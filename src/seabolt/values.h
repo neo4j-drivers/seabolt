@@ -637,7 +637,15 @@ float bolt_get_float32(struct BoltValue* value)
     return value->data.as_float[0];
 }
 
-//void bolt_put_float32_array(struct BoltValue* value, float* array, int32_t size);
+void bolt_put_float32_array(struct BoltValue* value, float* array, int32_t size)
+{
+    _bolt_put(value, BOLT_FLOAT32_ARRAY, array, size, sizeof_n(float, size));
+}
+
+float bolt_get_float32_array_at(struct BoltValue* value, int32_t index)
+{
+    return value->data.as_float[index];
+}
 
 
 

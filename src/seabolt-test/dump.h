@@ -75,6 +75,33 @@ int bolt_dump(struct BoltValue* x)
             printf("]");
             return EXIT_SUCCESS;
         }
+        case BOLT_UTF8:
+            printf("u8(\"");
+            for (int i = 0; i < x->data_items; i++)
+            {
+                printf("%c", x->data.as_char[i]);
+            }
+            printf("\")");
+            break;
+        case BOLT_UTF8_ARRAY:
+            printf("u8[");
+            char* data = x->data.as_char;
+            int size;
+            for (unsigned long i = 0; i < x->data_items; i++)
+            {
+                if (i > 0) { printf(", "); }
+                memcpy(&size, data, SIZE_OF_SIZE);
+                data += SIZE_OF_SIZE;
+                printf("\"");
+                for (unsigned long j = 0; j < size; j++)
+                {
+                    printf("%c", data[j]);
+                }
+                printf("\"");
+                data += size;
+            }
+            printf("]");
+            break;
         case BOLT_NUM8:
             printf("n8(%d)", bolt_get_num8(x));
             return EXIT_SUCCESS;
@@ -163,30 +190,14 @@ int bolt_dump(struct BoltValue* x)
             }
             printf("]");
             break;
-        case BOLT_UTF8:
-            printf("u8(\"");
+        case BOLT_FLOAT32:
+            printf("f32(%f)", bolt_get_float32(x));
+            break;
+        case BOLT_FLOAT32_ARRAY:
+            printf("f32[");
             for (int i = 0; i < x->data_items; i++)
             {
-                printf("%c", x->data.as_char[i]);
-            }
-            printf("\")");
-            break;
-        case BOLT_UTF8_ARRAY:
-            printf("u8[");
-            char* data = x->data.as_char;
-            int size;
-            for (unsigned long i = 0; i < x->data_items; i++)
-            {
-                if (i > 0) { printf(", "); }
-                memcpy(&size, data, SIZE_OF_SIZE);
-                data += SIZE_OF_SIZE;
-                printf("\"");
-                for (unsigned long j = 0; j < size; j++)
-                {
-                    printf("%c", data[j]);
-                }
-                printf("\"");
-                data += size;
+                printf(i == 0 ? "%f" : ", %f", bolt_get_float32_array_at(x, i));
             }
             printf("]");
             break;

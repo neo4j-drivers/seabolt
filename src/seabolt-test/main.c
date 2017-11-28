@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
+#include <math.h>
 
 #include "../seabolt/values.h"
 #include "dump.h"
@@ -461,6 +462,55 @@ void test_int64_array(int size)
     bolt_put_null(&value);
 }
 
+void _test_float32(float x)
+{
+    struct BoltValue value = bolt_value();
+    bolt_put_float32(&value, x);
+    bolt_dump_ln(&value);
+    assert(value.type == BOLT_FLOAT32);
+    assert(bolt_get_float32(&value) == x ||
+           (isnanf(bolt_get_float32(&value)) && isnanf(x)));
+    bolt_put_null(&value);
+}
+
+void test_float32()
+{
+    _test_float32(0.0F);
+    _test_float32(0.375F);
+    _test_float32(1.0F);
+    _test_float32(-1.0F);
+    _test_float32(3.14159F);
+    _test_float32(-3.14159F);
+    _test_float32(6.02214086e23F);
+    _test_float32(3.402823e38F);
+    _test_float32(INFINITY);
+    _test_float32(-INFINITY);
+    _test_float32(NAN);
+}
+
+void test_float32_array()
+{
+    struct BoltValue value = bolt_value();
+    float array[11] = {0.0F, 0.375F, 1.0F, -1.0F, 3.14159F, -3.14159F,
+                       6.02214086e23F, 3.402823e38F, INFINITY, -INFINITY, NAN};
+    bolt_put_float32_array(&value, array, 11);
+    bolt_dump_ln(&value);
+    assert(value.type == BOLT_FLOAT32_ARRAY);
+    assert(value.data_items == 11);
+    assert(bolt_get_float32_array_at(&value, 0) == 0.0F);
+    assert(bolt_get_float32_array_at(&value, 1) == 0.375F);
+    assert(bolt_get_float32_array_at(&value, 2) == 1.0F);
+    assert(bolt_get_float32_array_at(&value, 3) == -1.0F);
+    assert(bolt_get_float32_array_at(&value, 4) == 3.14159F);
+    assert(bolt_get_float32_array_at(&value, 5) == -3.14159F);
+    assert(bolt_get_float32_array_at(&value, 6) == 6.02214086e23F);
+    assert(bolt_get_float32_array_at(&value, 7) == 3.402823e38F);
+    assert(bolt_get_float32_array_at(&value, 8) == INFINITY);
+    assert(bolt_get_float32_array_at(&value, 9) == -INFINITY);
+    assert(isnanf(bolt_get_float32_array_at(&value, 10)));
+    bolt_put_null(&value);
+}
+
 int main()
 {
     test_null();
@@ -478,6 +528,8 @@ int main()
     test_int16_array(test_int16());
     test_int32_array(test_int32());
     test_int64_array(test_int64());
+    test_float32();
+    test_float32_array();
 
 //    const int NODE = 0xA0;
 //    bolt_put_structure(&value, NODE, 3);
