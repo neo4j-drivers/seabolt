@@ -1,10 +1,12 @@
-cmake_minimum_required(VERSION 3.8)
-project(seabolt)
+cmake_minimum_required(VERSION 3.7)
+project(seabolt-all)
+
+enable_testing()
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-add_subdirectory(src/seabolt)
-add_subdirectory(src/seabolt-test)
+add_custom_target(seabolt-all)
+add_dependencies(seabolt-all seabolt seabolt-test)
+
+add_subdirectory(seabolt)
+add_subdirectory(seabolt-test)

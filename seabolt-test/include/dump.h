@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <memory.h>
 
-#include "../seabolt/values.h"
+#include "values.h"
 
 const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                            '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -212,8 +212,5 @@ void bolt_dump_ln(struct BoltValue* value)
     bolt_dump(value);
     printf("\n");
 }
-
-#include <stdio.h>
-#include "../seabolt/values.h"
 
 #endif // SEABOLT_DUMP

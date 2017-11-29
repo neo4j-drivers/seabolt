@@ -22,8 +22,8 @@
 #include <assert.h>
 #include <math.h>
 
-#include "../seabolt/values.h"
-#include "dump.h"
+#include "values.h"
+#include "../include/dump.h"
 
 void test_null()
 {
