@@ -17,27 +17,20 @@
  * limitations under the License.
  */
 
-#ifndef SEABOLT_DUMP
-#define SEABOLT_DUMP
 
-#include <printf.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <memory.h>
 
-#include "values.h"
+#include "dump.h"
 
-const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
-                           '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-char hex_hi(const char* mem, unsigned long offset)
-{
-    return HEX_DIGITS[(mem[offset] >> 4) & 0x0F];
-}
+static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
+                                  '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-char hex_lo(const char* mem, unsigned long offset)
-{
-    return HEX_DIGITS[mem[offset] & 0x0F];
-}
+#define hex_hi(mem, offset) HEX_DIGITS[((mem)[offset] >> 4) & 0x0F]
+
+#define hex_lo(mem, offset) HEX_DIGITS[(mem)[offset] & 0x0F]
+
 
 int bolt_dump(struct BoltValue* x)
 {
@@ -52,7 +45,7 @@ int bolt_dump(struct BoltValue* x)
             return EXIT_SUCCESS;
         case BOLT_BIT_ARRAY:
             printf("b[");
-            for (int i = 0; i < x->data_items; i++)
+            for (int i = 0; i < x->logical_size; i++)
             {
                 printf("%d", bolt_get_bit_array_at(x, i));
             }
@@ -67,7 +60,7 @@ int bolt_dump(struct BoltValue* x)
         case BOLT_BYTE_ARRAY:
         {
             printf("b8[#");
-            for (int i = 0; i < x->data_items; i++)
+            for (int i = 0; i < x->logical_size; i++)
             {
                 char value = bolt_get_byte_array_at(x, i);
                 printf("%c%c", hex_hi(&value, 0), hex_lo(&value, 0));
@@ -77,7 +70,7 @@ int bolt_dump(struct BoltValue* x)
         }
         case BOLT_UTF8:
             printf("u8(\"");
-            for (int i = 0; i < x->data_items; i++)
+            for (int i = 0; i < x->logical_size; i++)
             {
                 printf("%c", x->data.as_char[i]);
             }
@@ -87,7 +80,7 @@ int bolt_dump(struct BoltValue* x)
             printf("u8[");
             char* data = x->data.as_char;
             int size;
-            for (unsigned long i = 0; i < x->data_items; i++)
+            for (unsigned long i = 0; i < x->logical_size; i++)
             {
                 if (i > 0) { printf(", "); }
                 memcpy(&size, data, SIZE_OF_SIZE);
@@ -107,7 +100,7 @@ int bolt_dump(struct BoltValue* x)
             return EXIT_SUCCESS;
         case BOLT_NUM8_ARRAY:
             printf("n8[");
-            for (int i = 0; i < x->data_items; i++)
+            for (int i = 0; i < x->logical_size; i++)
             {
                 printf(i == 0 ? "%d" : ", %d", bolt_get_num8_array_at(x, i));
             }
@@ -118,7 +111,7 @@ int bolt_dump(struct BoltValue* x)
             break;
         case BOLT_NUM16_ARRAY:
             printf("n16[");
-            for (int i = 0; i < x->data_items; i++)
+            for (int i = 0; i < x->logical_size; i++)
             {
                 printf(i == 0 ? "%d" : ", %d", bolt_get_num16_array_at(x, i));
             }
@@ -129,7 +122,7 @@ int bolt_dump(struct BoltValue* x)
             break;
         case BOLT_NUM32_ARRAY:
             printf("n32[");
-            for (int i = 0; i < x->data_items; i++)
+            for (int i = 0; i < x->logical_size; i++)
             {
                 printf(i == 0 ? "%u" : ", %u", bolt_get_num32_array_at(x, i));
             }
@@ -140,7 +133,7 @@ int bolt_dump(struct BoltValue* x)
             break;
         case BOLT_NUM64_ARRAY:
             printf("n64[");
-            for (int i = 0; i < x->data_items; i++)
+            for (int i = 0; i < x->logical_size; i++)
             {
                 printf(i == 0 ? "%lu" : ", %lu", bolt_get_num64_array_at(x, i));
             }
@@ -151,7 +144,7 @@ int bolt_dump(struct BoltValue* x)
             break;
         case BOLT_INT8_ARRAY:
             printf("i8[");
-            for (int i = 0; i < x->data_items; i++)
+            for (int i = 0; i < x->logical_size; i++)
             {
                 printf(i == 0 ? "%d" : ", %d", bolt_get_int8_array_at(x, i));
             }
@@ -162,7 +155,7 @@ int bolt_dump(struct BoltValue* x)
             break;
         case BOLT_INT16_ARRAY:
             printf("i16[");
-            for (int i = 0; i < x->data_items; i++)
+            for (int i = 0; i < x->logical_size; i++)
             {
                 printf(i == 0 ? "%d" : ", %d", bolt_get_int16_array_at(x, i));
             }
@@ -173,7 +166,7 @@ int bolt_dump(struct BoltValue* x)
             break;
         case BOLT_INT32_ARRAY:
             printf("i32[");
-            for (int i = 0; i < x->data_items; i++)
+            for (int i = 0; i < x->logical_size; i++)
             {
                 printf(i == 0 ? "%d" : ", %d", bolt_get_int32_array_at(x, i));
             }
@@ -184,7 +177,7 @@ int bolt_dump(struct BoltValue* x)
             break;
         case BOLT_INT64_ARRAY:
             printf("i64[");
-            for (int i = 0; i < x->data_items; i++)
+            for (int i = 0; i < x->logical_size; i++)
             {
                 printf(i == 0 ? "%ld" : ", %ld", bolt_get_int64_array_at(x, i));
             }
@@ -195,7 +188,7 @@ int bolt_dump(struct BoltValue* x)
             break;
         case BOLT_FLOAT32_ARRAY:
             printf("f32[");
-            for (int i = 0; i < x->data_items; i++)
+            for (int i = 0; i < x->logical_size; i++)
             {
                 printf(i == 0 ? "%f" : ", %f", bolt_get_float32_array_at(x, i));
             }
@@ -213,4 +206,3 @@ void bolt_dump_ln(struct BoltValue* value)
     printf("\n");
 }
 
-#endif // SEABOLT_DUMP

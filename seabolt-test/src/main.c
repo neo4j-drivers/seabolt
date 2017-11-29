@@ -23,7 +23,7 @@
 #include <math.h>
 
 #include "values.h"
-#include "../include/dump.h"
+#include "dump.h"
 
 void test_null()
 {
@@ -64,12 +64,12 @@ void test_bit_array()
 void test_byte()
 {
     struct BoltValue value = bolt_value();
-    for (int i = CHAR_MIN; i <= CHAR_MAX; i++)
+    for (int i = 0x00; i <= 0xFF; i++)
     {
         bolt_put_byte(&value, (char)(i));
         bolt_dump_ln(&value);
         assert(value.type == BOLT_BYTE);
-        assert(bolt_get_byte(&value) == i);
+        assert(bolt_get_byte(&value) == (char)(i));
     }
     bolt_put_null(&value);
 }
@@ -107,7 +107,7 @@ void _test_utf8(char* text, int32_t text_size)
     bolt_put_utf8(&value, text, text_size);
     bolt_dump_ln(&value);
     assert(value.type == BOLT_UTF8);
-    assert(value.data_bytes == text_size);
+    assert(value.physical_size == text_size);
     char* stored_text = bolt_get_utf8(&value);
     assert(strncmp(text, stored_text, (size_t)(text_size)) == 0);
     bolt_put_null(&value);
@@ -118,6 +118,7 @@ void test_utf8()
     _test_utf8("", 0);
     _test_utf8("hello, world", 12);
     _test_utf8("there is a null character -> \x00 <- in the middle of this string", 62);
+    _test_utf8("back to a short one", 19);
 }
 
 void test_utf8_array()
@@ -133,7 +134,7 @@ void test_utf8_array()
     bolt_put_utf8_array_next(&value, "that last one was empty!!", 25);
     bolt_dump_ln(&value);
     assert(value.type == BOLT_UTF8_ARRAY);
-    assert(value.data_items == 5);
+    assert(value.logical_size == 5);
 
     text = bolt_get_utf8_array_at(&value, 0);
     size = bolt_get_utf8_array_size_at(&value, 0);
@@ -496,7 +497,7 @@ void test_float32_array()
     bolt_put_float32_array(&value, array, 11);
     bolt_dump_ln(&value);
     assert(value.type == BOLT_FLOAT32_ARRAY);
-    assert(value.data_items == 11);
+    assert(value.logical_size == 11);
     assert(bolt_get_float32_array_at(&value, 0) == 0.0F);
     assert(bolt_get_float32_array_at(&value, 1) == 0.375F);
     assert(bolt_get_float32_array_at(&value, 2) == 1.0F);

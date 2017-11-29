@@ -23,6 +23,7 @@
 #include <limits.h>
 #include <malloc.h>
 #include <memory.h>
+#include <assert.h>
 
 #if CHAR_BIT != 8
 #error "Cannot compile if `char` is not 8-bit"
@@ -151,8 +152,8 @@ struct BoltValue
     uint8_t channel;
     uint8_t type;
     uint16_t code;
-    int32_t data_items;
-    size_t data_bytes;
+    int32_t logical_size;
+    size_t physical_size;
     union
     {
         void* as_ptr;
@@ -214,22 +215,76 @@ struct double_quad
 };
 
 
-void _bolt_put(struct BoltValue* value, uint8_t type, const void* data, int32_t data_items, size_t data_bytes)
+/**
+ * Allocate, reallocate or free memory for data storage.
+ *
+ * Since we recycle values, we can also potentially recycle
+ * the dynamically-allocated storage.
+ *
+ * @param value the value in which to allocate storage
+ * @param physical_size the number of bytes of storage required
+ */
+void _bolt_alloc(struct BoltValue* value, size_t physical_size)
+{
+    if (physical_size == value->physical_size)
+    {
+        // In this case, the physical data storage requirement
+        // hasn't changed, whether zero or some positive value.
+        // This means that we can reuse the storage exactly
+        // as-is and no allocation needs to occur. Therefore,
+        // if we reuse a value for the same fixed-size type -
+        // an int32 for example - then we can continue to reuse
+        // the same storage for each value, avoiding memory
+        // reallocation.
+    }
+    else if (value->physical_size == 0)
+    {
+        // In this case we need to allocate new storage space
+        // where previously none was allocated. This means
+        // that a full `malloc` is required.
+        assert(value->data.as_ptr == NULL);
+        value->data.as_ptr = malloc(physical_size);
+        value->physical_size = physical_size;
+    }
+    else if (physical_size == 0)
+    {
+        // In this case, we are moving from previously having
+        // data to no longer requiring any storage space. This
+        // means that we can free up the previously-allocated
+        // space.
+        assert(value->data.as_ptr != NULL);
+        free(value->data.as_ptr);
+        value->data.as_ptr = NULL;
+        value->physical_size = physical_size;
+    }
+    else
+    {
+        // Finally, this case deals with previous allocation
+        // and a new allocation requirement, but of different
+        // sizes. Here, we `realloc`, which should be more
+        // efficient than a naïve deallocation followed by a
+        // brand new allocation.
+        assert(value->data.as_ptr != NULL);
+        value->data.as_ptr = realloc(value->data.as_ptr, physical_size);
+        value->physical_size = physical_size;
+    }
+}
+
+void _bolt_copy_data(struct BoltValue* value, const void* data, size_t offset, size_t length)
+{
+    if (length > 0)
+    {
+        memcpy(value->data.as_char + offset, data, length);
+    }
+}
+
+void _bolt_put(struct BoltValue* value, uint8_t type, const void* data, int32_t logical_size, size_t physical_size)
 {
     value->type = type;
     value->code = 0;
-    value->data_items = data_items;
-    value->data_bytes = data_bytes;
-    if (value->data.as_ptr != NULL)
-    {
-        free(value->data.as_ptr);
-        value->data.as_ptr = NULL;
-    }
-    if (data != NULL && value->data_bytes > 0)
-    {
-        value->data.as_ptr = malloc(value->data_bytes);
-        memcpy(value->data.as_char, data, value->data_bytes);
-    }
+    value->logical_size = logical_size;
+    _bolt_alloc(value, physical_size);
+    _bolt_copy_data(value, data, 0, physical_size);
 }
 
 
@@ -238,6 +293,8 @@ struct BoltValue bolt_value()
     struct BoltValue value;
     value.channel = 0;
     value.type = BOLT_NULL;
+    value.logical_size = 0;
+    value.physical_size = 0;
     value.data.as_ptr = NULL;
     return value;
 }
@@ -360,20 +417,12 @@ void bolt_put_utf8_array(struct BoltValue* value)
 
 void bolt_put_utf8_array_next(struct BoltValue* value, char* string, int32_t size)
 {
-    size_t old_offset = value->data_bytes;
-    size_t new_offset = old_offset + SIZE_OF_SIZE + size;
-    if (value->data.as_ptr == NULL)
-    {
-        value->data.as_ptr = malloc(new_offset);
-    }
-    else
-    {
-        value->data.as_ptr = realloc(value->data.as_ptr, new_offset);
-    }
-    value->data_bytes = new_offset;
-    memcpy(&value->data.as_char[old_offset], &size, SIZE_OF_SIZE);
-    memcpy(&value->data.as_char[old_offset + SIZE_OF_SIZE], string, (size_t)(size));
-    value->data_items += 1;
+    assert(value->type == BOLT_UTF8_ARRAY);
+    value->logical_size += 1;
+    size_t old_physical_size = value->physical_size;
+    _bolt_alloc(value, old_physical_size + SIZE_OF_SIZE + size);
+    _bolt_copy_data(value, &size, old_physical_size, SIZE_OF_SIZE);
+    _bolt_copy_data(value, string, old_physical_size + SIZE_OF_SIZE, (size_t)(size));
 }
 
 int32_t bolt_get_utf8_array_size_at(struct BoltValue* value, int32_t index)
