@@ -28,9 +28,83 @@
 void test_null()
 {
     struct BoltValue value = bolt_value();
-    bolt_put_null(&value);
+    bolt_null(&value);
     bolt_dump_ln(&value);
     assert(value.type == BOLT_NULL);
+}
+
+void _test_list()
+{
+    struct BoltValue value = bolt_value();
+    bolt_put_list(&value, 6);
+    bolt_put_int32(bolt_get_list_at(&value, 0), 1234567);
+    bolt_put_int32(bolt_get_list_at(&value, 1), 2345678);
+    bolt_put_int32(bolt_get_list_at(&value, 2), 3456789);
+    bolt_put_utf8(bolt_get_list_at(&value, 3), "hello", 5);
+    bolt_put_list(bolt_get_list_at(&value, 5), 3);
+    bolt_put_num8(bolt_get_list_at(bolt_get_list_at(&value, 5), 0), 77);
+    bolt_put_num8(bolt_get_list_at(bolt_get_list_at(&value, 5), 1), 88);
+    bolt_put_byte(bolt_get_list_at(bolt_get_list_at(&value, 5), 2), 99);
+    bolt_dump_ln(&value);
+    assert(value.type == BOLT_LIST);
+    assert(value.logical_size == 6);
+    bolt_null(&value);
+}
+
+void _test_empty_list()
+{
+    struct BoltValue value = bolt_value();
+    bolt_put_list(&value, 0);
+    bolt_dump_ln(&value);
+    assert(value.type == BOLT_LIST);
+    assert(value.logical_size == 0);
+    bolt_null(&value);
+}
+
+void _test_list_growth()
+{
+    struct BoltValue value = bolt_value();
+    bolt_put_list(&value, 0);
+    bolt_dump_ln(&value);
+    assert(value.type == BOLT_LIST);
+    assert(value.logical_size == 0);
+    for (int i = 0; i < 3; i++)
+    {
+        int size = i + 1;
+        bolt_resize_list(&value, size);
+        bolt_put_int8(bolt_get_list_at(&value, i), (int8_t)(size));
+        bolt_dump_ln(&value);
+        assert(value.type == BOLT_LIST);
+        assert(value.logical_size == size);
+    }
+    bolt_null(&value);
+}
+
+void _test_list_shrinkage()
+{
+    struct BoltValue value = bolt_value();
+    bolt_put_list(&value, 3);
+    bolt_put_int8(bolt_get_list_at(&value, 0), 1);
+    bolt_put_int8(bolt_get_list_at(&value, 1), 2);
+    bolt_put_int8(bolt_get_list_at(&value, 2), 3);
+    assert(value.type == BOLT_LIST);
+    assert(value.logical_size == 3);
+    for (int size = 3; size >= 0; size--)
+    {
+        bolt_resize_list(&value, size);
+        bolt_dump_ln(&value);
+        assert(value.type == BOLT_LIST);
+        assert(value.logical_size == size);
+    }
+    bolt_null(&value);
+}
+
+void test_list()
+{
+    _test_list();
+    _test_empty_list();
+    _test_list_growth();
+    _test_list_shrinkage();
 }
 
 void test_bit()
@@ -43,7 +117,7 @@ void test_bit()
         assert(value.type == BOLT_BIT);
         assert(bolt_get_bit(&value) == i);
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 void test_bit_array()
@@ -59,7 +133,7 @@ void test_bit_array()
     {
         assert(bolt_get_bit_array_at(&value, i) == array[i]);
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 void test_byte()
@@ -72,25 +146,25 @@ void test_byte()
         assert(value.type == BOLT_BYTE);
         assert(bolt_get_byte(&value) == (char)(i));
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 void test_byte_array()
 {
     struct BoltValue value = bolt_value();
     char array[] = ("\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f"
-                    "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
-                    " !\"#$%&'()*+,-./0123456789:;<=>?"
-                    "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-                    "`abcdefghijklmnopqrstuvwxyz{|}~\x7f"
-                    "\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f"
-                    "\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f"
-                    "\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf"
-                    "\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf"
-                    "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf"
-                    "\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf"
-                    "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef"
-                    "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff");
+            "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
+            " !\"#$%&'()*+,-./0123456789:;<=>?"
+            "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+            "`abcdefghijklmnopqrstuvwxyz{|}~\x7f"
+            "\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f"
+            "\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f"
+            "\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf"
+            "\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf"
+            "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf"
+            "\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf"
+            "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef"
+            "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff");
     int32_t size = sizeof(array) - 1;
     bolt_put_byte_array(&value, array, size);
     bolt_dump_ln(&value);
@@ -100,7 +174,7 @@ void test_byte_array()
     {
         assert(bolt_get_byte_array_at(&value, i) == array[i]);
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 void _test_utf8(char* text, int32_t text_size)
@@ -112,7 +186,7 @@ void _test_utf8(char* text, int32_t text_size)
     assert(value.physical_size == text_size);
     char* stored_text = bolt_get_utf8(&value);
     assert(strncmp(text, stored_text, (size_t)(text_size)) == 0);
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 void test_utf8()
@@ -159,7 +233,7 @@ void test_utf8_array()
     size = bolt_get_utf8_array_size_at(&value, 4);
     assert(strncmp(text, "that last one was empty!!", (size_t)(size)) == 0);
 
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 int test_num8()
@@ -175,7 +249,7 @@ int test_num8()
         assert(bolt_get_num8(&value) == x);
         n += 1, z = x + y, x = y, y = z;
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
     return n;
 }
 
@@ -198,7 +272,7 @@ void test_num8_array(int size)
     {
         assert(bolt_get_num8_array_at(&value, i) == array[i]);
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 int test_num16()
@@ -214,7 +288,7 @@ int test_num16()
         assert(bolt_get_num16(&value) == x);
         n += 1, z = x + y, x = y, y = z;
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
     return n;
 }
 
@@ -237,7 +311,7 @@ void test_num16_array(int size)
     {
         assert(bolt_get_num16_array_at(&value, i) == array[i]);
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 int test_num32()
@@ -253,7 +327,7 @@ int test_num32()
         assert(bolt_get_num32(&value) == x);
         n += 1, z = x + y, x = y, y = z;
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
     return n;
 }
 
@@ -276,7 +350,7 @@ void test_num32_array(int size)
     {
         assert(bolt_get_num32_array_at(&value, i) == array[i]);
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 int test_num64()
@@ -292,7 +366,7 @@ int test_num64()
         assert(bolt_get_num64(&value) == x);
         n += 1, z = x + y, x = y, y = z;
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
     return n;
 }
 
@@ -315,7 +389,7 @@ void test_num64_array(int size)
     {
         assert(bolt_get_num64_array_at(&value, i) == array[i]);
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 int test_int8()
@@ -331,7 +405,7 @@ int test_int8()
         assert(bolt_get_int8(&value) == s * x);
         n += 1, s = -s, z = x + y, x = y, y = z;
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
     return n;
 }
 
@@ -354,7 +428,7 @@ void test_int8_array(int size)
     {
         assert(bolt_get_int8_array_at(&value, i) == array[i]);
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 int test_int16()
@@ -370,7 +444,7 @@ int test_int16()
         assert(bolt_get_int16(&value) == s * x);
         n += 1, s = -s, z = x + y, x = y, y = z;
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
     return n;
 }
 
@@ -393,7 +467,7 @@ void test_int16_array(int size)
     {
         assert(bolt_get_int16_array_at(&value, i) == array[i]);
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 int test_int32()
@@ -409,7 +483,7 @@ int test_int32()
         assert(bolt_get_int32(&value) == s * x);
         n += 1, s = -s, z = x + y, x = y, y = z;
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
     return n;
 }
 
@@ -432,7 +506,7 @@ void test_int32_array(int size)
     {
         assert(bolt_get_int32_array_at(&value, i) == array[i]);
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 int test_int64()
@@ -448,7 +522,7 @@ int test_int64()
         assert(bolt_get_int64(&value) == s * x);
         n += 1, s = -s, z = x + y, x = y, y = z;
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
     return n;
 }
 
@@ -471,7 +545,7 @@ void test_int64_array(int size)
     {
         assert(bolt_get_int64_array_at(&value, i) == array[i]);
     }
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 void _test_float32(float x)
@@ -482,7 +556,7 @@ void _test_float32(float x)
     assert(value.type == BOLT_FLOAT32);
     assert(bolt_get_float32(&value) == x ||
            (isnanf(bolt_get_float32(&value)) && isnanf(x)));
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 void test_float32()
@@ -521,12 +595,13 @@ void test_float32_array()
     assert(bolt_get_float32_array_at(&value, 8) == INFINITY);
     assert(bolt_get_float32_array_at(&value, 9) == -INFINITY);
     assert(isnanf(bolt_get_float32_array_at(&value, 10)));
-    bolt_put_null(&value);
+    bolt_null(&value);
 }
 
 int main()
 {
     test_null();
+    test_list();
     test_bit();
     test_bit_array();
     test_byte();

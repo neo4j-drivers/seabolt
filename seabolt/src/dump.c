@@ -35,7 +35,20 @@ static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
 int bolt_dump_null(const struct BoltValue* value)
 {
     assert(value->type == BOLT_NULL);
-printf("~");
+    printf("~");
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump_list(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_LIST);
+    printf("[");
+    for (int i = 0; i < value->logical_size; i++)
+    {
+        if (i > 0) printf(", ");
+        bolt_dump(bolt_get_list_at(value, i));
+    }
+    printf("]");
     return EXIT_SUCCESS;
 }
 
@@ -291,6 +304,8 @@ int bolt_dump(struct BoltValue* value)
     {
         case BOLT_NULL:
             return bolt_dump_null(value);
+        case BOLT_LIST:
+            return bolt_dump_list(value);
         case BOLT_BIT:
             return bolt_dump_bit(value);
         case BOLT_BYTE:

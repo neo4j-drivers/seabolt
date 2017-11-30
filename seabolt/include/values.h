@@ -90,6 +90,7 @@ struct BoltValue
         int64_t* as_int64;
         float* as_float;
         double* as_double;
+        struct BoltValue* as_value;
     } data;
 };
 
@@ -137,6 +138,12 @@ struct double_quad
 };
 
 
+static size_t __bolt_value_memory = 0;
+
+
+void bolt_null_list(struct BoltValue* value);
+
+
 /**
  * Allocate, reallocate or free memory for data storage.
  *
@@ -166,6 +173,9 @@ void _bolt_alloc(struct BoltValue* value, size_t physical_size)
         // that a full `malloc` is required.
         assert(value->data.as_ptr == NULL);
         value->data.as_ptr = malloc(physical_size);
+        __bolt_value_memory += physical_size;
+        fprintf(stderr, "\x1B[36mAllocated %ld bytes (balance: %lu)\x1B[0m\n",
+                physical_size, __bolt_value_memory);
         value->physical_size = physical_size;
     }
     else if (physical_size == 0)
@@ -177,7 +187,10 @@ void _bolt_alloc(struct BoltValue* value, size_t physical_size)
         assert(value->data.as_ptr != NULL);
         free(value->data.as_ptr);
         value->data.as_ptr = NULL;
-        value->physical_size = physical_size;
+        __bolt_value_memory -= value->physical_size;
+        fprintf(stderr, "\x1B[36mFreed %ld bytes (balance: %lu)\x1B[0m\n",
+                value->physical_size, __bolt_value_memory);
+        value->physical_size = 0;
     }
     else
     {
@@ -188,6 +201,9 @@ void _bolt_alloc(struct BoltValue* value, size_t physical_size)
         // brand new allocation.
         assert(value->data.as_ptr != NULL);
         value->data.as_ptr = realloc(value->data.as_ptr, physical_size);
+        __bolt_value_memory = __bolt_value_memory - value->physical_size + physical_size;
+        fprintf(stderr, "\x1B[36mReallocated %ld bytes as %ld bytes (balance: %lu)\x1B[0m\n",
+                value->physical_size, physical_size, __bolt_value_memory);
         value->physical_size = physical_size;
     }
 }
@@ -200,15 +216,33 @@ void _bolt_copy_data(struct BoltValue* value, const void* data, size_t offset, s
     }
 }
 
+/**
+ * Set any nested values to null.
+ *
+ * @param value
+ */
+void _bolt_null_items(struct BoltValue* value)
+{
+    if (value->type == BOLT_LIST)
+    {
+        bolt_null_list(value);
+    }
+    else if (value->type == BOLT_KEY_VALUE_LIST)
+    {
+        // TODO: null all the things
+    }
+}
+
 void _bolt_put(struct BoltValue* value, enum BoltType type, int code, int is_array,
                const void* data, int logical_size, size_t physical_size)
 {
+    _bolt_null_items(value);
+    _bolt_alloc(value, physical_size);
+    _bolt_copy_data(value, data, 0, physical_size);
     value->type = type;
     value->code = code;
     value->is_array = is_array;
     value->logical_size = logical_size;
-    _bolt_alloc(value, physical_size);
-    _bolt_copy_data(value, data, 0, physical_size);
 }
 
 
@@ -225,13 +259,86 @@ struct BoltValue bolt_value()
 }
 
 
+static const struct BoltValue BOLT_NULL_VALUE = { BOLT_NULL, 0, 0, 0, 0, NULL };
+
+
 /*********************************************************************
  * Null
  */
 
-void bolt_put_null(struct BoltValue* value)
+void bolt_null(struct BoltValue* value)
 {
     _bolt_put(value, BOLT_NULL, 0, 0, NULL, 0, 0);
+}
+
+
+/*********************************************************************
+ * List
+ */
+
+void bolt_put_list(struct BoltValue* value, int32_t size)
+{
+    size_t unit_size = sizeof(struct BoltValue);
+    size_t physical_size = unit_size * size;
+    _bolt_null_items(value);
+    _bolt_alloc(value, physical_size);
+    for (size_t offset = 0; offset < physical_size; offset += unit_size)
+    {
+        _bolt_copy_data(value, &BOLT_NULL_VALUE, offset, unit_size);
+    }
+    value->type = BOLT_LIST;
+    value->code = 0;
+    value->is_array = 0;
+    value->logical_size = size;
+}
+
+void bolt_null_list(struct BoltValue* value)
+{
+    assert(value->type == BOLT_LIST);
+    for (long i = 0; i < value->logical_size; i++)
+    {
+        bolt_null(&value->data.as_value[i]);
+    }
+}
+
+void bolt_resize_list(struct BoltValue* value, int32_t size)
+{
+    assert(value->type == BOLT_LIST);
+    if (size > value->logical_size)
+    {
+        // grow physically
+        size_t unit_size = sizeof(struct BoltValue);
+        size_t new_physical_size = unit_size * size;
+        size_t old_physical_size = value->physical_size;
+        _bolt_alloc(value, new_physical_size);
+        // grow logically
+        for (size_t offset = old_physical_size; offset < new_physical_size; offset += unit_size)
+        {
+            _bolt_copy_data(value, &BOLT_NULL_VALUE, offset, unit_size);
+        }
+        value->logical_size = size;
+    }
+    else if (size < value->logical_size)
+    {
+        // shrink logically
+        for(long i=size;i<value->logical_size;i++)
+        {
+            bolt_null(&value->data.as_value[i]);
+        }
+        value->logical_size = size;
+        // shrink physically
+        size_t new_physical_size = sizeof_n(struct BoltValue, size);
+        _bolt_alloc(value, new_physical_size);
+    }
+    else
+    {
+        // same size - do nothing
+    }
+}
+
+struct BoltValue* bolt_get_list_at(const struct BoltValue* value, int32_t index)
+{
+    return &value->data.as_value[index];
 }
 
 
