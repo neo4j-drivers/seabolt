@@ -32,172 +32,293 @@ static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
 #define hex_lo(mem, offset) HEX_DIGITS[(mem)[offset] & 0x0F]
 
 
-int bolt_dump(struct BoltValue* x)
+int bolt_dump_null(const struct BoltValue* value)
 {
-    printf("%d : ", (int)(x->channel));
-    switch (x->type)
+    assert(value->type == BOLT_NULL);
+printf("~");
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump_bit(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_BIT);
+    if (value->is_array)
     {
-        case BOLT_NULL:
-            printf("~");
-            return EXIT_SUCCESS;
-        case BOLT_BIT:
-            printf("b(%d)", bolt_get_bit(x));
-            return EXIT_SUCCESS;
-        case BOLT_BIT_ARRAY:
-            printf("b[");
-            for (int i = 0; i < x->logical_size; i++)
-            {
-                printf("%d", bolt_get_bit_array_at(x, i));
-            }
-            printf("]");
-            return EXIT_SUCCESS;
-        case BOLT_BYTE:
+        printf("b[");
+        for (int i = 0; i < value->logical_size; i++)
         {
-            char byte = bolt_get_byte(x);
-            printf("b8(#%c%c)", hex_hi(&byte, 0), hex_lo(&byte, 0));
-            return EXIT_SUCCESS;
+            printf("%d", bolt_get_bit_array_at(value, i));
         }
-        case BOLT_BYTE_ARRAY:
-        {
-            printf("b8[#");
-            for (int i = 0; i < x->logical_size; i++)
-            {
-                char value = bolt_get_byte_array_at(x, i);
-                printf("%c%c", hex_hi(&value, 0), hex_lo(&value, 0));
-            }
-            printf("]");
-            return EXIT_SUCCESS;
-        }
-        case BOLT_UTF8:
-            printf("u8(\"");
-            for (int i = 0; i < x->logical_size; i++)
-            {
-                printf("%c", x->data.as_char[i]);
-            }
-            printf("\")");
-            break;
-        case BOLT_UTF8_ARRAY:
-            printf("u8[");
-            char* data = x->data.as_char;
-            int size;
-            for (unsigned long i = 0; i < x->logical_size; i++)
-            {
-                if (i > 0) { printf(", "); }
-                memcpy(&size, data, SIZE_OF_SIZE);
-                data += SIZE_OF_SIZE;
-                printf("\"");
-                for (unsigned long j = 0; j < size; j++)
-                {
-                    printf("%c", data[j]);
-                }
-                printf("\"");
-                data += size;
-            }
-            printf("]");
-            break;
-        case BOLT_NUM8:
-            printf("n8(%d)", bolt_get_num8(x));
-            return EXIT_SUCCESS;
-        case BOLT_NUM8_ARRAY:
-            printf("n8[");
-            for (int i = 0; i < x->logical_size; i++)
-            {
-                printf(i == 0 ? "%d" : ", %d", bolt_get_num8_array_at(x, i));
-            }
-            printf("]");
-            return EXIT_SUCCESS;
-        case BOLT_NUM16:
-            printf("n16(%d)", bolt_get_num16(x));
-            break;
-        case BOLT_NUM16_ARRAY:
-            printf("n16[");
-            for (int i = 0; i < x->logical_size; i++)
-            {
-                printf(i == 0 ? "%d" : ", %d", bolt_get_num16_array_at(x, i));
-            }
-            printf("]");
-            break;
-        case BOLT_NUM32:
-            printf("n32(%u)", bolt_get_num32(x));
-            break;
-        case BOLT_NUM32_ARRAY:
-            printf("n32[");
-            for (int i = 0; i < x->logical_size; i++)
-            {
-                printf(i == 0 ? "%u" : ", %u", bolt_get_num32_array_at(x, i));
-            }
-            printf("]");
-            break;
-        case BOLT_NUM64:
-            printf("n64(%lu)", bolt_get_num64(x));
-            break;
-        case BOLT_NUM64_ARRAY:
-            printf("n64[");
-            for (int i = 0; i < x->logical_size; i++)
-            {
-                printf(i == 0 ? "%lu" : ", %lu", bolt_get_num64_array_at(x, i));
-            }
-            printf("]");
-            break;
-        case BOLT_INT8:
-            printf("i8(%d)", bolt_get_int8(x));
-            break;
-        case BOLT_INT8_ARRAY:
-            printf("i8[");
-            for (int i = 0; i < x->logical_size; i++)
-            {
-                printf(i == 0 ? "%d" : ", %d", bolt_get_int8_array_at(x, i));
-            }
-            printf("]");
-            break;
-        case BOLT_INT16:
-            printf("i16(%d)", bolt_get_int16(x));
-            break;
-        case BOLT_INT16_ARRAY:
-            printf("i16[");
-            for (int i = 0; i < x->logical_size; i++)
-            {
-                printf(i == 0 ? "%d" : ", %d", bolt_get_int16_array_at(x, i));
-            }
-            printf("]");
-            break;
-        case BOLT_INT32:
-            printf("i32(%d)", bolt_get_int32(x));
-            break;
-        case BOLT_INT32_ARRAY:
-            printf("i32[");
-            for (int i = 0; i < x->logical_size; i++)
-            {
-                printf(i == 0 ? "%d" : ", %d", bolt_get_int32_array_at(x, i));
-            }
-            printf("]");
-            break;
-        case BOLT_INT64:
-            printf("i64(%ld)", bolt_get_int64(x));
-            break;
-        case BOLT_INT64_ARRAY:
-            printf("i64[");
-            for (int i = 0; i < x->logical_size; i++)
-            {
-                printf(i == 0 ? "%ld" : ", %ld", bolt_get_int64_array_at(x, i));
-            }
-            printf("]");
-            break;
-        case BOLT_FLOAT32:
-            printf("f32(%f)", bolt_get_float32(x));
-            break;
-        case BOLT_FLOAT32_ARRAY:
-            printf("f32[");
-            for (int i = 0; i < x->logical_size; i++)
-            {
-                printf(i == 0 ? "%f" : ", %f", bolt_get_float32_array_at(x, i));
-            }
-            printf("]");
-            break;
-        default:
-            printf("?");
+        printf("]");
+    }
+    else
+    {
+        printf("b(%d)", bolt_get_bit(value));
     }
     return EXIT_SUCCESS;
+}
+
+int bolt_dump_byte(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_BYTE);
+    if (value->is_array)
+    {
+        printf("b8[#");
+        for (int i = 0; i < value->logical_size; i++)
+        {
+            char b = bolt_get_byte_array_at(value, i);
+            printf("%c%c", hex_hi(&b, 0), hex_lo(&b, 0));
+        }
+        printf("]");
+    }
+    else
+    {
+        char byte = bolt_get_byte(value);
+        printf("b8(#%c%c)", hex_hi(&byte, 0), hex_lo(&byte, 0));
+    }
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump_utf8(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_UTF8);
+    if (value->is_array)
+    {
+        printf("u8[");
+        char* data = value->data.as_char;
+        int size;
+        for (unsigned long i = 0; i < value->logical_size; i++)
+        {
+            if (i > 0) { printf(", "); }
+            memcpy(&size, data, SIZE_OF_SIZE);
+            data += SIZE_OF_SIZE;
+            printf("\"");
+            for (unsigned long j = 0; j < size; j++)
+            {
+                printf("%c", data[j]);
+            }
+            printf("\"");
+            data += size;
+        }
+        printf("]");
+    }
+    else
+    {
+        printf("u8(\"");
+        for (int i = 0; i < value->logical_size; i++)
+        {
+            printf("%c", value->data.as_char[i]);
+        }
+        printf("\")");
+    }
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump_num8(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_NUM8);
+    if (value->is_array)
+    {
+        printf("n8[");
+        for (int i = 0; i < value->logical_size; i++)
+        {
+            printf(i == 0 ? "%u" : ", %u", bolt_get_num8_array_at(value, i));
+        }
+        printf("]");
+    }
+    else
+    {
+        printf("n8(%u)", bolt_get_num8(value));
+    }
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump_num16(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_NUM16);
+    if (value->is_array)
+    {
+        printf("n16[");
+        for (int i = 0; i < value->logical_size; i++)
+        {
+            printf(i == 0 ? "%u" : ", %u", bolt_get_num16_array_at(value, i));
+        }
+        printf("]");
+    }
+    else
+    {
+        printf("n16(%u)", bolt_get_num16(value));
+    }
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump_num32(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_NUM32);
+    if (value->is_array)
+    {
+        printf("n32[");
+        for (int i = 0; i < value->logical_size; i++)
+        {
+            printf(i == 0 ? "%u" : ", %u", bolt_get_num32_array_at(value, i));
+        }
+        printf("]");
+    }
+    else
+    {
+        printf("n32(%u)", bolt_get_num32(value));
+    }
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump_num64(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_NUM64);
+    if (value->is_array)
+    {
+        printf("n64[");
+        for (int i = 0; i < value->logical_size; i++)
+        {
+            printf(i == 0 ? "%lu" : ", %lu", bolt_get_num64_array_at(value, i));
+        }
+        printf("]");
+    }
+    else
+    {
+        printf("n64(%lu)", bolt_get_num64(value));
+    }
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump_int8(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_INT8);
+    if (value->is_array)
+    {
+        printf("i8[");
+        for (int i = 0; i < value->logical_size; i++)
+        {
+            printf(i == 0 ? "%d" : ", %d", bolt_get_int8_array_at(value, i));
+        }
+        printf("]");
+    }
+    else
+    {
+        printf("i8(%d)", bolt_get_int8(value));
+    }
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump_int16(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_INT16);
+    if (value->is_array)
+    {
+        printf("i16[");
+        for (int i = 0; i < value->logical_size; i++)
+        {
+            printf(i == 0 ? "%d" : ", %d", bolt_get_int16_array_at(value, i));
+        }
+        printf("]");
+    }
+    else
+    {
+        printf("i16(%d)", bolt_get_int16(value));
+    }
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump_int32(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_INT32);
+    if (value->is_array)
+    {
+        printf("i32[");
+        for (int i = 0; i < value->logical_size; i++)
+        {
+            printf(i == 0 ? "%d" : ", %d", bolt_get_int32_array_at(value, i));
+        }
+        printf("]");
+    }
+    else
+    {
+        printf("i32(%d)", bolt_get_int32(value));
+    }
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump_int64(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_INT64);
+    if (value->is_array)
+    {
+        printf("i64[");
+        for (int i = 0; i < value->logical_size; i++)
+        {
+            printf(i == 0 ? "%ld" : ", %ld", bolt_get_int64_array_at(value, i));
+        }
+        printf("]");
+    }
+    else
+    {
+        printf("i64(%ld)", bolt_get_int64(value));
+    }
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump_float32(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_FLOAT32);
+    if (value->is_array)
+    {
+        printf("f32[");
+        for (int i = 0; i < value->logical_size; i++)
+        {
+            printf(i == 0 ? "%f" : ", %f", bolt_get_float32_array_at(value, i));
+        }
+        printf("]");
+    }
+    else
+    {
+        printf("f32(%f)", bolt_get_float32(value));
+    }
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump(struct BoltValue* value)
+{
+    switch (value->type)
+    {
+        case BOLT_NULL:
+            return bolt_dump_null(value);
+        case BOLT_BIT:
+            return bolt_dump_bit(value);
+        case BOLT_BYTE:
+            return bolt_dump_byte(value);
+        case BOLT_UTF8:
+            return bolt_dump_utf8(value);
+        case BOLT_NUM8:
+            return bolt_dump_num8(value);
+        case BOLT_NUM16:
+            return bolt_dump_num16(value);
+        case BOLT_NUM32:
+            return bolt_dump_num32(value);
+        case BOLT_NUM64:
+            return bolt_dump_num64(value);
+        case BOLT_INT8:
+            return bolt_dump_int8(value);
+        case BOLT_INT16:
+            return bolt_dump_int16(value);
+        case BOLT_INT32:
+            return bolt_dump_int32(value);
+        case BOLT_INT64:
+            return bolt_dump_int64(value);
+        case BOLT_FLOAT32:
+            return bolt_dump_float32(value);
+        default:
+            printf("?");
+            return EXIT_FAILURE;
+    }
 }
 
 void bolt_dump_ln(struct BoltValue* value)

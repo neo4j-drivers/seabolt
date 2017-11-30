@@ -22,7 +22,7 @@
 
 #include "values.h"
 
-int bolt_dump(struct BoltValue* x);
+int bolt_dump(struct BoltValue* value);
 
 void bolt_dump_ln(struct BoltValue* value);
 

@@ -53,7 +53,8 @@ void test_bit_array()
     char array[] = {0, 1};
     bolt_put_bit_array(&value, array, size);
     bolt_dump_ln(&value);
-    assert(value.type == BOLT_BIT_ARRAY);
+    assert(value.type == BOLT_BIT);
+    assert(value.is_array);
     for (int i = 0; i < size; i++)
     {
         assert(bolt_get_bit_array_at(&value, i) == array[i]);
@@ -93,7 +94,8 @@ void test_byte_array()
     int32_t size = sizeof(array) - 1;
     bolt_put_byte_array(&value, array, size);
     bolt_dump_ln(&value);
-    assert(value.type == BOLT_BYTE_ARRAY);
+    assert(value.type == BOLT_BYTE);
+    assert(value.is_array);
     for (int i = 0; i < size; i++)
     {
         assert(bolt_get_byte_array_at(&value, i) == array[i]);
@@ -133,7 +135,8 @@ void test_utf8_array()
     bolt_put_utf8_array_next(&value, "", 0);
     bolt_put_utf8_array_next(&value, "that last one was empty!!", 25);
     bolt_dump_ln(&value);
-    assert(value.type == BOLT_UTF8_ARRAY);
+    assert(value.type == BOLT_UTF8);
+    assert(value.is_array);
     assert(value.logical_size == 5);
 
     text = bolt_get_utf8_array_at(&value, 0);
@@ -189,7 +192,8 @@ void test_num8_array(int size)
     }
     bolt_put_num8_array(&value, array, size);
     bolt_dump_ln(&value);
-    assert(value.type == BOLT_NUM8_ARRAY);
+    assert(value.type == BOLT_NUM8);
+    assert(value.is_array);
     for (int i = 0; i < size; i++)
     {
         assert(bolt_get_num8_array_at(&value, i) == array[i]);
@@ -227,7 +231,8 @@ void test_num16_array(int size)
     }
     bolt_put_num16_array(&value, array, size);
     bolt_dump_ln(&value);
-    assert(value.type == BOLT_NUM16_ARRAY);
+    assert(value.type == BOLT_NUM16);
+    assert(value.is_array);
     for (int i = 0; i < size; i++)
     {
         assert(bolt_get_num16_array_at(&value, i) == array[i]);
@@ -265,7 +270,8 @@ void test_num32_array(int size)
     }
     bolt_put_num32_array(&value, array, size);
     bolt_dump_ln(&value);
-    assert(value.type == BOLT_NUM32_ARRAY);
+    assert(value.type == BOLT_NUM32);
+    assert(value.is_array);
     for (int i = 0; i < size; i++)
     {
         assert(bolt_get_num32_array_at(&value, i) == array[i]);
@@ -278,7 +284,7 @@ int test_num64()
     struct BoltValue value = bolt_value();
     int n = 0;
     unsigned long long x = 0, y = 1, z;
-    while (x <= 0xFFFF000000000000L)
+    while (x < 0xA000000000000000L)
     {
         bolt_put_num64(&value, (uint64_t)(x));
         bolt_dump_ln(&value);
@@ -296,14 +302,15 @@ void test_num64_array(int size)
     uint64_t array[size];
     int n = 0;
     unsigned long long x = 0, y = 1, z;
-    while (x <= 0xFFFF000000000000L)
+    while (x < 0xA000000000000000L)
     {
         array[n] = (uint64_t)(x);
         n += 1, z = x + y, x = y, y = z;
     }
     bolt_put_num64_array(&value, array, size);
     bolt_dump_ln(&value);
-    assert(value.type == BOLT_NUM64_ARRAY);
+    assert(value.type == BOLT_NUM64);
+    assert(value.is_array);
     for (int i = 0; i < size; i++)
     {
         assert(bolt_get_num64_array_at(&value, i) == array[i]);
@@ -341,7 +348,8 @@ void test_int8_array(int size)
     }
     bolt_put_int8_array(&value, array, size);
     bolt_dump_ln(&value);
-    assert(value.type == BOLT_INT8_ARRAY);
+    assert(value.type == BOLT_INT8);
+    assert(value.is_array);
     for (int i = 0; i < size; i++)
     {
         assert(bolt_get_int8_array_at(&value, i) == array[i]);
@@ -379,7 +387,8 @@ void test_int16_array(int size)
     }
     bolt_put_int16_array(&value, array, size);
     bolt_dump_ln(&value);
-    assert(value.type == BOLT_INT16_ARRAY);
+    assert(value.type == BOLT_INT16);
+    assert(value.is_array);
     for (int i = 0; i < size; i++)
     {
         assert(bolt_get_int16_array_at(&value, i) == array[i]);
@@ -417,7 +426,8 @@ void test_int32_array(int size)
     }
     bolt_put_int32_array(&value, array, size);
     bolt_dump_ln(&value);
-    assert(value.type == BOLT_INT32_ARRAY);
+    assert(value.type == BOLT_INT32);
+    assert(value.is_array);
     for (int i = 0; i < size; i++)
     {
         assert(bolt_get_int32_array_at(&value, i) == array[i]);
@@ -455,7 +465,8 @@ void test_int64_array(int size)
     }
     bolt_put_int64_array(&value, array, size);
     bolt_dump_ln(&value);
-    assert(value.type == BOLT_INT64_ARRAY);
+    assert(value.type == BOLT_INT64);
+    assert(value.is_array);
     for (int i = 0; i < size; i++)
     {
         assert(bolt_get_int64_array_at(&value, i) == array[i]);
@@ -496,7 +507,8 @@ void test_float32_array()
                        6.02214086e23F, 3.402823e38F, INFINITY, -INFINITY, NAN};
     bolt_put_float32_array(&value, array, 11);
     bolt_dump_ln(&value);
-    assert(value.type == BOLT_FLOAT32_ARRAY);
+    assert(value.type == BOLT_FLOAT32);
+    assert(value.is_array);
     assert(value.logical_size == 11);
     assert(bolt_get_float32_array_at(&value, 0) == 0.0F);
     assert(bolt_get_float32_array_at(&value, 1) == 0.375F);
