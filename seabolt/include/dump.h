@@ -22,8 +22,8 @@
 
 #include "values.h"
 
-int bolt_dump(struct BoltValue* value);
+int BoltValue_dump(struct BoltValue* value);
 
-void bolt_dump_ln(struct BoltValue* value);
+void BoltValue_dumpLine(struct BoltValue* value);
 
 #endif // SEABOLT_DUMP

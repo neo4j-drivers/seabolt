@@ -102,7 +102,7 @@ static const struct BoltValue BOLT_NULL_VALUE = {BOLT_NULL, 0, 0, 0, 0, NULL};
 static size_t __bolt_value_memory = 0;
 
 
-void bolt_null(struct BoltValue* value);
+void BoltValue_toNull(struct BoltValue* value);
 
 
 /**
@@ -114,7 +114,7 @@ void bolt_null(struct BoltValue* value);
  * @param value the value in which to allocate storage
  * @param physical_size the number of bytes of storage required
  */
-void _bolt_alloc(struct BoltValue* value, size_t physical_size)
+void _BoltValue_allocate(struct BoltValue* value, size_t physical_size)
 {
     if (physical_size == value->physical_size)
     {
@@ -169,7 +169,7 @@ void _bolt_alloc(struct BoltValue* value, size_t physical_size)
     }
 }
 
-void _bolt_copy_data(struct BoltValue* value, const void* data, size_t offset, size_t length)
+void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offset, size_t length)
 {
     if (length > 0)
     {
@@ -184,20 +184,20 @@ void _bolt_copy_data(struct BoltValue* value, const void* data, size_t offset, s
  *
  * @param value
  */
-void _bolt_recycle(struct BoltValue* value)
+void _BoltValue_recycle(struct BoltValue* value)
 {
     if (value->type == BOLT_LIST)
     {
         for (long i = 0; i < value->logical_size; i++)
         {
-            bolt_null(&value->data.as_value[i]);
+            BoltValue_toNull(&value->data.as_value[i]);
         }
     }
     else if (value->type == BOLT_UTF8_DICTIONARY)
     {
         for (long i = 0; i < 2 * value->logical_size; i++)
         {
-            bolt_null(&value->data.as_value[i]);
+            BoltValue_toNull(&value->data.as_value[i]);
         }
     }
     else if (value->type == BOLT_UTF16_DICTIONARY)
@@ -208,17 +208,17 @@ void _bolt_recycle(struct BoltValue* value)
     {
         for (long i = 0; i < value->logical_size; i++)
         {
-            bolt_null(&value->data.as_value[i]);
+            BoltValue_toNull(&value->data.as_value[i]);
         }
     }
 }
 
-void _bolt_put(struct BoltValue* value, enum BoltType type, int code, int is_array,
-               const void* data, int logical_size, size_t physical_size)
+void _BoltValue_to(struct BoltValue* value, enum BoltType type, int code, int is_array,
+                   const void* data, int logical_size, size_t physical_size)
 {
-    _bolt_recycle(value);
-    _bolt_alloc(value, physical_size);
-    _bolt_copy_data(value, data, 0, physical_size);
+    _BoltValue_recycle(value);
+    _BoltValue_allocate(value, physical_size);
+    _BoltValue_copyData(value, data, 0, physical_size);
     value->type = type;
     value->code = code;
     value->is_array = is_array;
@@ -233,7 +233,7 @@ void _bolt_put(struct BoltValue* value, enum BoltType type, int code, int is_arr
  * @param size
  * @param multiplier
  */
-void _bolt_resize(struct BoltValue* value, int32_t size, int multiplier)
+void _BoltValue_resize(struct BoltValue* value, int32_t size, int multiplier)
 {
     if (size > value->logical_size)
     {
@@ -241,11 +241,11 @@ void _bolt_resize(struct BoltValue* value, int32_t size, int multiplier)
         size_t unit_size = sizeof(struct BoltValue);
         size_t new_physical_size = multiplier * unit_size * size;
         size_t old_physical_size = value->physical_size;
-        _bolt_alloc(value, new_physical_size);
+        _BoltValue_allocate(value, new_physical_size);
         // grow logically
         for (size_t offset = old_physical_size; offset < new_physical_size; offset += unit_size)
         {
-            _bolt_copy_data(value, &BOLT_NULL_VALUE, offset, unit_size);
+            _BoltValue_copyData(value, &BOLT_NULL_VALUE, offset, unit_size);
         }
         value->logical_size = size;
     }
@@ -254,12 +254,12 @@ void _bolt_resize(struct BoltValue* value, int32_t size, int multiplier)
         // shrink logically
         for (long i = multiplier * size; i < multiplier * value->logical_size; i++)
         {
-            bolt_null(&value->data.as_value[i]);
+            BoltValue_toNull(&value->data.as_value[i]);
         }
         value->logical_size = size;
         // shrink physically
         size_t new_physical_size = multiplier * sizeof_n(struct BoltValue, size);
-        _bolt_alloc(value, new_physical_size);
+        _BoltValue_allocate(value, new_physical_size);
     }
     else
     {
@@ -268,7 +268,7 @@ void _bolt_resize(struct BoltValue* value, int32_t size, int multiplier)
 }
 
 
-struct BoltValue* bolt_create_value()
+struct BoltValue* BoltValue_create()
 {
     size_t size = sizeof(struct BoltValue);
     struct BoltValue* value = malloc(size);
@@ -283,9 +283,9 @@ struct BoltValue* bolt_create_value()
     return value;
 }
 
-void bolt_destroy_value(struct BoltValue* value)
+void BoltValue_destroy(struct BoltValue* value)
 {
-    bolt_null(value);
+    BoltValue_toNull(value);
     free(value);
     size_t size = sizeof(struct BoltValue);
     __bolt_value_memory -= size;
@@ -297,9 +297,9 @@ void bolt_destroy_value(struct BoltValue* value)
  * Null
  */
 
-void bolt_null(struct BoltValue* value)
+void BoltValue_toNull(struct BoltValue* value)
 {
-    _bolt_put(value, BOLT_NULL, 0, 0, NULL, 0, 0);
+    _BoltValue_to(value, BOLT_NULL, 0, 0, NULL, 0, 0);
 }
 
 
@@ -307,15 +307,15 @@ void bolt_null(struct BoltValue* value)
  * List
  */
 
-void bolt_put_list(struct BoltValue* value, int32_t size)
+void BoltValue_toList(struct BoltValue* value, int32_t size)
 {
     size_t unit_size = sizeof(struct BoltValue);
     size_t physical_size = unit_size * size;
-    _bolt_recycle(value);
-    _bolt_alloc(value, physical_size);
+    _BoltValue_recycle(value);
+    _BoltValue_allocate(value, physical_size);
     for (size_t offset = 0; offset < physical_size; offset += unit_size)
     {
-        _bolt_copy_data(value, &BOLT_NULL_VALUE, offset, unit_size);
+        _BoltValue_copyData(value, &BOLT_NULL_VALUE, offset, unit_size);
     }
     value->type = BOLT_LIST;
     value->code = 0;
@@ -323,13 +323,13 @@ void bolt_put_list(struct BoltValue* value, int32_t size)
     value->logical_size = size;
 }
 
-void bolt_resize_list(struct BoltValue* value, int32_t size)
+void BoltList_resize(struct BoltValue* value, int32_t size)
 {
     assert(value->type == BOLT_LIST);
-    _bolt_resize(value, size, 1);
+    _BoltValue_resize(value, size, 1);
 }
 
-struct BoltValue* bolt_get_list_at(const struct BoltValue* value, int32_t index)
+struct BoltValue* BoltList_at(const struct BoltValue* value, int32_t index)
 {
     assert(value->type == BOLT_LIST);
     return &value->data.as_value[index];
@@ -340,22 +340,22 @@ struct BoltValue* bolt_get_list_at(const struct BoltValue* value, int32_t index)
  * Bit / BitArray
  */
 
-void bolt_put_bit(struct BoltValue* value, char x)
+void BoltValue_toBit(struct BoltValue* value, char x)
 {
-    _bolt_put(value, BOLT_BIT, 0, 0, &x, 1, sizeof(char));
+    _BoltValue_to(value, BOLT_BIT, 0, 0, &x, 1, sizeof(char));
 }
 
-char bolt_get_bit(const struct BoltValue* value)
+char BoltBit_get(const struct BoltValue* value)
 {
     return to_bit(value->data.as_char[0]);
 }
 
-void bolt_put_bit_array(struct BoltValue* value, char* array, int32_t size)
+void BoltValue_toBitArray(struct BoltValue* value, char* array, int32_t size)
 {
-    _bolt_put(value, BOLT_BIT, 0, 1, array, size, sizeof_n(char, size));
+    _BoltValue_to(value, BOLT_BIT, 0, 1, array, size, sizeof_n(char, size));
 }
 
-char bolt_get_bit_array_at(const struct BoltValue* value, int32_t index)
+char BoltBitArray_get(const struct BoltValue* value, int32_t index)
 {
     return to_bit(value->data.as_char[index]);
 }
@@ -365,22 +365,22 @@ char bolt_get_bit_array_at(const struct BoltValue* value, int32_t index)
  * Byte / ByteArray
  */
 
-void bolt_put_byte(struct BoltValue* value, char x)
+void BoltValue_toByte(struct BoltValue* value, char x)
 {
-    _bolt_put(value, BOLT_BYTE, 0, 0, &x, 1, sizeof(char));
+    _BoltValue_to(value, BOLT_BYTE, 0, 0, &x, 1, sizeof(char));
 }
 
-char bolt_get_byte(const struct BoltValue* value)
+char BoltByte_get(const struct BoltValue* value)
 {
     return value->data.as_char[0];
 }
 
-void bolt_put_byte_array(struct BoltValue* value, char* array, int32_t size)
+void BoltValue_toByteArray(struct BoltValue* value, char* array, int32_t size)
 {
-    _bolt_put(value, BOLT_BYTE, 0, 1, array, size, sizeof_n(char, size));
+    _BoltValue_to(value, BOLT_BYTE, 0, 1, array, size, sizeof_n(char, size));
 }
 
-char bolt_get_byte_array_at(const struct BoltValue* value, int32_t index)
+char BoltByteArray_get(const struct BoltValue* value, int32_t index)
 {
     return value->data.as_char[index];
 }
@@ -390,14 +390,14 @@ char bolt_get_byte_array_at(const struct BoltValue* value, int32_t index)
  * Char16 / Char16Array
  */
 
-void bolt_put_char16(struct BoltValue* value, uint16_t x)
+void BoltValue_toChar16(struct BoltValue* value, uint16_t x)
 {
-    _bolt_put(value, BOLT_CHAR16, 0, 0, &x, 1, sizeof(uint16_t));
+    _BoltValue_to(value, BOLT_CHAR16, 0, 0, &x, 1, sizeof(uint16_t));
 }
 
-void bolt_put_char16_array(struct BoltValue* value, uint16_t* array, int32_t size)
+void BoltValue_toChar16Array(struct BoltValue* value, uint16_t* array, int32_t size)
 {
-    _bolt_put(value, BOLT_CHAR16, 0, 1, array, size, sizeof_n(uint16_t, size));
+    _BoltValue_to(value, BOLT_CHAR16, 0, 1, array, size, sizeof_n(uint16_t, size));
 }
 
 
@@ -405,14 +405,14 @@ void bolt_put_char16_array(struct BoltValue* value, uint16_t* array, int32_t siz
  * Char32 / Char32Array
  */
 
-void bolt_put_char32(struct BoltValue* value, uint32_t x)
+void BoltValue_toChar32(struct BoltValue* value, uint32_t x)
 {
-    _bolt_put(value, BOLT_CHAR32, 0, 0, &x, 1, sizeof(uint32_t));
+    _BoltValue_to(value, BOLT_CHAR32, 0, 0, &x, 1, sizeof(uint32_t));
 }
 
-void bolt_put_char32_array(struct BoltValue* value, uint32_t* array, int32_t size)
+void BoltValue_toChar32Array(struct BoltValue* value, uint32_t* array, int32_t size)
 {
-    _bolt_put(value, BOLT_CHAR32, 0, 1, array, size, sizeof_n(uint32_t, size));
+    _BoltValue_to(value, BOLT_CHAR32, 0, 1, array, size, sizeof_n(uint32_t, size));
 }
 
 
@@ -420,32 +420,32 @@ void bolt_put_char32_array(struct BoltValue* value, uint32_t* array, int32_t siz
  * UTF8 / UTF8Array
  */
 
-void bolt_put_utf8(struct BoltValue* value, char* string, int32_t size)
+void BoltValue_toUTF8(struct BoltValue* value, char* string, int32_t size)
 {
-    _bolt_put(value, BOLT_UTF8, 0, 0, string, size, sizeof_n(char, size));
+    _BoltValue_to(value, BOLT_UTF8, 0, 0, string, size, sizeof_n(char, size));
 }
 
-char* bolt_get_utf8(struct BoltValue* value)
+char* BoltUTF8_get(struct BoltValue* value)
 {
     return value->data.as_char;
 }
 
-void bolt_put_utf8_array(struct BoltValue* value)
+void BoltValue_toUTF8Array(struct BoltValue* value)
 {
-    _bolt_put(value, BOLT_UTF8, 0, 1, NULL, 0, 0);
+    _BoltValue_to(value, BOLT_UTF8, 0, 1, NULL, 0, 0);
 }
 
-void bolt_put_utf8_array_next(struct BoltValue* value, char* string, int32_t size)
+void BoltUTF8Array_append(struct BoltValue* value, char* string, int32_t size)
 {
     assert(value->type == BOLT_UTF8 && value->is_array);
     value->logical_size += 1;
     size_t old_physical_size = value->physical_size;
-    _bolt_alloc(value, old_physical_size + SIZE_OF_SIZE + size);
-    _bolt_copy_data(value, &size, old_physical_size, SIZE_OF_SIZE);
-    _bolt_copy_data(value, string, old_physical_size + SIZE_OF_SIZE, (size_t)(size));
+    _BoltValue_allocate(value, old_physical_size + SIZE_OF_SIZE + size);
+    _BoltValue_copyData(value, &size, old_physical_size, SIZE_OF_SIZE);
+    _BoltValue_copyData(value, string, old_physical_size + SIZE_OF_SIZE, (size_t)(size));
 }
 
-int32_t bolt_get_utf8_array_size_at(struct BoltValue* value, int32_t index)
+int32_t BoltUTF8Array_getSize(struct BoltValue* value, int32_t index)
 {
     size_t offset = 0;
     int32_t size = 0;
@@ -458,7 +458,7 @@ int32_t bolt_get_utf8_array_size_at(struct BoltValue* value, int32_t index)
     return size;
 }
 
-char* bolt_get_utf8_array_at(struct BoltValue* value, int32_t index)
+char* BoltUTF8Array_get(struct BoltValue* value, int32_t index)
 {
     size_t offset = 0;
     int32_t size = 0;
@@ -476,15 +476,15 @@ char* bolt_get_utf8_array_at(struct BoltValue* value, int32_t index)
  * UTF8Dictionary
  */
 
-void bolt_put_utf8_dictionary(struct BoltValue* value, int32_t size)
+void BoltValue_toUTF8Dictionary(struct BoltValue* value, int32_t size)
 {
     size_t unit_size = sizeof(struct BoltValue);
     size_t physical_size = 2 * unit_size * size;
-    _bolt_recycle(value);
-    _bolt_alloc(value, physical_size);
+    _BoltValue_recycle(value);
+    _BoltValue_allocate(value, physical_size);
     for (size_t offset = 0; offset < physical_size; offset += unit_size)
     {
-        _bolt_copy_data(value, &BOLT_NULL_VALUE, offset, unit_size);
+        _BoltValue_copyData(value, &BOLT_NULL_VALUE, offset, unit_size);
     }
     value->type = BOLT_UTF8_DICTIONARY;
     value->code = 0;
@@ -492,29 +492,30 @@ void bolt_put_utf8_dictionary(struct BoltValue* value, int32_t size)
     value->logical_size = size;
 }
 
-void bolt_resize_utf8_dictionary(struct BoltValue* value, int32_t size)
+void BoltUTF8Dictionary_resize(struct BoltValue* value, int32_t size)
 {
     assert(value->type == BOLT_UTF8_DICTIONARY);
-    _bolt_resize(value, size, 2);
+    _BoltValue_resize(value, size, 2);
 }
 
-void bolt_put_utf8_dictionary_key_at(struct BoltValue* value, int32_t index, char* key, int32_t key_size)
+struct BoltValue* BoltUTF8Dictionary_at(const struct BoltValue* value, int32_t index)
 {
     assert(value->type == BOLT_UTF8_DICTIONARY);
-    bolt_put_utf8(&value->data.as_value[2 * index], key, key_size);
+    return &value->data.as_value[2 * index + 1];
 }
 
-struct BoltValue* bolt_get_utf8_dictionary_key_at(const struct BoltValue* value, int32_t index)
+struct BoltValue* BoltUTF8Dictionary_withKey(struct BoltValue* value, int32_t index, char* key, int32_t key_size)
+{
+    assert(value->type == BOLT_UTF8_DICTIONARY);
+    BoltValue_toUTF8(&value->data.as_value[2 * index], key, key_size);
+    return &value->data.as_value[2 * index + 1];
+}
+
+struct BoltValue* BoltUTF8Dictionary_getKey(const struct BoltValue* value, int32_t index)
 {
     assert(value->type == BOLT_UTF8_DICTIONARY);
     struct BoltValue* key = &value->data.as_value[2 * index];
     return key->type == BOLT_UTF8 ? key : NULL;
-}
-
-struct BoltValue* bolt_get_utf8_dictionary_at(const struct BoltValue* value, int32_t index)
-{
-    assert(value->type == BOLT_UTF8_DICTIONARY);
-    return &value->data.as_value[2 * index + 1];
 }
 
 
@@ -522,9 +523,9 @@ struct BoltValue* bolt_get_utf8_dictionary_at(const struct BoltValue* value, int
  * UTF16 / UTF16Array
  */
 
-void bolt_put_utf16(struct BoltValue* value, uint16_t* string, int32_t size)
+void BoltValue_toUTF16(struct BoltValue* value, uint16_t* string, int32_t size)
 {
-    _bolt_put(value, BOLT_UTF16, 0, 0, string, size, sizeof_n(uint16_t, size));
+    _BoltValue_to(value, BOLT_UTF16, 0, 0, string, size, sizeof_n(uint16_t, size));
 }
 
 
@@ -532,22 +533,22 @@ void bolt_put_utf16(struct BoltValue* value, uint16_t* string, int32_t size)
  * Num8 / Num8Array
  */
 
-void bolt_put_num8(struct BoltValue* value, uint8_t x)
+void BoltValue_toNum8(struct BoltValue* value, uint8_t x)
 {
-    _bolt_put(value, BOLT_NUM8, 0, 0, &x, 1, sizeof(uint8_t));
+    _BoltValue_to(value, BOLT_NUM8, 0, 0, &x, 1, sizeof(uint8_t));
 }
 
-uint8_t bolt_get_num8(const struct BoltValue* value)
+uint8_t BoltNum8_get(const struct BoltValue* value)
 {
     return value->data.as_uint8[0];
 }
 
-void bolt_put_num8_array(struct BoltValue* value, uint8_t* array, int32_t size)
+void BoltValue_toNum8Array(struct BoltValue* value, uint8_t* array, int32_t size)
 {
-    _bolt_put(value, BOLT_NUM8, 0, 1, array, size, sizeof_n(uint8_t, size));
+    _BoltValue_to(value, BOLT_NUM8, 0, 1, array, size, sizeof_n(uint8_t, size));
 }
 
-uint8_t bolt_get_num8_array_at(const struct BoltValue* value, int32_t index)
+uint8_t BoltNum8Array_get(const struct BoltValue* value, int32_t index)
 {
     return value->data.as_uint8[index];
 }
@@ -557,22 +558,22 @@ uint8_t bolt_get_num8_array_at(const struct BoltValue* value, int32_t index)
  * Num16 / Num16Array
  */
 
-void bolt_put_num16(struct BoltValue* value, uint16_t x)
+void BoltValue_toNum16(struct BoltValue* value, uint16_t x)
 {
-    _bolt_put(value, BOLT_NUM16, 0, 0, &x, 1, sizeof(uint16_t));
+    _BoltValue_to(value, BOLT_NUM16, 0, 0, &x, 1, sizeof(uint16_t));
 }
 
-uint16_t bolt_get_num16(const struct BoltValue* value)
+uint16_t BoltNum16_get(const struct BoltValue* value)
 {
     return value->data.as_uint16[0];
 }
 
-void bolt_put_num16_array(struct BoltValue* value, uint16_t* array, int32_t size)
+void BoltValue_toNum16Array(struct BoltValue* value, uint16_t* array, int32_t size)
 {
-    _bolt_put(value, BOLT_NUM16, 0, 1, array, size, sizeof_n(uint16_t, size));
+    _BoltValue_to(value, BOLT_NUM16, 0, 1, array, size, sizeof_n(uint16_t, size));
 }
 
-uint16_t bolt_get_num16_array_at(const struct BoltValue* value, int32_t index)
+uint16_t BoltNum16Array_get(const struct BoltValue* value, int32_t index)
 {
     return value->data.as_uint16[index];
 }
@@ -582,22 +583,22 @@ uint16_t bolt_get_num16_array_at(const struct BoltValue* value, int32_t index)
  * Num32 / Num32Array
  */
 
-void bolt_put_num32(struct BoltValue* value, uint32_t x)
+void BoltValue_toNum32(struct BoltValue* value, uint32_t x)
 {
-    _bolt_put(value, BOLT_NUM32, 0, 0, &x, 1, sizeof(uint32_t));
+    _BoltValue_to(value, BOLT_NUM32, 0, 0, &x, 1, sizeof(uint32_t));
 }
 
-uint32_t bolt_get_num32(const struct BoltValue* value)
+uint32_t BoltNum32_get(const struct BoltValue* value)
 {
     return value->data.as_uint32[0];
 }
 
-void bolt_put_num32_array(struct BoltValue* value, uint32_t* array, int32_t size)
+void BoltValue_toNum32Array(struct BoltValue* value, uint32_t* array, int32_t size)
 {
-    _bolt_put(value, BOLT_NUM32, 0, 1, array, size, sizeof_n(uint32_t, size));
+    _BoltValue_to(value, BOLT_NUM32, 0, 1, array, size, sizeof_n(uint32_t, size));
 }
 
-uint32_t bolt_get_num32_array_at(const struct BoltValue* value, int32_t index)
+uint32_t BoltNum32Array_get(const struct BoltValue* value, int32_t index)
 {
     return value->data.as_uint32[index];
 }
@@ -607,22 +608,22 @@ uint32_t bolt_get_num32_array_at(const struct BoltValue* value, int32_t index)
  * Num64 / Num64Array
  */
 
-void bolt_put_num64(struct BoltValue* value, uint64_t x)
+void BoltValue_toNum64(struct BoltValue* value, uint64_t x)
 {
-    _bolt_put(value, BOLT_NUM64, 0, 0, &x, 1, sizeof(uint64_t));
+    _BoltValue_to(value, BOLT_NUM64, 0, 0, &x, 1, sizeof(uint64_t));
 }
 
-uint64_t bolt_get_num64(const struct BoltValue* value)
+uint64_t BoltNum64_get(const struct BoltValue* value)
 {
     return value->data.as_uint64[0];
 }
 
-void bolt_put_num64_array(struct BoltValue* value, uint64_t* array, int32_t size)
+void BoltValue_toNum64Array(struct BoltValue* value, uint64_t* array, int32_t size)
 {
-    _bolt_put(value, BOLT_NUM64, 0, 1, array, size, sizeof_n(uint64_t, size));
+    _BoltValue_to(value, BOLT_NUM64, 0, 1, array, size, sizeof_n(uint64_t, size));
 }
 
-uint64_t bolt_get_num64_array_at(const struct BoltValue* value, int32_t index)
+uint64_t BoltNum64Array_get(const struct BoltValue* value, int32_t index)
 {
     return value->data.as_uint64[index];
 }
@@ -632,22 +633,22 @@ uint64_t bolt_get_num64_array_at(const struct BoltValue* value, int32_t index)
  * Int8 / Int8Array
  */
 
-void bolt_put_int8(struct BoltValue* value, int8_t x)
+void BoltValue_toInt8(struct BoltValue* value, int8_t x)
 {
-    _bolt_put(value, BOLT_INT8, 0, 0, &x, 1, sizeof(int8_t));
+    _BoltValue_to(value, BOLT_INT8, 0, 0, &x, 1, sizeof(int8_t));
 }
 
-int8_t bolt_get_int8(const struct BoltValue* value)
+int8_t BoltInt8_get(const struct BoltValue* value)
 {
     return value->data.as_int8[0];
 }
 
-void bolt_put_int8_array(struct BoltValue* value, int8_t* array, int32_t size)
+void BoltValue_toInt8Array(struct BoltValue* value, int8_t* array, int32_t size)
 {
-    _bolt_put(value, BOLT_INT8, 0, 1, array, size, sizeof_n(int8_t, size));
+    _BoltValue_to(value, BOLT_INT8, 0, 1, array, size, sizeof_n(int8_t, size));
 }
 
-int8_t bolt_get_int8_array_at(const struct BoltValue* value, int32_t index)
+int8_t BoltInt8Array_get(const struct BoltValue* value, int32_t index)
 {
     return value->data.as_int8[index];
 }
@@ -657,22 +658,22 @@ int8_t bolt_get_int8_array_at(const struct BoltValue* value, int32_t index)
  * Int16 / Int16Array
  */
 
-void bolt_put_int16(struct BoltValue* value, int16_t x)
+void BoltValue_toInt16(struct BoltValue* value, int16_t x)
 {
-    _bolt_put(value, BOLT_INT16, 0, 0, &x, 1, sizeof(int16_t));
+    _BoltValue_to(value, BOLT_INT16, 0, 0, &x, 1, sizeof(int16_t));
 }
 
-int16_t bolt_get_int16(const struct BoltValue* value)
+int16_t BoltInt16_get(const struct BoltValue* value)
 {
     return value->data.as_int16[0];
 }
 
-void bolt_put_int16_array(struct BoltValue* value, int16_t* array, int32_t size)
+void BoltValue_toInt16Array(struct BoltValue* value, int16_t* array, int32_t size)
 {
-    _bolt_put(value, BOLT_INT16, 0, 1, array, size, sizeof_n(int16_t, size));
+    _BoltValue_to(value, BOLT_INT16, 0, 1, array, size, sizeof_n(int16_t, size));
 }
 
-int16_t bolt_get_int16_array_at(const struct BoltValue* value, int32_t index)
+int16_t BoltInt16Array_get(const struct BoltValue* value, int32_t index)
 {
     return value->data.as_int16[index];
 }
@@ -682,22 +683,22 @@ int16_t bolt_get_int16_array_at(const struct BoltValue* value, int32_t index)
  * Int32 / Int32Array
  */
 
-void bolt_put_int32(struct BoltValue* value, int32_t x)
+void BoltValue_toInt32(struct BoltValue* value, int32_t x)
 {
-    _bolt_put(value, BOLT_INT32, 0, 0, &x, 1, sizeof(int32_t));
+    _BoltValue_to(value, BOLT_INT32, 0, 0, &x, 1, sizeof(int32_t));
 }
 
-int32_t bolt_get_int32(const struct BoltValue* value)
+int32_t BoltInt32_get(const struct BoltValue* value)
 {
     return value->data.as_int32[0];
 }
 
-void bolt_put_int32_array(struct BoltValue* value, int32_t* array, int32_t size)
+void BoltValue_toInt32Array(struct BoltValue* value, int32_t* array, int32_t size)
 {
-    _bolt_put(value, BOLT_INT32, 0, 1, array, size, sizeof_n(int32_t, size));
+    _BoltValue_to(value, BOLT_INT32, 0, 1, array, size, sizeof_n(int32_t, size));
 }
 
-int32_t bolt_get_int32_array_at(const struct BoltValue* value, int32_t index)
+int32_t BoltInt32Array_get(const struct BoltValue* value, int32_t index)
 {
     return value->data.as_int32[index];
 }
@@ -707,22 +708,22 @@ int32_t bolt_get_int32_array_at(const struct BoltValue* value, int32_t index)
  * Int64 / Int64Array
  */
 
-void bolt_put_int64(struct BoltValue* value, int64_t x)
+void BoltValue_toInt64(struct BoltValue* value, int64_t x)
 {
-    _bolt_put(value, BOLT_INT64, 0, 0, &x, 1, sizeof(int64_t));
+    _BoltValue_to(value, BOLT_INT64, 0, 0, &x, 1, sizeof(int64_t));
 }
 
-int64_t bolt_get_int64(const struct BoltValue* value)
+int64_t BoltInt64_get(const struct BoltValue* value)
 {
     return value->data.as_int64[0];
 }
 
-void bolt_put_int64_array(struct BoltValue* value, int64_t* array, int32_t size)
+void BoltValue_toInt64Array(struct BoltValue* value, int64_t* array, int32_t size)
 {
-    _bolt_put(value, BOLT_INT64, 0, 1, array, size, sizeof_n(int64_t, size));
+    _BoltValue_to(value, BOLT_INT64, 0, 1, array, size, sizeof_n(int64_t, size));
 }
 
-int64_t bolt_get_int64_array_at(const struct BoltValue* value, int32_t index)
+int64_t BoltInt64Array_get(const struct BoltValue* value, int32_t index)
 {
     return value->data.as_int64[index];
 }
@@ -732,22 +733,22 @@ int64_t bolt_get_int64_array_at(const struct BoltValue* value, int32_t index)
  * Float32 / Float32Array
  */
 
-void bolt_put_float32(struct BoltValue* value, float x)
+void BoltValue_toFloat32(struct BoltValue* value, float x)
 {
-    _bolt_put(value, BOLT_FLOAT32, 0, 0, &x, 1, sizeof(float));
+    _BoltValue_to(value, BOLT_FLOAT32, 0, 0, &x, 1, sizeof(float));
 }
 
-float bolt_get_float32(const struct BoltValue* value)
+float BoltFloat32_get(const struct BoltValue* value)
 {
     return value->data.as_float[0];
 }
 
-void bolt_put_float32_array(struct BoltValue* value, float* array, int32_t size)
+void BoltValue_toFloat32Array(struct BoltValue* value, float* array, int32_t size)
 {
-    _bolt_put(value, BOLT_FLOAT32, 0, 1, array, size, sizeof_n(float, size));
+    _BoltValue_to(value, BOLT_FLOAT32, 0, 1, array, size, sizeof_n(float, size));
 }
 
-float bolt_get_float32_array_at(const struct BoltValue* value, int32_t index)
+float BoltFloat32Array_get(const struct BoltValue* value, int32_t index)
 {
     return value->data.as_float[index];
 }
@@ -809,7 +810,7 @@ struct float_quad
 
 void bolt_put_float64(struct BoltValue* value, double x)
 {
-    _bolt_put(value, BOLT_FLOAT64, 0, 0, &x, 1, sizeof(double));
+    _BoltValue_to(value, BOLT_FLOAT64, 0, 0, &x, 1, sizeof(double));
 }
 
 double bolt_get_float64(struct BoltValue* value)
@@ -873,15 +874,15 @@ struct double_quad
  * Structure / StructureArray
  */
 
-void bolt_put_structure(struct BoltValue* value, int16_t code, int32_t size)
+void BoltValue_toStructure(struct BoltValue* value, int16_t code, int32_t size)
 {
     size_t unit_size = sizeof(struct BoltValue);
     size_t physical_size = unit_size * size;
-    _bolt_recycle(value);
-    _bolt_alloc(value, physical_size);
+    _BoltValue_recycle(value);
+    _BoltValue_allocate(value, physical_size);
     for (size_t offset = 0; offset < physical_size; offset += unit_size)
     {
-        _bolt_copy_data(value, &BOLT_NULL_VALUE, offset, unit_size);
+        _BoltValue_copyData(value, &BOLT_NULL_VALUE, offset, unit_size);
     }
     value->type = BOLT_STRUCTURE;
     value->code = code;
@@ -889,7 +890,7 @@ void bolt_put_structure(struct BoltValue* value, int16_t code, int32_t size)
     value->logical_size = size;
 }
 
-struct BoltValue* bolt_get_structure_at(const struct BoltValue* value, int32_t index)
+struct BoltValue* BoltStructure_at(const struct BoltValue* value, int32_t index)
 {
     assert(value->type == BOLT_STRUCTURE);
     return &value->data.as_value[index];
