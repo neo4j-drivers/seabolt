@@ -99,6 +99,8 @@ struct BoltValue
 static size_t __bolt_value_memory = 0;
 
 
+void bolt_null(struct BoltValue* value);
+
 void bolt_null_list(struct BoltValue* value);
 
 void bolt_null_utf8_dictionary(struct BoltValue* value);
@@ -206,16 +208,24 @@ void _bolt_put(struct BoltValue* value, enum BoltType type, int code, int is_arr
 }
 
 
-struct BoltValue bolt_value()
+struct BoltValue* bolt_create_value()
 {
-    struct BoltValue value;
-    value.type = BOLT_NULL;
-    value.code = 0;
-    value.is_array = 0;
-    value.logical_size = 0;
-    value.physical_size = 0;
-    value.data.as_ptr = NULL;
+    // TODO: allocation reporting
+    struct BoltValue* value = malloc(sizeof(struct BoltValue));
+    value->type = BOLT_NULL;
+    value->code = 0;
+    value->is_array = 0;
+    value->logical_size = 0;
+    value->physical_size = 0;
+    value->data.as_ptr = NULL;
     return value;
+}
+
+void bolt_destroy_value(struct BoltValue* value)
+{
+    // TODO: allocation reporting
+    bolt_null(value);
+    free(value);
 }
 
 
