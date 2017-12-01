@@ -210,8 +210,10 @@ void _bolt_put(struct BoltValue* value, enum BoltType type, int code, int is_arr
 
 struct BoltValue* bolt_create_value()
 {
-    // TODO: allocation reporting
-    struct BoltValue* value = malloc(sizeof(struct BoltValue));
+    size_t size = sizeof(struct BoltValue);
+    struct BoltValue* value = malloc(size);
+    __bolt_value_memory += size;
+    fprintf(stderr, "\x1B[36mAllocated %ld bytes (balance: %lu)\x1B[0m\n", size, __bolt_value_memory);
     value->type = BOLT_NULL;
     value->code = 0;
     value->is_array = 0;
@@ -223,9 +225,11 @@ struct BoltValue* bolt_create_value()
 
 void bolt_destroy_value(struct BoltValue* value)
 {
-    // TODO: allocation reporting
     bolt_null(value);
     free(value);
+    size_t size = sizeof(struct BoltValue);
+    __bolt_value_memory -= size;
+    fprintf(stderr, "\x1B[36mFreed %ld bytes (balance: %lu)\x1B[0m\n", size, __bolt_value_memory);
 }
 
 
