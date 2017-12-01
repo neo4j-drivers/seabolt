@@ -688,6 +688,29 @@ void test_float32_array()
     bolt_destroy_value(value);
 }
 
+void test_structure()
+{
+    struct BoltValue* value = bolt_create_value();
+    const int NODE = 0xA0;
+    bolt_put_structure(value, NODE, 3);
+    struct BoltValue* id = bolt_get_structure_at(value, 0);
+    struct BoltValue* labels = bolt_get_structure_at(value, 1);
+    struct BoltValue* properties = bolt_get_structure_at(value, 2);
+    bolt_put_int64(id, 123);
+    bolt_put_utf8_array(labels);
+    bolt_put_utf8_array_next(labels, "Person", 6);
+    bolt_put_utf8_array_next(labels, "Employee", 8);
+    bolt_put_utf8_dictionary(properties, 2);
+    bolt_put_utf8_dictionary_key_at(properties, 0, "name", 4);
+    bolt_put_utf8(bolt_get_utf8_dictionary_at(properties, 0), "Alice", 5);
+    bolt_put_utf8_dictionary_key_at(properties, 1, "since", 5);
+    bolt_put_num16(bolt_get_utf8_dictionary_at(properties, 1), 1999);
+    bolt_dump_ln(value);
+    assert(value->type == BOLT_STRUCTURE && value->code == NODE);
+    assert(value->logical_size == 3);
+    bolt_destroy_value(value);
+}
+
 int main()
 {
     test_null();
@@ -709,11 +732,5 @@ int main()
     test_int64_array(test_int64());
     test_float32();
     test_float32_array();
-
-//    const int NODE = 0xA0;
-//    bolt_put_structure(value, NODE, 3);
-//    bolt_put_int64(bolt_get_structure_at(value, 0), 123);
-//    bolt_put_utf8_array(bolt_get_structure_at(value, 1));
-//    bolt_put_utf8_array_next(bolt_get_structure_at(value, 1), "Person", 6);
-
+    test_structure();
 }

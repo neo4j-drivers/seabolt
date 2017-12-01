@@ -96,14 +96,13 @@ struct BoltValue
 };
 
 
+static const struct BoltValue BOLT_NULL_VALUE = {BOLT_NULL, 0, 0, 0, 0, NULL};
+
+
 static size_t __bolt_value_memory = 0;
 
 
 void bolt_null(struct BoltValue* value);
-
-void bolt_null_list(struct BoltValue* value);
-
-void bolt_null_utf8_dictionary(struct BoltValue* value);
 
 
 /**
@@ -179,32 +178,93 @@ void _bolt_copy_data(struct BoltValue* value, const void* data, size_t offset, s
 }
 
 /**
- * Set any nested values to null.
+ * Clean up a value for reuse.
+ *
+ * This sets any nested values to null.
  *
  * @param value
  */
-void _bolt_null_items(struct BoltValue* value)
+void _bolt_recycle(struct BoltValue* value)
 {
     if (value->type == BOLT_LIST)
     {
-        bolt_null_list(value);
+        for (long i = 0; i < value->logical_size; i++)
+        {
+            bolt_null(&value->data.as_value[i]);
+        }
     }
     else if (value->type == BOLT_UTF8_DICTIONARY)
     {
-        bolt_null_utf8_dictionary(value);
+        for (long i = 0; i < 2 * value->logical_size; i++)
+        {
+            bolt_null(&value->data.as_value[i]);
+        }
+    }
+    else if (value->type == BOLT_UTF16_DICTIONARY)
+    {
+        // TODO
+    }
+    else if (value->type == BOLT_STRUCTURE)
+    {
+        for (long i = 0; i < value->logical_size; i++)
+        {
+            bolt_null(&value->data.as_value[i]);
+        }
     }
 }
 
 void _bolt_put(struct BoltValue* value, enum BoltType type, int code, int is_array,
                const void* data, int logical_size, size_t physical_size)
 {
-    _bolt_null_items(value);
+    _bolt_recycle(value);
     _bolt_alloc(value, physical_size);
     _bolt_copy_data(value, data, 0, physical_size);
     value->type = type;
     value->code = code;
     value->is_array = is_array;
     value->logical_size = logical_size;
+}
+
+
+/**
+ * Resize a value that contains multiple sub-values.
+ *
+ * @param value
+ * @param size
+ * @param multiplier
+ */
+void _bolt_resize(struct BoltValue* value, int32_t size, int multiplier)
+{
+    if (size > value->logical_size)
+    {
+        // grow physically
+        size_t unit_size = sizeof(struct BoltValue);
+        size_t new_physical_size = multiplier * unit_size * size;
+        size_t old_physical_size = value->physical_size;
+        _bolt_alloc(value, new_physical_size);
+        // grow logically
+        for (size_t offset = old_physical_size; offset < new_physical_size; offset += unit_size)
+        {
+            _bolt_copy_data(value, &BOLT_NULL_VALUE, offset, unit_size);
+        }
+        value->logical_size = size;
+    }
+    else if (size < value->logical_size)
+    {
+        // shrink logically
+        for (long i = multiplier * size; i < multiplier * value->logical_size; i++)
+        {
+            bolt_null(&value->data.as_value[i]);
+        }
+        value->logical_size = size;
+        // shrink physically
+        size_t new_physical_size = multiplier * sizeof_n(struct BoltValue, size);
+        _bolt_alloc(value, new_physical_size);
+    }
+    else
+    {
+        // same size - do nothing
+    }
 }
 
 
@@ -233,9 +293,6 @@ void bolt_destroy_value(struct BoltValue* value)
 }
 
 
-static const struct BoltValue BOLT_NULL_VALUE = {BOLT_NULL, 0, 0, 0, 0, NULL};
-
-
 /*********************************************************************
  * Null
  */
@@ -254,7 +311,7 @@ void bolt_put_list(struct BoltValue* value, int32_t size)
 {
     size_t unit_size = sizeof(struct BoltValue);
     size_t physical_size = unit_size * size;
-    _bolt_null_items(value);
+    _bolt_recycle(value);
     _bolt_alloc(value, physical_size);
     for (size_t offset = 0; offset < physical_size; offset += unit_size)
     {
@@ -266,48 +323,10 @@ void bolt_put_list(struct BoltValue* value, int32_t size)
     value->logical_size = size;
 }
 
-void bolt_null_list(struct BoltValue* value)
-{
-    assert(value->type == BOLT_LIST);
-    for (long i = 0; i < value->logical_size; i++)
-    {
-        bolt_null(&value->data.as_value[i]);
-    }
-}
-
 void bolt_resize_list(struct BoltValue* value, int32_t size)
 {
     assert(value->type == BOLT_LIST);
-    if (size > value->logical_size)
-    {
-        // grow physically
-        size_t unit_size = sizeof(struct BoltValue);
-        size_t new_physical_size = unit_size * size;
-        size_t old_physical_size = value->physical_size;
-        _bolt_alloc(value, new_physical_size);
-        // grow logically
-        for (size_t offset = old_physical_size; offset < new_physical_size; offset += unit_size)
-        {
-            _bolt_copy_data(value, &BOLT_NULL_VALUE, offset, unit_size);
-        }
-        value->logical_size = size;
-    }
-    else if (size < value->logical_size)
-    {
-        // shrink logically
-        for (long i = size; i < value->logical_size; i++)
-        {
-            bolt_null(&value->data.as_value[i]);
-        }
-        value->logical_size = size;
-        // shrink physically
-        size_t new_physical_size = sizeof_n(struct BoltValue, size);
-        _bolt_alloc(value, new_physical_size);
-    }
-    else
-    {
-        // same size - do nothing
-    }
+    _bolt_resize(value, size, 1);
 }
 
 struct BoltValue* bolt_get_list_at(const struct BoltValue* value, int32_t index)
@@ -418,8 +437,7 @@ void bolt_put_utf8_array(struct BoltValue* value)
 
 void bolt_put_utf8_array_next(struct BoltValue* value, char* string, int32_t size)
 {
-    assert(value->type == BOLT_UTF8);
-    assert(value->is_array);
+    assert(value->type == BOLT_UTF8 && value->is_array);
     value->logical_size += 1;
     size_t old_physical_size = value->physical_size;
     _bolt_alloc(value, old_physical_size + SIZE_OF_SIZE + size);
@@ -462,7 +480,7 @@ void bolt_put_utf8_dictionary(struct BoltValue* value, int32_t size)
 {
     size_t unit_size = sizeof(struct BoltValue);
     size_t physical_size = 2 * unit_size * size;
-    _bolt_null_items(value);
+    _bolt_recycle(value);
     _bolt_alloc(value, physical_size);
     for (size_t offset = 0; offset < physical_size; offset += unit_size)
     {
@@ -474,48 +492,10 @@ void bolt_put_utf8_dictionary(struct BoltValue* value, int32_t size)
     value->logical_size = size;
 }
 
-void bolt_null_utf8_dictionary(struct BoltValue* value)
-{
-    assert(value->type == BOLT_UTF8_DICTIONARY);
-    for (long i = 0; i < 2 * value->logical_size; i++)
-    {
-        bolt_null(&value->data.as_value[i]);
-    }
-}
-
 void bolt_resize_utf8_dictionary(struct BoltValue* value, int32_t size)
 {
     assert(value->type == BOLT_UTF8_DICTIONARY);
-    if (size > value->logical_size)
-    {
-        // grow physically
-        size_t unit_size = sizeof(struct BoltValue);
-        size_t new_physical_size = 2 * unit_size * size;
-        size_t old_physical_size = value->physical_size;
-        _bolt_alloc(value, new_physical_size);
-        // grow logically
-        for (size_t offset = old_physical_size; offset < new_physical_size; offset += unit_size)
-        {
-            _bolt_copy_data(value, &BOLT_NULL_VALUE, offset, unit_size);
-        }
-        value->logical_size = size;
-    }
-    else if (size < value->logical_size)
-    {
-        // shrink logically
-        for (long i = 2 * size; i < 2 * value->logical_size; i++)
-        {
-            bolt_null(&value->data.as_value[i]);
-        }
-        value->logical_size = size;
-        // shrink physically
-        size_t new_physical_size = 2 * sizeof_n(struct BoltValue, size);
-        _bolt_alloc(value, new_physical_size);
-    }
-    else
-    {
-        // same size - do nothing
-    }
+    _bolt_resize(value, size, 2);
 }
 
 void bolt_put_utf8_dictionary_key_at(struct BoltValue* value, int32_t index, char* key, int32_t key_size)
@@ -889,9 +869,31 @@ struct double_quad
 
 
 
-//void bolt_put_structure(struct BoltValue* x, int16_t code, int32_t size);
-//int16_t bolt_get_structure_code(struct BoltValue* x);
-//struct BoltValue* bolt_get_structure_at(struct BoltValue* x, int32_t index);
+/*********************************************************************
+ * Structure / StructureArray
+ */
+
+void bolt_put_structure(struct BoltValue* value, int16_t code, int32_t size)
+{
+    size_t unit_size = sizeof(struct BoltValue);
+    size_t physical_size = unit_size * size;
+    _bolt_recycle(value);
+    _bolt_alloc(value, physical_size);
+    for (size_t offset = 0; offset < physical_size; offset += unit_size)
+    {
+        _bolt_copy_data(value, &BOLT_NULL_VALUE, offset, unit_size);
+    }
+    value->type = BOLT_STRUCTURE;
+    value->code = code;
+    value->is_array = 0;
+    value->logical_size = size;
+}
+
+struct BoltValue* bolt_get_structure_at(const struct BoltValue* value, int32_t index)
+{
+    assert(value->type == BOLT_STRUCTURE);
+    return &value->data.as_value[index];
+}
 
 
 #endif // SEABOLT_VALUES

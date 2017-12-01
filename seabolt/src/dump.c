@@ -27,9 +27,13 @@
 static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                                   '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-#define hex_hi(mem, offset) HEX_DIGITS[((mem)[offset] >> 4) & 0x0F]
+#define hex3(mem, offset) HEX_DIGITS[((mem)[offset] >> 12) & 0x0F]
 
-#define hex_lo(mem, offset) HEX_DIGITS[(mem)[offset] & 0x0F]
+#define hex2(mem, offset) HEX_DIGITS[((mem)[offset] >> 8) & 0x0F]
+
+#define hex1(mem, offset) HEX_DIGITS[((mem)[offset] >> 4) & 0x0F]
+
+#define hex0(mem, offset) HEX_DIGITS[(mem)[offset] & 0x0F]
 
 void _bolt_dump_string(char* data, size_t size)
 {
@@ -89,14 +93,14 @@ int bolt_dump_byte(const struct BoltValue* value)
         for (int i = 0; i < value->logical_size; i++)
         {
             char b = bolt_get_byte_array_at(value, i);
-            printf("%c%c", hex_hi(&b, 0), hex_lo(&b, 0));
+            printf("%c%c", hex1(&b, 0), hex0(&b, 0));
         }
         printf("]");
     }
     else
     {
         char byte = bolt_get_byte(value);
-        printf("b8(#%c%c)", hex_hi(&byte, 0), hex_lo(&byte, 0));
+        printf("b8(#%c%c)", hex1(&byte, 0), hex0(&byte, 0));
     }
     return EXIT_SUCCESS;
 }
@@ -323,6 +327,27 @@ int bolt_dump_float32(const struct BoltValue* value)
     return EXIT_SUCCESS;
 }
 
+int bolt_dump_structure(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_STRUCTURE);
+    switch (value->code)
+    {
+        case 0xA0:
+            printf("$Node");
+            break;
+        default:
+            printf("$#%c%c%c%c", hex3(&value->code, 0), hex2(&value->code, 0), hex1(&value->code, 0), hex0(&value->code, 0));
+    }
+    printf("(");
+    for (int i = 0; i < value->logical_size; i++)
+    {
+        if (i > 0) printf(" ");
+        bolt_dump(bolt_get_structure_at(value, i));
+    }
+    printf(")");
+    return EXIT_SUCCESS;
+}
+
 int bolt_dump(struct BoltValue* value)
 {
     switch (value->type)
@@ -357,6 +382,8 @@ int bolt_dump(struct BoltValue* value)
             return bolt_dump_int64(value);
         case BOLT_FLOAT32:
             return bolt_dump_float32(value);
+        case BOLT_STRUCTURE:
+            return bolt_dump_structure(value);
         default:
             printf("?");
             return EXIT_FAILURE;
