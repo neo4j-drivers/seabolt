@@ -31,6 +31,15 @@ static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
 
 #define hex_lo(mem, offset) HEX_DIGITS[(mem)[offset] & 0x0F]
 
+void _bolt_dump_string(char* data, size_t size)
+{
+    printf("\"");
+    for (size_t i = 0; i < size; i++)
+    {
+        printf("%c", data[i]);
+    }
+    printf("\"");
+}
 
 int bolt_dump_null(const struct BoltValue* value)
 {
@@ -99,18 +108,13 @@ int bolt_dump_utf8(const struct BoltValue* value)
     {
         printf("u8[");
         char* data = value->data.as_char;
-        int size;
+        int32_t size;
         for (unsigned long i = 0; i < value->logical_size; i++)
         {
             if (i > 0) { printf(", "); }
             memcpy(&size, data, SIZE_OF_SIZE);
             data += SIZE_OF_SIZE;
-            printf("\"");
-            for (unsigned long j = 0; j < size; j++)
-            {
-                printf("%c", data[j]);
-            }
-            printf("\"");
+            _bolt_dump_string(data, (size_t)(size));
             data += size;
         }
         printf("]");
@@ -124,6 +128,27 @@ int bolt_dump_utf8(const struct BoltValue* value)
         }
         printf("\")");
     }
+    return EXIT_SUCCESS;
+}
+
+int bolt_dump_utf8_dictionary(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_UTF8_DICTIONARY);
+    printf("d8[");
+    int comma = 0;
+    for (int i = 0; i < value->logical_size; i++)
+    {
+        struct BoltValue* key = bolt_get_utf8_dictionary_key_at(value, i);
+        if (key != NULL)
+        {
+            if (comma) printf(", ");
+            _bolt_dump_string(bolt_get_utf8(key), (size_t)(key->logical_size));
+            printf(" ");
+            bolt_dump(bolt_get_utf8_dictionary_at(value, i));
+            comma = 1;
+        }
+    }
+    printf("]");
     return EXIT_SUCCESS;
 }
 
@@ -312,6 +337,8 @@ int bolt_dump(struct BoltValue* value)
             return bolt_dump_byte(value);
         case BOLT_UTF8:
             return bolt_dump_utf8(value);
+        case BOLT_UTF8_DICTIONARY:
+            return bolt_dump_utf8_dictionary(value);
         case BOLT_NUM8:
             return bolt_dump_num8(value);
         case BOLT_NUM16:

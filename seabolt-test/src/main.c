@@ -107,6 +107,95 @@ void test_list()
     _test_list_shrinkage();
 }
 
+void _test_utf8_dictionary()
+{
+    struct BoltValue value = bolt_value();
+    bolt_put_utf8_dictionary(&value, 4);
+    bolt_put_utf8_dictionary_key_at(&value, 0, "a", 1);
+    bolt_put_int8(bolt_get_utf8_dictionary_at(&value, 0), 1);
+    bolt_put_utf8_dictionary_key_at(&value, 1, "b", 1);
+    bolt_put_int8(bolt_get_utf8_dictionary_at(&value, 1), 2);
+    bolt_put_utf8_dictionary_key_at(&value, 2, "c", 1);
+    bolt_put_int8(bolt_get_utf8_dictionary_at(&value, 2), 3);
+    bolt_dump_ln(&value);
+    assert(value.type == BOLT_UTF8_DICTIONARY);
+    assert(value.logical_size == 4);
+    bolt_null(&value);
+}
+
+void _test_empty_utf8_dictionary()
+{
+    struct BoltValue value = bolt_value();
+    bolt_put_utf8_dictionary(&value, 0);
+    bolt_dump_ln(&value);
+    assert(value.type == BOLT_UTF8_DICTIONARY);
+    assert(value.logical_size == 0);
+    bolt_null(&value);
+}
+
+void _test_single_entry_utf8_dictionary()
+{
+    struct BoltValue value = bolt_value();
+    bolt_put_utf8_dictionary(&value, 1);
+    bolt_put_utf8_dictionary_key_at(&value, 0, "hello", 5);
+    bolt_put_utf8(bolt_get_utf8_dictionary_at(&value, 0), "world", 5);
+    bolt_dump_ln(&value);
+    assert(value.type == BOLT_UTF8_DICTIONARY);
+    assert(value.logical_size == 1);
+    bolt_null(&value);
+}
+
+void _test_utf8_dictionary_growth()
+{
+    struct BoltValue value = bolt_value();
+    bolt_put_utf8_dictionary(&value, 0);
+    bolt_dump_ln(&value);
+    assert(value.type == BOLT_UTF8_DICTIONARY);
+    assert(value.logical_size == 0);
+    for (int i = 0; i < 3; i++)
+    {
+        int size = i + 1;
+        bolt_resize_utf8_dictionary(&value, size);
+        bolt_put_utf8_dictionary_key_at(&value, i, "key", 3);
+        bolt_put_int8(bolt_get_utf8_dictionary_at(&value, i), (int8_t)(size));
+        bolt_dump_ln(&value);
+        assert(value.type == BOLT_UTF8_DICTIONARY);
+        assert(value.logical_size == size);
+    }
+    bolt_null(&value);
+}
+
+void _test_utf8_dictionary_shrinkage()
+{
+    struct BoltValue value = bolt_value();
+    bolt_put_utf8_dictionary(&value, 3);
+    bolt_put_utf8_dictionary_key_at(&value, 0, "a", 1);
+    bolt_put_int8(bolt_get_utf8_dictionary_at(&value, 0), 1);
+    bolt_put_utf8_dictionary_key_at(&value, 1, "b", 1);
+    bolt_put_int8(bolt_get_utf8_dictionary_at(&value, 1), 2);
+    bolt_put_utf8_dictionary_key_at(&value, 2, "c", 1);
+    bolt_put_int8(bolt_get_utf8_dictionary_at(&value, 2), 3);
+    assert(value.type == BOLT_UTF8_DICTIONARY);
+    assert(value.logical_size == 3);
+    for (int size = 3; size >= 0; size--)
+    {
+        bolt_resize_utf8_dictionary(&value, size);
+        bolt_dump_ln(&value);
+        assert(value.type == BOLT_UTF8_DICTIONARY);
+        assert(value.logical_size == size);
+    }
+    bolt_null(&value);
+}
+
+void test_utf8_dictionary()
+{
+    _test_utf8_dictionary();
+    _test_empty_utf8_dictionary();
+    _test_single_entry_utf8_dictionary();
+    _test_utf8_dictionary_growth();
+    _test_utf8_dictionary_shrinkage();
+}
+
 void test_bit()
 {
     struct BoltValue value = bolt_value();
@@ -608,6 +697,7 @@ int main()
     test_byte_array();
     test_utf8();
     test_utf8_array();
+    test_utf8_dictionary();
     test_num8_array(test_num8());
     test_num16_array(test_num16());
     test_num32_array(test_num32());
