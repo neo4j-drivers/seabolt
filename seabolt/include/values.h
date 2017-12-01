@@ -96,49 +96,6 @@ struct BoltValue
 };
 
 
-struct float_pair
-{
-    float x;
-    float y;
-};
-
-struct float_triple
-{
-    float x;
-    float y;
-    float z;
-};
-
-struct float_quad
-{
-    float x;
-    float y;
-    float z;
-    float a;
-};
-
-struct double_pair
-{
-    double x;
-    double y;
-};
-
-struct double_triple
-{
-    double x;
-    double y;
-    double z;
-};
-
-struct double_quad
-{
-    double x;
-    double y;
-    double z;
-    double a;
-};
-
-
 static size_t __bolt_value_memory = 0;
 
 
@@ -807,6 +764,13 @@ float bolt_get_float32_array_at(const struct BoltValue* value, int32_t index)
  * Float32Pair / Float32PairArray
  */
 
+
+struct float_pair
+{
+    float x;
+    float y;
+};
+
 //void bolt_put_float32_pair(struct BoltValue* value, float x, float y);
 //void bolt_put_float32_pair_array(struct BoltValue* value, struct float_pair* array, int32_t size);
 
@@ -816,6 +780,13 @@ float bolt_get_float32_array_at(const struct BoltValue* value, int32_t index)
  * Float32Triple / Float32TripleArray
  */
 
+struct float_triple
+{
+    float x;
+    float y;
+    float z;
+};
+
 //void bolt_put_float32_triple(struct BoltValue* value, float x, float y, float z);
 //void bolt_put_float32_triple_array(struct BoltValue* value, struct float_triple* array, int32_t size);
 
@@ -824,6 +795,14 @@ float bolt_get_float32_array_at(const struct BoltValue* value, int32_t index)
 /*********************************************************************
  * Float32Quad / Float32QuadArray
  */
+
+struct float_quad
+{
+    float x;
+    float y;
+    float z;
+    float a;
+};
 
 //void bolt_put_float32_quad(struct BoltValue* value, float x, float y, float z, float a);
 //void bolt_put_float32_quad_array(struct BoltValue* value, struct float_quad* array, int32_t size);
@@ -852,6 +831,12 @@ double bolt_get_float64(struct BoltValue* value)
  * Float64Pair / Float64PairArray
  */
 
+struct double_pair
+{
+    double x;
+    double y;
+};
+
 //void bolt_put_float64_pair(struct BoltValue* value, double x, double y);
 //void bolt_put_float64_pair_array(struct BoltValue* value, struct double_pair* array, int32_t size);
 
@@ -861,6 +846,13 @@ double bolt_get_float64(struct BoltValue* value)
  * Float64Triple / Float64TripleArray
  */
 
+struct double_triple
+{
+    double x;
+    double y;
+    double z;
+};
+
 //void bolt_put_float64_triple(struct BoltValue* value, double x, double y, double z);
 //void bolt_put_float64_triple_array(struct BoltValue* value, struct double_triple* array, int32_t size);
 
@@ -869,6 +861,14 @@ double bolt_get_float64(struct BoltValue* value)
 /*********************************************************************
  * Float64Quad / Float64QuadArray
  */
+
+struct double_quad
+{
+    double x;
+    double y;
+    double z;
+    double a;
+};
 
 //void bolt_put_float64_quad(struct BoltValue* value, double x, double y, double z, double a);
 //void bolt_put_float64_quad_array(struct BoltValue* value, struct double_quad* array, int32_t size);
