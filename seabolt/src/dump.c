@@ -111,15 +111,18 @@ int BoltUTF8_dump(const struct BoltValue* value)
     if (value->is_array)
     {
         printf("u8[");
-        char* data = value->data.as_char;
-        int32_t size;
-        for (unsigned long i = 0; i < value->logical_size; i++)
+        for (long i = 0; i < value->logical_size; i++)
         {
             if (i > 0) { printf(", "); }
-            memcpy(&size, data, SIZE_OF_SIZE);
-            data += SIZE_OF_SIZE;
-            _bolt_dump_string(data, (size_t)(size));
-            data += size;
+            struct array_t string = value->data.as_array[i];
+            if (string.size == 0)
+            {
+                printf("\"\"");
+            }
+            else
+            {
+                _bolt_dump_string(string.data.as_char, (size_t)(string.size));
+            }
         }
         printf("]");
     }
@@ -336,7 +339,8 @@ int BoltStructure_dump(const struct BoltValue* value)
             printf("$Node");
             break;
         default:
-            printf("$#%c%c%c%c", hex3(&value->code, 0), hex2(&value->code, 0), hex1(&value->code, 0), hex0(&value->code, 0));
+            printf("$#%c%c%c%c", hex3(&value->code, 0), hex2(&value->code, 0), hex1(&value->code, 0),
+                   hex0(&value->code, 0));
     }
     printf("(");
     for (int i = 0; i < value->logical_size; i++)

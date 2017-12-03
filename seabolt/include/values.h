@@ -34,9 +34,6 @@
 #define to_bit(x) (char)((x) == 0 ? 0 : 1);
 
 
-static const size_t SIZE_OF_SIZE = sizeof(int32_t);
-
-
 enum BoltType
 {
     BOLT_NULL,                          /* ALSO IN BOLT v1 (as Null) */
@@ -70,6 +67,32 @@ enum BoltType
     BOLT_SUMMARY,  // summaries match 11xxxxxx
 };
 
+struct array_t;
+
+union data_u
+{
+    void* as_ptr;
+    char* as_char;
+    uint8_t* as_uint8;
+    uint16_t* as_uint16;
+    uint32_t* as_uint32;
+    uint64_t* as_uint64;
+    int8_t* as_int8;
+    int16_t* as_int16;
+    int32_t* as_int32;
+    int64_t* as_int64;
+    float* as_float;
+    double* as_double;
+    struct BoltValue* as_value;
+    struct array_t* as_array;
+};
+
+struct array_t
+{
+    int32_t size;
+    union data_u data;
+};
+
 struct BoltValue
 {
     enum BoltType type;
@@ -77,29 +100,38 @@ struct BoltValue
     int is_array;
     long logical_size;
     size_t physical_size;
-    union
-    {
-        void* as_ptr;
-        char* as_char;
-        uint8_t* as_uint8;
-        uint16_t* as_uint16;
-        uint32_t* as_uint32;
-        uint64_t* as_uint64;
-        int8_t* as_int8;
-        int16_t* as_int16;
-        int32_t* as_int32;
-        int64_t* as_int64;
-        float* as_float;
-        double* as_double;
-        struct BoltValue* as_value;
-    } data;
+    union data_u data;
 };
 
 
 static const struct BoltValue BOLT_NULL_VALUE = {BOLT_NULL, 0, 0, 0, 0, NULL};
 
 
-static size_t __bolt_value_memory = 0;
+static size_t __bolt_memory = 0;
+
+void* __bolt_malloc(size_t new_size)
+{
+    void* p = malloc(new_size);
+    __bolt_memory += new_size;
+    fprintf(stderr, "\x1B[36mAllocated %ld bytes (balance: %lu)\x1B[0m\n", new_size, __bolt_memory);
+    return p;
+}
+
+void* __bolt_realloc(void* ptr, size_t old_size, size_t new_size)
+{
+    void* p = realloc(ptr, new_size);
+    __bolt_memory = __bolt_memory - old_size + new_size;
+    fprintf(stderr, "\x1B[36mReallocated %ld bytes as %ld bytes (balance: %lu)\x1B[0m\n", old_size, new_size, __bolt_memory);
+    return p;
+}
+
+void* __bolt_free(void* ptr, size_t old_size)
+{
+    free(ptr);
+    __bolt_memory -= old_size;
+    fprintf(stderr, "\x1B[36mFreed %ld bytes (balance: %lu)\x1B[0m\n", old_size, __bolt_memory);
+    return NULL;
+}
 
 
 void BoltValue_toNull(struct BoltValue* value);
@@ -131,12 +163,9 @@ void _BoltValue_allocate(struct BoltValue* value, size_t physical_size)
     {
         // In this case we need to allocate new storage space
         // where previously none was allocated. This means
-        // that a full `malloc` is required.
+        // that a full allocation is required.
         assert(value->data.as_ptr == NULL);
-        value->data.as_ptr = malloc(physical_size);
-        __bolt_value_memory += physical_size;
-        fprintf(stderr, "\x1B[36mAllocated %ld bytes (balance: %lu)\x1B[0m\n",
-                physical_size, __bolt_value_memory);
+        value->data.as_ptr = __bolt_malloc(physical_size);
         value->physical_size = physical_size;
     }
     else if (physical_size == 0)
@@ -146,11 +175,7 @@ void _BoltValue_allocate(struct BoltValue* value, size_t physical_size)
         // means that we can free up the previously-allocated
         // space.
         assert(value->data.as_ptr != NULL);
-        free(value->data.as_ptr);
-        value->data.as_ptr = NULL;
-        __bolt_value_memory -= value->physical_size;
-        fprintf(stderr, "\x1B[36mFreed %ld bytes (balance: %lu)\x1B[0m\n",
-                value->physical_size, __bolt_value_memory);
+        value->data.as_ptr = __bolt_free(value->data.as_ptr, value->physical_size);
         value->physical_size = 0;
     }
     else
@@ -161,10 +186,7 @@ void _BoltValue_allocate(struct BoltValue* value, size_t physical_size)
         // efficient than a naïve deallocation followed by a
         // brand new allocation.
         assert(value->data.as_ptr != NULL);
-        value->data.as_ptr = realloc(value->data.as_ptr, physical_size);
-        __bolt_value_memory = __bolt_value_memory - value->physical_size + physical_size;
-        fprintf(stderr, "\x1B[36mReallocated %ld bytes as %ld bytes (balance: %lu)\x1B[0m\n",
-                value->physical_size, physical_size, __bolt_value_memory);
+        value->data.as_ptr = __bolt_realloc(value->data.as_ptr, value->physical_size, physical_size);
         value->physical_size = physical_size;
     }
 }
@@ -193,6 +215,17 @@ void _BoltValue_recycle(struct BoltValue* value)
             BoltValue_toNull(&value->data.as_value[i]);
         }
     }
+    else if (value->type == BOLT_UTF8 && value->is_array)
+    {
+        for (long i = 0; i < value->logical_size; i++)
+        {
+            struct array_t string = value->data.as_array[i];
+            if (string.size > 0)
+            {
+                __bolt_free(string.data.as_ptr, (size_t)(string.size));
+            }
+        }
+    }
     else if (value->type == BOLT_UTF8_DICTIONARY)
     {
         for (long i = 0; i < 2 * value->logical_size; i++)
@@ -218,7 +251,10 @@ void _BoltValue_to(struct BoltValue* value, enum BoltType type, int code, int is
 {
     _BoltValue_recycle(value);
     _BoltValue_allocate(value, physical_size);
-    _BoltValue_copyData(value, data, 0, physical_size);
+    if (data != NULL)
+    {
+        _BoltValue_copyData(value, data, 0, physical_size);
+    }
     value->type = type;
     value->code = code;
     value->is_array = is_array;
@@ -271,9 +307,7 @@ void _BoltValue_resize(struct BoltValue* value, int32_t size, int multiplier)
 struct BoltValue* BoltValue_create()
 {
     size_t size = sizeof(struct BoltValue);
-    struct BoltValue* value = malloc(size);
-    __bolt_value_memory += size;
-    fprintf(stderr, "\x1B[36mAllocated %ld bytes (balance: %lu)\x1B[0m\n", size, __bolt_value_memory);
+    struct BoltValue* value = __bolt_malloc(size);
     value->type = BOLT_NULL;
     value->code = 0;
     value->is_array = 0;
@@ -286,10 +320,7 @@ struct BoltValue* BoltValue_create()
 void BoltValue_destroy(struct BoltValue* value)
 {
     BoltValue_toNull(value);
-    free(value);
-    size_t size = sizeof(struct BoltValue);
-    __bolt_value_memory -= size;
-    fprintf(stderr, "\x1B[36mFreed %ld bytes (balance: %lu)\x1B[0m\n", size, __bolt_value_memory);
+    __bolt_free(value, sizeof(struct BoltValue));
 }
 
 
@@ -430,45 +461,35 @@ char* BoltUTF8_get(struct BoltValue* value)
     return value->data.as_char;
 }
 
-void BoltValue_toUTF8Array(struct BoltValue* value)
+void BoltValue_toUTF8Array(struct BoltValue* value, int32_t size)
 {
-    _BoltValue_to(value, BOLT_UTF8, 0, 1, NULL, 0, 0);
+    _BoltValue_to(value, BOLT_UTF8, 0, 1, NULL, size, sizeof_n(struct array_t, size));
+    for (int i = 0; i < size; i++)
+    {
+        value->data.as_array[i].size = 0;
+        value->data.as_array[i].data.as_ptr = NULL;
+    }
 }
 
-void BoltUTF8Array_append(struct BoltValue* value, char* string, int32_t size)
+void BoltUTF8Array_put(struct BoltValue* value, int32_t index, char* string, int32_t size)
 {
-    assert(value->type == BOLT_UTF8 && value->is_array);
-    value->logical_size += 1;
-    size_t old_physical_size = value->physical_size;
-    _BoltValue_allocate(value, old_physical_size + SIZE_OF_SIZE + size);
-    _BoltValue_copyData(value, &size, old_physical_size, SIZE_OF_SIZE);
-    _BoltValue_copyData(value, string, old_physical_size + SIZE_OF_SIZE, (size_t)(size));
+    value->data.as_array[index].size = size;
+    if (size > 0)
+    {
+        value->data.as_array[index].data.as_ptr = __bolt_malloc((size_t)(size));
+        memcpy(value->data.as_array[index].data.as_char, string, (size_t)(size));
+    }
 }
 
 int32_t BoltUTF8Array_getSize(struct BoltValue* value, int32_t index)
 {
-    size_t offset = 0;
-    int32_t size = 0;
-    memcpy(&size, &value->data.as_char[offset], SIZE_OF_SIZE);
-    for (int i = 0; i < index; i++)
-    {
-        offset += SIZE_OF_SIZE + size;
-        memcpy(&size, &value->data.as_char[offset], SIZE_OF_SIZE);
-    }
-    return size;
+    return value->data.as_array[index].size;
 }
 
 char* BoltUTF8Array_get(struct BoltValue* value, int32_t index)
 {
-    size_t offset = 0;
-    int32_t size = 0;
-    memcpy(&size, &value->data.as_char[offset], SIZE_OF_SIZE);
-    for (int i = 0; i < index; i++)
-    {
-        offset += SIZE_OF_SIZE + size;
-        memcpy(&size, &value->data.as_char[offset], SIZE_OF_SIZE);
-    }
-    return &value->data.as_char[offset + SIZE_OF_SIZE];
+    struct array_t string = value->data.as_array[index];
+    return string.size == 0 ? NULL : string.data.as_char;
 }
 
 
@@ -752,7 +773,6 @@ float BoltFloat32Array_get(const struct BoltValue* value, int32_t index)
 {
     return value->data.as_float[index];
 }
-
 
 
 /*********************************************************************
