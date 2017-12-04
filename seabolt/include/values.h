@@ -105,17 +105,17 @@ struct BoltValue
     size_t data_size;           // physical size
     union
     {
-        char as_char[8];
-        uint8_t as_uint8[8];
-        uint16_t as_uint16[4];
-        uint32_t as_uint32[2];
-        uint64_t as_uint64[1];
-        int8_t as_int8[8];
-        int16_t as_int16[4];
-        int32_t as_int32[2];
-        int64_t as_int64[1];
-        float as_float[2];
-        double as_double[1];
+        char as_char[16];
+        uint8_t as_uint8[16];
+        uint16_t as_uint16[8];
+        uint32_t as_uint32[4];
+        uint64_t as_uint64[2];
+        int8_t as_int8[16];
+        int16_t as_int16[8];
+        int32_t as_int32[4];
+        int64_t as_int64[2];
+        float as_float[4];
+        double as_double[2];
         data_t extended;
     } data;
 };
@@ -372,9 +372,9 @@ float BoltFloat32_get(const struct BoltValue* value);
 
 float BoltFloat32Array_get(const struct BoltValue* value, int32_t index);
 
-double BoltFloat64_get(struct BoltValue* value);
+double BoltFloat64_get(const struct BoltValue* value);
 
-double BoltFloat64Array_get(struct BoltValue* value, int32_t index);
+double BoltFloat64Array_get(const struct BoltValue* value, int32_t index);
 
 
 int16_t BoltStructure_code(const struct BoltValue* value);

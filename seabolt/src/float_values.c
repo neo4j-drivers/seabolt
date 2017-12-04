@@ -35,7 +35,28 @@ void BoltValue_toFloat64(struct BoltValue* value, double x)
 
 void BoltValue_toFloat32Array(struct BoltValue* value, float* array, int32_t size)
 {
-    _BoltValue_to(value, BOLT_FLOAT32, 1, size, array, sizeof_n(float, size));
+    if (size <= sizeof(value->data) / sizeof(float))
+    {
+        _BoltValue_to(value, BOLT_FLOAT32, 1, size, NULL, 0);
+        memcpy(value->data.as_float, array, (size_t)(size));
+    }
+    else
+    {
+        _BoltValue_to(value, BOLT_FLOAT32, 1, size, array, sizeof_n(float, size));
+    }
+}
+
+void BoltValue_toFloat64Array(struct BoltValue* value, double* array, int32_t size)
+{
+    if (size <= sizeof(value->data) / sizeof(double))
+    {
+        _BoltValue_to(value, BOLT_FLOAT64, 1, size, NULL, 0);
+        memcpy(value->data.as_double, array, (size_t)(size));
+    }
+    else
+    {
+        _BoltValue_to(value, BOLT_FLOAT64, 1, size, array, sizeof_n(double, size));
+    }
 }
 
 float BoltFloat32_get(const struct BoltValue* value)
@@ -43,12 +64,21 @@ float BoltFloat32_get(const struct BoltValue* value)
     return value->data.as_float[0];
 }
 
-float BoltFloat32Array_get(const struct BoltValue* value, int32_t index)
-{
-    return value->data.extended.as_float[index];
-}
-
-double BoltFloat64_get(struct BoltValue* value)
+double BoltFloat64_get(const struct BoltValue* value)
 {
     return value->data.as_double[0];
+}
+
+float BoltFloat32Array_get(const struct BoltValue* value, int32_t index)
+{
+    const float* data = value->size <= sizeof(value->data) / sizeof(float) ?
+                        value->data.as_float : value->data.extended.as_float;
+    return data[index];
+}
+
+double BoltFloat64Array_get(const struct BoltValue* value, int32_t index)
+{
+    const double* data = value->size <= sizeof(value->data) / sizeof(double) ?
+                         value->data.as_double : value->data.extended.as_double;
+    return data[index];
 }
