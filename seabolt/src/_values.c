@@ -92,14 +92,14 @@ void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offse
  */
 void _BoltValue_recycle(struct BoltValue* value)
 {
-    if (value->type == BOLT_LIST)
+    if (BoltValue_type(value) == BOLT_LIST)
     {
         for (long i = 0; i < value->logical_size; i++)
         {
             BoltValue_toNull(&value->data.as_value[i]);
         }
     }
-    else if (value->type == BOLT_UTF8 && value->is_array)
+    else if (BoltValue_type(value) == BOLT_UTF8 && BoltValue_isArray(value))
     {
         for (long i = 0; i < value->logical_size; i++)
         {
@@ -110,24 +110,31 @@ void _BoltValue_recycle(struct BoltValue* value)
             }
         }
     }
-    else if (value->type == BOLT_UTF8_DICTIONARY)
+    else if (BoltValue_type(value) == BOLT_UTF8_DICTIONARY)
     {
         for (long i = 0; i < 2 * value->logical_size; i++)
         {
             BoltValue_toNull(&value->data.as_value[i]);
         }
     }
-    else if (value->type == BOLT_UTF16_DICTIONARY)
+    else if (BoltValue_type(value) == BOLT_UTF16_DICTIONARY)
     {
         // TODO
     }
-    else if (value->type == BOLT_STRUCTURE)
+    else if (BoltValue_type(value) == BOLT_STRUCTURE)
     {
         for (long i = 0; i < value->logical_size; i++)
         {
             BoltValue_toNull(&value->data.as_value[i]);
         }
     }
+}
+
+void _BoltValue_setType(struct BoltValue* value, enum BoltType type, char is_array, int logical_size)
+{
+    value->type = type;
+    value->is_array = is_array;
+    value->logical_size = logical_size;
 }
 
 void _BoltValue_to(struct BoltValue* value, enum BoltType type, char is_array,
@@ -139,9 +146,7 @@ void _BoltValue_to(struct BoltValue* value, enum BoltType type, char is_array,
     {
         _BoltValue_copyData(value, data, 0, physical_size);
     }
-    value->type = type;
-    value->is_array = is_array;
-    value->logical_size = logical_size;
+    _BoltValue_setType(value, type, is_array, logical_size);
 }
 
 

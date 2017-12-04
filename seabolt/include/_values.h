@@ -55,6 +55,8 @@ void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offse
  */
 void _BoltValue_recycle(struct BoltValue* value);
 
+void _BoltValue_setType(struct BoltValue* value, enum BoltType type, char is_array, int logical_size);
+
 void _BoltValue_to(struct BoltValue* value, enum BoltType type, char is_array,
                    const void* data, int logical_size, size_t physical_size);
 

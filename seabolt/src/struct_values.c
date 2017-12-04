@@ -30,20 +30,18 @@ void BoltValue_toStructure(struct BoltValue* value, int16_t code, int32_t size)
     _BoltValue_recycle(value);
     _BoltValue_allocate(value, physical_size);
     memset(value->data.as_char, 0, physical_size);
-    value->type = BOLT_STRUCTURE;
+    _BoltValue_setType(value, BOLT_STRUCTURE, 0, size);
     value->inline_data.as_int16[0] = code;
-    value->is_array = 0;
-    value->logical_size = size;
 }
 
 int16_t BoltStructure_code(const struct BoltValue* value)
 {
-    assert(value->type == BOLT_STRUCTURE);
+    assert(BoltValue_type(value) == BOLT_STRUCTURE);
     return value->inline_data.as_int16[0];
 }
 
 struct BoltValue* BoltStructure_at(const struct BoltValue* value, int32_t index)
 {
-    assert(value->type == BOLT_STRUCTURE);
+    assert(BoltValue_type(value) == BOLT_STRUCTURE);
     return &value->data.as_value[index];
 }

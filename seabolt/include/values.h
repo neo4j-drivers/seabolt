@@ -221,6 +221,10 @@ void BoltValue_toFloat64QuadArray(struct BoltValue* value, int32_t size);
 
 void BoltValue_toStructure(struct BoltValue* value, int16_t code, int32_t size);
 
+enum BoltType BoltValue_type(const struct BoltValue* value);
+
+int BoltValue_isArray(const struct BoltValue* value);
+
 void BoltValue_destroy(struct BoltValue* value);
 
 

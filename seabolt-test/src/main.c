@@ -30,7 +30,7 @@ void test_null()
     struct BoltValue* value = BoltValue_create();
     BoltValue_toNull(value);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_NULL);
+    assert(BoltValue_type(value) == BOLT_NULL);
     BoltValue_destroy(value);
 }
 
@@ -47,7 +47,7 @@ void _test_list()
     BoltValue_toNum8(BoltList_at(BoltList_at(value, 5), 1), 88);
     BoltValue_toByte(BoltList_at(BoltList_at(value, 5), 2), 99);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_LIST);
+    assert(BoltValue_type(value) == BOLT_LIST);
     assert(value->logical_size == 6);
     BoltValue_destroy(value);
 }
@@ -57,7 +57,7 @@ void _test_empty_list()
     struct BoltValue* value = BoltValue_create();
     BoltValue_toList(value, 0);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_LIST);
+    assert(BoltValue_type(value) == BOLT_LIST);
     assert(value->logical_size == 0);
     BoltValue_destroy(value);
 }
@@ -67,7 +67,7 @@ void _test_list_growth()
     struct BoltValue* value = BoltValue_create();
     BoltValue_toList(value, 0);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_LIST);
+    assert(BoltValue_type(value) == BOLT_LIST);
     assert(value->logical_size == 0);
     for (int i = 0; i < 3; i++)
     {
@@ -75,7 +75,7 @@ void _test_list_growth()
         BoltList_resize(value, size);
         BoltValue_toInt8(BoltList_at(value, i), (int8_t)(size));
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_LIST);
+        assert(BoltValue_type(value) == BOLT_LIST);
         assert(value->logical_size == size);
     }
     BoltValue_destroy(value);
@@ -88,13 +88,13 @@ void _test_list_shrinkage()
     BoltValue_toInt8(BoltList_at(value, 0), 1);
     BoltValue_toInt8(BoltList_at(value, 1), 2);
     BoltValue_toInt8(BoltList_at(value, 2), 3);
-    assert(value->type == BOLT_LIST);
+    assert(BoltValue_type(value) == BOLT_LIST);
     assert(value->logical_size == 3);
     for (int size = 3; size >= 0; size--)
     {
         BoltList_resize(value, size);
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_LIST);
+        assert(BoltValue_type(value) == BOLT_LIST);
         assert(value->logical_size == size);
     }
     BoltValue_destroy(value);
@@ -116,7 +116,7 @@ void _test_utf8_dictionary()
     BoltValue_toInt8(BoltUTF8Dictionary_withKey(value, 1, "b", 1), 2);
     BoltValue_toInt8(BoltUTF8Dictionary_withKey(value, 2, "c", 1), 3);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
     assert(value->logical_size == 4);
     BoltValue_destroy(value);
 }
@@ -126,7 +126,7 @@ void _test_empty_utf8_dictionary()
     struct BoltValue* value = BoltValue_create();
     BoltValue_toUTF8Dictionary(value, 0);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
     assert(value->logical_size == 0);
     BoltValue_destroy(value);
 }
@@ -137,7 +137,7 @@ void _test_single_entry_utf8_dictionary()
     BoltValue_toUTF8Dictionary(value, 1);
     BoltValue_toUTF8(BoltUTF8Dictionary_withKey(value, 0, "hello", 5), "world", 5);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
     assert(value->logical_size == 1);
     BoltValue_destroy(value);
 }
@@ -147,7 +147,7 @@ void _test_utf8_dictionary_growth()
     struct BoltValue* value = BoltValue_create();
     BoltValue_toUTF8Dictionary(value, 0);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
     assert(value->logical_size == 0);
     for (int i = 0; i < 3; i++)
     {
@@ -155,7 +155,7 @@ void _test_utf8_dictionary_growth()
         BoltUTF8Dictionary_resize(value, size);
         BoltValue_toInt8(BoltUTF8Dictionary_withKey(value, i, "key", 3), (int8_t)(size));
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_UTF8_DICTIONARY);
+        assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
         assert(value->logical_size == size);
     }
     BoltValue_destroy(value);
@@ -168,13 +168,13 @@ void _test_utf8_dictionary_shrinkage()
     BoltValue_toInt8(BoltUTF8Dictionary_withKey(value, 0, "a", 1), 1);
     BoltValue_toInt8(BoltUTF8Dictionary_withKey(value, 1, "b", 1), 2);
     BoltValue_toInt8(BoltUTF8Dictionary_withKey(value, 2, "c", 1), 3);
-    assert(value->type == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
     assert(value->logical_size == 3);
     for (int size = 3; size >= 0; size--)
     {
         BoltUTF8Dictionary_resize(value, size);
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_UTF8_DICTIONARY);
+        assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
         assert(value->logical_size == size);
     }
     BoltValue_destroy(value);
@@ -196,7 +196,7 @@ void test_bit()
     {
         BoltValue_toBit(value, i);
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_BIT);
+        assert(BoltValue_type(value) == BOLT_BIT);
         assert(BoltBit_get(value) == i);
     }
     BoltValue_destroy(value);
@@ -209,8 +209,7 @@ void test_bit_array()
     char array[] = {0, 1};
     BoltValue_toBitArray(value, array, size);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_BIT);
-    assert(value->is_array);
+    assert(BoltValue_type(value) == BOLT_BIT && BoltValue_isArray(value));
     for (int i = 0; i < size; i++)
     {
         assert(BoltBitArray_get(value, i) == array[i]);
@@ -225,7 +224,7 @@ void test_byte()
     {
         BoltValue_toByte(value, (char)(i));
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_BYTE);
+        assert(BoltValue_type(value) == BOLT_BYTE);
         assert(BoltByte_get(value) == (char)(i));
     }
     BoltValue_destroy(value);
@@ -250,8 +249,7 @@ void test_byte_array()
     int32_t size = sizeof(array) - 1;
     BoltValue_toByteArray(value, array, size);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_BYTE);
-    assert(value->is_array);
+    assert(BoltValue_type(value) == BOLT_BYTE && BoltValue_isArray(value));
     for (int i = 0; i < size; i++)
     {
         assert(BoltByteArray_get(value, i) == array[i]);
@@ -264,7 +262,7 @@ void _test_utf8(char* text, int32_t text_size)
     struct BoltValue* value = BoltValue_create();
     BoltValue_toUTF8(value, text, text_size);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_UTF8);
+    assert(BoltValue_type(value) == BOLT_UTF8);
     assert(value->physical_size == text_size);
     const char* stored_text = BoltUTF8_get(value);
     assert(strncmp(text, stored_text, (size_t)(text_size)) == 0);
@@ -291,8 +289,7 @@ void test_utf8_array()
     BoltUTF8Array_put(value, 3, "", 0);
     BoltUTF8Array_put(value, 4, "that last one was empty!!", 25);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_UTF8);
-    assert(value->is_array);
+    assert(BoltValue_type(value) == BOLT_UTF8 && BoltValue_isArray(value));
     assert(value->logical_size == 5);
 
     text = BoltUTF8Array_get(value, 0);
@@ -327,7 +324,7 @@ int test_num8()
     {
         BoltValue_toNum8(value, (uint8_t)(x));
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_NUM8);
+        assert(BoltValue_type(value) == BOLT_NUM8);
         assert(BoltNum8_get(value) == x);
         n += 1, z = x + y, x = y, y = z;
     }
@@ -348,8 +345,7 @@ void test_num8_array(int size)
     }
     BoltValue_toNum8Array(value, array, size);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_NUM8);
-    assert(value->is_array);
+    assert(BoltValue_type(value) == BOLT_NUM8 && BoltValue_isArray(value));
     for (int i = 0; i < size; i++)
     {
         assert(BoltNum8Array_get(value, i) == array[i]);
@@ -366,7 +362,7 @@ int test_num16()
     {
         BoltValue_toNum16(value, (uint16_t)(x));
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_NUM16);
+        assert(BoltValue_type(value) == BOLT_NUM16);
         assert(BoltNum16_get(value) == x);
         n += 1, z = x + y, x = y, y = z;
     }
@@ -387,8 +383,7 @@ void test_num16_array(int size)
     }
     BoltValue_toNum16Array(value, array, size);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_NUM16);
-    assert(value->is_array);
+    assert(BoltValue_type(value) == BOLT_NUM16 && BoltValue_isArray(value));
     for (int i = 0; i < size; i++)
     {
         assert(BoltNum16Array_get(value, i) == array[i]);
@@ -405,7 +400,7 @@ int test_num32()
     {
         BoltValue_toNum32(value, (uint32_t)(x));
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_NUM32);
+        assert(BoltValue_type(value) == BOLT_NUM32);
         assert(BoltNum32_get(value) == x);
         n += 1, z = x + y, x = y, y = z;
     }
@@ -426,8 +421,7 @@ void test_num32_array(int size)
     }
     BoltValue_toNum32Array(value, array, size);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_NUM32);
-    assert(value->is_array);
+    assert(BoltValue_type(value) == BOLT_NUM32 && BoltValue_isArray(value));
     for (int i = 0; i < size; i++)
     {
         assert(BoltNum32Array_get(value, i) == array[i]);
@@ -444,7 +438,7 @@ int test_num64()
     {
         BoltValue_toNum64(value, (uint64_t)(x));
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_NUM64);
+        assert(BoltValue_type(value) == BOLT_NUM64);
         assert(BoltNum64_get(value) == x);
         n += 1, z = x + y, x = y, y = z;
     }
@@ -465,8 +459,7 @@ void test_num64_array(int size)
     }
     BoltValue_toNum64Array(value, array, size);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_NUM64);
-    assert(value->is_array);
+    assert(BoltValue_type(value) == BOLT_NUM64 && BoltValue_isArray(value));
     for (int i = 0; i < size; i++)
     {
         assert(BoltNum64Array_get(value, i) == array[i]);
@@ -483,7 +476,7 @@ int test_int8()
     {
         BoltValue_toInt8(value, (int8_t)(s * x));
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_INT8);
+        assert(BoltValue_type(value) == BOLT_INT8);
         assert(BoltInt8_get(value) == s * x);
         n += 1, s = -s, z = x + y, x = y, y = z;
     }
@@ -504,8 +497,7 @@ void test_int8_array(int size)
     }
     BoltValue_toInt8Array(value, array, size);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_INT8);
-    assert(value->is_array);
+    assert(BoltValue_type(value) == BOLT_INT8 && BoltValue_isArray(value));
     for (int i = 0; i < size; i++)
     {
         assert(BoltInt8Array_get(value, i) == array[i]);
@@ -522,7 +514,7 @@ int test_int16()
     {
         BoltValue_toInt16(value, (int16_t)(s * x));
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_INT16);
+        assert(BoltValue_type(value) == BOLT_INT16);
         assert(BoltInt16_get(value) == s * x);
         n += 1, s = -s, z = x + y, x = y, y = z;
     }
@@ -543,8 +535,7 @@ void test_int16_array(int size)
     }
     BoltValue_toInt16Array(value, array, size);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_INT16);
-    assert(value->is_array);
+    assert(BoltValue_type(value) == BOLT_INT16 && BoltValue_isArray(value));
     for (int i = 0; i < size; i++)
     {
         assert(BoltInt16Array_get(value, i) == array[i]);
@@ -561,7 +552,7 @@ int test_int32()
     {
         BoltValue_toInt32(value, (int32_t)(s * x));
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_INT32);
+        assert(BoltValue_type(value) == BOLT_INT32);
         assert(BoltInt32_get(value) == s * x);
         n += 1, s = -s, z = x + y, x = y, y = z;
     }
@@ -582,8 +573,7 @@ void test_int32_array(int size)
     }
     BoltValue_toInt32Array(value, array, size);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_INT32);
-    assert(value->is_array);
+    assert(BoltValue_type(value) == BOLT_INT32 && BoltValue_isArray(value));
     for (int i = 0; i < size; i++)
     {
         assert(BoltInt32Array_get(value, i) == array[i]);
@@ -600,7 +590,7 @@ int test_int64()
     {
         BoltValue_toInt64(value, (int64_t)(s * x));
         BoltValue_dumpLine(value);
-        assert(value->type == BOLT_INT64);
+        assert(BoltValue_type(value) == BOLT_INT64);
         assert(BoltInt64_get(value) == s * x);
         n += 1, s = -s, z = x + y, x = y, y = z;
     }
@@ -621,8 +611,7 @@ void test_int64_array(int size)
     }
     BoltValue_toInt64Array(value, array, size);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_INT64);
-    assert(value->is_array);
+    assert(BoltValue_type(value) == BOLT_INT64 && BoltValue_isArray(value));
     for (int i = 0; i < size; i++)
     {
         assert(BoltInt64Array_get(value, i) == array[i]);
@@ -635,7 +624,7 @@ void _test_float32(float x)
     struct BoltValue* value = BoltValue_create();
     BoltValue_toFloat32(value, x);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_FLOAT32);
+    assert(BoltValue_type(value) == BOLT_FLOAT32);
     assert(BoltFloat32_get(value) == x ||
            (isnanf(BoltFloat32_get(value)) && isnanf(x)));
     BoltValue_destroy(value);
@@ -663,8 +652,7 @@ void test_float32_array()
                        6.02214086e23F, 3.402823e38F, INFINITY, -INFINITY, NAN};
     BoltValue_toFloat32Array(value, array, 11);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_FLOAT32);
-    assert(value->is_array);
+    assert(BoltValue_type(value) == BOLT_FLOAT32 && BoltValue_isArray(value));
     assert(value->logical_size == 11);
     assert(BoltFloat32Array_get(value, 0) == 0.0F);
     assert(BoltFloat32Array_get(value, 1) == 0.375F);
@@ -696,7 +684,7 @@ void test_structure()
     BoltValue_toUTF8(BoltUTF8Dictionary_withKey(properties, 0, "name", 4), "Alice", 5);
     BoltValue_toNum16(BoltUTF8Dictionary_withKey(properties, 1, "since", 5), 1999);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_STRUCTURE && BoltStructure_code(value) == NODE);
+    assert(BoltValue_type(value) == BOLT_STRUCTURE && BoltStructure_code(value) == NODE);
     assert(value->logical_size == 3);
     BoltValue_destroy(value);
 }

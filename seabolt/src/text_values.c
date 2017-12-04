@@ -102,35 +102,33 @@ void BoltValue_toUTF8Dictionary(struct BoltValue* value, int32_t size)
     _BoltValue_recycle(value);
     _BoltValue_allocate(value, physical_size);
     memset(value->data.as_char, 0, physical_size);
-    value->type = BOLT_UTF8_DICTIONARY;
-    value->is_array = 0;
-    value->logical_size = size;
+    _BoltValue_setType(value, BOLT_UTF8_DICTIONARY, 0, size);
 }
 
 void BoltUTF8Dictionary_resize(struct BoltValue* value, int32_t size)
 {
-    assert(value->type == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
     _BoltValue_resize(value, size, 2);
 }
 
 struct BoltValue* BoltUTF8Dictionary_at(const struct BoltValue* value, int32_t index)
 {
-    assert(value->type == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
     return &value->data.as_value[2 * index + 1];
 }
 
 struct BoltValue* BoltUTF8Dictionary_withKey(struct BoltValue* value, int32_t index, char* key, int32_t key_size)
 {
-    assert(value->type == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
     BoltValue_toUTF8(&value->data.as_value[2 * index], key, key_size);
     return &value->data.as_value[2 * index + 1];
 }
 
 struct BoltValue* BoltUTF8Dictionary_getKey(const struct BoltValue* value, int32_t index)
 {
-    assert(value->type == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
     struct BoltValue* key = &value->data.as_value[2 * index];
-    return key->type == BOLT_UTF8 ? key : NULL;
+    return BoltValue_type(key) == BOLT_UTF8 ? key : NULL;
 }
 
 void BoltValue_toUTF16(struct BoltValue* value, uint16_t* string, int32_t size)
