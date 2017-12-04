@@ -129,10 +129,11 @@ int BoltUTF8_dump(const struct BoltValue* value)
     }
     else
     {
+        char* data = BoltUTF8_get(value);
         printf("u8(\"");
         for (int i = 0; i < value->logical_size; i++)
         {
-            printf("%c", value->data.as_char[i]);
+            printf("%c", data[i]);
         }
         printf("\")");
     }

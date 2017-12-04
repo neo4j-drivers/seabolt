@@ -104,6 +104,7 @@ struct BoltValue
     size_t physical_size;
     union
     {
+        char as_chars[8];
         char as_char;
         uint8_t as_uint8;
         uint16_t as_uint16;
@@ -251,13 +252,13 @@ uint32_t BoltChar32Array_get(const struct BoltValue* value, int32_t index);
 
 
 
-char* BoltUTF8_get(struct BoltValue* value);
+char* BoltUTF8_get(const struct BoltValue* value);
 
 uint16_t* BoltUTF16_get(struct BoltValue* value);
 
 char* BoltUTF8Array_get(struct BoltValue* value, int32_t index);
 
-uint16_t* BoltUTF16Array_get(struct BoltValue* value, int32_t index);
+uint16_t* BoltUTF16Array_get(const struct BoltValue* value, int32_t index);
 
 void BoltUTF8Array_put(struct BoltValue* value, int32_t index, char* string, int32_t size);
 

@@ -18,6 +18,7 @@
  */
 
 #include <stdint.h>
+#include <values.h>
 
 #include "_values.h"
 
@@ -47,12 +48,20 @@ void BoltValue_toChar32Array(struct BoltValue* value, uint32_t* array, int32_t s
 
 void BoltValue_toUTF8(struct BoltValue* value, char* string, int32_t size)
 {
-    _BoltValue_to(value, BOLT_UTF8, 0, string, size, sizeof_n(char, size));
+    if (size <= 8)
+    {
+        _BoltValue_to(value, BOLT_UTF8, 0, NULL, size, 0);
+        memcpy(value->inline_data.as_chars, string, (size_t)(size));
+    }
+    else
+    {
+        _BoltValue_to(value, BOLT_UTF8, 0, string, size, sizeof_n(char, size));
+    }
 }
 
-char* BoltUTF8_get(struct BoltValue* value)
+char* BoltUTF8_get(const struct BoltValue* value)
 {
-    return value->data.as_char;
+    return value->logical_size <= 8 ? value->inline_data.as_chars : value->data.as_char;
 }
 
 void BoltValue_toUTF8Array(struct BoltValue* value, int32_t size)
