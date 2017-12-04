@@ -90,7 +90,7 @@ void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offse
 void _BoltValue_recycle(struct BoltValue* value)
 {
     enum BoltType type = BoltValue_type(value);
-    if (type == BOLT_LIST)
+    if (type == BOLT_LIST || type == BOLT_STRUCTURE || type == BOLT_REQUEST || type == BOLT_SUMMARY)
     {
         for (long i = 0; i < value->size; i++)
         {
@@ -118,13 +118,6 @@ void _BoltValue_recycle(struct BoltValue* value)
     else if (type == BOLT_UTF16_DICTIONARY)
     {
         // TODO
-    }
-    else if (type == BOLT_STRUCTURE || type == BOLT_REQUEST || type == BOLT_SUMMARY)
-    {
-        for (long i = 0; i < value->size; i++)
-        {
-            BoltValue_toNull(&value->data.extended.as_value[i]);
-        }
     }
 }
 
