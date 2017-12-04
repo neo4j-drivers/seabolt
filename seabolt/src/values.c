@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <memory.h>
+#include <values.h>
 
 #include "_values.h"
 
@@ -30,17 +31,17 @@ struct BoltValue* BoltValue_create()
     size_t size = sizeof(struct BoltValue);
     struct BoltValue* value = BoltMem_allocate(size);
     value->type = BOLT_NULL;
-    value->code = 0;
     value->is_array = 0;
     value->logical_size = 0;
     value->physical_size = 0;
+    value->inline_data.as_uint64 = 0;
     value->data.as_ptr = NULL;
     return value;
 }
 
 void BoltValue_toNull(struct BoltValue* value)
 {
-    _BoltValue_to(value, BOLT_NULL, 0, 0, NULL, 0, 0);
+    _BoltValue_to(value, BOLT_NULL, 0, NULL, 0, 0);
 }
 
 void BoltValue_toList(struct BoltValue* value, int32_t size)
@@ -54,7 +55,6 @@ void BoltValue_toList(struct BoltValue* value, int32_t size)
         _BoltValue_copyData(value, &BOLT_NULL_VALUE, offset, unit_size);
     }
     value->type = BOLT_LIST;
-    value->code = 0;
     value->is_array = 0;
     value->logical_size = size;
 }

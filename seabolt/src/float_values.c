@@ -17,22 +17,30 @@
  * limitations under the License.
  */
 
+#include <values.h>
 #include "_values.h"
 
 
 void BoltValue_toFloat32(struct BoltValue* value, float x)
 {
-    _BoltValue_to(value, BOLT_FLOAT32, 0, 0, &x, 1, sizeof(float));
+    _BoltValue_to(value, BOLT_FLOAT32, 0, NULL, 1, 0);
+    value->inline_data.as_float = x;
 }
 
-float BoltFloat32_get(const struct BoltValue* value)
+void BoltValue_toFloat64(struct BoltValue* value, double x)
 {
-    return value->data.as_float[0];
+    _BoltValue_to(value, BOLT_FLOAT64, 0, NULL, 1, 0);
+    value->inline_data.as_double = x;
 }
 
 void BoltValue_toFloat32Array(struct BoltValue* value, float* array, int32_t size)
 {
-    _BoltValue_to(value, BOLT_FLOAT32, 0, 1, array, size, sizeof_n(float, size));
+    _BoltValue_to(value, BOLT_FLOAT32, 1, array, size, sizeof_n(float, size));
+}
+
+float BoltFloat32_get(const struct BoltValue* value)
+{
+    return value->inline_data.as_float;
 }
 
 float BoltFloat32Array_get(const struct BoltValue* value, int32_t index)
@@ -40,12 +48,7 @@ float BoltFloat32Array_get(const struct BoltValue* value, int32_t index)
     return value->data.as_float[index];
 }
 
-void BoltValue_toFloat64(struct BoltValue* value, double x)
-{
-    _BoltValue_to(value, BOLT_FLOAT64, 0, 0, &x, 1, sizeof(double));
-}
-
 double BoltFloat64_get(struct BoltValue* value)
 {
-    return value->data.as_double[0];
+    return value->inline_data.as_double;
 }

@@ -18,6 +18,7 @@
  */
 
 #include <stdint.h>
+#include <values.h>
 
 #include "_values.h"
 
@@ -33,9 +34,15 @@ void BoltValue_toStructure(struct BoltValue* value, int16_t code, int32_t size)
         _BoltValue_copyData(value, &BOLT_NULL_VALUE, offset, unit_size);
     }
     value->type = BOLT_STRUCTURE;
-    value->code = code;
+    value->inline_data.as_int16 = code;
     value->is_array = 0;
     value->logical_size = size;
+}
+
+int16_t BoltStructure_code(const struct BoltValue* value)
+{
+    assert(value->type == BOLT_STRUCTURE);
+    return value->inline_data.as_int16;
 }
 
 struct BoltValue* BoltStructure_at(const struct BoltValue* value, int32_t index)

@@ -130,7 +130,7 @@ void _BoltValue_recycle(struct BoltValue* value)
     }
 }
 
-void _BoltValue_to(struct BoltValue* value, enum BoltType type, int code, int is_array,
+void _BoltValue_to(struct BoltValue* value, enum BoltType type, int is_array,
                    const void* data, int logical_size, size_t physical_size)
 {
     _BoltValue_recycle(value);
@@ -140,7 +140,6 @@ void _BoltValue_to(struct BoltValue* value, enum BoltType type, int code, int is
         _BoltValue_copyData(value, data, 0, physical_size);
     }
     value->type = type;
-    value->code = code;
     value->is_array = is_array;
     value->logical_size = logical_size;
 }

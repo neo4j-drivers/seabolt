@@ -25,27 +25,29 @@
 
 void BoltValue_toChar16(struct BoltValue* value, uint16_t x)
 {
-    _BoltValue_to(value, BOLT_CHAR16, 0, 0, &x, 1, sizeof(uint16_t));
-}
-
-void BoltValue_toChar16Array(struct BoltValue* value, uint16_t* array, int32_t size)
-{
-    _BoltValue_to(value, BOLT_CHAR16, 0, 1, array, size, sizeof_n(uint16_t, size));
+    _BoltValue_to(value, BOLT_CHAR16, 0, NULL, 1, 0);
+    value->inline_data.as_uint16 = x;
 }
 
 void BoltValue_toChar32(struct BoltValue* value, uint32_t x)
 {
-    _BoltValue_to(value, BOLT_CHAR32, 0, 0, &x, 1, sizeof(uint32_t));
+    _BoltValue_to(value, BOLT_CHAR32, 0, NULL, 1, 0);
+    value->inline_data.as_uint32 = x;
+}
+
+void BoltValue_toChar16Array(struct BoltValue* value, uint16_t* array, int32_t size)
+{
+    _BoltValue_to(value, BOLT_CHAR16, 1, array, size, sizeof_n(uint16_t, size));
 }
 
 void BoltValue_toChar32Array(struct BoltValue* value, uint32_t* array, int32_t size)
 {
-    _BoltValue_to(value, BOLT_CHAR32, 0, 1, array, size, sizeof_n(uint32_t, size));
+    _BoltValue_to(value, BOLT_CHAR32, 1, array, size, sizeof_n(uint32_t, size));
 }
 
 void BoltValue_toUTF8(struct BoltValue* value, char* string, int32_t size)
 {
-    _BoltValue_to(value, BOLT_UTF8, 0, 0, string, size, sizeof_n(char, size));
+    _BoltValue_to(value, BOLT_UTF8, 0, string, size, sizeof_n(char, size));
 }
 
 char* BoltUTF8_get(struct BoltValue* value)
@@ -55,7 +57,7 @@ char* BoltUTF8_get(struct BoltValue* value)
 
 void BoltValue_toUTF8Array(struct BoltValue* value, int32_t size)
 {
-    _BoltValue_to(value, BOLT_UTF8, 0, 1, NULL, size, sizeof_n(struct array_t, size));
+    _BoltValue_to(value, BOLT_UTF8, 1, NULL, size, sizeof_n(struct array_t, size));
     for (int i = 0; i < size; i++)
     {
         value->data.as_array[i].size = 0;
@@ -95,7 +97,6 @@ void BoltValue_toUTF8Dictionary(struct BoltValue* value, int32_t size)
         _BoltValue_copyData(value, &BOLT_NULL_VALUE, offset, unit_size);
     }
     value->type = BOLT_UTF8_DICTIONARY;
-    value->code = 0;
     value->is_array = 0;
     value->logical_size = size;
 }
@@ -128,5 +129,5 @@ struct BoltValue* BoltUTF8Dictionary_getKey(const struct BoltValue* value, int32
 
 void BoltValue_toUTF16(struct BoltValue* value, uint16_t* string, int32_t size)
 {
-    _BoltValue_to(value, BOLT_UTF16, 0, 0, string, size, sizeof_n(uint16_t, size));
+    _BoltValue_to(value, BOLT_UTF16, 0, string, size, sizeof_n(uint16_t, size));
 }

@@ -22,7 +22,7 @@
 
 void BoltValue_toBit(struct BoltValue* value, char x)
 {
-    _BoltValue_to(value, BOLT_BIT, 0, 0, &x, 1, sizeof(char));
+    _BoltValue_to(value, BOLT_BIT, 0, &x, 1, sizeof(char));
 }
 
 char BoltBit_get(const struct BoltValue* value)
@@ -32,7 +32,7 @@ char BoltBit_get(const struct BoltValue* value)
 
 void BoltValue_toBitArray(struct BoltValue* value, char* array, int32_t size)
 {
-    _BoltValue_to(value, BOLT_BIT, 0, 1, array, size, sizeof_n(char, size));
+    _BoltValue_to(value, BOLT_BIT, 1, array, size, sizeof_n(char, size));
 }
 
 char BoltBitArray_get(const struct BoltValue* value, int32_t index)
@@ -42,7 +42,7 @@ char BoltBitArray_get(const struct BoltValue* value, int32_t index)
 
 void BoltValue_toByte(struct BoltValue* value, char x)
 {
-    _BoltValue_to(value, BOLT_BYTE, 0, 0, &x, 1, sizeof(char));
+    _BoltValue_to(value, BOLT_BYTE, 0, &x, 1, sizeof(char));
 }
 
 char BoltByte_get(const struct BoltValue* value)
@@ -52,7 +52,7 @@ char BoltByte_get(const struct BoltValue* value)
 
 void BoltValue_toByteArray(struct BoltValue* value, char* array, int32_t size)
 {
-    _BoltValue_to(value, BOLT_BYTE, 0, 1, array, size, sizeof_n(char, size));
+    _BoltValue_to(value, BOLT_BYTE, 1, array, size, sizeof_n(char, size));
 }
 
 char BoltByteArray_get(const struct BoltValue* value, int32_t index)

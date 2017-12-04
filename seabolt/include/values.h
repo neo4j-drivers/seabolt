@@ -72,7 +72,7 @@ enum BoltType
 
 struct array_t;
 
-union data_u
+typedef union
 {
     void* as_ptr;
     char* as_char;
@@ -88,22 +88,35 @@ union data_u
     double* as_double;
     struct BoltValue* as_value;
     struct array_t* as_array;
-};
+} data_t;
 
 struct array_t
 {
     int32_t size;
-    union data_u data;
+    data_t data;
 };
 
 struct BoltValue
 {
     enum BoltType type;
-    int code;
-    int is_array;
+    char is_array;
     long logical_size;
     size_t physical_size;
-    union data_u data;
+    union
+    {
+        char as_char;
+        uint8_t as_uint8;
+        uint16_t as_uint16;
+        uint32_t as_uint32;
+        uint64_t as_uint64;
+        int8_t as_int8;
+        int16_t as_int16;
+        int32_t as_int32;
+        int64_t as_int64;
+        float as_float;
+        double as_double;
+    } inline_data;
+    data_t data;
 };
 
 
@@ -359,6 +372,7 @@ double BoltFloat64_get(struct BoltValue* value);
 double BoltFloat64Array_get(struct BoltValue* value, int32_t index);
 
 
+int16_t BoltStructure_code(const struct BoltValue* value);
 
 struct BoltValue* BoltStructure_at(const struct BoltValue* value, int32_t index);
 

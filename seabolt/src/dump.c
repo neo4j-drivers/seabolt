@@ -334,14 +334,14 @@ int BoltFloat32_dump(const struct BoltValue* value)
 int BoltStructure_dump(const struct BoltValue* value)
 {
     assert(value->type == BOLT_STRUCTURE);
-    switch (value->code)
+    int16_t code = BoltStructure_code(value);
+    switch (code)
     {
         case 0xA0:
             printf("$Node");
             break;
         default:
-            printf("$#%c%c%c%c", hex3(&value->code, 0), hex2(&value->code, 0), hex1(&value->code, 0),
-                   hex0(&value->code, 0));
+            printf("$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
     }
     printf("(");
     for (int i = 0; i < value->logical_size; i++)

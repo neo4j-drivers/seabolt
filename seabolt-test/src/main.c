@@ -696,7 +696,7 @@ void test_structure()
     BoltValue_toUTF8(BoltUTF8Dictionary_withKey(properties, 0, "name", 4), "Alice", 5);
     BoltValue_toNum16(BoltUTF8Dictionary_withKey(properties, 1, "since", 5), 1999);
     BoltValue_dumpLine(value);
-    assert(value->type == BOLT_STRUCTURE && value->code == NODE);
+    assert(value->type == BOLT_STRUCTURE && BoltStructure_code(value) == NODE);
     assert(value->logical_size == 3);
     BoltValue_destroy(value);
 }
@@ -723,4 +723,5 @@ int main()
     test_float32();
     test_float32_array();
     test_structure();
+    printf("*******\nMemory activity: %lld\n*******\n", BoltMem_activity());
 }

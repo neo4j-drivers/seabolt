@@ -48,5 +48,11 @@ void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size);
  */
 void* BoltMem_deallocate(void* ptr, size_t old_size);
 
+/**
+ * Get an activity count for memory (de/re/-)allocation
+ * @return
+ */
+long long BoltMem_activity();
+
 
 #endif // SEABOLT_MEMORY
