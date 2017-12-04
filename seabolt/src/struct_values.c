@@ -17,33 +17,12 @@
  * limitations under the License.
  */
 
-
-#include <assert.h>
 #include <stdint.h>
-#include <memory.h>
 
 #include "_values.h"
 
 
-struct BoltValue* BoltValue_create()
-{
-    size_t size = sizeof(struct BoltValue);
-    struct BoltValue* value = BoltMem_allocate(size);
-    value->type = BOLT_NULL;
-    value->code = 0;
-    value->is_array = 0;
-    value->logical_size = 0;
-    value->physical_size = 0;
-    value->data.as_ptr = NULL;
-    return value;
-}
-
-void BoltValue_toNull(struct BoltValue* value)
-{
-    _BoltValue_to(value, BOLT_NULL, 0, 0, NULL, 0, 0);
-}
-
-void BoltValue_toList(struct BoltValue* value, int32_t size)
+void BoltValue_toStructure(struct BoltValue* value, int16_t code, int32_t size)
 {
     size_t unit_size = sizeof(struct BoltValue);
     size_t physical_size = unit_size * size;
@@ -53,26 +32,14 @@ void BoltValue_toList(struct BoltValue* value, int32_t size)
     {
         _BoltValue_copyData(value, &BOLT_NULL_VALUE, offset, unit_size);
     }
-    value->type = BOLT_LIST;
-    value->code = 0;
+    value->type = BOLT_STRUCTURE;
+    value->code = code;
     value->is_array = 0;
     value->logical_size = size;
 }
 
-void BoltValue_destroy(struct BoltValue* value)
+struct BoltValue* BoltStructure_at(const struct BoltValue* value, int32_t index)
 {
-    BoltValue_toNull(value);
-    BoltMem_deallocate(value, sizeof(struct BoltValue));
-}
-
-void BoltList_resize(struct BoltValue* value, int32_t size)
-{
-    assert(value->type == BOLT_LIST);
-    _BoltValue_resize(value, size, 1);
-}
-
-struct BoltValue* BoltList_at(const struct BoltValue* value, int32_t index)
-{
-    assert(value->type == BOLT_LIST);
+    assert(value->type == BOLT_STRUCTURE);
     return &value->data.as_value[index];
 }

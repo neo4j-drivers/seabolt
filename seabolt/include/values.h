@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <memory.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "mem.h"
