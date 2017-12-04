@@ -222,6 +222,10 @@ void BoltValue_toFloat64QuadArray(struct BoltValue* value, int32_t size);
 
 void BoltValue_toStructure(struct BoltValue* value, int16_t code, int32_t size);
 
+void BoltValue_toRequest(struct BoltValue* value, int16_t code, int32_t size);
+
+void BoltValue_toSummary(struct BoltValue* value, int16_t code, int32_t size);
+
 void BoltValue_toStructureArray(struct BoltValue* value, int16_t code, int32_t size);
 
 enum BoltType BoltValue_type(const struct BoltValue* value);
@@ -381,7 +385,15 @@ double BoltFloat64Array_get(const struct BoltValue* value, int32_t index);
 
 int16_t BoltStructure_code(const struct BoltValue* value);
 
+int16_t BoltRequest_code(const struct BoltValue* value);
+
+int16_t BoltSummary_code(const struct BoltValue* value);
+
 struct BoltValue* BoltStructure_at(const struct BoltValue* value, int32_t index);
+
+struct BoltValue* BoltRequest_at(const struct BoltValue* value, int32_t index);
+
+struct BoltValue* BoltSummary_at(const struct BoltValue* value, int32_t index);
 
 int32_t BoltStructureArray_getSize(const struct BoltValue* value, int32_t index);
 

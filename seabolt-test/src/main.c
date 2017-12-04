@@ -741,6 +741,37 @@ void test_structure_array()
     BoltValue_destroy(value);
 }
 
+void test_request()
+{
+    struct BoltValue* value = BoltValue_create();
+    const int RUN = 0xA0;
+    BoltValue_toRequest(value, RUN, 2);
+    struct BoltValue* statement = BoltRequest_at(value, 0);
+    struct BoltValue* parameters = BoltRequest_at(value, 1);
+    BoltValue_toUTF8(statement, "RETURN $x", 9);
+    BoltValue_toUTF8Dictionary(parameters, 1);
+    BoltValue_toInt64(BoltUTF8Dictionary_withKey(parameters, 0, "x", 1), 1);
+    BoltValue_dumpLine(value);
+    assert(BoltValue_type(value) == BOLT_REQUEST && BoltRequest_code(value) == RUN);
+    assert(value->size == 2);
+    BoltValue_destroy(value);
+}
+
+void test_summary()
+{
+    struct BoltValue* value = BoltValue_create();
+    const int SUCCESS = 0xA0;
+    BoltValue_toSummary(value, SUCCESS, 1);
+    struct BoltValue* metadata = BoltSummary_at(value, 0);
+    BoltValue_toUTF8Dictionary(metadata, 2);
+    BoltValue_toInt64(BoltUTF8Dictionary_withKey(metadata, 0, "results", 7), 100);
+    BoltValue_toInt64(BoltUTF8Dictionary_withKey(metadata, 1, "time", 4), 123456789);
+    BoltValue_dumpLine(value);
+    assert(BoltValue_type(value) == BOLT_SUMMARY && BoltSummary_code(value) == SUCCESS);
+    assert(value->size == 1);
+    BoltValue_destroy(value);
+}
+
 int main()
 {
     test_null();
@@ -766,5 +797,7 @@ int main()
     // TODO: test_float64_array();
     test_structure();
     test_structure_array();
+    test_request();
+    test_summary();
     printf("*******\nMemory activity: %lld\n*******\n", BoltMem_activity());
 }

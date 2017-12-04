@@ -390,6 +390,44 @@ int BoltStructure_dump(const struct BoltValue* value)
     return EXIT_SUCCESS;
 }
 
+int BoltRequest_dump(const struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_REQUEST);
+    int16_t code = BoltRequest_code(value);
+    switch (code)
+    {
+        default:
+            printf("Request<#%c%c%c%c>", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+    }
+    printf("(");
+    for (int i = 0; i < value->size; i++)
+    {
+        if (i > 0) printf(" ");
+        BoltValue_dump(BoltRequest_at(value, i));
+    }
+    printf(")");
+    return EXIT_SUCCESS;
+}
+
+int BoltSummary_dump(const struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_SUMMARY);
+    int16_t code = BoltSummary_code(value);
+    switch (code)
+    {
+        default:
+            printf("Summary<#%c%c%c%c>", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+    }
+    printf("(");
+    for (int i = 0; i < value->size; i++)
+    {
+        if (i > 0) printf(" ");
+        BoltValue_dump(BoltSummary_at(value, i));
+    }
+    printf(")");
+    return EXIT_SUCCESS;
+}
+
 int BoltValue_dump(struct BoltValue* value)
 {
     switch (BoltValue_type(value))
@@ -428,6 +466,10 @@ int BoltValue_dump(struct BoltValue* value)
             return BoltFloat64_dump(value);
         case BOLT_STRUCTURE:
             return BoltStructure_dump(value);
+        case BOLT_REQUEST:
+            return BoltRequest_dump(value);
+        case BOLT_SUMMARY:
+            return BoltSummary_dump(value);
         default:
             printf("?");
             return EXIT_FAILURE;
