@@ -13,11 +13,11 @@ _seabolt = CDLL(path_join(dirname(__file__), "..", "..", "lib", "libseabolt.so")
 class _BoltValue(Structure):
 
     _fields_ = [
-        ("type", c_int),
-        ("code", c_int),
-        ("is_array", c_int),
-        ("logical_size", c_long),
-        ("physical_size", c_size_t),
+        ("type", c_char),
+        ("is_array", c_char),
+        ("code", c_int16),
+        ("size", c_int32),
+        ("data_size", c_size_t),
         ("data", c_void_p),
     ]
 

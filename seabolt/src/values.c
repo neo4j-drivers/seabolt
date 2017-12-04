@@ -31,30 +31,30 @@ struct BoltValue* BoltValue_create()
     size_t size = sizeof(struct BoltValue);
     struct BoltValue* value = BoltMem_allocate(size);
     _BoltValue_setType(value, BOLT_NULL, 0, 0);
-    value->physical_size = 0;
-    value->inline_data.as_uint64[0] = 0;
-    value->data.as_ptr = NULL;
+    value->data_size = 0;
+    value->data.as_uint64[0] = 0;
+    value->data.extended.as_ptr = NULL;
     return value;
 }
 
 void BoltValue_toNull(struct BoltValue* value)
 {
-    _BoltValue_to(value, BOLT_NULL, 0, NULL, 0, 0);
+    _BoltValue_to(value, BOLT_NULL, 0, 0, NULL, 0);
 }
 
 void BoltValue_toList(struct BoltValue* value, int32_t size)
 {
     size_t unit_size = sizeof(struct BoltValue);
-    size_t physical_size = unit_size * size;
+    size_t data_size = unit_size * size;
     _BoltValue_recycle(value);
-    _BoltValue_allocate(value, physical_size);
-    memset(value->data.as_char, 0, physical_size);
+    _BoltValue_allocate(value, data_size);
+    memset(value->data.extended.as_char, 0, data_size);
     _BoltValue_setType(value, BOLT_LIST, 0, size);
 }
 
 enum BoltType BoltValue_type(const struct BoltValue* value)
 {
-    return value->type;
+    return (enum BoltType)(value->type);
 }
 
 int BoltValue_isArray(const struct BoltValue* value)
@@ -77,5 +77,5 @@ void BoltList_resize(struct BoltValue* value, int32_t size)
 struct BoltValue* BoltList_at(const struct BoltValue* value, int32_t index)
 {
     assert(BoltValue_type(value) == BOLT_LIST);
-    return &value->data.as_value[index];
+    return &value->data.extended.as_value[index];
 }

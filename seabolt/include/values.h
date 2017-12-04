@@ -98,10 +98,11 @@ struct array_t
 
 struct BoltValue
 {
-    enum BoltType type;
+    char type;
     char is_array;
-    long logical_size;
-    size_t physical_size;
+    int16_t code;
+    int32_t size;               // logical size
+    size_t data_size;           // physical size
     union
     {
         char as_char[8];
@@ -115,8 +116,8 @@ struct BoltValue
         int64_t as_int64[1];
         float as_float[2];
         double as_double[1];
-    } inline_data;
-    data_t data;
+        data_t extended;
+    } data;
 };
 
 

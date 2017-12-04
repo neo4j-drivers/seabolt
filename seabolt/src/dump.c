@@ -57,7 +57,7 @@ int BoltList_dump(const struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_LIST);
     printf("[");
-    for (int i = 0; i < value->logical_size; i++)
+    for (int i = 0; i < value->size; i++)
     {
         if (i > 0) printf(", ");
         BoltValue_dump(BoltList_at(value, i));
@@ -72,7 +72,7 @@ int BoltBit_dump(const struct BoltValue* value)
     if (BoltValue_isArray(value))
     {
         printf("b[");
-        for (int i = 0; i < value->logical_size; i++)
+        for (int i = 0; i < value->size; i++)
         {
             printf("%d", BoltBitArray_get(value, i));
         }
@@ -91,7 +91,7 @@ int BoltByte_dump(const struct BoltValue* value)
     if (BoltValue_isArray(value))
     {
         printf("b8[#");
-        for (int i = 0; i < value->logical_size; i++)
+        for (int i = 0; i < value->size; i++)
         {
             char b = BoltByteArray_get(value, i);
             printf("%c%c", hex1(&b, 0), hex0(&b, 0));
@@ -112,10 +112,10 @@ int BoltUTF8_dump(const struct BoltValue* value)
     if (BoltValue_isArray(value))
     {
         printf("u8[");
-        for (long i = 0; i < value->logical_size; i++)
+        for (long i = 0; i < value->size; i++)
         {
             if (i > 0) { printf(", "); }
-            struct array_t string = value->data.as_array[i];
+            struct array_t string = value->data.extended.as_array[i];
             if (string.size == 0)
             {
                 printf("\"\"");
@@ -131,7 +131,7 @@ int BoltUTF8_dump(const struct BoltValue* value)
     {
         const char* data = BoltUTF8_get(value);
         printf("u8(\"");
-        for (int i = 0; i < value->logical_size; i++)
+        for (int i = 0; i < value->size; i++)
         {
             printf("%c", data[i]);
         }
@@ -145,13 +145,13 @@ int BoltUTF8Dictionary_dump(const struct BoltValue* value)
     assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
     printf("d8[");
     int comma = 0;
-    for (int i = 0; i < value->logical_size; i++)
+    for (int i = 0; i < value->size; i++)
     {
         struct BoltValue* key = BoltUTF8Dictionary_getKey(value, i);
         if (key != NULL)
         {
             if (comma) printf(", ");
-            _bolt_dump_string(BoltUTF8_get(key), (size_t)(key->logical_size));
+            _bolt_dump_string(BoltUTF8_get(key), (size_t)(key->size));
             printf(" ");
             BoltValue_dump(BoltUTF8Dictionary_at(value, i));
             comma = 1;
@@ -167,7 +167,7 @@ int BoltNum8_dump(const struct BoltValue* value)
     if (BoltValue_isArray(value))
     {
         printf("n8[");
-        for (int i = 0; i < value->logical_size; i++)
+        for (int i = 0; i < value->size; i++)
         {
             printf(i == 0 ? "%u" : ", %u", BoltNum8Array_get(value, i));
         }
@@ -186,7 +186,7 @@ int BoltNum16_dump(const struct BoltValue* value)
     if (BoltValue_isArray(value))
     {
         printf("n16[");
-        for (int i = 0; i < value->logical_size; i++)
+        for (int i = 0; i < value->size; i++)
         {
             printf(i == 0 ? "%u" : ", %u", BoltNum16Array_get(value, i));
         }
@@ -205,7 +205,7 @@ int BoltNum32_dump(const struct BoltValue* value)
     if (BoltValue_isArray(value))
     {
         printf("n32[");
-        for (int i = 0; i < value->logical_size; i++)
+        for (int i = 0; i < value->size; i++)
         {
             printf(i == 0 ? "%u" : ", %u", BoltNum32Array_get(value, i));
         }
@@ -224,7 +224,7 @@ int BoltNum64_dump(const struct BoltValue* value)
     if (BoltValue_isArray(value))
     {
         printf("n64[");
-        for (int i = 0; i < value->logical_size; i++)
+        for (int i = 0; i < value->size; i++)
         {
             printf(i == 0 ? "%lu" : ", %lu", BoltNum64Array_get(value, i));
         }
@@ -243,7 +243,7 @@ int BoltInt8_dump(const struct BoltValue* value)
     if (BoltValue_isArray(value))
     {
         printf("i8[");
-        for (int i = 0; i < value->logical_size; i++)
+        for (int i = 0; i < value->size; i++)
         {
             printf(i == 0 ? "%d" : ", %d", BoltInt8Array_get(value, i));
         }
@@ -262,7 +262,7 @@ int BoltInt16_dump(const struct BoltValue* value)
     if (BoltValue_isArray(value))
     {
         printf("i16[");
-        for (int i = 0; i < value->logical_size; i++)
+        for (int i = 0; i < value->size; i++)
         {
             printf(i == 0 ? "%d" : ", %d", BoltInt16Array_get(value, i));
         }
@@ -281,7 +281,7 @@ int BoltInt32_dump(const struct BoltValue* value)
     if (BoltValue_isArray(value))
     {
         printf("i32[");
-        for (int i = 0; i < value->logical_size; i++)
+        for (int i = 0; i < value->size; i++)
         {
             printf(i == 0 ? "%d" : ", %d", BoltInt32Array_get(value, i));
         }
@@ -300,7 +300,7 @@ int BoltInt64_dump(const struct BoltValue* value)
     if (BoltValue_isArray(value))
     {
         printf("i64[");
-        for (int i = 0; i < value->logical_size; i++)
+        for (int i = 0; i < value->size; i++)
         {
             printf(i == 0 ? "%ld" : ", %ld", BoltInt64Array_get(value, i));
         }
@@ -319,7 +319,7 @@ int BoltFloat32_dump(const struct BoltValue* value)
     if (BoltValue_isArray(value))
     {
         printf("f32[");
-        for (int i = 0; i < value->logical_size; i++)
+        for (int i = 0; i < value->size; i++)
         {
             printf(i == 0 ? "%f" : ", %f", BoltFloat32Array_get(value, i));
         }
@@ -345,7 +345,7 @@ int BoltStructure_dump(const struct BoltValue* value)
             printf("$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
     }
     printf("(");
-    for (int i = 0; i < value->logical_size; i++)
+    for (int i = 0; i < value->size; i++)
     {
         if (i > 0) printf(" ");
         BoltValue_dump(BoltStructure_at(value, i));

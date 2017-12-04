@@ -23,42 +23,42 @@
 
 void BoltValue_toBit(struct BoltValue* value, char x)
 {
-    _BoltValue_to(value, BOLT_BIT, 0, NULL, 1, 0);
-    value->inline_data.as_char[0] = x;
+    _BoltValue_to(value, BOLT_BIT, 0, 1, NULL, 0);
+    value->data.as_char[0] = x;
 }
 
 char BoltBit_get(const struct BoltValue* value)
 {
-    return to_bit(value->inline_data.as_char[0]);
+    return to_bit(value->data.as_char[0]);
 }
 
 void BoltValue_toBitArray(struct BoltValue* value, char* array, int32_t size)
 {
-    _BoltValue_to(value, BOLT_BIT, 1, array, size, sizeof_n(char, size));
+    _BoltValue_to(value, BOLT_BIT, 1, size, array, sizeof_n(char, size));
 }
 
 char BoltBitArray_get(const struct BoltValue* value, int32_t index)
 {
-    return to_bit(value->data.as_char[index]);
+    return to_bit(value->data.extended.as_char[index]);
 }
 
 void BoltValue_toByte(struct BoltValue* value, char x)
 {
-    _BoltValue_to(value, BOLT_BYTE, 0, NULL, 1, 0);
-    value->inline_data.as_char[0] = x;
+    _BoltValue_to(value, BOLT_BYTE, 0, 1, NULL, 0);
+    value->data.as_char[0] = x;
 }
 
 char BoltByte_get(const struct BoltValue* value)
 {
-    return value->inline_data.as_char[0];
+    return value->data.as_char[0];
 }
 
 void BoltValue_toByteArray(struct BoltValue* value, char* array, int32_t size)
 {
-    _BoltValue_to(value, BOLT_BYTE, 1, array, size, sizeof_n(char, size));
+    _BoltValue_to(value, BOLT_BYTE, 1, size, array, sizeof_n(char, size));
 }
 
 char BoltByteArray_get(const struct BoltValue* value, int32_t index)
 {
-    return value->data.as_char[index];
+    return value->data.extended.as_char[index];
 }

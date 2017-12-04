@@ -28,11 +28,11 @@
  * the dynamically-allocated storage.
  *
  * @param value the value in which to allocate storage
- * @param physical_size the number of bytes of storage required
+ * @param data_size the number of bytes of storage required
  */
-void _BoltValue_allocate(struct BoltValue* value, size_t physical_size)
+void _BoltValue_allocate(struct BoltValue* value, size_t data_size)
 {
-    if (physical_size == value->physical_size)
+    if (data_size == value->data_size)
     {
         // In this case, the physical data storage requirement
         // hasn't changed, whether zero or some positive value.
@@ -43,24 +43,22 @@ void _BoltValue_allocate(struct BoltValue* value, size_t physical_size)
         // the same storage for each value, avoiding memory
         // reallocation.
     }
-    else if (value->physical_size == 0)
+    else if (value->data_size == 0)
     {
         // In this case we need to allocate new storage space
         // where previously none was allocated. This means
         // that a full allocation is required.
-        assert(value->data.as_ptr == NULL);
-        value->data.as_ptr = BoltMem_allocate(physical_size);
-        value->physical_size = physical_size;
+        value->data.extended.as_ptr = BoltMem_allocate(data_size);
+        value->data_size = data_size;
     }
-    else if (physical_size == 0)
+    else if (data_size == 0)
     {
         // In this case, we are moving from previously having
         // data to no longer requiring any storage space. This
         // means that we can free up the previously-allocated
         // space.
-        assert(value->data.as_ptr != NULL);
-        value->data.as_ptr = BoltMem_deallocate(value->data.as_ptr, value->physical_size);
-        value->physical_size = 0;
+        value->data.extended.as_ptr = BoltMem_deallocate(value->data.extended.as_ptr, value->data_size);
+        value->data_size = 0;
     }
     else
     {
@@ -69,9 +67,8 @@ void _BoltValue_allocate(struct BoltValue* value, size_t physical_size)
         // sizes. Here, we `realloc`, which should be more
         // efficient than a naïve deallocation followed by a
         // brand new allocation.
-        assert(value->data.as_ptr != NULL);
-        value->data.as_ptr = BoltMem_reallocate(value->data.as_ptr, value->physical_size, physical_size);
-        value->physical_size = physical_size;
+        value->data.extended.as_ptr = BoltMem_reallocate(value->data.extended.as_ptr, value->data_size, data_size);
+        value->data_size = data_size;
     }
 }
 
@@ -79,7 +76,7 @@ void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offse
 {
     if (length > 0)
     {
-        memcpy(value->data.as_char + offset, data, length);
+        memcpy(value->data.extended.as_char + offset, data, length);
     }
 }
 
@@ -94,16 +91,16 @@ void _BoltValue_recycle(struct BoltValue* value)
 {
     if (BoltValue_type(value) == BOLT_LIST)
     {
-        for (long i = 0; i < value->logical_size; i++)
+        for (long i = 0; i < value->size; i++)
         {
-            BoltValue_toNull(&value->data.as_value[i]);
+            BoltValue_toNull(&value->data.extended.as_value[i]);
         }
     }
     else if (BoltValue_type(value) == BOLT_UTF8 && BoltValue_isArray(value))
     {
-        for (long i = 0; i < value->logical_size; i++)
+        for (long i = 0; i < value->size; i++)
         {
-            struct array_t string = value->data.as_array[i];
+            struct array_t string = value->data.extended.as_array[i];
             if (string.size > 0)
             {
                 BoltMem_deallocate(string.data.as_ptr, (size_t)(string.size));
@@ -112,9 +109,9 @@ void _BoltValue_recycle(struct BoltValue* value)
     }
     else if (BoltValue_type(value) == BOLT_UTF8_DICTIONARY)
     {
-        for (long i = 0; i < 2 * value->logical_size; i++)
+        for (long i = 0; i < 2 * value->size; i++)
         {
-            BoltValue_toNull(&value->data.as_value[i]);
+            BoltValue_toNull(&value->data.extended.as_value[i]);
         }
     }
     else if (BoltValue_type(value) == BOLT_UTF16_DICTIONARY)
@@ -123,30 +120,30 @@ void _BoltValue_recycle(struct BoltValue* value)
     }
     else if (BoltValue_type(value) == BOLT_STRUCTURE)
     {
-        for (long i = 0; i < value->logical_size; i++)
+        for (long i = 0; i < value->size; i++)
         {
-            BoltValue_toNull(&value->data.as_value[i]);
+            BoltValue_toNull(&value->data.extended.as_value[i]);
         }
     }
 }
 
-void _BoltValue_setType(struct BoltValue* value, enum BoltType type, char is_array, int logical_size)
+void _BoltValue_setType(struct BoltValue* value, enum BoltType type, char is_array, int size)
 {
-    value->type = type;
+    assert(type < 0x80);
+    value->type = (char)(type);
     value->is_array = is_array;
-    value->logical_size = logical_size;
+    value->size = size;
 }
 
-void _BoltValue_to(struct BoltValue* value, enum BoltType type, char is_array,
-                   const void* data, int logical_size, size_t physical_size)
+void _BoltValue_to(struct BoltValue* value, enum BoltType type, char is_array, int size, const void* data, size_t data_size)
 {
     _BoltValue_recycle(value);
-    _BoltValue_allocate(value, physical_size);
+    _BoltValue_allocate(value, data_size);
     if (data != NULL)
     {
-        _BoltValue_copyData(value, data, 0, physical_size);
+        _BoltValue_copyData(value, data, 0, data_size);
     }
-    _BoltValue_setType(value, type, is_array, logical_size);
+    _BoltValue_setType(value, type, is_array, size);
 }
 
 
@@ -159,28 +156,28 @@ void _BoltValue_to(struct BoltValue* value, enum BoltType type, char is_array,
  */
 void _BoltValue_resize(struct BoltValue* value, int32_t size, int multiplier)
 {
-    if (size > value->logical_size)
+    if (size > value->size)
     {
         // grow physically
         size_t unit_size = sizeof(struct BoltValue);
-        size_t new_physical_size = multiplier * unit_size * size;
-        size_t old_physical_size = value->physical_size;
-        _BoltValue_allocate(value, new_physical_size);
+        size_t new_data_size = multiplier * unit_size * size;
+        size_t old_data_size = value->data_size;
+        _BoltValue_allocate(value, new_data_size);
         // grow logically
-        memset(value->data.as_char + old_physical_size, 0, new_physical_size - old_physical_size);
-        value->logical_size = size;
+        memset(value->data.extended.as_char + old_data_size, 0, new_data_size - old_data_size);
+        value->size = size;
     }
-    else if (size < value->logical_size)
+    else if (size < value->size)
     {
         // shrink logically
-        for (long i = multiplier * size; i < multiplier * value->logical_size; i++)
+        for (long i = multiplier * size; i < multiplier * value->size; i++)
         {
-            BoltValue_toNull(&value->data.as_value[i]);
+            BoltValue_toNull(&value->data.extended.as_value[i]);
         }
-        value->logical_size = size;
+        value->size = size;
         // shrink physically
-        size_t new_physical_size = multiplier * sizeof_n(struct BoltValue, size);
-        _BoltValue_allocate(value, new_physical_size);
+        size_t new_data_size = multiplier * sizeof_n(struct BoltValue, size);
+        _BoltValue_allocate(value, new_data_size);
     }
     else
     {

@@ -40,9 +40,9 @@
  * the dynamically-allocated storage.
  *
  * @param value the value in which to allocate storage
- * @param physical_size the number of bytes of storage required
+ * @param data_size the number of bytes of storage required
  */
-void _BoltValue_allocate(struct BoltValue* value, size_t physical_size);
+void _BoltValue_allocate(struct BoltValue* value, size_t data_size);
 
 void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offset, size_t length);
 
@@ -55,10 +55,10 @@ void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offse
  */
 void _BoltValue_recycle(struct BoltValue* value);
 
-void _BoltValue_setType(struct BoltValue* value, enum BoltType type, char is_array, int logical_size);
+void _BoltValue_setType(struct BoltValue* value, enum BoltType type, char is_array, int size);
 
-void _BoltValue_to(struct BoltValue* value, enum BoltType type, char is_array,
-                   const void* data, int logical_size, size_t physical_size);
+void _BoltValue_to(struct BoltValue* value, enum BoltType type, char is_array, int size,
+                   const void* data, size_t data_size);
 
 
 /**
