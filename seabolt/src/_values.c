@@ -21,12 +21,6 @@
 #include "_values.h"
 
 
-void _BoltValue_allocate(struct BoltValue* value, size_t data_size)
-{
-    value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
-    value->data_size = data_size;
-}
-
 void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offset, size_t length)
 {
     if (length > 0)
@@ -87,7 +81,8 @@ void _BoltValue_setType(struct BoltValue* value, enum BoltType type, char is_arr
 void _BoltValue_to(struct BoltValue* value, enum BoltType type, char is_array, int size, const void* data, size_t data_size)
 {
     _BoltValue_recycle(value);
-    _BoltValue_allocate(value, data_size);
+    value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
+    value->data_size = data_size;
     if (data != NULL)
     {
         _BoltValue_copyData(value, data, 0, data_size);
@@ -111,7 +106,8 @@ void _BoltValue_resize(struct BoltValue* value, int32_t size, int multiplier)
         size_t unit_size = sizeof(struct BoltValue);
         size_t new_data_size = multiplier * unit_size * size;
         size_t old_data_size = value->data_size;
-        _BoltValue_allocate(value, new_data_size);
+        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, new_data_size);
+        value->data_size = new_data_size;
         // grow logically
         memset(value->data.extended.as_char + old_data_size, 0, new_data_size - old_data_size);
         value->size = size;
@@ -126,7 +122,8 @@ void _BoltValue_resize(struct BoltValue* value, int32_t size, int multiplier)
         value->size = size;
         // shrink physically
         size_t new_data_size = multiplier * sizeof_n(struct BoltValue, size);
-        _BoltValue_allocate(value, new_data_size);
+        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, new_data_size);
+        value->data_size = new_data_size;
     }
     else
     {

@@ -33,17 +33,6 @@
 #define to_bit(x) (char)((x) == 0 ? 0 : 1);
 
 
-/**
- * Allocate, reallocate or free memory for data storage.
- *
- * Since we recycle values, we can also potentially recycle
- * the dynamically-allocated storage.
- *
- * @param value the value in which to allocate storage
- * @param data_size the number of bytes of storage required
- */
-void _BoltValue_allocate(struct BoltValue* value, size_t data_size);
-
 void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offset, size_t length);
 
 /**

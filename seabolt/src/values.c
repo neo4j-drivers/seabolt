@@ -47,7 +47,8 @@ void BoltValue_toList(struct BoltValue* value, int32_t size)
     size_t unit_size = sizeof(struct BoltValue);
     size_t data_size = unit_size * size;
     _BoltValue_recycle(value);
-    _BoltValue_allocate(value, data_size);
+    value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
+    value->data_size = data_size;
     memset(value->data.extended.as_char, 0, data_size);
     _BoltValue_setType(value, BOLT_LIST, 0, size);
 }

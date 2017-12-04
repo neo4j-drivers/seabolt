@@ -87,7 +87,8 @@ void BoltValue_toUTF8Dictionary(struct BoltValue* value, int32_t size)
     size_t unit_size = sizeof(struct BoltValue);
     size_t data_size = 2 * unit_size * size;
     _BoltValue_recycle(value);
-    _BoltValue_allocate(value, data_size);
+    value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
+    value->data_size = data_size;
     memset(value->data.extended.as_char, 0, data_size);
     _BoltValue_setType(value, BOLT_UTF8_DICTIONARY, 0, size);
 }

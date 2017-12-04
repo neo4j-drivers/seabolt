@@ -23,44 +23,39 @@
 #include "_values.h"
 
 
-void BoltValue_toStructure(struct BoltValue* value, int16_t code, int32_t size)
+void _to_structure(struct BoltValue* value, enum BoltType type, int16_t code, char is_array, int32_t size)
 {
     _BoltValue_recycle(value);
-    _BoltValue_allocate(value, sizeof_n(struct BoltValue, size));
+    value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size,
+                                                 sizeof_n(struct BoltValue, size));
+    value->data_size = sizeof_n(struct BoltValue, size);
     memset(value->data.extended.as_char, 0, value->data_size);
-    _BoltValue_setType(value, BOLT_STRUCTURE, 0, size);
+    _BoltValue_setType(value, type, is_array, size);
     value->code = code;
+}
+
+void BoltValue_toStructure(struct BoltValue* value, int16_t code, int32_t size)
+{
+    _to_structure(value, BOLT_STRUCTURE, code, 0, size);
 }
 
 void BoltValue_toRequest(struct BoltValue* value, int16_t code, int32_t size)
 {
-    _BoltValue_recycle(value);
-    _BoltValue_allocate(value, sizeof_n(struct BoltValue, size));
-    memset(value->data.extended.as_char, 0, value->data_size);
-    _BoltValue_setType(value, BOLT_REQUEST, 0, size);
-    value->code = code;
+    _to_structure(value, BOLT_REQUEST, code, 0, size);
 }
 
 void BoltValue_toSummary(struct BoltValue* value, int16_t code, int32_t size)
 {
-    _BoltValue_recycle(value);
-    _BoltValue_allocate(value, sizeof_n(struct BoltValue, size));
-    memset(value->data.extended.as_char, 0, value->data_size);
-    _BoltValue_setType(value, BOLT_SUMMARY, 0, size);
-    value->code = code;
+    _to_structure(value, BOLT_SUMMARY, code, 0, size);
 }
 
 void BoltValue_toStructureArray(struct BoltValue* value, int16_t code, int32_t size)
 {
-    _BoltValue_recycle(value);
-    _BoltValue_allocate(value, sizeof_n(struct BoltValue, size));
-    memset(value->data.extended.as_ptr, 0, value->data_size);
+    _to_structure(value, BOLT_STRUCTURE, code, 1, size);
     for (long i = 0; i < size; i++)
     {
         BoltValue_toList(&value->data.extended.as_value[i], 0);
     }
-    _BoltValue_setType(value, BOLT_STRUCTURE, 1, size);
-    value->code = code;
 }
 
 int16_t BoltStructure_code(const struct BoltValue* value)
