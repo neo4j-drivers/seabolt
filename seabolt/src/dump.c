@@ -332,6 +332,25 @@ int BoltFloat32_dump(const struct BoltValue* value)
     return EXIT_SUCCESS;
 }
 
+int BoltFloat64_dump(const struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_FLOAT64);
+    if (BoltValue_isArray(value))
+    {
+        printf("f64[");
+        for (int i = 0; i < value->size; i++)
+        {
+            printf(i == 0 ? "%f" : ", %f", BoltFloat64Array_get(value, i));
+        }
+        printf("]");
+    }
+    else
+    {
+        printf("f64(%f)", BoltFloat64_get(value));
+    }
+    return EXIT_SUCCESS;
+}
+
 int BoltStructure_dump(const struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_STRUCTURE);
@@ -388,6 +407,8 @@ int BoltValue_dump(struct BoltValue* value)
             return BoltInt64_dump(value);
         case BOLT_FLOAT32:
             return BoltFloat32_dump(value);
+        case BOLT_FLOAT64:
+            return BoltFloat64_dump(value);
         case BOLT_STRUCTURE:
             return BoltStructure_dump(value);
         default:

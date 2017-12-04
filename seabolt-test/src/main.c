@@ -668,6 +668,32 @@ void test_float32_array()
     BoltValue_destroy(value);
 }
 
+void _test_float64(double x)
+{
+    struct BoltValue* value = BoltValue_create();
+    BoltValue_toFloat64(value, x);
+    BoltValue_dumpLine(value);
+    assert(BoltValue_type(value) == BOLT_FLOAT64);
+    assert(BoltFloat64_get(value) == x ||
+           (isnan(BoltFloat64_get(value)) && isnan(x)));
+    BoltValue_destroy(value);
+}
+
+void test_float64()
+{
+    _test_float64(0.0);
+    _test_float64(0.375);
+    _test_float64(1.0);
+    _test_float64(-1.0);
+    _test_float64(3.14159);
+    _test_float64(-3.14159);
+    _test_float64(6.02214086e23);
+    _test_float64(3.402823e38);
+    _test_float64(INFINITY);
+    _test_float64(-INFINITY);
+    _test_float64(NAN);
+}
+
 void test_structure()
 {
     struct BoltValue* value = BoltValue_create();
@@ -710,14 +736,8 @@ int main()
     test_int64_array(test_int64());
     test_float32();
     test_float32_array();
+    test_float64();
+    // TODO: test_float64_array();
     test_structure();
     printf("*******\nMemory activity: %lld\n*******\n", BoltMem_activity());
-    struct BoltValue* value = BoltValue_create();
-    printf("%ld\n", sizeof(value->type));
-    printf("%ld\n", sizeof(value->is_array));
-    printf("%ld\n", sizeof(value->code));
-    printf("%ld\n", sizeof(value->size));
-    printf("%ld\n", sizeof(value->data_size));
-    printf("%ld\n", sizeof(value->data));
-    BoltValue_destroy(value);
 }
