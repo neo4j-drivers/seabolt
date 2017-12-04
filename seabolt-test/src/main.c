@@ -708,10 +708,36 @@ void test_structure()
     BoltUTF8Array_put(labels, 1, "Employee", 8);
     BoltValue_toUTF8Dictionary(properties, 2);
     BoltValue_toUTF8(BoltUTF8Dictionary_withKey(properties, 0, "name", 4), "Alice", 5);
-    BoltValue_toNum16(BoltUTF8Dictionary_withKey(properties, 1, "since", 5), 1999);
+    BoltValue_toNum8(BoltUTF8Dictionary_withKey(properties, 1, "age", 3), 33);
     BoltValue_dumpLine(value);
     assert(BoltValue_type(value) == BOLT_STRUCTURE && BoltStructure_code(value) == NODE);
     assert(value->size == 3);
+    BoltValue_destroy(value);
+}
+
+void test_structure_array()
+{
+    struct BoltValue* value = BoltValue_create();
+    const int NODE = 0xA0;
+    BoltValue_toStructureArray(value, NODE, 2);
+    for (int i = 0; i < 2; i++)
+    {
+        BoltStructureArray_setSize(value, i, 3);
+        struct BoltValue* id = BoltStructureArray_at(value, i, 0);
+        struct BoltValue* labels = BoltStructureArray_at(value, i, 1);
+        struct BoltValue* properties = BoltStructureArray_at(value, i, 2);
+        BoltValue_toInt64(id, 123 + 1);
+        BoltValue_toUTF8Array(labels, 2);
+        BoltUTF8Array_put(labels, 0, "Person", 6);
+        BoltUTF8Array_put(labels, 1, "Employee", 8);
+        BoltValue_toUTF8Dictionary(properties, 2);
+        BoltValue_toUTF8(BoltUTF8Dictionary_withKey(properties, 0, "name", 4),
+                         i == 0 ? "Alice" : "Bob", i == 0 ? 5 : 3);
+        BoltValue_toNum8(BoltUTF8Dictionary_withKey(properties, 1, "age", 3), (uint8_t)(i == 0 ? 33 : 44));
+    }
+    BoltValue_dumpLine(value);
+    assert(BoltValue_type(value) == BOLT_STRUCTURE && BoltStructure_code(value) == NODE);
+    assert(value->size == 2);
     BoltValue_destroy(value);
 }
 
@@ -739,5 +765,6 @@ int main()
     test_float64();
     // TODO: test_float64_array();
     test_structure();
+    test_structure_array();
     printf("*******\nMemory activity: %lld\n*******\n", BoltMem_activity());
 }

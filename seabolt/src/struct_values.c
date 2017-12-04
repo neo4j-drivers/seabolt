@@ -25,13 +25,39 @@
 
 void BoltValue_toStructure(struct BoltValue* value, int16_t code, int32_t size)
 {
-    size_t unit_size = sizeof(struct BoltValue);
-    size_t data_size = unit_size * size;
     _BoltValue_recycle(value);
-    _BoltValue_allocate(value, data_size);
-    memset(value->data.extended.as_char, 0, data_size);
+    _BoltValue_allocate(value, sizeof_n(struct BoltValue, size));
+    memset(value->data.extended.as_char, 0, value->data_size);
     _BoltValue_setType(value, BOLT_STRUCTURE, 0, size);
     value->code = code;
+}
+
+void BoltValue_toStructureArray(struct BoltValue* value, int16_t code, int32_t size)
+{
+    _BoltValue_recycle(value);
+    _BoltValue_allocate(value, sizeof_n(struct BoltValue, size));
+    memset(value->data.extended.as_ptr, 0, value->data_size);
+    for (long i = 0; i < size; i++)
+    {
+        BoltValue_toList(&value->data.extended.as_value[i], 0);
+    }
+    _BoltValue_setType(value, BOLT_STRUCTURE, 1, size);
+    value->code = code;
+}
+
+int32_t BoltStructureArray_getSize(const struct BoltValue* value, int32_t index)
+{
+    return value->data.extended.as_value[index].size;
+}
+
+void BoltStructureArray_setSize(struct BoltValue* value, int32_t index, int32_t size)
+{
+    BoltList_resize(&value->data.extended.as_value[index], size);
+}
+
+struct BoltValue* BoltStructureArray_at(const struct BoltValue* value, int32_t array_index, int32_t structure_index)
+{
+    return BoltList_at(&value->data.extended.as_value[array_index], structure_index);
 }
 
 int16_t BoltStructure_code(const struct BoltValue* value)

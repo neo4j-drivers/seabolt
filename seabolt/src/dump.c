@@ -363,13 +363,30 @@ int BoltStructure_dump(const struct BoltValue* value)
         default:
             printf("$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
     }
-    printf("(");
-    for (int i = 0; i < value->size; i++)
+    if (BoltValue_isArray(value))
     {
-        if (i > 0) printf(" ");
-        BoltValue_dump(BoltStructure_at(value, i));
+        printf("[");
+        for (int i = 0; i < value->size; i++)
+        {
+            if (i > 0) printf(", ");
+            for (int j = 0; j < BoltStructureArray_getSize(value, i); j++)
+            {
+                if (j > 0) printf(" ");
+                BoltValue_dump(BoltStructureArray_at(value, i, j));
+            }
+        }
+        printf("]");
     }
-    printf(")");
+    else
+    {
+        printf("(");
+        for (int i = 0; i < value->size; i++)
+        {
+            if (i > 0) printf(" ");
+            BoltValue_dump(BoltStructure_at(value, i));
+        }
+        printf(")");
+    }
     return EXIT_SUCCESS;
 }
 
