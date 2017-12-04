@@ -266,7 +266,7 @@ void _test_utf8(char* text, int32_t text_size)
     BoltValue_dumpLine(value);
     assert(value->type == BOLT_UTF8);
     assert(value->physical_size == text_size);
-    char* stored_text = BoltUTF8_get(value);
+    const char* stored_text = BoltUTF8_get(value);
     assert(strncmp(text, stored_text, (size_t)(text_size)) == 0);
     BoltValue_destroy(value);
 }

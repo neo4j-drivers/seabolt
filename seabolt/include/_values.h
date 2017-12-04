@@ -33,9 +33,6 @@
 #define to_bit(x) (char)((x) == 0 ? 0 : 1);
 
 
-static const struct BoltValue BOLT_NULL_VALUE = {BOLT_NULL, 0, 0, 0, 0, NULL};
-
-
 /**
  * Allocate, reallocate or free memory for data storage.
  *
@@ -58,7 +55,7 @@ void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offse
  */
 void _BoltValue_recycle(struct BoltValue* value);
 
-void _BoltValue_to(struct BoltValue* value, enum BoltType type, int is_array,
+void _BoltValue_to(struct BoltValue* value, enum BoltType type, char is_array,
                    const void* data, int logical_size, size_t physical_size);
 
 

@@ -27,13 +27,13 @@
 void BoltValue_toChar16(struct BoltValue* value, uint16_t x)
 {
     _BoltValue_to(value, BOLT_CHAR16, 0, NULL, 1, 0);
-    value->inline_data.as_uint16 = x;
+    value->inline_data.as_uint16[0] = x;
 }
 
 void BoltValue_toChar32(struct BoltValue* value, uint32_t x)
 {
     _BoltValue_to(value, BOLT_CHAR32, 0, NULL, 1, 0);
-    value->inline_data.as_uint32 = x;
+    value->inline_data.as_uint32[0] = x;
 }
 
 void BoltValue_toChar16Array(struct BoltValue* value, uint16_t* array, int32_t size)
@@ -51,7 +51,7 @@ void BoltValue_toUTF8(struct BoltValue* value, char* string, int32_t size)
     if (size <= 8)
     {
         _BoltValue_to(value, BOLT_UTF8, 0, NULL, size, 0);
-        memcpy(value->inline_data.as_chars, string, (size_t)(size));
+        memcpy(value->inline_data.as_char, string, (size_t)(size));
     }
     else
     {
@@ -59,9 +59,9 @@ void BoltValue_toUTF8(struct BoltValue* value, char* string, int32_t size)
     }
 }
 
-char* BoltUTF8_get(const struct BoltValue* value)
+const char* BoltUTF8_get(const struct BoltValue* value)
 {
-    return value->logical_size <= 8 ? value->inline_data.as_chars : value->data.as_char;
+    return value->logical_size <= 8 ? value->inline_data.as_char : value->data.as_char;
 }
 
 void BoltValue_toUTF8Array(struct BoltValue* value, int32_t size)
@@ -101,10 +101,7 @@ void BoltValue_toUTF8Dictionary(struct BoltValue* value, int32_t size)
     size_t physical_size = 2 * unit_size * size;
     _BoltValue_recycle(value);
     _BoltValue_allocate(value, physical_size);
-    for (size_t offset = 0; offset < physical_size; offset += unit_size)
-    {
-        _BoltValue_copyData(value, &BOLT_NULL_VALUE, offset, unit_size);
-    }
+    memset(value->data.as_char, 0, physical_size);
     value->type = BOLT_UTF8_DICTIONARY;
     value->is_array = 0;
     value->logical_size = size;

@@ -17,17 +17,19 @@
  * limitations under the License.
  */
 
+#include <values.h>
 #include "_values.h"
 
 
 void BoltValue_toBit(struct BoltValue* value, char x)
 {
-    _BoltValue_to(value, BOLT_BIT, 0, &x, 1, sizeof(char));
+    _BoltValue_to(value, BOLT_BIT, 0, NULL, 1, 0);
+    value->inline_data.as_char[0] = x;
 }
 
 char BoltBit_get(const struct BoltValue* value)
 {
-    return to_bit(value->data.as_char[0]);
+    return to_bit(value->inline_data.as_char[0]);
 }
 
 void BoltValue_toBitArray(struct BoltValue* value, char* array, int32_t size)
@@ -42,12 +44,13 @@ char BoltBitArray_get(const struct BoltValue* value, int32_t index)
 
 void BoltValue_toByte(struct BoltValue* value, char x)
 {
-    _BoltValue_to(value, BOLT_BYTE, 0, &x, 1, sizeof(char));
+    _BoltValue_to(value, BOLT_BYTE, 0, NULL, 1, 0);
+    value->inline_data.as_char[0] = x;
 }
 
 char BoltByte_get(const struct BoltValue* value)
 {
-    return value->data.as_char[0];
+    return value->inline_data.as_char[0];
 }
 
 void BoltValue_toByteArray(struct BoltValue* value, char* array, int32_t size)

@@ -30,12 +30,12 @@
 void BoltValue_toInt8(struct BoltValue* value, int8_t x)
 {
     _BoltValue_to(value, BOLT_INT8, 0, NULL, 1, 0);
-    value->inline_data.as_int8 = x;
+    value->inline_data.as_int8[0] = x;
 }
 
 int8_t BoltInt8_get(const struct BoltValue* value)
 {
-    return value->inline_data.as_int8;
+    return value->inline_data.as_int8[0];
 }
 
 void BoltValue_toInt8Array(struct BoltValue* value, int8_t* array, int32_t size)
@@ -56,12 +56,12 @@ int8_t BoltInt8Array_get(const struct BoltValue* value, int32_t index)
 void BoltValue_toInt16(struct BoltValue* value, int16_t x)
 {
     _BoltValue_to(value, BOLT_INT16, 0, NULL, 1, 0);
-    value->inline_data.as_int16 = x;
+    value->inline_data.as_int16[0] = x;
 }
 
 int16_t BoltInt16_get(const struct BoltValue* value)
 {
-    return value->inline_data.as_int16;
+    return value->inline_data.as_int16[0];
 }
 
 void BoltValue_toInt16Array(struct BoltValue* value, int16_t* array, int32_t size)
@@ -82,12 +82,12 @@ int16_t BoltInt16Array_get(const struct BoltValue* value, int32_t index)
 void BoltValue_toInt32(struct BoltValue* value, int32_t x)
 {
     _BoltValue_to(value, BOLT_INT32, 0, NULL, 1, 0);
-    value->inline_data.as_int32 = x;
+    value->inline_data.as_int32[0] = x;
 }
 
 int32_t BoltInt32_get(const struct BoltValue* value)
 {
-    return value->inline_data.as_int32;
+    return value->inline_data.as_int32[0];
 }
 
 void BoltValue_toInt32Array(struct BoltValue* value, int32_t* array, int32_t size)
@@ -108,12 +108,12 @@ int32_t BoltInt32Array_get(const struct BoltValue* value, int32_t index)
 void BoltValue_toInt64(struct BoltValue* value, int64_t x)
 {
     _BoltValue_to(value, BOLT_INT64, 0, NULL, 1, 0);
-    value->inline_data.as_int64 = x;
+    value->inline_data.as_int64[0] = x;
 }
 
 int64_t BoltInt64_get(const struct BoltValue* value)
 {
-    return value->inline_data.as_int64;
+    return value->inline_data.as_int64[0];
 }
 
 void BoltValue_toInt64Array(struct BoltValue* value, int64_t* array, int32_t size)

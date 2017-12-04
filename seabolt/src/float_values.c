@@ -24,13 +24,13 @@
 void BoltValue_toFloat32(struct BoltValue* value, float x)
 {
     _BoltValue_to(value, BOLT_FLOAT32, 0, NULL, 1, 0);
-    value->inline_data.as_float = x;
+    value->inline_data.as_float[0] = x;
 }
 
 void BoltValue_toFloat64(struct BoltValue* value, double x)
 {
     _BoltValue_to(value, BOLT_FLOAT64, 0, NULL, 1, 0);
-    value->inline_data.as_double = x;
+    value->inline_data.as_double[0] = x;
 }
 
 void BoltValue_toFloat32Array(struct BoltValue* value, float* array, int32_t size)
@@ -40,7 +40,7 @@ void BoltValue_toFloat32Array(struct BoltValue* value, float* array, int32_t siz
 
 float BoltFloat32_get(const struct BoltValue* value)
 {
-    return value->inline_data.as_float;
+    return value->inline_data.as_float[0];
 }
 
 float BoltFloat32Array_get(const struct BoltValue* value, int32_t index)
@@ -50,5 +50,5 @@ float BoltFloat32Array_get(const struct BoltValue* value, int32_t index)
 
 double BoltFloat64_get(struct BoltValue* value)
 {
-    return value->inline_data.as_double;
+    return value->inline_data.as_double[0];
 }

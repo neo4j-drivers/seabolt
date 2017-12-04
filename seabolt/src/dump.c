@@ -36,7 +36,7 @@ static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
 
 #define hex0(mem, offset) HEX_DIGITS[(mem)[offset] & 0x0F]
 
-void _bolt_dump_string(char* data, size_t size)
+void _bolt_dump_string(const char* data, size_t size)
 {
     printf("\"");
     for (size_t i = 0; i < size; i++)
@@ -129,7 +129,7 @@ int BoltUTF8_dump(const struct BoltValue* value)
     }
     else
     {
-        char* data = BoltUTF8_get(value);
+        const char* data = BoltUTF8_get(value);
         printf("u8(\"");
         for (int i = 0; i < value->logical_size; i++)
         {

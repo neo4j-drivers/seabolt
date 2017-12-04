@@ -130,7 +130,7 @@ void _BoltValue_recycle(struct BoltValue* value)
     }
 }
 
-void _BoltValue_to(struct BoltValue* value, enum BoltType type, int is_array,
+void _BoltValue_to(struct BoltValue* value, enum BoltType type, char is_array,
                    const void* data, int logical_size, size_t physical_size)
 {
     _BoltValue_recycle(value);
@@ -162,10 +162,7 @@ void _BoltValue_resize(struct BoltValue* value, int32_t size, int multiplier)
         size_t old_physical_size = value->physical_size;
         _BoltValue_allocate(value, new_physical_size);
         // grow logically
-        for (size_t offset = old_physical_size; offset < new_physical_size; offset += unit_size)
-        {
-            _BoltValue_copyData(value, &BOLT_NULL_VALUE, offset, unit_size);
-        }
+        memset(value->data.as_char + old_physical_size, 0, new_physical_size - old_physical_size);
         value->logical_size = size;
     }
     else if (size < value->logical_size)
