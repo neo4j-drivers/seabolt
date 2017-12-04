@@ -772,7 +772,7 @@ void test_summary()
     BoltValue_destroy(value);
 }
 
-int main()
+int test()
 {
     test_null();
     test_list();
@@ -800,4 +800,9 @@ int main()
     test_request();
     test_summary();
     printf("*******\nMemory activity: %lld\n*******\n", BoltMem_activity());
+}
+
+int main()
+{
+    test();
 }
