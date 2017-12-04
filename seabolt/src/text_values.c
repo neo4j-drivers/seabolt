@@ -111,11 +111,12 @@ int32_t BoltUTF8Array_getSize(struct BoltValue* value, int32_t index)
 
 void BoltUTF8Array_put(struct BoltValue* value, int32_t index, char* string, int32_t size)
 {
-    value->data.extended.as_array[index].size = size;
+    struct array_t* s = &value->data.extended.as_array[index];
+    s->data.as_ptr = BoltMem_adjust(s->data.as_ptr, (size_t)(s->size), (size_t)(size));
+    s->size = size;
     if (size > 0)
     {
-        value->data.extended.as_array[index].data.as_ptr = BoltMem_allocate((size_t)(size));
-        memcpy(value->data.extended.as_array[index].data.as_char, string, (size_t)(size));
+        memcpy(s->data.as_ptr, string, (size_t)(size));
     }
 }
 

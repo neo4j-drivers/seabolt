@@ -49,6 +49,18 @@ void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size);
 void* BoltMem_deallocate(void* ptr, size_t old_size);
 
 /**
+ * Allocate, reallocate or free memory for data storage.
+ *
+ * Since we recycle values, we can also potentially recycle
+ * the dynamically-allocated storage.
+ *
+ * @param ptr a pointer to the existing memory (if any)
+ * @param old_size the number of bytes already allocated
+ * @param new_size the new number of bytes required
+ */
+void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
+
+/**
  * Get an activity count for memory (de/re/-)allocation
  * @return
  */

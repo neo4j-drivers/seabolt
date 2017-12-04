@@ -21,55 +21,10 @@
 #include "_values.h"
 
 
-/**
- * Allocate, reallocate or free memory for data storage.
- *
- * Since we recycle values, we can also potentially recycle
- * the dynamically-allocated storage.
- *
- * @param value the value in which to allocate storage
- * @param data_size the number of bytes of storage required
- */
 void _BoltValue_allocate(struct BoltValue* value, size_t data_size)
 {
-    if (data_size == value->data_size)
-    {
-        // In this case, the physical data storage requirement
-        // hasn't changed, whether zero or some positive value.
-        // This means that we can reuse the storage exactly
-        // as-is and no allocation needs to occur. Therefore,
-        // if we reuse a value for the same fixed-size type -
-        // an int32 for example - then we can continue to reuse
-        // the same storage for each value, avoiding memory
-        // reallocation.
-    }
-    else if (value->data_size == 0)
-    {
-        // In this case we need to allocate new storage space
-        // where previously none was allocated. This means
-        // that a full allocation is required.
-        value->data.extended.as_ptr = BoltMem_allocate(data_size);
-        value->data_size = data_size;
-    }
-    else if (data_size == 0)
-    {
-        // In this case, we are moving from previously having
-        // data to no longer requiring any storage space. This
-        // means that we can free up the previously-allocated
-        // space.
-        value->data.extended.as_ptr = BoltMem_deallocate(value->data.extended.as_ptr, value->data_size);
-        value->data_size = 0;
-    }
-    else
-    {
-        // Finally, this case deals with previous allocation
-        // and a new allocation requirement, but of different
-        // sizes. Here, we `realloc`, which should be more
-        // efficient than a naïve deallocation followed by a
-        // brand new allocation.
-        value->data.extended.as_ptr = BoltMem_reallocate(value->data.extended.as_ptr, value->data_size, data_size);
-        value->data_size = data_size;
-    }
+    value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
+    value->data_size = data_size;
 }
 
 void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offset, size_t length)

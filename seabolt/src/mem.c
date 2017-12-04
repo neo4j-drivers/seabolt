@@ -54,6 +54,44 @@ void* BoltMem_deallocate(void* ptr, size_t old_size)
     return NULL;
 }
 
+void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size)
+{
+    if (new_size == old_size)
+    {
+        // In this case, the physical data storage requirement
+        // hasn't changed, whether zero or some positive value.
+        // This means that we can reuse the storage exactly
+        // as-is and no allocation needs to occur. Therefore,
+        // if we reuse a value for the same fixed-size type -
+        // an int32 for example - then we can continue to reuse
+        // the same storage for each value, avoiding memory
+        // reallocation.
+        return ptr;
+    }
+    if (old_size == 0)
+    {
+        // In this case we need to allocate new storage space
+        // where previously none was allocated. This means
+        // that a full allocation is required.
+        return BoltMem_allocate(new_size);
+    }
+    if (new_size == 0)
+    {
+        // In this case, we are moving from previously having
+        // data to no longer requiring any storage space. This
+        // means that we can free up the previously-allocated
+        // space.
+        return BoltMem_deallocate(ptr, old_size);
+    }
+    // Finally, this case deals with previous allocation
+    // and a new allocation requirement, but of different
+    // sizes. Here, we `realloc`, which should be more
+    // efficient than a naïve deallocation followed by a
+    // brand new allocation.
+    return BoltMem_reallocate(ptr, old_size, new_size);
+}
+
+
 long long BoltMem_activity()
 {
     return __activity;
