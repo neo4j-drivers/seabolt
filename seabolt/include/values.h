@@ -20,10 +20,12 @@
 #ifndef SEABOLT_VALUES
 #define SEABOLT_VALUES
 
-#include <limits.h>
-#include <malloc.h>
-#include <memory.h>
 #include <assert.h>
+#include <limits.h>
+#include <memory.h>
+#include <string.h>
+
+#include "mem.h"
 
 #if CHAR_BIT != 8
 #error "Cannot compile if `char` is not 8-bit"
@@ -107,33 +109,6 @@ struct BoltValue
 static const struct BoltValue BOLT_NULL_VALUE = {BOLT_NULL, 0, 0, 0, 0, NULL};
 
 
-static size_t __bolt_memory = 0;
-
-void* __bolt_malloc(size_t new_size)
-{
-    void* p = malloc(new_size);
-    __bolt_memory += new_size;
-    fprintf(stderr, "\x1B[36mAllocated %ld bytes (balance: %lu)\x1B[0m\n", new_size, __bolt_memory);
-    return p;
-}
-
-void* __bolt_realloc(void* ptr, size_t old_size, size_t new_size)
-{
-    void* p = realloc(ptr, new_size);
-    __bolt_memory = __bolt_memory - old_size + new_size;
-    fprintf(stderr, "\x1B[36mReallocated %ld bytes as %ld bytes (balance: %lu)\x1B[0m\n", old_size, new_size, __bolt_memory);
-    return p;
-}
-
-void* __bolt_free(void* ptr, size_t old_size)
-{
-    free(ptr);
-    __bolt_memory -= old_size;
-    fprintf(stderr, "\x1B[36mFreed %ld bytes (balance: %lu)\x1B[0m\n", old_size, __bolt_memory);
-    return NULL;
-}
-
-
 void BoltValue_toNull(struct BoltValue* value);
 
 
@@ -165,7 +140,7 @@ void _BoltValue_allocate(struct BoltValue* value, size_t physical_size)
         // where previously none was allocated. This means
         // that a full allocation is required.
         assert(value->data.as_ptr == NULL);
-        value->data.as_ptr = __bolt_malloc(physical_size);
+        value->data.as_ptr = BoltMem_allocate(physical_size);
         value->physical_size = physical_size;
     }
     else if (physical_size == 0)
@@ -175,7 +150,7 @@ void _BoltValue_allocate(struct BoltValue* value, size_t physical_size)
         // means that we can free up the previously-allocated
         // space.
         assert(value->data.as_ptr != NULL);
-        value->data.as_ptr = __bolt_free(value->data.as_ptr, value->physical_size);
+        value->data.as_ptr = BoltMem_deallocate(value->data.as_ptr, value->physical_size);
         value->physical_size = 0;
     }
     else
@@ -186,7 +161,7 @@ void _BoltValue_allocate(struct BoltValue* value, size_t physical_size)
         // efficient than a naïve deallocation followed by a
         // brand new allocation.
         assert(value->data.as_ptr != NULL);
-        value->data.as_ptr = __bolt_realloc(value->data.as_ptr, value->physical_size, physical_size);
+        value->data.as_ptr = BoltMem_reallocate(value->data.as_ptr, value->physical_size, physical_size);
         value->physical_size = physical_size;
     }
 }
@@ -222,7 +197,7 @@ void _BoltValue_recycle(struct BoltValue* value)
             struct array_t string = value->data.as_array[i];
             if (string.size > 0)
             {
-                __bolt_free(string.data.as_ptr, (size_t)(string.size));
+                BoltMem_deallocate(string.data.as_ptr, (size_t)(string.size));
             }
         }
     }
@@ -307,7 +282,7 @@ void _BoltValue_resize(struct BoltValue* value, int32_t size, int multiplier)
 struct BoltValue* BoltValue_create()
 {
     size_t size = sizeof(struct BoltValue);
-    struct BoltValue* value = __bolt_malloc(size);
+    struct BoltValue* value = BoltMem_allocate(size);
     value->type = BOLT_NULL;
     value->code = 0;
     value->is_array = 0;
@@ -320,7 +295,7 @@ struct BoltValue* BoltValue_create()
 void BoltValue_destroy(struct BoltValue* value)
 {
     BoltValue_toNull(value);
-    __bolt_free(value, sizeof(struct BoltValue));
+    BoltMem_deallocate(value, sizeof(struct BoltValue));
 }
 
 
@@ -476,7 +451,7 @@ void BoltUTF8Array_put(struct BoltValue* value, int32_t index, char* string, int
     value->data.as_array[index].size = size;
     if (size > 0)
     {
-        value->data.as_array[index].data.as_ptr = __bolt_malloc((size_t)(size));
+        value->data.as_array[index].data.as_ptr = BoltMem_allocate((size_t)(size));
         memcpy(value->data.as_array[index].data.as_char, string, (size_t)(size));
     }
 }
