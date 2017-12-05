@@ -37,7 +37,7 @@
 #define to_bit(x) (char)((x) == 0 ? 0 : 1);
 
 
-enum BoltType
+typedef enum
 {
     BOLT_NULL,                          /* ALSO IN BOLT v1 (as Null) */
     BOLT_LIST,                          /* ALSO IN BOLT v1 (as List) */
@@ -68,7 +68,7 @@ enum BoltType
     BOLT_STRUCTURE,                     /* ALSO IN BOLT v1 (as Structure) */
     BOLT_REQUEST,  // requests match 10xxxxxx
     BOLT_SUMMARY,  // summaries match 11xxxxxx
-};
+} BoltType;
 
 struct array_t;
 
@@ -228,7 +228,7 @@ void BoltValue_toSummary(struct BoltValue* value, int16_t code, int32_t size);
 
 void BoltValue_toStructureArray(struct BoltValue* value, int16_t code, int32_t size);
 
-enum BoltType BoltValue_type(const struct BoltValue* value);
+BoltType BoltValue_type(const struct BoltValue* value);
 
 int BoltValue_isArray(const struct BoltValue* value);
 

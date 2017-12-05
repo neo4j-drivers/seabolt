@@ -23,7 +23,7 @@
 #include "_values.h"
 
 
-void _to_structure(struct BoltValue* value, enum BoltType type, int16_t code, char is_array, int32_t size)
+void _to_structure(struct BoltValue* value, BoltType type, int16_t code, char is_array, int32_t size)
 {
     _BoltValue_recycle(value);
     value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size,

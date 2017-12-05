@@ -38,7 +38,7 @@ void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offse
  */
 void _BoltValue_recycle(struct BoltValue* value)
 {
-    enum BoltType type = BoltValue_type(value);
+    BoltType type = BoltValue_type(value);
     if (type == BOLT_LIST || type == BOLT_STRUCTURE || type == BOLT_REQUEST || type == BOLT_SUMMARY)
     {
         for (long i = 0; i < value->size; i++)
@@ -70,7 +70,7 @@ void _BoltValue_recycle(struct BoltValue* value)
     }
 }
 
-void _BoltValue_setType(struct BoltValue* value, enum BoltType type, char is_array, int size)
+void _BoltValue_setType(struct BoltValue* value, BoltType type, char is_array, int size)
 {
     assert(type < 0x80);
     value->type = (char)(type);
@@ -78,7 +78,7 @@ void _BoltValue_setType(struct BoltValue* value, enum BoltType type, char is_arr
     value->size = size;
 }
 
-void _BoltValue_to(struct BoltValue* value, enum BoltType type, char is_array, int size, const void* data, size_t data_size)
+void _BoltValue_to(struct BoltValue* value, BoltType type, char is_array, int size, const void* data, size_t data_size)
 {
     _BoltValue_recycle(value);
     value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);

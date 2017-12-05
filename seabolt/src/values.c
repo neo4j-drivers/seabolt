@@ -53,9 +53,9 @@ void BoltValue_toList(struct BoltValue* value, int32_t size)
     _BoltValue_setType(value, BOLT_LIST, 0, size);
 }
 
-enum BoltType BoltValue_type(const struct BoltValue* value)
+BoltType BoltValue_type(const struct BoltValue* value)
 {
-    return (enum BoltType)(value->type);
+    return (BoltType)(value->type);
 }
 
 int BoltValue_isArray(const struct BoltValue* value)
