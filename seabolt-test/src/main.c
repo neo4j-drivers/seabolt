@@ -28,7 +28,7 @@
 
 void test_null()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     BoltValue_toNull(value);
     BoltValue_dumpLine(value);
     assert(BoltValue_type(value) == BOLT_NULL);
@@ -37,7 +37,7 @@ void test_null()
 
 void _test_list()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     BoltValue_toList(value, 6);
     BoltValue_toInt32(BoltList_at(value, 0), 1234567);
     BoltValue_toInt32(BoltList_at(value, 1), 2345678);
@@ -55,7 +55,7 @@ void _test_list()
 
 void _test_empty_list()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     BoltValue_toList(value, 0);
     BoltValue_dumpLine(value);
     assert(BoltValue_type(value) == BOLT_LIST);
@@ -65,7 +65,7 @@ void _test_empty_list()
 
 void _test_list_growth()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     BoltValue_toList(value, 0);
     BoltValue_dumpLine(value);
     assert(BoltValue_type(value) == BOLT_LIST);
@@ -84,7 +84,7 @@ void _test_list_growth()
 
 void _test_list_shrinkage()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     BoltValue_toList(value, 3);
     BoltValue_toInt8(BoltList_at(value, 0), 1);
     BoltValue_toInt8(BoltList_at(value, 1), 2);
@@ -111,7 +111,7 @@ void test_list()
 
 void _test_utf8_dictionary()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     BoltValue_toUTF8Dictionary(value, 4);
     BoltValue_toInt8(BoltUTF8Dictionary_withKey(value, 0, "a", 1), 1);
     BoltValue_toInt8(BoltUTF8Dictionary_withKey(value, 1, "b", 1), 2);
@@ -124,7 +124,7 @@ void _test_utf8_dictionary()
 
 void _test_empty_utf8_dictionary()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     BoltValue_toUTF8Dictionary(value, 0);
     BoltValue_dumpLine(value);
     assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
@@ -134,7 +134,7 @@ void _test_empty_utf8_dictionary()
 
 void _test_single_entry_utf8_dictionary()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     BoltValue_toUTF8Dictionary(value, 1);
     BoltValue_toUTF8(BoltUTF8Dictionary_withKey(value, 0, "hello", 5), "world", 5);
     BoltValue_dumpLine(value);
@@ -145,7 +145,7 @@ void _test_single_entry_utf8_dictionary()
 
 void _test_utf8_dictionary_growth()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     BoltValue_toUTF8Dictionary(value, 0);
     BoltValue_dumpLine(value);
     assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
@@ -164,7 +164,7 @@ void _test_utf8_dictionary_growth()
 
 void _test_utf8_dictionary_shrinkage()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     BoltValue_toUTF8Dictionary(value, 3);
     BoltValue_toInt8(BoltUTF8Dictionary_withKey(value, 0, "a", 1), 1);
     BoltValue_toInt8(BoltUTF8Dictionary_withKey(value, 1, "b", 1), 2);
@@ -192,7 +192,7 @@ void test_utf8_dictionary()
 
 void test_bit()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     for (char i = 0; i <= 1; i++)
     {
         BoltValue_toBit(value, i);
@@ -205,7 +205,7 @@ void test_bit()
 
 void test_bit_array()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     int32_t size = 2;
     char array[] = {0, 1};
     BoltValue_toBitArray(value, array, size);
@@ -220,7 +220,7 @@ void test_bit_array()
 
 void test_byte()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     for (int i = 0x00; i <= 0xFF; i++)
     {
         BoltValue_toByte(value, (char)(i));
@@ -233,7 +233,7 @@ void test_byte()
 
 void test_byte_array()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     char array[] = ("\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f"
             "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
             " !\"#$%&'()*+,-./0123456789:;<=>?"
@@ -260,7 +260,7 @@ void test_byte_array()
 
 void _test_utf8(char* text, int32_t text_size)
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     BoltValue_toUTF8(value, text, text_size);
     BoltValue_dumpLine(value);
     assert(BoltValue_type(value) == BOLT_UTF8);
@@ -280,7 +280,7 @@ void test_utf8()
 
 void test_utf8_array()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     char* text;
     int32_t size;
     BoltValue_toUTF8Array(value, 5);
@@ -318,7 +318,7 @@ void test_utf8_array()
 
 int test_num8()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     int n = 0;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x100)
@@ -335,7 +335,7 @@ int test_num8()
 
 void test_num8_array(int size)
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     uint8_t array[size];
     int n = 0;
     unsigned long long x = 0, y = 1, z;
@@ -356,7 +356,7 @@ void test_num8_array(int size)
 
 int test_num16()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     int n = 0;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x10000)
@@ -373,7 +373,7 @@ int test_num16()
 
 void test_num16_array(int size)
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     uint16_t array[size];
     int n = 0;
     unsigned long long x = 0, y = 1, z;
@@ -394,7 +394,7 @@ void test_num16_array(int size)
 
 int test_num32()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     int n = 0;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x100000000)
@@ -411,7 +411,7 @@ int test_num32()
 
 void test_num32_array(int size)
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     uint32_t array[size];
     int n = 0;
     unsigned long long x = 0, y = 1, z;
@@ -432,7 +432,7 @@ void test_num32_array(int size)
 
 int test_num64()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     int n = 0;
     unsigned long long x = 0, y = 1, z;
     while (x < 0xA000000000000000L)
@@ -449,7 +449,7 @@ int test_num64()
 
 void test_num64_array(int size)
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     uint64_t array[size];
     int n = 0;
     unsigned long long x = 0, y = 1, z;
@@ -470,7 +470,7 @@ void test_num64_array(int size)
 
 int test_int8()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     int n = 0, s = 1;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x80)
@@ -487,7 +487,7 @@ int test_int8()
 
 void test_int8_array(int size)
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     int8_t array[size];
     int n = 0, s = 1;
     unsigned long long x = 0, y = 1, z;
@@ -508,7 +508,7 @@ void test_int8_array(int size)
 
 int test_int16()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     int n = 0, s = 1;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x8000)
@@ -525,7 +525,7 @@ int test_int16()
 
 void test_int16_array(int size)
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     int16_t array[size];
     int n = 0, s = 1;
     unsigned long long x = 0, y = 1, z;
@@ -546,7 +546,7 @@ void test_int16_array(int size)
 
 int test_int32()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     int n = 0, s = 1;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x80000000)
@@ -563,7 +563,7 @@ int test_int32()
 
 void test_int32_array(int size)
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     int32_t array[size];
     int n = 0, s = 1;
     unsigned long long x = 0, y = 1, z;
@@ -584,7 +584,7 @@ void test_int32_array(int size)
 
 int test_int64()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     int n = 0, s = 1;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x8000000000000000)
@@ -601,7 +601,7 @@ int test_int64()
 
 void test_int64_array(int size)
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     int64_t array[size];
     int n = 0, s = 1;
     unsigned long long x = 0, y = 1, z;
@@ -622,7 +622,7 @@ void test_int64_array(int size)
 
 void _test_float32(float x)
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     BoltValue_toFloat32(value, x);
     BoltValue_dumpLine(value);
     assert(BoltValue_type(value) == BOLT_FLOAT32);
@@ -648,7 +648,7 @@ void test_float32()
 
 void test_float32_array()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     float array[11] = {0.0F, 0.375F, 1.0F, -1.0F, 3.14159F, -3.14159F,
                        6.02214086e23F, 3.402823e38F, INFINITY, -INFINITY, NAN};
     BoltValue_toFloat32Array(value, array, 11);
@@ -671,7 +671,7 @@ void test_float32_array()
 
 void _test_float64(double x)
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     BoltValue_toFloat64(value, x);
     BoltValue_dumpLine(value);
     assert(BoltValue_type(value) == BOLT_FLOAT64);
@@ -697,12 +697,12 @@ void test_float64()
 
 void test_structure()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     const int NODE = 0xA0;
     BoltValue_toStructure(value, NODE, 3);
-    struct BoltValue* id = BoltStructure_at(value, 0);
-    struct BoltValue* labels = BoltStructure_at(value, 1);
-    struct BoltValue* properties = BoltStructure_at(value, 2);
+    BoltValue* id = BoltStructure_at(value, 0);
+    BoltValue* labels = BoltStructure_at(value, 1);
+    BoltValue* properties = BoltStructure_at(value, 2);
     BoltValue_toInt64(id, 123);
     BoltValue_toUTF8Array(labels, 2);
     BoltUTF8Array_put(labels, 0, "Person", 6);
@@ -718,15 +718,15 @@ void test_structure()
 
 void test_structure_array()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     const int NODE = 0xA0;
     BoltValue_toStructureArray(value, NODE, 2);
     for (int i = 0; i < 2; i++)
     {
         BoltStructureArray_setSize(value, i, 3);
-        struct BoltValue* id = BoltStructureArray_at(value, i, 0);
-        struct BoltValue* labels = BoltStructureArray_at(value, i, 1);
-        struct BoltValue* properties = BoltStructureArray_at(value, i, 2);
+        BoltValue* id = BoltStructureArray_at(value, i, 0);
+        BoltValue* labels = BoltStructureArray_at(value, i, 1);
+        BoltValue* properties = BoltStructureArray_at(value, i, 2);
         BoltValue_toInt64(id, 123 + 1);
         BoltValue_toUTF8Array(labels, 2);
         BoltUTF8Array_put(labels, 0, "Person", 6);
@@ -744,11 +744,11 @@ void test_structure_array()
 
 void test_request()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     const int RUN = 0xA0;
     BoltValue_toRequest(value, RUN, 2);
-    struct BoltValue* statement = BoltRequest_at(value, 0);
-    struct BoltValue* parameters = BoltRequest_at(value, 1);
+    BoltValue* statement = BoltRequest_at(value, 0);
+    BoltValue* parameters = BoltRequest_at(value, 1);
     BoltValue_toUTF8(statement, "RETURN $x", 9);
     BoltValue_toUTF8Dictionary(parameters, 1);
     BoltValue_toInt64(BoltUTF8Dictionary_withKey(parameters, 0, "x", 1), 1);
@@ -760,10 +760,10 @@ void test_request()
 
 void test_summary()
 {
-    struct BoltValue* value = BoltValue_create();
+    BoltValue* value = BoltValue_create();
     const int SUCCESS = 0xA0;
     BoltValue_toSummary(value, SUCCESS, 1);
-    struct BoltValue* metadata = BoltSummary_at(value, 0);
+    BoltValue* metadata = BoltSummary_at(value, 0);
     BoltValue_toUTF8Dictionary(metadata, 2);
     BoltValue_toInt64(BoltUTF8Dictionary_withKey(metadata, 0, "results", 7), 100);
     BoltValue_toInt64(BoltUTF8Dictionary_withKey(metadata, 1, "time", 4), 123456789);

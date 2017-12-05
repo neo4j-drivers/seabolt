@@ -26,10 +26,10 @@
 #include "_values.h"
 
 
-struct BoltValue* BoltValue_create()
+BoltValue* BoltValue_create()
 {
-    size_t size = sizeof(struct BoltValue);
-    struct BoltValue* value = BoltMem_allocate(size);
+    size_t size = sizeof(BoltValue);
+    BoltValue* value = BoltMem_allocate(size);
     _BoltValue_setType(value, BOLT_NULL, 0, 0);
     value->data_size = 0;
     value->data.as_uint64[0] = 0;
@@ -37,14 +37,14 @@ struct BoltValue* BoltValue_create()
     return value;
 }
 
-void BoltValue_toNull(struct BoltValue* value)
+void BoltValue_toNull(BoltValue* value)
 {
     _BoltValue_to(value, BOLT_NULL, 0, 0, NULL, 0);
 }
 
-void BoltValue_toList(struct BoltValue* value, int32_t size)
+void BoltValue_toList(BoltValue* value, int32_t size)
 {
-    size_t unit_size = sizeof(struct BoltValue);
+    size_t unit_size = sizeof(BoltValue);
     size_t data_size = unit_size * size;
     _BoltValue_recycle(value);
     value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
@@ -53,29 +53,29 @@ void BoltValue_toList(struct BoltValue* value, int32_t size)
     _BoltValue_setType(value, BOLT_LIST, 0, size);
 }
 
-BoltType BoltValue_type(const struct BoltValue* value)
+BoltType BoltValue_type(const BoltValue* value)
 {
     return (BoltType)(value->type);
 }
 
-int BoltValue_isArray(const struct BoltValue* value)
+int BoltValue_isArray(const BoltValue* value)
 {
     return value->is_array;
 }
 
-void BoltValue_destroy(struct BoltValue* value)
+void BoltValue_destroy(BoltValue* value)
 {
     BoltValue_toNull(value);
-    BoltMem_deallocate(value, sizeof(struct BoltValue));
+    BoltMem_deallocate(value, sizeof(BoltValue));
 }
 
-void BoltList_resize(struct BoltValue* value, int32_t size)
+void BoltList_resize(BoltValue* value, int32_t size)
 {
     assert(BoltValue_type(value) == BOLT_LIST);
     _BoltValue_resize(value, size, 1);
 }
 
-struct BoltValue* BoltList_at(const struct BoltValue* value, int32_t index)
+BoltValue* BoltList_at(const BoltValue* value, int32_t index)
 {
     assert(BoltValue_type(value) == BOLT_LIST);
     return &value->data.extended.as_value[index];

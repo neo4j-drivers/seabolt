@@ -21,7 +21,7 @@
 #include "_values.h"
 
 
-void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offset, size_t length)
+void _BoltValue_copyData(BoltValue* value, const void* data, size_t offset, size_t length)
 {
     if (length > 0)
     {
@@ -36,7 +36,7 @@ void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offse
  *
  * @param value
  */
-void _BoltValue_recycle(struct BoltValue* value)
+void _BoltValue_recycle(BoltValue* value)
 {
     BoltType type = BoltValue_type(value);
     if (type == BOLT_LIST || type == BOLT_STRUCTURE || type == BOLT_REQUEST || type == BOLT_SUMMARY)
@@ -70,7 +70,7 @@ void _BoltValue_recycle(struct BoltValue* value)
     }
 }
 
-void _BoltValue_setType(struct BoltValue* value, BoltType type, char is_array, int size)
+void _BoltValue_setType(BoltValue* value, BoltType type, char is_array, int size)
 {
     assert(type < 0x80);
     value->type = (char)(type);
@@ -78,7 +78,7 @@ void _BoltValue_setType(struct BoltValue* value, BoltType type, char is_array, i
     value->size = size;
 }
 
-void _BoltValue_to(struct BoltValue* value, BoltType type, char is_array, int size, const void* data, size_t data_size)
+void _BoltValue_to(BoltValue* value, BoltType type, char is_array, int size, const void* data, size_t data_size)
 {
     _BoltValue_recycle(value);
     value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
@@ -98,12 +98,12 @@ void _BoltValue_to(struct BoltValue* value, BoltType type, char is_array, int si
  * @param size
  * @param multiplier
  */
-void _BoltValue_resize(struct BoltValue* value, int32_t size, int multiplier)
+void _BoltValue_resize(BoltValue* value, int32_t size, int multiplier)
 {
     if (size > value->size)
     {
         // grow physically
-        size_t unit_size = sizeof(struct BoltValue);
+        size_t unit_size = sizeof(BoltValue);
         size_t new_data_size = multiplier * unit_size * size;
         size_t old_data_size = value->data_size;
         value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, new_data_size);
@@ -121,7 +121,7 @@ void _BoltValue_resize(struct BoltValue* value, int32_t size, int multiplier)
         }
         value->size = size;
         // shrink physically
-        size_t new_data_size = multiplier * sizeof_n(struct BoltValue, size);
+        size_t new_data_size = multiplier * sizeof_n(BoltValue, size);
         value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, new_data_size);
         value->data_size = new_data_size;
     }

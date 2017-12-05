@@ -21,19 +21,19 @@
 #include "_values.h"
 
 
-void BoltValue_toFloat32(struct BoltValue* value, float x)
+void BoltValue_toFloat32(BoltValue* value, float x)
 {
     _BoltValue_to(value, BOLT_FLOAT32, 0, 1, NULL, 0);
     value->data.as_float[0] = x;
 }
 
-void BoltValue_toFloat64(struct BoltValue* value, double x)
+void BoltValue_toFloat64(BoltValue* value, double x)
 {
     _BoltValue_to(value, BOLT_FLOAT64, 0, 1, NULL, 0);
     value->data.as_double[0] = x;
 }
 
-void BoltValue_toFloat32Array(struct BoltValue* value, float* array, int32_t size)
+void BoltValue_toFloat32Array(BoltValue* value, float* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(float))
     {
@@ -46,7 +46,7 @@ void BoltValue_toFloat32Array(struct BoltValue* value, float* array, int32_t siz
     }
 }
 
-void BoltValue_toFloat64Array(struct BoltValue* value, double* array, int32_t size)
+void BoltValue_toFloat64Array(BoltValue* value, double* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(double))
     {
@@ -59,24 +59,24 @@ void BoltValue_toFloat64Array(struct BoltValue* value, double* array, int32_t si
     }
 }
 
-float BoltFloat32_get(const struct BoltValue* value)
+float BoltFloat32_get(const BoltValue* value)
 {
     return value->data.as_float[0];
 }
 
-double BoltFloat64_get(const struct BoltValue* value)
+double BoltFloat64_get(const BoltValue* value)
 {
     return value->data.as_double[0];
 }
 
-float BoltFloat32Array_get(const struct BoltValue* value, int32_t index)
+float BoltFloat32Array_get(const BoltValue* value, int32_t index)
 {
     const float* data = value->size <= sizeof(value->data) / sizeof(float) ?
                         value->data.as_float : value->data.extended.as_float;
     return data[index];
 }
 
-double BoltFloat64Array_get(const struct BoltValue* value, int32_t index)
+double BoltFloat64Array_get(const BoltValue* value, int32_t index)
 {
     const double* data = value->size <= sizeof(value->data) / sizeof(double) ?
                          value->data.as_double : value->data.extended.as_double;

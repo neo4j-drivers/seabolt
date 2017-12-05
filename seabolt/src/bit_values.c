@@ -21,19 +21,19 @@
 #include "_values.h"
 
 
-void BoltValue_toBit(struct BoltValue* value, char x)
+void BoltValue_toBit(BoltValue* value, char x)
 {
     _BoltValue_to(value, BOLT_BIT, 0, 1, NULL, 0);
     value->data.as_char[0] = x;
 }
 
-void BoltValue_toByte(struct BoltValue* value, char x)
+void BoltValue_toByte(BoltValue* value, char x)
 {
     _BoltValue_to(value, BOLT_BYTE, 0, 1, NULL, 0);
     value->data.as_char[0] = x;
 }
 
-void BoltValue_toBitArray(struct BoltValue* value, char* array, int32_t size)
+void BoltValue_toBitArray(BoltValue* value, char* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(char))
     {
@@ -46,7 +46,7 @@ void BoltValue_toBitArray(struct BoltValue* value, char* array, int32_t size)
     }
 }
 
-void BoltValue_toByteArray(struct BoltValue* value, char* array, int32_t size)
+void BoltValue_toByteArray(BoltValue* value, char* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(char))
     {
@@ -59,24 +59,24 @@ void BoltValue_toByteArray(struct BoltValue* value, char* array, int32_t size)
     }
 }
 
-char BoltBit_get(const struct BoltValue* value)
+char BoltBit_get(const BoltValue* value)
 {
     return to_bit(value->data.as_char[0]);
 }
 
-char BoltByte_get(const struct BoltValue* value)
+char BoltByte_get(const BoltValue* value)
 {
     return value->data.as_char[0];
 }
 
-char BoltBitArray_get(const struct BoltValue* value, int32_t index)
+char BoltBitArray_get(const BoltValue* value, int32_t index)
 {
     const char* data = value->size <= sizeof(value->data) / sizeof(char) ?
                        value->data.as_char : value->data.extended.as_char;
     return to_bit(data[index]);
 }
 
-char BoltByteArray_get(const struct BoltValue* value, int32_t index)
+char BoltByteArray_get(const BoltValue* value, int32_t index)
 {
     const char* data = value->size <= sizeof(value->data) / sizeof(char) ?
                        value->data.as_char : value->data.extended.as_char;

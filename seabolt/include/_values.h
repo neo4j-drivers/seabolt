@@ -33,7 +33,7 @@
 #define to_bit(x) (char)((x) == 0 ? 0 : 1);
 
 
-void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offset, size_t length);
+void _BoltValue_copyData(BoltValue* value, const void* data, size_t offset, size_t length);
 
 /**
  * Clean up a value for reuse.
@@ -42,11 +42,11 @@ void _BoltValue_copyData(struct BoltValue* value, const void* data, size_t offse
  *
  * @param value
  */
-void _BoltValue_recycle(struct BoltValue* value);
+void _BoltValue_recycle(BoltValue* value);
 
-void _BoltValue_setType(struct BoltValue* value, BoltType type, char is_array, int size);
+void _BoltValue_setType(BoltValue* value, BoltType type, char is_array, int size);
 
-void _BoltValue_to(struct BoltValue* value, BoltType type, char is_array, int size,
+void _BoltValue_to(BoltValue* value, BoltType type, char is_array, int size,
                    const void* data, size_t data_size);
 
 
@@ -57,7 +57,7 @@ void _BoltValue_to(struct BoltValue* value, BoltType type, char is_array, int si
  * @param size
  * @param multiplier
  */
-void _BoltValue_resize(struct BoltValue* value, int32_t size, int multiplier);
+void _BoltValue_resize(BoltValue* value, int32_t size, int multiplier);
 
 
 #endif // SEABOLT__VALUES

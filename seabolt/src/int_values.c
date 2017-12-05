@@ -23,31 +23,31 @@
 #include "_values.h"
 
 
-void BoltValue_toInt8(struct BoltValue* value, int8_t x)
+void BoltValue_toInt8(BoltValue* value, int8_t x)
 {
     _BoltValue_to(value, BOLT_INT8, 0, 1, NULL, 0);
     value->data.as_int8[0] = x;
 }
 
-void BoltValue_toInt16(struct BoltValue* value, int16_t x)
+void BoltValue_toInt16(BoltValue* value, int16_t x)
 {
     _BoltValue_to(value, BOLT_INT16, 0, 1, NULL, 0);
     value->data.as_int16[0] = x;
 }
 
-void BoltValue_toInt32(struct BoltValue* value, int32_t x)
+void BoltValue_toInt32(BoltValue* value, int32_t x)
 {
     _BoltValue_to(value, BOLT_INT32, 0, 1, NULL, 0);
     value->data.as_int32[0] = x;
 }
 
-void BoltValue_toInt64(struct BoltValue* value, int64_t x)
+void BoltValue_toInt64(BoltValue* value, int64_t x)
 {
     _BoltValue_to(value, BOLT_INT64, 0, 1, NULL, 0);
     value->data.as_int64[0] = x;
 }
 
-void BoltValue_toInt8Array(struct BoltValue* value, int8_t* array, int32_t size)
+void BoltValue_toInt8Array(BoltValue* value, int8_t* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(int8_t))
     {
@@ -60,7 +60,7 @@ void BoltValue_toInt8Array(struct BoltValue* value, int8_t* array, int32_t size)
     }
 }
 
-void BoltValue_toInt16Array(struct BoltValue* value, int16_t* array, int32_t size)
+void BoltValue_toInt16Array(BoltValue* value, int16_t* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(int16_t))
     {
@@ -73,7 +73,7 @@ void BoltValue_toInt16Array(struct BoltValue* value, int16_t* array, int32_t siz
     }
 }
 
-void BoltValue_toInt32Array(struct BoltValue* value, int32_t* array, int32_t size)
+void BoltValue_toInt32Array(BoltValue* value, int32_t* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(int32_t))
     {
@@ -86,7 +86,7 @@ void BoltValue_toInt32Array(struct BoltValue* value, int32_t* array, int32_t siz
     }
 }
 
-void BoltValue_toInt64Array(struct BoltValue* value, int64_t* array, int32_t size)
+void BoltValue_toInt64Array(BoltValue* value, int64_t* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(int64_t))
     {
@@ -99,48 +99,48 @@ void BoltValue_toInt64Array(struct BoltValue* value, int64_t* array, int32_t siz
     }
 }
 
-int8_t BoltInt8_get(const struct BoltValue* value)
+int8_t BoltInt8_get(const BoltValue* value)
 {
     return value->data.as_int8[0];
 }
 
-int16_t BoltInt16_get(const struct BoltValue* value)
+int16_t BoltInt16_get(const BoltValue* value)
 {
     return value->data.as_int16[0];
 }
 
-int32_t BoltInt32_get(const struct BoltValue* value)
+int32_t BoltInt32_get(const BoltValue* value)
 {
     return value->data.as_int32[0];
 }
 
-int64_t BoltInt64_get(const struct BoltValue* value)
+int64_t BoltInt64_get(const BoltValue* value)
 {
     return value->data.as_int64[0];
 }
 
-int8_t BoltInt8Array_get(const struct BoltValue* value, int32_t index)
+int8_t BoltInt8Array_get(const BoltValue* value, int32_t index)
 {
     const int8_t* data = value->size <= sizeof(value->data) / sizeof(int8_t) ?
                          value->data.as_int8 : value->data.extended.as_int8;
     return data[index];
 }
 
-int16_t BoltInt16Array_get(const struct BoltValue* value, int32_t index)
+int16_t BoltInt16Array_get(const BoltValue* value, int32_t index)
 {
     const int16_t* data = value->size <= sizeof(value->data) / sizeof(int16_t) ?
                           value->data.as_int16 : value->data.extended.as_int16;
     return data[index];
 }
 
-int32_t BoltInt32Array_get(const struct BoltValue* value, int32_t index)
+int32_t BoltInt32Array_get(const BoltValue* value, int32_t index)
 {
     const int32_t* data = value->size <= sizeof(value->data) / sizeof(int32_t) ?
                           value->data.as_int32 : value->data.extended.as_int32;
     return data[index];
 }
 
-int64_t BoltInt64Array_get(const struct BoltValue* value, int32_t index)
+int64_t BoltInt64Array_get(const BoltValue* value, int32_t index)
 {
     const int64_t* data = value->size <= sizeof(value->data) / sizeof(int64_t) ?
                           value->data.as_int64 : value->data.extended.as_int64;
