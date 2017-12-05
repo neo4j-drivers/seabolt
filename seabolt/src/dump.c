@@ -143,7 +143,7 @@ int BoltUTF8_dump(const struct BoltValue* value)
 int BoltUTF8Dictionary_dump(const struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
-    printf("d8[");
+    printf("du8[");
     int comma = 0;
     for (int i = 0; i < value->size; i++)
     {
