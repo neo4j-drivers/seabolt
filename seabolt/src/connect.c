@@ -21,9 +21,14 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <connect.h>
+#include <assert.h>
 
+#include "buffer.h"
 #include "connect.h"
 #include "mem.h"
+
+
+static const char* DEFAULT_USER_AGENT = "seabolt/1.0.0a";
 
 
 int _connect(BoltConnection* connection)
@@ -52,8 +57,10 @@ int _connect(BoltConnection* connection)
 BoltConnection* BoltConnection_openSocket(const char* host, int port)
 {
     BoltConnection* connection = BoltMem_allocate(sizeof(BoltConnection));
+    connection->user_agent = DEFAULT_USER_AGENT;
     connection->host = host;
     connection->port = port;
+    connection->buffer = BoltBuffer_create(8192);
     connection->bio = BIO_new(BIO_s_connect());
     if (connection->bio == NULL)
     {
@@ -68,8 +75,10 @@ BoltConnection* BoltConnection_openSocket(const char* host, int port)
 BoltConnection* BoltConnection_openSecureSocket(const char* host, int port)
 {
     BoltConnection* connection = BoltMem_allocate(sizeof(BoltConnection));
+    connection->user_agent = DEFAULT_USER_AGENT;
     connection->host = host;
     connection->port = port;
+    connection->buffer = BoltBuffer_create(8192);
     // Ensure SSL has been initialised
     SSL_library_init();
     SSL_load_error_strings();
@@ -116,6 +125,7 @@ BoltConnection* BoltConnection_openSecureSocket(const char* host, int port)
 
 void BoltConnection_close(BoltConnection* connection)
 {
+    BoltBuffer_destroy(connection->buffer);
     BIO_free_all(connection->bio);
     SSL_CTX_free(connection->ssl_context);
     BoltMem_deallocate(connection, sizeof(BoltConnection));
@@ -137,7 +147,7 @@ int BoltConnection_transmit(BoltConnection* connection, const void* buffer, int 
     return -1;
 }
 
-int BoltConnection_receive(BoltConnection* connection, void* buffer, int len, int flags)
+int BoltConnection_receive(BoltConnection* connection, void* buffer, int len)
 {
     int res = BIO_read(connection->bio, buffer, len);
 
@@ -150,7 +160,7 @@ int BoltConnection_receive(BoltConnection* connection, void* buffer, int len, in
     {
         if (BIO_should_retry(connection->bio))
         {
-            return BoltConnection_receive(connection, buffer, len, flags);
+            return BoltConnection_receive(connection, buffer, len);
         }
         printf("%s", ERR_error_string(ERR_get_error(), NULL));
         return -1;
@@ -160,32 +170,41 @@ int BoltConnection_receive(BoltConnection* connection, void* buffer, int len, in
     return res;
 }
 
-void int32be_write(char* buffer, int32_t value)
-{
-    buffer[0] = (char)(value >> 24);
-    buffer[1] = (char)(value >> 16);
-    buffer[2] = (char)(value >> 8);
-    buffer[3] = (char)(value);
-}
-
-int32_t int32be_read(const char* buffer)
-{
-    return (buffer[0] << 24) |
-           (buffer[1] << 16) |
-           (buffer[2] << 8) |
-           (buffer[3]);
-}
-
 int BoltConnection_handshake(BoltConnection* connection, int32_t first, int32_t second, int32_t third, int32_t fourth)
 {
-    char buffer[20];
-    memcpy(&buffer, "\x60\x60\xB0\x17", 4);
-    int32be_write(&buffer[4], first);
-    int32be_write(&buffer[8], second);
-    int32be_write(&buffer[12], third);
-    int32be_write(&buffer[16], fourth);
-    BoltConnection_transmit(connection, &buffer, 20);
-    BoltConnection_receive(connection, &buffer, 4, 0);
-    connection->protocol_version = int32be_read(&buffer[0]);
+    BoltBuffer_load_bytes(connection->buffer, "\x60\x60\xB0\x17", 4);
+    BoltBuffer_load_int32be(connection->buffer, first);
+    BoltBuffer_load_int32be(connection->buffer, second);
+    BoltBuffer_load_int32be(connection->buffer, third);
+    BoltBuffer_load_int32be(connection->buffer, fourth);
+    BoltConnection_transmit(connection, BoltBuffer_unload(connection->buffer, 20), 20);
+    BoltConnection_receive(connection, BoltBuffer_load(connection->buffer, 4), 4);
+    connection->protocol_version = BoltBuffer_unload_int32be(connection->buffer);
     // TODO: return codes
+}
+
+int _init1(BoltConnection* connection, const char* user, const char* password)
+{
+    assert(strlen(connection->user_agent) < 0x100);
+    assert(strlen(user) < 0x100);
+    assert(strlen(password) < 0x100);
+    char buffer[8192];
+    memcpy(&buffer[0], "\x00\x00\xB2\x01", 4);
+    // TODO: pretty much all of this...
+}
+
+/**
+ * Initialise with basic auth.
+ *
+ * @return
+ */
+int BoltConnection_init(BoltConnection* connection, const char* user, const char* password)
+{
+    switch(connection->protocol_version)
+    {
+        case 1:
+            return _init1(connection, user, password);
+        default:
+            return -1;
+    }
 }

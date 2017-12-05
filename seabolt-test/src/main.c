@@ -809,5 +809,11 @@ int main()
     BoltConnection* connection = BoltConnection_openSecureSocket("matrix.nige.io", 7687);
     BoltConnection_handshake(connection, 1, 0, 0, 0);
     printf("Using Bolt v%d\n", connection->protocol_version);
+//    BoltValue* init_parameters = BoltValue_create();
+//    BoltValue_toUTF8Dictionary(init_parameters, 3);
+//    BoltValue_toUTF8(BoltUTF8Dictionary_withKey(init_parameters, 0, "scheme", 6), "basic", 5);
+//    BoltValue_toUTF8(BoltUTF8Dictionary_withKey(init_parameters, 1, "principal", 9), "neo4j", 5);
+//    BoltValue_toUTF8(BoltUTF8Dictionary_withKey(init_parameters, 2, "credentials", 11), "password", 8);
+    BoltConnection_init(connection, "neo4j", "password");
     BoltConnection_close(connection);
 }

@@ -24,6 +24,8 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
+#include "buffer.h"
+
 
 typedef struct
 {
@@ -33,6 +35,9 @@ typedef struct
     struct ssl_st* _ssl;
     struct bio_st* bio;
     int32_t protocol_version;
+    const char* user_agent;
+    BoltBuffer* buffer;
+    int chunked;
 } BoltConnection;
 
 
@@ -44,9 +49,11 @@ void BoltConnection_close(BoltConnection* connection);
 
 int BoltConnection_transmit(BoltConnection* connection, const void* buffer, int size);
 
-int BoltConnection_receive(BoltConnection* connection, void* buffer, int len, int flags);
+int BoltConnection_receive(BoltConnection* connection, void* buffer, int len);
 
 int32_t BoltConnection_handshake(BoltConnection* connection, int32_t first, int32_t second, int32_t third, int32_t fourth);
+
+int BoltConnection_init(BoltConnection* connection, const char* user, const char* password);
 
 
 #endif // SEABOLT_CONNECT
