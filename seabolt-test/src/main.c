@@ -22,6 +22,7 @@
 #include <assert.h>
 #include <math.h>
 
+#include "connect.h"
 #include "values.h"
 #include "dump.h"
 
@@ -804,5 +805,9 @@ int test()
 
 int main()
 {
-    test();
+//    test();
+    BoltConnection* connection = BoltConnection_openSecureSocket("matrix.nige.io", 7687);
+    BoltConnection_handshake(connection, 1, 0, 0, 0);
+    printf("Using Bolt v%d\n", connection->protocol_version);
+    BoltConnection_close(connection);
 }
