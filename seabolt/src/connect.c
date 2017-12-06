@@ -242,3 +242,27 @@ int BoltConnection_init(BoltConnection* connection, const char* user, const char
             return -1;
     }
 }
+
+int BoltConnection_loadRun(BoltConnection* connection, const char* statement)
+{
+    switch(connection->protocol_version)
+    {
+        case 1:
+            BoltProtocolV1_loadRun(connection, statement);
+            return 0;
+        default:
+            return -1;
+    }
+}
+
+int BoltConnection_loadPull(BoltConnection* connection)
+{
+    switch(connection->protocol_version)
+    {
+        case 1:
+            BoltProtocolV1_loadPull(connection);
+            return 0;
+        default:
+            return -1;
+    }
+}

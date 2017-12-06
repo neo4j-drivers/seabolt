@@ -61,5 +61,9 @@ int32_t BoltConnection_handshake(BoltConnection* connection, int32_t first, int3
 
 int BoltConnection_init(BoltConnection* connection, const char* user, const char* password);
 
+int BoltConnection_loadRun(BoltConnection* connection, const char*);
+
+int BoltConnection_loadPull(BoltConnection* connection);
+
 
 #endif // SEABOLT_CONNECT

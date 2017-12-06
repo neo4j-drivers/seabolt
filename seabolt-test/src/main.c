@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <protocol_v1.h>
 
 #include "connect.h"
 #include "values.h"
@@ -809,11 +810,18 @@ int main()
     BoltConnection* connection = BoltConnection_openSecureSocket("matrix.nige.io", 7687);
     BoltConnection_handshake(connection, 1, 0, 0, 0);
     printf("Using Bolt v%d\n", connection->protocol_version);
-//    BoltValue* init_parameters = BoltValue_create();
-//    BoltValue_toUTF8Dictionary(init_parameters, 3);
-//    BoltValue_toUTF8(BoltUTF8Dictionary_withKey(init_parameters, 0, "scheme", 6), "basic", 5);
-//    BoltValue_toUTF8(BoltUTF8Dictionary_withKey(init_parameters, 1, "principal", 9), "neo4j", 5);
-//    BoltValue_toUTF8(BoltUTF8Dictionary_withKey(init_parameters, 2, "credentials", 11), "password", 8);
     BoltConnection_init(connection, "neo4j", "password");
+    for (int q = 0; q < 10; q++)
+    {
+        BoltConnection_loadRun(connection, "RETURN 1 AS x, true AS truth, 3 AS pi, 'hello, world' AS message");
+        BoltConnection_loadPull(connection);
+        BoltConnection_transmit(connection);
+        for (int i = 0; i < 3; i++)
+        {
+            try(BoltConnection_receive(connection));
+            BoltProtocolV1_unload(connection, connection->incoming);
+            BoltValue_dumpLine(connection->incoming);
+        }
+    }
     BoltConnection_close(connection);
 }

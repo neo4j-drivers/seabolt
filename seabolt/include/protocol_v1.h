@@ -24,6 +24,21 @@
 #include "values.h"
 
 
+typedef enum {
+    BOLT_V1_NULL,
+    BOLT_V1_BOOLEAN,
+    BOLT_V1_INTEGER,
+    BOLT_V1_FLOAT,
+    BOLT_V1_STRING,
+    BOLT_V1_BYTES,
+    BOLT_V1_LIST,
+    BOLT_V1_MAP,
+    BOLT_V1_STRUCTURE,
+    BOLT_V1_RESERVED,
+} BoltProtocolV1Type;
+
+BoltProtocolV1Type BoltProtocolV1_markerType(uint8_t marker);
+
 int BoltProtocolV1_loadString(BoltConnection* connection, const char* string, int32_t size);
 
 int BoltProtocolV1_loadMap(BoltConnection* connection, BoltValue* value);
@@ -32,12 +47,27 @@ int BoltProtocolV1_load(BoltConnection* connection, BoltValue* value);
 
 int BoltProtocolV1_loadInit(BoltConnection* connection, const char* user, const char* password);
 
+int BoltProtocolV1_loadRun(BoltConnection* connection, const char* statement);
+
+int BoltProtocolV1_loadPull(BoltConnection* connection);
+
+/**
+ * Top-level unload. Unloads either a summary or the first value of a record.
+ *
+ * @param connection
+ * @param value
+ * @return
+ */
 int BoltProtocolV1_unload(BoltConnection* connection, BoltValue* value);
+
+int BoltProtocolV1_unloadBoolean(BoltConnection* connection, BoltValue* value);
+
+int BoltProtocolV1_unloadInteger(BoltConnection* connection, BoltValue* value);
 
 int BoltProtocolV1_unloadString(BoltConnection* connection, BoltValue* value);
 
-int BoltProtocolV1_unloadMap(BoltConnection* connection, BoltValue* value);
+int BoltProtocolV1_unloadList(BoltConnection* connection, BoltValue* value);
 
-int BoltProtocolV1_unloadSummary(BoltConnection* connection, BoltValue* value);
+int BoltProtocolV1_unloadMap(BoltConnection* connection, BoltValue* value);
 
 #endif // SEABOLT_PROTOCOL_V1
