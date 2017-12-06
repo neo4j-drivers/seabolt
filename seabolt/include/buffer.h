@@ -53,7 +53,11 @@ void BoltBuffer_load_uint8(BoltBuffer* buffer, uint8_t x);
 
 void BoltBuffer_load_int32be(BoltBuffer* buffer, int32_t x);
 
-void BoltBuffer_stop(BoltBuffer* buffer);
+void BoltBuffer_pushStop(BoltBuffer* buffer);
+
+int BoltBuffer_nextStop(BoltBuffer* buffer);
+
+void BoltBuffer_pullStop(BoltBuffer* buffer);
 
 int BoltBuffer_unloadable(BoltBuffer* buffer);
 

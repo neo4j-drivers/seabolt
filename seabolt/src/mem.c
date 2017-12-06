@@ -19,6 +19,7 @@
 
 #include <stddef.h>
 #include <malloc.h>
+#include <logging.h>
 
 #include "mem.h"
 
@@ -31,7 +32,7 @@ void* BoltMem_allocate(size_t new_size)
 {
     void* p = malloc(new_size);
     __memory += new_size;
-    fprintf(stderr, "\x1B[36mAllocated %ld bytes (balance: %lu)\x1B[0m\n", new_size, __memory);
+    log("[MEM] Allocated %ld bytes (balance: %lu)", new_size, __memory);
     __activity += 1;
     return p;
 }
@@ -40,7 +41,7 @@ void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size)
 {
     void* p = realloc(ptr, new_size);
     __memory = __memory - old_size + new_size;
-    fprintf(stderr, "\x1B[36mReallocated %ld bytes as %ld bytes (balance: %lu)\x1B[0m\n", old_size, new_size, __memory);
+    log("[MEM] Reallocated %ld bytes as %ld bytes (balance: %lu)", old_size, new_size, __memory);
     __activity += 1;
     return p;
 }
@@ -49,7 +50,7 @@ void* BoltMem_deallocate(void* ptr, size_t old_size)
 {
     free(ptr);
     __memory -= old_size;
-    fprintf(stderr, "\x1B[36mFreed %ld bytes (balance: %lu)\x1B[0m\n", old_size, __memory);
+    log("[MEM] Freed %ld bytes (balance: %lu)", old_size, __memory);
     __activity += 1;
     return NULL;
 }

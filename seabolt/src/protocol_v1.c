@@ -71,7 +71,7 @@ int BoltProtocolV1_loadInit(BoltConnection* connection, const char* user, const 
     BoltValue_toUTF8(BoltUTF8Dictionary_withKey(auth, 2, "credentials", 11), password, strlen(password));
     BoltProtocolV1_load(connection, auth);
     BoltValue_destroy(auth);
-    BoltBuffer_stop(connection->buffer);
+    BoltBuffer_pushStop(connection->buffer);
 }
 
 int _unload(BoltConnection* connection, BoltValue* value)

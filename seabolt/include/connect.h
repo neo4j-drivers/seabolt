@@ -28,6 +28,9 @@
 #include "values.h"
 
 
+#define try(code) { int status = (code); if (status == -1) return status; }
+
+
 typedef struct
 {
     const char* host;
@@ -38,7 +41,8 @@ typedef struct
     int32_t protocol_version;
     const char* user_agent;
     BoltBuffer* buffer;
-    unsigned long err;
+    unsigned long bolt_error;
+    unsigned long library_error;
     BoltValue* incoming; // holder for incoming messages (one at a time so we can reuse this)
 } BoltConnection;
 

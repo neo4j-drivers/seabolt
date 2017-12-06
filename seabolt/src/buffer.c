@@ -83,7 +83,7 @@ void BoltBuffer_load_int32be(BoltBuffer* buffer, int32_t x)
     target[3] = (char)(x);
 }
 
-void BoltBuffer_stop(BoltBuffer* buffer)
+void BoltBuffer_pushStop(BoltBuffer* buffer)
 {
     int num_stops = buffer->num_stops + 1;
     buffer->stops = BoltMem_reallocate(buffer->stops, buffer->num_stops * sizeof(int), num_stops * sizeof(int));
@@ -91,9 +91,26 @@ void BoltBuffer_stop(BoltBuffer* buffer)
     buffer->num_stops = num_stops;
 }
 
+int BoltBuffer_nextStop(BoltBuffer* buffer)
+{
+    return buffer->num_stops == 0 ? -1 : buffer->stops[0];
+}
+
+void BoltBuffer_pullStop(BoltBuffer* buffer)
+{
+    if (buffer->num_stops > 0)
+    {
+        int num_stops = buffer->num_stops - 1;
+        memcpy(&buffer->stops[0], &buffer->stops[1], num_stops * sizeof(int));
+        buffer->stops = BoltMem_reallocate(buffer->stops, buffer->num_stops * sizeof(int), num_stops * sizeof(int));
+        buffer->num_stops = num_stops;
+    }
+}
+
 int BoltBuffer_unloadable(BoltBuffer* buffer)
 {
-    return buffer->extent - buffer->cursor;
+    int stop = BoltBuffer_nextStop(buffer);
+    return (stop == -1 ? buffer->extent : stop) - buffer->cursor;
 }
 
 char* BoltBuffer_unloadTarget(BoltBuffer* buffer, int size)

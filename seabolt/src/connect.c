@@ -23,30 +23,34 @@
 #include <connect.h>
 #include <protocol_v1.h>
 #include <dump.h>
+#include <logging.h>
+#include <err.h>
+#include <buffer.h>
+
+
+#define return_if(predicate, bolt_err, lib_err, return_value)       \
+    if (predicate)                                                  \
+    {                                                               \
+        connection->bolt_error = (bolt_err);                        \
+        connection->library_error = (lib_err);                      \
+        return (return_value);                                      \
+    }
 
 
 #define char_to_int16be(array) (header[0] << 8) | (header[1]);
-
-#define try(code) { int status = (code); if (status == -1) return status; }
 
 
 static const char* DEFAULT_USER_AGENT = "seabolt/1.0.0a";
 
 
-int _connect(BoltConnection* connection)
+int _open(BoltConnection* connection, const char* host, int port)
 {
-    char host_port[strlen(connection->host) + 6];
-    sprintf(&host_port[0], "%s:%d", connection->host, connection->port);
-
-    BIO_set_conn_hostname(connection->bio, host_port);
-
-    if (BIO_do_connect(connection->bio) <= 0)
-    {
-        return EXIT_FAILURE;
-//        throw runtime_error("unable to establish a connection to " + hostPort + ". Error is: " + basic_string<char>(
-//                ERR_error_string(ERR_get_error(), nullptr)));
-    }
-
+    connection->host = host;
+    connection->port = port;
+    char address[strlen(connection->host) + 6];
+    sprintf(&address[0], "%s:%d", connection->host, connection->port);
+    BIO_set_conn_hostname(connection->bio, address);
+    return_if(BIO_do_connect(connection->bio) <= 0, BOLT_SOCKET_ERROR, ERR_get_error(), EXIT_FAILURE);
     if (connection->_ssl != NULL)
     {
         if (SSL_get_verify_result(connection->_ssl) != X509_V_OK)
@@ -54,78 +58,46 @@ int _connect(BoltConnection* connection)
             SSL_set_verify_result(connection->_ssl, X509_V_OK);
         }
     }
+    connection->buffer = BoltBuffer_create(8192);
+    connection->protocol_version = 0;
+    connection->user_agent = DEFAULT_USER_AGENT;
+    connection->incoming = BoltValue_create();
+
 }
 
 BoltConnection* BoltConnection_openSocket(const char* host, int port)
 {
     BoltConnection* connection = BoltMem_allocate(sizeof(BoltConnection));
-    connection->user_agent = DEFAULT_USER_AGENT;
-    connection->host = host;
-    connection->port = port;
-    connection->protocol_version = 0;
-    connection->buffer = BoltBuffer_create(8192);
-    connection->incoming = BoltValue_create();
     connection->bio = BIO_new(BIO_s_connect());
-    if (connection->bio == NULL)
-    {
-//            throw runtime_error("unable to initialize connection structures. Error is: " +
-//                                basic_string<char>(ERR_error_string(ERR_get_error(), nullptr)));
-        return NULL;
-    }
-    _connect(connection);
+    return_if(connection->bio == NULL, BOLT_SOCKET_ERROR, 0, NULL);
+    _open(connection, host, port);
     return connection;
 }
 
 BoltConnection* BoltConnection_openSecureSocket(const char* host, int port)
 {
     BoltConnection* connection = BoltMem_allocate(sizeof(BoltConnection));
-    connection->user_agent = DEFAULT_USER_AGENT;
-    connection->host = host;
-    connection->port = port;
-    connection->protocol_version = 0;
-    connection->buffer = BoltBuffer_create(8192);
-    connection->incoming = BoltValue_create();
     // Ensure SSL has been initialised
     SSL_library_init();
     SSL_load_error_strings();
 
     // create a new TLS 1.2 context
     connection->ssl_context = SSL_CTX_new(TLSv1_2_client_method());
-    if (connection->ssl_context == NULL)
-    {
-        printf("Error: %s\n", ERR_reason_error_string(ERR_get_error()));
-        return NULL;
-//        throw runtime_error("SSL context initialisation failed. Error is: " + basic_string<char>(
-//                ERR_error_string(ERR_get_error(), nullptr)));
-    }
+    return_if(connection->ssl_context == NULL, BOLT_TLS_ERROR, ERR_get_error(), NULL);
 
     // set CA cert store to the defaults
-    if (SSL_CTX_set_default_verify_paths(connection->ssl_context) <= 0)
-    {
-        return NULL;
-//        throw runtime_error("Default trusted CA store could not be loaded. Error is: " + basic_string<char>(
-//                ERR_error_string(ERR_get_error(), nullptr)));
-    }
+    return_if(SSL_CTX_set_default_verify_paths(connection->ssl_context) <= 0,
+              BOLT_TLS_ERROR, ERR_get_error(), NULL);
 
     connection->bio = BIO_new_ssl_connect(connection->ssl_context);
-    if (connection->bio == NULL)
-    {
-        return NULL;
-//        throw runtime_error("unable to initialize connection structures. Error is: " + basic_string<char>(
-//                ERR_error_string(ERR_get_error(), nullptr)));
-    }
+    return_if(connection->bio == NULL, BOLT_TLS_ERROR, ERR_get_error(), NULL);
 
     BIO_get_ssl(connection->bio, &connection->_ssl);
-    if (connection->_ssl == NULL)
-    {
-        return NULL;
-//        throw runtime_error("unable to initialize SSL structures. Error is: " + basic_string<char>(
-//                ERR_error_string(ERR_get_error(), nullptr)));
-    }
+    return_if(connection->_ssl == NULL, BOLT_TLS_ERROR, ERR_get_error(), NULL);
 
     SSL_set_mode(connection->_ssl, SSL_MODE_AUTO_RETRY);
 
-    _connect(connection);
+    _open(connection, host, port);
     return connection;
 }
 
@@ -140,16 +112,10 @@ void BoltConnection_close(BoltConnection* connection)
 
 int _transmit(BoltConnection* connection, const char* data, int len)
 {
-    printf("Tx:");
-    for (int i=0;i< len;i++)
-    {
-        printf(" %d", data[i]);
-    }
-    printf("\n");
     int sent = BIO_write(connection->bio, data, len);
     if (sent > 0)
     {
-        printf("Transmitted %d bytes\n", sent);
+        log("[CON] Transmitted %d bytes", sent);
         return sent;
     }
     if (BIO_should_retry(connection->bio))
@@ -157,7 +123,7 @@ int _transmit(BoltConnection* connection, const char* data, int len)
         return _transmit(connection, data, len);
     }
     printf("Transmission error: %s", ERR_error_string(ERR_get_error(), NULL));
-    connection->err = ERR_get_error();
+    connection->bolt_error = ERR_get_error();
     return -1;
 }
 
@@ -168,22 +134,31 @@ int BoltConnection_transmit(BoltConnection* connection)
         case 1:
         {
             // TODO: more chunks if size is too big
-            // TODO: use stops
             int size = BoltBuffer_unloadable(connection->buffer);
-            char header[2];
-            header[0] = (char)(size >> 8);
-            header[1] = (char)(size);
-            try(_transmit(connection, &header[0], 2));
-            try(_transmit(connection, BoltBuffer_unloadTarget(connection->buffer, size), size));
-            header[0] = (char)(0);
-            header[1] = (char)(0);
-            try(_transmit(connection, &header[0], 2));
+            while (size > 0)
+            {
+                char header[2];
+                header[0] = (char)(size >> 8);
+                header[1] = (char)(size);
+                try(_transmit(connection, &header[0], 2));
+                try(_transmit(connection, BoltBuffer_unloadTarget(connection->buffer, size), size));
+                header[0] = (char)(0);
+                header[1] = (char)(0);
+                try(_transmit(connection, &header[0], 2));
+                BoltBuffer_pullStop(connection->buffer);
+                size = BoltBuffer_unloadable(connection->buffer);
+            }
             return 0;
         }
         default:
         {
             int size = BoltBuffer_unloadable(connection->buffer);
-            try(_transmit(connection, BoltBuffer_unloadTarget(connection->buffer, size), size));
+            while(size > 0)
+            {
+                try(_transmit(connection, BoltBuffer_unloadTarget(connection->buffer, size), size));
+                BoltBuffer_pullStop(connection->buffer);
+                size = BoltBuffer_unloadable(connection->buffer);
+            }
             return 0;
         }
     }
@@ -206,7 +181,7 @@ int _receive(BoltConnection* connection, char* buffer, int size)
         printf("%s", ERR_error_string(ERR_get_error(), NULL));
         return -1;
     }
-    printf("Received %d bytes\n", received);
+    log("[CON] Received %d bytes", received);
     return received;
 }
 
