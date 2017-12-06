@@ -25,6 +25,7 @@
 #include <openssl/ssl.h>
 
 #include "buffer.h"
+#include "values.h"
 
 
 typedef struct
@@ -37,7 +38,8 @@ typedef struct
     int32_t protocol_version;
     const char* user_agent;
     BoltBuffer* buffer;
-    int chunked;
+    unsigned long err;
+    BoltValue* incoming; // holder for incoming messages (one at a time so we can reuse this)
 } BoltConnection;
 
 
@@ -47,9 +49,9 @@ BoltConnection* BoltConnection_openSecureSocket(const char* host, int port);
 
 void BoltConnection_close(BoltConnection* connection);
 
-int BoltConnection_transmit(BoltConnection* connection, const void* buffer, int size);
+int BoltConnection_transmit(BoltConnection* connection);
 
-int BoltConnection_receive(BoltConnection* connection, void* buffer, int len);
+int BoltConnection_receive(BoltConnection* connection);
 
 int32_t BoltConnection_handshake(BoltConnection* connection, int32_t first, int32_t second, int32_t third, int32_t fourth);
 

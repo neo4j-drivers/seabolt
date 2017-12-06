@@ -39,14 +39,14 @@ void _test_list()
 {
     BoltValue* value = BoltValue_create();
     BoltValue_toList(value, 6);
-    BoltValue_toInt32(BoltList_at(value, 0), 1234567);
-    BoltValue_toInt32(BoltList_at(value, 1), 2345678);
-    BoltValue_toInt32(BoltList_at(value, 2), 3456789);
-    BoltValue_toUTF8(BoltList_at(value, 3), "hello", 5);
-    BoltValue_toList(BoltList_at(value, 5), 3);
-    BoltValue_toNum8(BoltList_at(BoltList_at(value, 5), 0), 77);
-    BoltValue_toNum8(BoltList_at(BoltList_at(value, 5), 1), 88);
-    BoltValue_toByte(BoltList_at(BoltList_at(value, 5), 2), 99);
+    BoltValue_toInt32(BoltList_value(value, 0), 1234567);
+    BoltValue_toInt32(BoltList_value(value, 1), 2345678);
+    BoltValue_toInt32(BoltList_value(value, 2), 3456789);
+    BoltValue_toUTF8(BoltList_value(value, 3), "hello", 5);
+    BoltValue_toList(BoltList_value(value, 5), 3);
+    BoltValue_toNum8(BoltList_value(BoltList_value(value, 5), 0), 77);
+    BoltValue_toNum8(BoltList_value(BoltList_value(value, 5), 1), 88);
+    BoltValue_toByte(BoltList_value(BoltList_value(value, 5), 2), 99);
     BoltValue_dumpLine(value);
     assert(BoltValue_type(value) == BOLT_LIST);
     assert(value->size == 6);
@@ -74,7 +74,7 @@ void _test_list_growth()
     {
         int size = i + 1;
         BoltList_resize(value, size);
-        BoltValue_toInt8(BoltList_at(value, i), (int8_t)(size));
+        BoltValue_toInt8(BoltList_value(value, i), (int8_t)(size));
         BoltValue_dumpLine(value);
         assert(BoltValue_type(value) == BOLT_LIST);
         assert(value->size == size);
@@ -86,9 +86,9 @@ void _test_list_shrinkage()
 {
     BoltValue* value = BoltValue_create();
     BoltValue_toList(value, 3);
-    BoltValue_toInt8(BoltList_at(value, 0), 1);
-    BoltValue_toInt8(BoltList_at(value, 1), 2);
-    BoltValue_toInt8(BoltList_at(value, 2), 3);
+    BoltValue_toInt8(BoltList_value(value, 0), 1);
+    BoltValue_toInt8(BoltList_value(value, 1), 2);
+    BoltValue_toInt8(BoltList_value(value, 2), 3);
     assert(BoltValue_type(value) == BOLT_LIST);
     assert(value->size == 3);
     for (int size = 3; size >= 0; size--)
@@ -700,9 +700,9 @@ void test_structure()
     BoltValue* value = BoltValue_create();
     const int NODE = 0xA0;
     BoltValue_toStructure(value, NODE, 3);
-    BoltValue* id = BoltStructure_at(value, 0);
-    BoltValue* labels = BoltStructure_at(value, 1);
-    BoltValue* properties = BoltStructure_at(value, 2);
+    BoltValue* id = BoltStructure_value(value, 0);
+    BoltValue* labels = BoltStructure_value(value, 1);
+    BoltValue* properties = BoltStructure_value(value, 2);
     BoltValue_toInt64(id, 123);
     BoltValue_toUTF8Array(labels, 2);
     BoltUTF8Array_put(labels, 0, "Person", 6);
@@ -747,8 +747,8 @@ void test_request()
     BoltValue* value = BoltValue_create();
     const int RUN = 0xA0;
     BoltValue_toRequest(value, RUN, 2);
-    BoltValue* statement = BoltRequest_at(value, 0);
-    BoltValue* parameters = BoltRequest_at(value, 1);
+    BoltValue* statement = BoltRequest_value(value, 0);
+    BoltValue* parameters = BoltRequest_value(value, 1);
     BoltValue_toUTF8(statement, "RETURN $x", 9);
     BoltValue_toUTF8Dictionary(parameters, 1);
     BoltValue_toInt64(BoltUTF8Dictionary_withKey(parameters, 0, "x", 1), 1);
@@ -763,7 +763,7 @@ void test_summary()
     BoltValue* value = BoltValue_create();
     const int SUCCESS = 0xA0;
     BoltValue_toSummary(value, SUCCESS, 1);
-    BoltValue* metadata = BoltSummary_at(value, 0);
+    BoltValue* metadata = BoltSummary_value(value, 0);
     BoltValue_toUTF8Dictionary(metadata, 2);
     BoltValue_toInt64(BoltUTF8Dictionary_withKey(metadata, 0, "results", 7), 100);
     BoltValue_toInt64(BoltUTF8Dictionary_withKey(metadata, 1, "time", 4), 123456789);

@@ -75,7 +75,7 @@ void BoltList_resize(BoltValue* value, int32_t size)
     _BoltValue_resize(value, size, 1);
 }
 
-BoltValue* BoltList_at(const BoltValue* value, int32_t index)
+BoltValue* BoltList_value(const BoltValue* value, int32_t index)
 {
     assert(BoltValue_type(value) == BOLT_LIST);
     return &value->data.extended.as_value[index];

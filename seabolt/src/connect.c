@@ -21,11 +21,13 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <connect.h>
-#include <assert.h>
+#include <protocol_v1.h>
+#include <dump.h>
 
-#include "buffer.h"
-#include "connect.h"
-#include "mem.h"
+
+#define char_to_int16be(array) (header[0] << 8) | (header[1]);
+
+#define try(code) { int status = (code); if (status == -1) return status; }
 
 
 static const char* DEFAULT_USER_AGENT = "seabolt/1.0.0a";
@@ -60,7 +62,9 @@ BoltConnection* BoltConnection_openSocket(const char* host, int port)
     connection->user_agent = DEFAULT_USER_AGENT;
     connection->host = host;
     connection->port = port;
+    connection->protocol_version = 0;
     connection->buffer = BoltBuffer_create(8192);
+    connection->incoming = BoltValue_create();
     connection->bio = BIO_new(BIO_s_connect());
     if (connection->bio == NULL)
     {
@@ -78,7 +82,9 @@ BoltConnection* BoltConnection_openSecureSocket(const char* host, int port)
     connection->user_agent = DEFAULT_USER_AGENT;
     connection->host = host;
     connection->port = port;
+    connection->protocol_version = 0;
     connection->buffer = BoltBuffer_create(8192);
+    connection->incoming = BoltValue_create();
     // Ensure SSL has been initialised
     SSL_library_init();
     SSL_load_error_strings();
@@ -126,14 +132,21 @@ BoltConnection* BoltConnection_openSecureSocket(const char* host, int port)
 void BoltConnection_close(BoltConnection* connection)
 {
     BoltBuffer_destroy(connection->buffer);
+    BoltValue_destroy(connection->incoming);
     BIO_free_all(connection->bio);
     SSL_CTX_free(connection->ssl_context);
     BoltMem_deallocate(connection, sizeof(BoltConnection));
 }
 
-int BoltConnection_transmit(BoltConnection* connection, const void* buffer, int size)
+int _transmit(BoltConnection* connection, const char* data, int len)
 {
-    int sent = BIO_write(connection->bio, buffer, size);
+    printf("Tx:");
+    for (int i=0;i< len;i++)
+    {
+        printf(" %d", data[i]);
+    }
+    printf("\n");
+    int sent = BIO_write(connection->bio, data, len);
     if (sent > 0)
     {
         printf("Transmitted %d bytes\n", sent);
@@ -141,56 +154,97 @@ int BoltConnection_transmit(BoltConnection* connection, const void* buffer, int 
     }
     if (BIO_should_retry(connection->bio))
     {
-        return BoltConnection_transmit(connection, buffer, size);
+        return _transmit(connection, data, len);
     }
     printf("Transmission error: %s", ERR_error_string(ERR_get_error(), NULL));
+    connection->err = ERR_get_error();
     return -1;
 }
 
-int BoltConnection_receive(BoltConnection* connection, void* buffer, int len)
+int BoltConnection_transmit(BoltConnection* connection)
 {
-    int res = BIO_read(connection->bio, buffer, len);
+    switch(connection->protocol_version)
+    {
+        case 1:
+        {
+            // TODO: more chunks if size is too big
+            // TODO: use stops
+            int size = BoltBuffer_unloadable(connection->buffer);
+            char header[2];
+            header[0] = (char)(size >> 8);
+            header[1] = (char)(size);
+            try(_transmit(connection, &header[0], 2));
+            try(_transmit(connection, BoltBuffer_unloadTarget(connection->buffer, size), size));
+            header[0] = (char)(0);
+            header[1] = (char)(0);
+            try(_transmit(connection, &header[0], 2));
+            return 0;
+        }
+        default:
+        {
+            int size = BoltBuffer_unloadable(connection->buffer);
+            try(_transmit(connection, BoltBuffer_unloadTarget(connection->buffer, size), size));
+            return 0;
+        }
+    }
+}
 
-    if (res == 0)
+int _receive(BoltConnection* connection, char* buffer, int size)
+{
+    int received = BIO_read(connection->bio, buffer, size);
+    if (received == 0)
     {
         printf("Unable to read from a closed connection.");
         return -1;
     }
-    if (res < 0)
+    if (received < 0)
     {
         if (BIO_should_retry(connection->bio))
         {
-            return BoltConnection_receive(connection, buffer, len);
+            return _receive(connection, buffer, size);
         }
         printf("%s", ERR_error_string(ERR_get_error(), NULL));
         return -1;
     }
+    printf("Received %d bytes\n", received);
+    return received;
+}
 
-    printf("%d received\n", res);
-    return res;
+int BoltConnection_receive(BoltConnection* connection)
+{
+    switch(connection->protocol_version)
+    {
+        case 1:
+        {
+            char header[2];
+            try(_receive(connection, &header[0], 2));
+            int chunk_size = char_to_int16be(header);
+            while (chunk_size != 0)
+            {
+                try(_receive(connection, BoltBuffer_loadTarget(connection->buffer, chunk_size), chunk_size));
+                try(_receive(connection, &header[0], 2));
+                chunk_size = char_to_int16be(header);
+            }
+            return 0;
+        }
+        default:
+        {
+            // TODO
+            return -1;
+        }
+    }
 }
 
 int BoltConnection_handshake(BoltConnection* connection, int32_t first, int32_t second, int32_t third, int32_t fourth)
 {
-    BoltBuffer_load_bytes(connection->buffer, "\x60\x60\xB0\x17", 4);
+    BoltBuffer_load(connection->buffer, "\x60\x60\xB0\x17", 4);
     BoltBuffer_load_int32be(connection->buffer, first);
     BoltBuffer_load_int32be(connection->buffer, second);
     BoltBuffer_load_int32be(connection->buffer, third);
     BoltBuffer_load_int32be(connection->buffer, fourth);
-    BoltConnection_transmit(connection, BoltBuffer_unload(connection->buffer, 20), 20);
-    BoltConnection_receive(connection, BoltBuffer_load(connection->buffer, 4), 4);
-    connection->protocol_version = BoltBuffer_unload_int32be(connection->buffer);
-    // TODO: return codes
-}
-
-int _init1(BoltConnection* connection, const char* user, const char* password)
-{
-    assert(strlen(connection->user_agent) < 0x100);
-    assert(strlen(user) < 0x100);
-    assert(strlen(password) < 0x100);
-    char buffer[8192];
-    memcpy(&buffer[0], "\x00\x00\xB2\x01", 4);
-    // TODO: pretty much all of this...
+    try(BoltConnection_transmit(connection));
+    try(_receive(connection, BoltBuffer_loadTarget(connection->buffer, 4), 4));
+    BoltBuffer_unload_int32be(connection->buffer, &connection->protocol_version);
 }
 
 /**
@@ -203,7 +257,12 @@ int BoltConnection_init(BoltConnection* connection, const char* user, const char
     switch(connection->protocol_version)
     {
         case 1:
-            return _init1(connection, user, password);
+            BoltProtocolV1_loadInit(connection, user, password);
+            try(BoltConnection_transmit(connection));
+            try(BoltConnection_receive(connection));
+            BoltProtocolV1_unload(connection, connection->incoming);
+            BoltValue_dumpLine(connection->incoming);
+            return 0;
         default:
             return -1;
     }

@@ -145,7 +145,7 @@ void BoltValue_toChar16Array(BoltValue* value, uint16_t* array, int32_t size);
 
 void BoltValue_toChar32Array(BoltValue* value, uint32_t* array, int32_t size);
 
-void BoltValue_toUTF8(BoltValue* value, char* string, int32_t size);
+void BoltValue_toUTF8(BoltValue* value, const char* string, int32_t size);
 
 void BoltValue_toUTF16(BoltValue* value, uint16_t* string, int32_t size);
 
@@ -239,7 +239,7 @@ void BoltValue_destroy(BoltValue* value);
 
 void BoltList_resize(BoltValue* value, int32_t size);
 
-BoltValue* BoltList_at(const BoltValue* value, int32_t index);
+BoltValue* BoltList_value(const BoltValue* value, int32_t index);
 
 
 
@@ -263,13 +263,13 @@ uint32_t BoltChar32Array_get(const BoltValue* value, int32_t index);
 
 
 
-const char* BoltUTF8_get(const BoltValue* value);
+char* BoltUTF8_get(BoltValue* value);
 
 uint16_t* BoltUTF16_get(BoltValue* value);
 
 char* BoltUTF8Array_get(BoltValue* value, int32_t index);
 
-uint16_t* BoltUTF16Array_get(const BoltValue* value, int32_t index);
+uint16_t* BoltUTF16Array_get(BoltValue* value, int32_t index);
 
 void BoltUTF8Array_put(BoltValue* value, int32_t index, char* string, int32_t size);
 
@@ -279,17 +279,17 @@ int32_t BoltUTF8Array_getSize(BoltValue* value, int32_t index);
 
 int32_t BoltUTF16Array_getSize(BoltValue* value, int32_t index);
 
-BoltValue* BoltUTF8Dictionary_getKey(const BoltValue* value, int32_t index);
+BoltValue* BoltUTF8Dictionary_key(BoltValue* value, int32_t index);
 
-BoltValue* BoltUTF16Dictionary_getKey(const BoltValue* value, int32_t index);
+BoltValue* BoltUTF16Dictionary_key(BoltValue* value, int32_t index);
 
 BoltValue* BoltUTF8Dictionary_withKey(BoltValue* value, int32_t index, char* key, int32_t key_size);
 
 BoltValue* BoltUTF16Dictionary_withKey(BoltValue* value, int32_t index, uint16_t* key, int32_t key_size);
 
-BoltValue* BoltUTF8Dictionary_at(const BoltValue* value, int32_t index);
+BoltValue* BoltUTF8Dictionary_value(BoltValue* value, int32_t index);
 
-BoltValue* BoltUTF16Dictionary_at(const BoltValue* value, int32_t index);
+BoltValue* BoltUTF16Dictionary_value(BoltValue* value, int32_t index);
 
 void BoltUTF8Dictionary_resize(BoltValue* value, int32_t size);
 
@@ -390,11 +390,11 @@ int16_t BoltRequest_code(const BoltValue* value);
 
 int16_t BoltSummary_code(const BoltValue* value);
 
-BoltValue* BoltStructure_at(const BoltValue* value, int32_t index);
+BoltValue* BoltStructure_value(const BoltValue* value, int32_t index);
 
-BoltValue* BoltRequest_at(const BoltValue* value, int32_t index);
+BoltValue* BoltRequest_value(const BoltValue* value, int32_t index);
 
-BoltValue* BoltSummary_at(const BoltValue* value, int32_t index);
+BoltValue* BoltSummary_value(const BoltValue* value, int32_t index);
 
 int32_t BoltStructureArray_getSize(const BoltValue* value, int32_t index);
 

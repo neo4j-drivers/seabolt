@@ -76,19 +76,19 @@ int16_t BoltSummary_code(const BoltValue* value)
     return value->code;
 }
 
-BoltValue* BoltStructure_at(const BoltValue* value, int32_t index)
+BoltValue* BoltStructure_value(const BoltValue* value, int32_t index)
 {
     assert(BoltValue_type(value) == BOLT_STRUCTURE);
     return &value->data.extended.as_value[index];
 }
 
-BoltValue* BoltRequest_at(const BoltValue* value, int32_t index)
+BoltValue* BoltRequest_value(const BoltValue* value, int32_t index)
 {
     assert(BoltValue_type(value) == BOLT_REQUEST);
     return &value->data.extended.as_value[index];
 }
 
-BoltValue* BoltSummary_at(const BoltValue* value, int32_t index)
+BoltValue* BoltSummary_value(const BoltValue* value, int32_t index)
 {
     assert(BoltValue_type(value) == BOLT_SUMMARY);
     return &value->data.extended.as_value[index];
@@ -106,5 +106,5 @@ void BoltStructureArray_setSize(BoltValue* value, int32_t index, int32_t size)
 
 BoltValue* BoltStructureArray_at(const BoltValue* value, int32_t array_index, int32_t structure_index)
 {
-    return BoltList_at(&value->data.extended.as_value[array_index], structure_index);
+    return BoltList_value(&value->data.extended.as_value[array_index], structure_index);
 }

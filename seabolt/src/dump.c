@@ -60,7 +60,7 @@ int BoltList_dump(const BoltValue* value)
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) printf(", ");
-        BoltValue_dump(BoltList_at(value, i));
+        BoltValue_dump(BoltList_value(value, i));
     }
     printf("]");
     return EXIT_SUCCESS;
@@ -106,7 +106,7 @@ int BoltByte_dump(const BoltValue* value)
     return EXIT_SUCCESS;
 }
 
-int BoltUTF8_dump(const BoltValue* value)
+int BoltUTF8_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_UTF8);
     if (BoltValue_isArray(value))
@@ -129,7 +129,7 @@ int BoltUTF8_dump(const BoltValue* value)
     }
     else
     {
-        const char* data = BoltUTF8_get(value);
+        char* data = BoltUTF8_get(value);
         printf("u8(\"");
         for (int i = 0; i < value->size; i++)
         {
@@ -140,20 +140,20 @@ int BoltUTF8_dump(const BoltValue* value)
     return EXIT_SUCCESS;
 }
 
-int BoltUTF8Dictionary_dump(const BoltValue* value)
+int BoltUTF8Dictionary_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
-    printf("du8[");
+    printf("d8[");
     int comma = 0;
     for (int i = 0; i < value->size; i++)
     {
-        BoltValue* key = BoltUTF8Dictionary_getKey(value, i);
+        BoltValue* key = BoltUTF8Dictionary_key(value, i);
         if (key != NULL)
         {
             if (comma) printf(", ");
             _bolt_dump_string(BoltUTF8_get(key), (size_t)(key->size));
             printf(" ");
-            BoltValue_dump(BoltUTF8Dictionary_at(value, i));
+            BoltValue_dump(BoltUTF8Dictionary_value(value, i));
             comma = 1;
         }
     }
@@ -161,7 +161,7 @@ int BoltUTF8Dictionary_dump(const BoltValue* value)
     return EXIT_SUCCESS;
 }
 
-int BoltNum8_dump(const BoltValue* value)
+int BoltNum8_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NUM8);
     if (BoltValue_isArray(value))
@@ -180,7 +180,7 @@ int BoltNum8_dump(const BoltValue* value)
     return EXIT_SUCCESS;
 }
 
-int BoltNum16_dump(const BoltValue* value)
+int BoltNum16_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NUM16);
     if (BoltValue_isArray(value))
@@ -199,7 +199,7 @@ int BoltNum16_dump(const BoltValue* value)
     return EXIT_SUCCESS;
 }
 
-int BoltNum32_dump(const BoltValue* value)
+int BoltNum32_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NUM32);
     if (BoltValue_isArray(value))
@@ -218,7 +218,7 @@ int BoltNum32_dump(const BoltValue* value)
     return EXIT_SUCCESS;
 }
 
-int BoltNum64_dump(const BoltValue* value)
+int BoltNum64_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NUM64);
     if (BoltValue_isArray(value))
@@ -237,7 +237,7 @@ int BoltNum64_dump(const BoltValue* value)
     return EXIT_SUCCESS;
 }
 
-int BoltInt8_dump(const BoltValue* value)
+int BoltInt8_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT8);
     if (BoltValue_isArray(value))
@@ -256,7 +256,7 @@ int BoltInt8_dump(const BoltValue* value)
     return EXIT_SUCCESS;
 }
 
-int BoltInt16_dump(const BoltValue* value)
+int BoltInt16_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT16);
     if (BoltValue_isArray(value))
@@ -275,7 +275,7 @@ int BoltInt16_dump(const BoltValue* value)
     return EXIT_SUCCESS;
 }
 
-int BoltInt32_dump(const BoltValue* value)
+int BoltInt32_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT32);
     if (BoltValue_isArray(value))
@@ -294,7 +294,7 @@ int BoltInt32_dump(const BoltValue* value)
     return EXIT_SUCCESS;
 }
 
-int BoltInt64_dump(const BoltValue* value)
+int BoltInt64_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT64);
     if (BoltValue_isArray(value))
@@ -313,7 +313,7 @@ int BoltInt64_dump(const BoltValue* value)
     return EXIT_SUCCESS;
 }
 
-int BoltFloat32_dump(const BoltValue* value)
+int BoltFloat32_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT32);
     if (BoltValue_isArray(value))
@@ -332,7 +332,7 @@ int BoltFloat32_dump(const BoltValue* value)
     return EXIT_SUCCESS;
 }
 
-int BoltFloat64_dump(const BoltValue* value)
+int BoltFloat64_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT64);
     if (BoltValue_isArray(value))
@@ -351,7 +351,7 @@ int BoltFloat64_dump(const BoltValue* value)
     return EXIT_SUCCESS;
 }
 
-int BoltStructure_dump(const BoltValue* value)
+int BoltStructure_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_STRUCTURE);
     int16_t code = BoltStructure_code(value);
@@ -383,14 +383,14 @@ int BoltStructure_dump(const BoltValue* value)
         for (int i = 0; i < value->size; i++)
         {
             if (i > 0) printf(" ");
-            BoltValue_dump(BoltStructure_at(value, i));
+            BoltValue_dump(BoltStructure_value(value, i));
         }
         printf(")");
     }
     return EXIT_SUCCESS;
 }
 
-int BoltRequest_dump(const BoltValue* value)
+int BoltRequest_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_REQUEST);
     int16_t code = BoltRequest_code(value);
@@ -403,13 +403,13 @@ int BoltRequest_dump(const BoltValue* value)
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) printf(" ");
-        BoltValue_dump(BoltRequest_at(value, i));
+        BoltValue_dump(BoltRequest_value(value, i));
     }
     printf(")");
     return EXIT_SUCCESS;
 }
 
-int BoltSummary_dump(const BoltValue* value)
+int BoltSummary_dump(BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_SUMMARY);
     int16_t code = BoltSummary_code(value);
@@ -422,7 +422,7 @@ int BoltSummary_dump(const BoltValue* value)
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) printf(" ");
-        BoltValue_dump(BoltSummary_at(value, i));
+        BoltValue_dump(BoltSummary_value(value, i));
     }
     printf(")");
     return EXIT_SUCCESS;

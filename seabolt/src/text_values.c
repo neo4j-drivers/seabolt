@@ -36,12 +36,15 @@ void BoltValue_toChar32(BoltValue* value, uint32_t x)
     value->data.as_uint32[0] = x;
 }
 
-void BoltValue_toUTF8(BoltValue* value, char* string, int32_t size)
+void BoltValue_toUTF8(BoltValue* value, const char* string, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(char))
     {
         _BoltValue_to(value, BOLT_UTF8, 0, size, NULL, 0);
-        memcpy(value->data.as_char, string, (size_t)(size));
+        if (string != NULL)
+        {
+            memcpy(value->data.as_char, string, (size_t)(size));
+        }
     }
     else
     {
@@ -93,7 +96,7 @@ void BoltValue_toUTF8Dictionary(BoltValue* value, int32_t size)
     _BoltValue_setType(value, BOLT_UTF8_DICTIONARY, 0, size);
 }
 
-const char* BoltUTF8_get(const BoltValue* value)
+char* BoltUTF8_get(BoltValue* value)
 {
     return value->size <= sizeof(value->data) / sizeof(char) ?
            value->data.as_char : value->data.extended.as_char;
@@ -121,11 +124,10 @@ void BoltUTF8Array_put(BoltValue* value, int32_t index, char* string, int32_t si
     }
 }
 
-BoltValue* BoltUTF8Dictionary_getKey(const BoltValue* value, int32_t index)
+BoltValue* BoltUTF8Dictionary_key(BoltValue* value, int32_t index)
 {
     assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
-    BoltValue* key = &value->data.extended.as_value[2 * index];
-    return BoltValue_type(key) == BOLT_UTF8 ? key : NULL;
+    return &value->data.extended.as_value[2 * index];
 }
 
 BoltValue* BoltUTF8Dictionary_withKey(BoltValue* value, int32_t index, char* key, int32_t key_size)
@@ -135,7 +137,7 @@ BoltValue* BoltUTF8Dictionary_withKey(BoltValue* value, int32_t index, char* key
     return &value->data.extended.as_value[2 * index + 1];
 }
 
-BoltValue* BoltUTF8Dictionary_at(const BoltValue* value, int32_t index)
+BoltValue* BoltUTF8Dictionary_value(BoltValue* value, int32_t index)
 {
     assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
     return &value->data.extended.as_value[2 * index + 1];
