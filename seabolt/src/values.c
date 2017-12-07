@@ -39,18 +39,27 @@ BoltValue* BoltValue_create()
 
 void BoltValue_toNull(BoltValue* value)
 {
-    _BoltValue_to(value, BOLT_NULL, 0, 0, NULL, 0);
+    if (BoltValue_type(value) != BOLT_NULL)
+    {
+        _BoltValue_to(value, BOLT_NULL, 0, 0, NULL, 0);
+    }
 }
 
 void BoltValue_toList(BoltValue* value, int32_t size)
 {
-    size_t unit_size = sizeof(BoltValue);
-    size_t data_size = unit_size * size;
-    _BoltValue_recycle(value);
-    value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
-    value->data_size = data_size;
-    memset(value->data.extended.as_char, 0, data_size);
-    _BoltValue_setType(value, BOLT_LIST, 0, size);
+    if (BoltValue_type(value) == BOLT_LIST)
+    {
+        BoltList_resize(value, size);
+    }
+    else
+    {
+        size_t data_size = sizeof(BoltValue) * size;
+        _BoltValue_recycle(value);
+        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
+        value->data_size = data_size;
+        memset(value->data.extended.as_char, 0, data_size);
+        _BoltValue_setType(value, BOLT_LIST, 0, size);
+    }
 }
 
 BoltType BoltValue_type(const BoltValue* value)

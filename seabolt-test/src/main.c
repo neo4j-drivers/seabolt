@@ -841,7 +841,7 @@ int run(const char* statement)
 
     try(BoltConnection_receive(connection));
     BoltProtocolV1_unload(connection, connection->incoming);
-    // BoltValue_dumpLine(connection->incoming);
+     BoltValue_dumpLine(connection->incoming);
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
@@ -850,7 +850,7 @@ int run(const char* statement)
     {
         try(BoltConnection_receive(connection));
         BoltProtocolV1_unload(connection, connection->incoming);
-        // BoltValue_dumpLine(connection->incoming);
+        BoltValue_dumpLine(connection->incoming);
         record_count += 1;
     } while (BoltValue_type(connection->incoming) != BOLT_SUMMARY);
     // BoltValue_dumpLine(connection->incoming);
