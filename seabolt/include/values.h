@@ -44,40 +44,63 @@ struct array_t;
 
 struct BoltValue;
 
-typedef enum
+enum BoltType
 {
     BOLT_NULL,                          /* ALSO IN BOLT v1 (as Null) */
-    BOLT_LIST,                          /* ALSO IN BOLT v1 (as List) */
     BOLT_BIT,                           /* ALSO IN BOLT v1 (as Boolean) */
     BOLT_BYTE,
+    BOLT_BIT_ARRAY,
+    BOLT_BYTE_ARRAY,                    /* ALSO IN BOLT v1 */
     BOLT_CHAR16,
     BOLT_CHAR32,
+    BOLT_CHAR16_ARRAY,
+    BOLT_CHAR32_ARRAY,
     BOLT_UTF8,                          /* ALSO IN BOLT v1 (as String) */
-    BOLT_UTF8_DICTIONARY,               /* ALSO IN BOLT v1 (as Map) */
     BOLT_UTF16,
+    BOLT_UTF8_ARRAY,
+    BOLT_UTF16_ARRAY,
+    BOLT_UTF8_DICTIONARY,               /* ALSO IN BOLT v1 (as Map) */
     BOLT_UTF16_DICTIONARY,
     BOLT_NUM8,
     BOLT_NUM16,
     BOLT_NUM32,
     BOLT_NUM64,
+    BOLT_NUM8_ARRAY,
+    BOLT_NUM16_ARRAY,
+    BOLT_NUM32_ARRAY,
+    BOLT_NUM64_ARRAY,
     BOLT_INT8,
     BOLT_INT16,
     BOLT_INT32,
     BOLT_INT64,                         /* ALSO IN BOLT v1 (as Integer) */
+    BOLT_INT8_ARRAY,
+    BOLT_INT16_ARRAY,
+    BOLT_INT32_ARRAY,
+    BOLT_INT64_ARRAY,
     BOLT_FLOAT32,
     BOLT_FLOAT32_PAIR,
     BOLT_FLOAT32_TRIPLE,
     BOLT_FLOAT32_QUAD,
+    BOLT_FLOAT32_ARRAY,
+    BOLT_FLOAT32_PAIR_ARRAY,
+    BOLT_FLOAT32_TRIPLE_ARRAY,
+    BOLT_FLOAT32_QUAD_ARRAY,
     BOLT_FLOAT64,                       /* ALSO IN BOLT v1 (as Float) */
     BOLT_FLOAT64_PAIR,
     BOLT_FLOAT64_TRIPLE,
     BOLT_FLOAT64_QUAD,
+    BOLT_FLOAT64_ARRAY,
+    BOLT_FLOAT64_PAIR_ARRAY,
+    BOLT_FLOAT64_TRIPLE_ARRAY,
+    BOLT_FLOAT64_QUAD_ARRAY,
     BOLT_STRUCTURE,                     /* ALSO IN BOLT v1 (as Structure) */
-    BOLT_REQUEST,  // requests match 10xxxxxx
-    BOLT_SUMMARY,  // summaries match 11xxxxxx
-} BoltType;
+    BOLT_STRUCTURE_ARRAY,
+    BOLT_REQUEST,
+    BOLT_SUMMARY,
+    BOLT_LIST,                          /* ALSO IN BOLT v1 (as List) */
+};
 
-typedef union
+union data_t
 {
     void* as_ptr;
     char* as_char;
@@ -93,18 +116,17 @@ typedef union
     double* as_double;
     struct BoltValue* as_value;
     struct array_t* as_array;
-} data_t;
+};
 
 struct array_t
 {
     int32_t size;
-    data_t data;
+    union data_t data;
 };
 
 struct BoltValue
 {
-    char type;
-    char is_array;
+    int16_t type;
     int16_t code;
     int32_t size;               // logical size
     size_t data_size;           // physical size
@@ -121,7 +143,7 @@ struct BoltValue
         int64_t as_int64[2];
         float as_float[4];
         double as_double[2];
-        data_t extended;
+        union data_t extended;
     } data;
 };
 
@@ -137,10 +159,9 @@ void _copyData(struct BoltValue* value, const void* data, size_t offset, size_t 
  */
 void _recycle(struct BoltValue* value);
 
-void _setType(struct BoltValue* value, BoltType type, char is_array, int size);
+void _setType(struct BoltValue* value, enum BoltType type, int size);
 
-void _format(struct BoltValue* value, BoltType type, char is_array, int size,
-             const void* data, size_t data_size);
+void _format(struct BoltValue* value, enum BoltType type, int size, const void* data, size_t data_size);
 
 
 /**
@@ -153,10 +174,25 @@ void _format(struct BoltValue* value, BoltType type, char is_array, int size,
 void _resize(struct BoltValue* value, int32_t size, int multiplier);
 
 
+/**
+ * Create a new BoltValue instance.
+ *
+ * @return
+ */
 struct BoltValue* BoltValue_create();
 
+/**
+ * Set a BoltValue instance to null.
+ *
+ * @param value
+ */
 void BoltValue_toNull(struct BoltValue* value);
 
+/**
+ * Reformat a BoltValue instance to hold a list.
+ *
+ * @param value
+ */
 void BoltValue_toList(struct BoltValue* value, int32_t size);
 
 void BoltValue_toBit(struct BoltValue* value, char x);
@@ -259,9 +295,7 @@ void BoltValue_toSummary(struct BoltValue* value, int16_t code, int32_t size);
 
 void BoltValue_toStructureArray(struct BoltValue* value, int16_t code, int32_t size);
 
-BoltType BoltValue_type(const struct BoltValue* value);
-
-int BoltValue_isArray(const struct BoltValue* value);
+enum BoltType BoltValue_type(const struct BoltValue* value);
 
 void BoltValue_destroy(struct BoltValue* value);
 

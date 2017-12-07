@@ -73,4 +73,4 @@ CTestTestfile.cmake
 __pycache__
 
 # Docs
-docs/
+docs/build/

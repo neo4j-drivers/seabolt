@@ -22,13 +22,13 @@
 
 void BoltValue_toBit(struct BoltValue* value, char x)
 {
-    _format(value, BOLT_BIT, 0, 1, NULL, 0);
+    _format(value, BOLT_BIT, 1, NULL, 0);
     value->data.as_char[0] = x;
 }
 
 void BoltValue_toByte(struct BoltValue* value, char x)
 {
-    _format(value, BOLT_BYTE, 0, 1, NULL, 0);
+    _format(value, BOLT_BYTE, 1, NULL, 0);
     value->data.as_char[0] = x;
 }
 
@@ -36,12 +36,12 @@ void BoltValue_toBitArray(struct BoltValue* value, char* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(char))
     {
-        _format(value, BOLT_BIT, 1, size, NULL, 0);
+        _format(value, BOLT_BIT_ARRAY, size, NULL, 0);
         memcpy(value->data.as_char, array, (size_t)(size));
     }
     else
     {
-        _format(value, BOLT_BIT, 1, size, array, sizeof_n(char, size));
+        _format(value, BOLT_BIT_ARRAY, size, array, sizeof_n(char, size));
     }
 }
 
@@ -49,12 +49,12 @@ void BoltValue_toByteArray(struct BoltValue* value, char* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(char))
     {
-        _format(value, BOLT_BYTE, 1, size, NULL, 0);
+        _format(value, BOLT_BYTE_ARRAY, size, NULL, 0);
         memcpy(value->data.as_char, array, (size_t)(size));
     }
     else
     {
-        _format(value, BOLT_BYTE, 1, size, array, sizeof_n(char, size));
+        _format(value, BOLT_BYTE_ARRAY, size, array, sizeof_n(char, size));
     }
 }
 

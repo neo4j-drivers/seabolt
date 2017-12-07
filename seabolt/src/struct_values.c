@@ -21,44 +21,44 @@
 #include <values.h>
 
 
-void _to_structure(struct BoltValue* value, BoltType type, int16_t code, char is_array, int32_t size)
+void _to_structure(struct BoltValue* value, enum BoltType type, int16_t code, int32_t size)
 {
     _recycle(value);
     value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size,
                                                  sizeof_n(struct BoltValue, size));
     value->data_size = sizeof_n(struct BoltValue, size);
     memset(value->data.extended.as_char, 0, value->data_size);
-    _setType(value, type, is_array, size);
+    _setType(value, type, size);
     value->code = code;
 }
 
 void BoltValue_toStructure(struct BoltValue* value, int16_t code, int32_t size)
 {
-    _to_structure(value, BOLT_STRUCTURE, code, 0, size);
-}
-
-void BoltValue_toRequest(struct BoltValue* value, int16_t code, int32_t size)
-{
-    _to_structure(value, BOLT_REQUEST, code, 0, size);
-}
-
-void BoltValue_toSummary(struct BoltValue* value, int16_t code, int32_t size)
-{
-    _to_structure(value, BOLT_SUMMARY, code, 0, size);
+    _to_structure(value, BOLT_STRUCTURE, code, size);
 }
 
 void BoltValue_toStructureArray(struct BoltValue* value, int16_t code, int32_t size)
 {
-    _to_structure(value, BOLT_STRUCTURE, code, 1, size);
+    _to_structure(value, BOLT_STRUCTURE_ARRAY, code, size);
     for (long i = 0; i < size; i++)
     {
         BoltValue_toList(&value->data.extended.as_value[i], 0);
     }
 }
 
+void BoltValue_toRequest(struct BoltValue* value, int16_t code, int32_t size)
+{
+    _to_structure(value, BOLT_REQUEST, code, size);
+}
+
+void BoltValue_toSummary(struct BoltValue* value, int16_t code, int32_t size)
+{
+    _to_structure(value, BOLT_SUMMARY, code, size);
+}
+
 int16_t BoltStructure_code(const struct BoltValue* value)
 {
-    assert(BoltValue_type(value) == BOLT_STRUCTURE);
+    assert(BoltValue_type(value) == BOLT_STRUCTURE || BoltValue_type(value) == BOLT_STRUCTURE_ARRAY);
     return value->code;
 }
 
