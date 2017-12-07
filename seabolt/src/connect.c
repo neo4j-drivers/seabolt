@@ -236,7 +236,7 @@ int BoltConnection_init(BoltConnection* connection, const char* user, const char
             try(BoltConnection_transmit(connection));
             try(BoltConnection_receive(connection));
             BoltProtocolV1_unload(connection, connection->incoming);
-            BoltValue_dumpLine(connection->incoming);
+//            BoltValue_dumpLine(connection->incoming);
             return 0;
         default:
             return -1;

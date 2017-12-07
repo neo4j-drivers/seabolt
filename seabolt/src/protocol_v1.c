@@ -225,9 +225,33 @@ int BoltProtocolV1_unloadInteger(BoltConnection* connection, BoltValue* value)
     {
         BoltValue_toInt64(value, marker - 0x100);
     }
+    else if (marker == 0xC8)
+    {
+        int8_t x;
+        BoltBuffer_unload_int8(connection->buffer, &x);
+        BoltValue_toInt64(value, x);
+    }
+    else if (marker == 0xC9)
+    {
+        int16_t x;
+        BoltBuffer_unload_int16be(connection->buffer, &x);
+        BoltValue_toInt64(value, x);
+    }
+    else if (marker == 0xCA)
+    {
+        int32_t x;
+        BoltBuffer_unload_int32be(connection->buffer, &x);
+        BoltValue_toInt64(value, x);
+    }
+    else if (marker == 0xCB)
+    {
+        int64_t x;
+        BoltBuffer_unload_int64be(connection->buffer, &x);
+        BoltValue_toInt64(value, x);
+    }
     else
     {
-        // TODO: bigger numbers
+        return -1;  // BOLT_ERROR_WRONG_TYPE
     }
 }
 

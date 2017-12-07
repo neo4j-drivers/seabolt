@@ -69,7 +69,13 @@ int BoltBuffer_peek_uint8(BoltBuffer* buffer, uint8_t* x);
 
 int BoltBuffer_unload_uint8(BoltBuffer* buffer, uint8_t* x);
 
+int BoltBuffer_unload_int8(BoltBuffer* buffer, int8_t* x);
+
+int BoltBuffer_unload_int16be(BoltBuffer* buffer, int16_t* x);
+
 int BoltBuffer_unload_int32be(BoltBuffer* buffer, int32_t* x);
+
+int BoltBuffer_unload_int64be(BoltBuffer* buffer, int64_t* x);
 
 
 #endif // SEABOLT_BUFFER

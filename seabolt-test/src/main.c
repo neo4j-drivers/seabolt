@@ -774,7 +774,7 @@ void test_summary()
     BoltValue_destroy(value);
 }
 
-int test()
+int test_types()
 {
     test_null();
     test_list();
@@ -804,24 +804,91 @@ int test()
     printf("*******\nMemory activity: %lld\n*******\n", BoltMem_activity());
 }
 
-int main()
+void timespec_diff(struct timespec *t, struct timespec *t0, struct timespec *t1)
 {
-//    test();
-    BoltConnection* connection = BoltConnection_openSecureSocket("matrix.nige.io", 7687);
+    t->tv_sec = t0->tv_sec - t1->tv_sec;
+    t->tv_nsec = t0->tv_nsec - t1->tv_nsec;
+    while (t->tv_nsec >= 1000000000)
+    {
+        t->tv_sec += 1;
+        t->tv_nsec -= 1000000000;
+    }
+    while (t->tv_nsec < 0)
+    {
+        t->tv_sec -= 1;
+        t->tv_nsec += 1000000000;
+    }
+}
+
+int run(const char* statement)
+{
+    struct timespec t[7];
+
+    timespec_get(&t[1], TIME_UTC);    // Checkpoint 1 - right at the start
+
+    BoltConnection* connection = BoltConnection_openSecureSocket("localhost", 7687);
     BoltConnection_handshake(connection, 1, 0, 0, 0);
     printf("Using Bolt v%d\n", connection->protocol_version);
     BoltConnection_init(connection, "neo4j", "password");
-    for (int q = 0; q < 10; q++)
+
+    timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after handshake and initialisation
+
+    BoltConnection_loadRun(connection, statement);
+    BoltConnection_loadPull(connection);
+    BoltConnection_transmit(connection);
+
+    timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission
+
+    try(BoltConnection_receive(connection));
+    BoltProtocolV1_unload(connection, connection->incoming);
+    // BoltValue_dumpLine(connection->incoming);
+
+    timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
+
+    do
     {
-        BoltConnection_loadRun(connection, "RETURN 1 AS x, true AS truth, 3 AS pi, 'hello, world' AS message");
-        BoltConnection_loadPull(connection);
-        BoltConnection_transmit(connection);
-        for (int i = 0; i < 3; i++)
-        {
-            try(BoltConnection_receive(connection));
-            BoltProtocolV1_unload(connection, connection->incoming);
-            BoltValue_dumpLine(connection->incoming);
-        }
-    }
+        try(BoltConnection_receive(connection));
+        BoltProtocolV1_unload(connection, connection->incoming);
+        // BoltValue_dumpLine(connection->incoming);
+    } while (BoltValue_type(connection->incoming) != BOLT_SUMMARY);
+    // BoltValue_dumpLine(connection->incoming);
+
+    timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
+
     BoltConnection_close(connection);
+
+    timespec_get(&t[6], TIME_UTC);    // Checkpoint 6 - after close
+
+    ///////////////////////////////////////////////////////////////////
+
+    printf("query                : %s\n", statement);
+
+    timespec_diff(&t[0], &t[2], &t[1]);
+    printf("initialisation       : %lds %ldns\n", t[0].tv_sec, t[0].tv_nsec);
+
+    timespec_diff(&t[0], &t[3], &t[2]);
+    printf("query transmission   : %lds %ldns\n", t[0].tv_sec, t[0].tv_nsec);
+
+    timespec_diff(&t[0], &t[4], &t[3]);
+    printf("query acknowledgment : %lds %ldns\n", t[0].tv_sec, t[0].tv_nsec);
+
+    timespec_diff(&t[0], &t[5], &t[4]);
+    printf("record processing    : %lds %ldns\n", t[0].tv_sec, t[0].tv_nsec);
+
+    timespec_diff(&t[0], &t[6], &t[5]);
+    printf("shutdown             : %lds %ldns\n", t[0].tv_sec, t[0].tv_nsec);
+
+}
+
+int main(int argc, char *argv[])
+{
+    // test_types();
+    if (argc >= 2)
+    {
+        run(argv[1]);
+    }
+    else
+    {
+        run("RETURN 1");
+    }
 }

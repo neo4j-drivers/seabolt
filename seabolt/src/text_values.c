@@ -40,7 +40,21 @@ void BoltValue_toUTF8(BoltValue* value, const char* string, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(char))
     {
+        // If the string is short, it can fit entirely within the
+        // BoltValue instance
         _BoltValue_to(value, BOLT_UTF8, 0, size, NULL, 0);
+        if (string != NULL)
+        {
+            memcpy(value->data.as_char, string, (size_t)(size));
+        }
+    }
+    else if (BoltValue_type(value) == BOLT_UTF8 && !BoltValue_isArray(value))
+    {
+        // This is already a UTF-8 string so we can just tweak it
+        size_t data_size = size >= 0 ? (size_t)(size) : 0;
+        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
+        value->data_size = data_size;
+        value->size = size;
         if (string != NULL)
         {
             memcpy(value->data.as_char, string, (size_t)(size));
@@ -48,6 +62,7 @@ void BoltValue_toUTF8(BoltValue* value, const char* string, int32_t size)
     }
     else
     {
+        // If all else fails, allocate some new external data space
         _BoltValue_to(value, BOLT_UTF8, 0, size, string, sizeof_n(char, size));
     }
 }

@@ -3,7 +3,7 @@ project(seabolt-all)
 
 enable_testing()
 
-set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD 11)
 
 add_custom_target(seabolt-all)
 add_dependencies(seabolt-all seabolt seabolt-test)

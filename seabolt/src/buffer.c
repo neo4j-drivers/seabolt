@@ -154,11 +154,43 @@ int BoltBuffer_unload_uint8(BoltBuffer* buffer, uint8_t* x)
     *x = (uint8_t)(buffer->data[buffer->cursor++]);
 }
 
+int BoltBuffer_unload_int8(BoltBuffer* buffer, int8_t* x)
+{
+    if (BoltBuffer_unloadable(buffer) < 1) return -1;
+    *x = (uint8_t)(buffer->data[buffer->cursor++]);
+}
+
+int BoltBuffer_unload_int16be(BoltBuffer* buffer, int16_t* x)
+{
+    if (BoltBuffer_unloadable(buffer) < 2) return -1;
+    *x = (int16_t)(
+            ((uint16_t)(uint8_t)(buffer->data[buffer->cursor++]) << 8) |
+            ((uint16_t)(uint8_t)(buffer->data[buffer->cursor++]))
+    );
+}
+
 int BoltBuffer_unload_int32be(BoltBuffer* buffer, int32_t* x)
 {
     if (BoltBuffer_unloadable(buffer) < 4) return -1;
-    *x = (buffer->data[buffer->cursor++] << 24) |
-         (buffer->data[buffer->cursor++] << 16) |
-         (buffer->data[buffer->cursor++] << 8) |
-         (buffer->data[buffer->cursor++]);
+    *x = (int32_t)(
+            ((uint32_t)(uint8_t)(buffer->data[buffer->cursor++]) << 24) |
+            ((uint32_t)(uint8_t)(buffer->data[buffer->cursor++]) << 16) |
+            ((uint32_t)(uint8_t)(buffer->data[buffer->cursor++]) << 8) |
+            ((uint32_t)(uint8_t)(buffer->data[buffer->cursor++]))
+    );
+}
+
+int BoltBuffer_unload_int64be(BoltBuffer* buffer, int64_t* x)
+{
+    if (BoltBuffer_unloadable(buffer) < 8) return -1;
+    *x = (int64_t)(
+            ((uint64_t)(uint8_t)(buffer->data[buffer->cursor++]) << 56) |
+            ((uint64_t)(uint8_t)(buffer->data[buffer->cursor++]) << 48) |
+            ((uint64_t)(uint8_t)(buffer->data[buffer->cursor++]) << 40) |
+            ((uint64_t)(uint8_t)(buffer->data[buffer->cursor++]) << 32) |
+            ((uint64_t)(uint8_t)(buffer->data[buffer->cursor++]) << 24) |
+            ((uint64_t)(uint8_t)(buffer->data[buffer->cursor++]) << 16) |
+            ((uint64_t)(uint8_t)(buffer->data[buffer->cursor++]) << 8) |
+            ((uint64_t)(uint8_t)(buffer->data[buffer->cursor++]))
+    );
 }
