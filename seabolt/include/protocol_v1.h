@@ -52,7 +52,10 @@ int BoltProtocolV1_loadRun(BoltConnection* connection, const char* statement);
 int BoltProtocolV1_loadPull(BoltConnection* connection);
 
 /**
- * Top-level unload. Unloads either a summary or the first value of a record.
+ * Top-level unload.
+ *
+ * For a typical Bolt v1 data stream, this will unload either a summary
+ * or the first value of a record.
  *
  * @param connection
  * @param value
@@ -60,14 +63,5 @@ int BoltProtocolV1_loadPull(BoltConnection* connection);
  */
 int BoltProtocolV1_unload(BoltConnection* connection, BoltValue* value);
 
-int BoltProtocolV1_unloadBoolean(BoltConnection* connection, BoltValue* value);
-
-int BoltProtocolV1_unloadInteger(BoltConnection* connection, BoltValue* value);
-
-int BoltProtocolV1_unloadString(BoltConnection* connection, BoltValue* value);
-
-int BoltProtocolV1_unloadList(BoltConnection* connection, BoltValue* value);
-
-int BoltProtocolV1_unloadMap(BoltConnection* connection, BoltValue* value);
 
 #endif // SEABOLT_PROTOCOL_V1

@@ -69,6 +69,8 @@ int BoltBuffer_peek_uint8(BoltBuffer* buffer, uint8_t* x);
 
 int BoltBuffer_unload_uint8(BoltBuffer* buffer, uint8_t* x);
 
+int BoltBuffer_unload_uint16be(BoltBuffer* buffer, uint16_t* x);
+
 int BoltBuffer_unload_int8(BoltBuffer* buffer, int8_t* x);
 
 int BoltBuffer_unload_int16be(BoltBuffer* buffer, int16_t* x);

@@ -129,24 +129,181 @@ int BoltProtocolV1_loadPull(BoltConnection* connection)
     BoltBuffer_pushStop(connection->buffer);
 }
 
+int _unload(BoltConnection* connection, BoltValue* value);
+
+int _unloadNull(BoltConnection* connection, BoltValue* value)
+{
+    uint8_t marker;
+    BoltBuffer_unload_uint8(connection->buffer, &marker);
+    if (marker == 0xC0)
+    {
+        BoltValue_toNull(value);
+    }
+    else
+    {
+        return -1;  // BOLT_ERROR_WRONG_TYPE
+    }
+}
+
+int _unloadBoolean(BoltConnection* connection, BoltValue* value)
+{
+    uint8_t marker;
+    BoltBuffer_unload_uint8(connection->buffer, &marker);
+    if (marker == 0xC3)
+    {
+        BoltValue_toBit(value, 1);
+    }
+    else if (marker == 0xC2)
+    {
+        BoltValue_toBit(value, 0);
+    }
+    else
+    {
+        return -1;  // BOLT_ERROR_WRONG_TYPE
+    }
+}
+
+int _unloadInteger(BoltConnection* connection, BoltValue* value)
+{
+    uint8_t marker;
+    BoltBuffer_unload_uint8(connection->buffer, &marker);
+    if (marker < 0x80)
+    {
+        BoltValue_toInt64(value, marker);
+    }
+    else if (marker >= 0xF0)
+    {
+        BoltValue_toInt64(value, marker - 0x100);
+    }
+    else if (marker == 0xC8)
+    {
+        int8_t x;
+        BoltBuffer_unload_int8(connection->buffer, &x);
+        BoltValue_toInt64(value, x);
+    }
+    else if (marker == 0xC9)
+    {
+        int16_t x;
+        BoltBuffer_unload_int16be(connection->buffer, &x);
+        BoltValue_toInt64(value, x);
+    }
+    else if (marker == 0xCA)
+    {
+        int32_t x;
+        BoltBuffer_unload_int32be(connection->buffer, &x);
+        BoltValue_toInt64(value, x);
+    }
+    else if (marker == 0xCB)
+    {
+        int64_t x;
+        BoltBuffer_unload_int64be(connection->buffer, &x);
+        BoltValue_toInt64(value, x);
+    }
+    else
+    {
+        return -1;  // BOLT_ERROR_WRONG_TYPE
+    }
+}
+
+int _unloadString(BoltConnection* connection, BoltValue* value)
+{
+    uint8_t marker;
+    BoltBuffer_unload_uint8(connection->buffer, &marker);
+    if (marker >= 0x80 && marker <= 0x8F)
+    {
+        int32_t size;
+        size = marker & 0x0F;
+        BoltValue_toUTF8(value, NULL, size);
+        BoltBuffer_unload(connection->buffer, BoltUTF8_get(value), size);
+        return 0;
+    }
+    if (marker == 0xD0)
+    {
+        uint8_t size;
+        BoltBuffer_unload_uint8(connection->buffer, &size);
+        BoltValue_toUTF8(value, NULL, size);
+        BoltBuffer_unload(connection->buffer, BoltUTF8_get(value), size);
+        return 0;
+    }
+    if (marker == 0xD1)
+    {
+        uint16_t size;
+        BoltBuffer_unload_uint16be(connection->buffer, &size);
+        BoltValue_toUTF8(value, NULL, size);
+        BoltBuffer_unload(connection->buffer, BoltUTF8_get(value), size);
+        return 0;
+    }
+    if (marker == 0xD2)
+    {
+        int32_t size;
+        BoltBuffer_unload_int32be(connection->buffer, &size);
+        BoltValue_toUTF8(value, NULL, size);
+        BoltBuffer_unload(connection->buffer, BoltUTF8_get(value), size);
+        return 0;
+    }
+    log_error("Wrong marker type: %d", marker);
+    return -1;  // BOLT_ERROR_WRONG_TYPE
+}
+
+int _unloadList(BoltConnection* connection, BoltValue* value)
+{
+    uint8_t marker;
+    int32_t size;
+    BoltBuffer_unload_uint8(connection->buffer, &marker);
+    if (marker >= 0x90 && marker <= 0x9F)
+    {
+        size = marker & 0x0F;
+        BoltValue_toList(value, size);
+        for (int i = 0; i < size; i++)
+        {
+            _unload(connection, BoltList_value(value, i));
+        }
+        return 0;
+    }
+    // TODO: bigger lists
+    return -1;  // BOLT_ERROR_WRONG_TYPE
+}
+
+int _unloadMap(BoltConnection* connection, BoltValue* value)
+{
+    uint8_t marker;
+    int32_t size;
+    BoltBuffer_unload_uint8(connection->buffer, &marker);
+    if (marker >= 0xA0 && marker <= 0xAF)
+    {
+        size = marker & 0x0F;
+        BoltValue_toUTF8Dictionary(value, size);
+        for (int i = 0; i < size; i++)
+        {
+            _unload(connection, BoltUTF8Dictionary_key(value, i));
+            _unload(connection, BoltUTF8Dictionary_value(value, i));
+        }
+        return 0;
+    }
+    // TODO: bigger maps
+    return -1;  // BOLT_ERROR_WRONG_TYPE
+}
+
 int _unload(BoltConnection* connection, BoltValue* value)
 {
     uint8_t marker;
     BoltBuffer_peek_uint8(connection->buffer, &marker);
     switch(BoltProtocolV1_markerType(marker))
     {
+        case BOLT_V1_NULL:
+            return _unloadNull(connection, value);
         case BOLT_V1_BOOLEAN:
-            return BoltProtocolV1_unloadBoolean(connection, value);
+            return _unloadBoolean(connection, value);
         case BOLT_V1_INTEGER:
-            return BoltProtocolV1_unloadInteger(connection, value);
+            return _unloadInteger(connection, value);
         case BOLT_V1_STRING:
-            return BoltProtocolV1_unloadString(connection, value);
+            return _unloadString(connection, value);
         case BOLT_V1_LIST:
-            return BoltProtocolV1_unloadList(connection, value);
+            return _unloadList(connection, value);
         case BOLT_V1_MAP:
-            return BoltProtocolV1_unloadMap(connection, value);
+            return _unloadMap(connection, value);
         default:
-            log_error("Unsupported type: %d", marker);
+            log_error("Unsupported marker: %d", marker);
             return -1;  // BOLT_UNSUPPORTED_MARKER
     }
 }
@@ -192,148 +349,5 @@ int BoltProtocolV1_unload(BoltConnection* connection, BoltValue* value)
         return 0;
 
     }
-    return -1;  // BOLT_ERROR_WRONG_TYPE
-}
-
-int BoltProtocolV1_unloadBoolean(BoltConnection* connection, BoltValue* value)
-{
-    uint8_t marker;
-    BoltBuffer_unload_uint8(connection->buffer, &marker);
-    if (marker == 0xC3)
-    {
-        BoltValue_toBit(value, 1);
-    }
-    else if (marker == 0xC2)
-    {
-        BoltValue_toBit(value, 0);
-    }
-    else
-    {
-        return -1;  // BOLT_ERROR_WRONG_TYPE
-    }
-}
-
-int BoltProtocolV1_unloadInteger(BoltConnection* connection, BoltValue* value)
-{
-    uint8_t marker;
-    BoltBuffer_unload_uint8(connection->buffer, &marker);
-    if (marker < 0x80)
-    {
-        BoltValue_toInt64(value, marker);
-    }
-    else if (marker >= 0xF0)
-    {
-        BoltValue_toInt64(value, marker - 0x100);
-    }
-    else if (marker == 0xC8)
-    {
-        int8_t x;
-        BoltBuffer_unload_int8(connection->buffer, &x);
-        BoltValue_toInt64(value, x);
-    }
-    else if (marker == 0xC9)
-    {
-        int16_t x;
-        BoltBuffer_unload_int16be(connection->buffer, &x);
-        BoltValue_toInt64(value, x);
-    }
-    else if (marker == 0xCA)
-    {
-        int32_t x;
-        BoltBuffer_unload_int32be(connection->buffer, &x);
-        BoltValue_toInt64(value, x);
-    }
-    else if (marker == 0xCB)
-    {
-        int64_t x;
-        BoltBuffer_unload_int64be(connection->buffer, &x);
-        BoltValue_toInt64(value, x);
-    }
-    else
-    {
-        return -1;  // BOLT_ERROR_WRONG_TYPE
-    }
-}
-
-int BoltProtocolV1_unloadString(BoltConnection* connection, BoltValue* value)
-{
-    uint8_t marker;
-    BoltBuffer_unload_uint8(connection->buffer, &marker);
-    switch(marker)
-    {
-        case 0x80:
-        case 0x81:
-        case 0x82:
-        case 0x83:
-        case 0x84:
-        case 0x85:
-        case 0x86:
-        case 0x87:
-        case 0x88:
-        case 0x89:
-        case 0x8A:
-        case 0x8B:
-        case 0x8C:
-        case 0x8D:
-        case 0x8E:
-        case 0x8F:
-        {
-            int32_t size;
-            size = marker & 0x0F;
-            BoltValue_toUTF8(value, NULL, size);
-            BoltBuffer_unload(connection->buffer, BoltUTF8_get(value), size);
-            return 0;
-        }
-        case 0xD0:
-        {
-            uint8_t size;
-            BoltBuffer_unload_uint8(connection->buffer, &size);
-            BoltValue_toUTF8(value, NULL, size);
-            BoltBuffer_unload(connection->buffer, BoltUTF8_get(value), size);
-            return 0;
-        }
-        // TODO: bigger strings
-        default:
-            log_error("Wrong marker type: %d", marker);
-            return -1;  // BOLT_ERROR_WRONG_TYPE
-    }
-}
-
-int BoltProtocolV1_unloadList(BoltConnection* connection, BoltValue* value)
-{
-    uint8_t marker;
-    int32_t size;
-    BoltBuffer_unload_uint8(connection->buffer, &marker);
-    if (marker >= 0x90 && marker <= 0x9F)
-    {
-        size = marker & 0x0F;
-        BoltValue_toList(value, size);
-        for (int i = 0; i < size; i++)
-        {
-            _unload(connection, BoltList_value(value, i));
-        }
-        return 0;
-    }
-    // TODO: bigger lists
-    return -1;  // BOLT_ERROR_WRONG_TYPE
-}
-
-int BoltProtocolV1_unloadMap(BoltConnection* connection, BoltValue* value)
-{
-    uint8_t marker;
-    int32_t size;
-    BoltBuffer_unload_uint8(connection->buffer, &marker);
-    if (marker >= 0xA0 && marker <= 0xAF)
-    {
-        size = marker & 0x0F;
-        BoltValue_toUTF8Dictionary(value, size);
-        for (int i = 0; i < size; i++)
-        {
-            _unload(connection, BoltUTF8Dictionary_key(value, i));
-            _unload(connection, BoltUTF8Dictionary_value(value, i));
-        }
-        return 0;
-    }
-    // TODO: bigger maps
     return -1;  // BOLT_ERROR_WRONG_TYPE
 }

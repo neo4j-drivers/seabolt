@@ -845,13 +845,16 @@ int run(const char* statement)
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
+    long record_count = 0;
     do
     {
         try(BoltConnection_receive(connection));
         BoltProtocolV1_unload(connection, connection->incoming);
         // BoltValue_dumpLine(connection->incoming);
+        record_count += 1;
     } while (BoltValue_type(connection->incoming) != BOLT_SUMMARY);
     // BoltValue_dumpLine(connection->incoming);
+    record_count -= 1;
 
     timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
 
@@ -862,6 +865,7 @@ int run(const char* statement)
     ///////////////////////////////////////////////////////////////////
 
     printf("query                : %s\n", statement);
+    printf("record count         : %ld\n", record_count);
 
     timespec_diff(&t[0], &t[2], &t[1]);
     printf("initialisation       : %lds %ldns\n", t[0].tv_sec, t[0].tv_nsec);

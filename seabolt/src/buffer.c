@@ -154,10 +154,19 @@ int BoltBuffer_unload_uint8(BoltBuffer* buffer, uint8_t* x)
     *x = (uint8_t)(buffer->data[buffer->cursor++]);
 }
 
+int BoltBuffer_unload_uint16be(BoltBuffer* buffer, uint16_t* x)
+{
+    if (BoltBuffer_unloadable(buffer) < 2) return -1;
+    *x = (
+            ((uint16_t)(uint8_t)(buffer->data[buffer->cursor++]) << 8) |
+            ((uint16_t)(uint8_t)(buffer->data[buffer->cursor++]))
+    );
+}
+
 int BoltBuffer_unload_int8(BoltBuffer* buffer, int8_t* x)
 {
     if (BoltBuffer_unloadable(buffer) < 1) return -1;
-    *x = (uint8_t)(buffer->data[buffer->cursor++]);
+    *x = (int8_t)(uint8_t)(buffer->data[buffer->cursor++]);
 }
 
 int BoltBuffer_unload_int16be(BoltBuffer* buffer, int16_t* x)
