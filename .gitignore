@@ -74,3 +74,4 @@ __pycache__
 
 # Docs
 docs/build/
+docs/doxygen/

@@ -192,6 +192,7 @@ void BoltValue_toNull(struct BoltValue* value);
  * Reformat a BoltValue instance to hold a list.
  *
  * @param value
+ * @param size
  */
 void BoltValue_toList(struct BoltValue* value, int32_t size);
 
@@ -297,6 +298,11 @@ void BoltValue_toStructureArray(struct BoltValue* value, int16_t code, int32_t s
 
 enum BoltType BoltValue_type(const struct BoltValue* value);
 
+/**
+ * Destroy a BoltValue instance.
+ *
+ * @param value
+ */
 void BoltValue_destroy(struct BoltValue* value);
 
 
