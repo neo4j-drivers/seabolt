@@ -129,7 +129,7 @@ int _transmit(BoltConnection* connection, const char* data, int len)
 
 int BoltConnection_transmit(BoltConnection* connection)
 {
-    switch(connection->protocol_version)
+    switch (connection->protocol_version)
     {
         case 1:
         {
@@ -153,7 +153,7 @@ int BoltConnection_transmit(BoltConnection* connection)
         default:
         {
             int size = BoltBuffer_unloadable(connection->buffer);
-            while(size > 0)
+            while (size > 0)
             {
                 try(_transmit(connection, BoltBuffer_unloadTarget(connection->buffer, size), size));
                 BoltBuffer_pullStop(connection->buffer);
@@ -187,7 +187,7 @@ int _receive(BoltConnection* connection, char* buffer, int size)
 
 int BoltConnection_receive(BoltConnection* connection)
 {
-    switch(connection->protocol_version)
+    switch (connection->protocol_version)
     {
         case 1:
         {
@@ -229,7 +229,7 @@ int BoltConnection_handshake(BoltConnection* connection, int32_t first, int32_t 
  */
 int BoltConnection_init(BoltConnection* connection, const char* user, const char* password)
 {
-    switch(connection->protocol_version)
+    switch (connection->protocol_version)
     {
         case 1:
             BoltProtocolV1_loadInit(connection, user, password);
@@ -245,7 +245,7 @@ int BoltConnection_init(BoltConnection* connection, const char* user, const char
 
 int BoltConnection_loadRun(BoltConnection* connection, const char* statement)
 {
-    switch(connection->protocol_version)
+    switch (connection->protocol_version)
     {
         case 1:
             BoltProtocolV1_loadRun(connection, statement);
@@ -257,7 +257,7 @@ int BoltConnection_loadRun(BoltConnection* connection, const char* statement)
 
 int BoltConnection_loadPull(BoltConnection* connection)
 {
-    switch(connection->protocol_version)
+    switch (connection->protocol_version)
     {
         case 1:
             BoltProtocolV1_loadPull(connection);

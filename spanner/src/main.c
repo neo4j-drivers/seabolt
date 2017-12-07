@@ -841,7 +841,7 @@ int run(const char* statement)
 
     try(BoltConnection_receive(connection));
     BoltProtocolV1_unload(connection, connection->incoming);
-     BoltValue_dumpLine(connection->incoming);
+//    BoltValue_dumpLine(connection->incoming);
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
@@ -850,10 +850,10 @@ int run(const char* statement)
     {
         try(BoltConnection_receive(connection));
         BoltProtocolV1_unload(connection, connection->incoming);
-        BoltValue_dumpLine(connection->incoming);
+//        BoltValue_dumpLine(connection->incoming);
         record_count += 1;
     } while (BoltValue_type(connection->incoming) != BOLT_SUMMARY);
-    // BoltValue_dumpLine(connection->incoming);
+//    BoltValue_dumpLine(connection->incoming);
     record_count -= 1;
 
     timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
@@ -868,19 +868,19 @@ int run(const char* statement)
     printf("record count         : %ld\n", record_count);
 
     timespec_diff(&t[0], &t[2], &t[1]);
-    printf("initialisation       : %lds %ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    printf("initialisation       : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[3], &t[2]);
-    printf("query transmission   : %lds %ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    printf("query transmission   : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[4], &t[3]);
-    printf("query acknowledgment : %lds %ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    printf("query processing     : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[5], &t[4]);
-    printf("record processing    : %lds %ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    printf("result processing    : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[6], &t[5]);
-    printf("shutdown             : %lds %ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    printf("shutdown             : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
 }
 
