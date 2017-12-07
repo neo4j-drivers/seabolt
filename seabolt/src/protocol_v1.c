@@ -23,7 +23,7 @@
 #include "protocol_v1.h"
 
 
-BoltProtocolV1Type BoltProtocolV1_markerType(uint8_t marker)
+enum BoltProtocolV1Type BoltProtocolV1_markerType(uint8_t marker)
 {
     if (marker < 0x80 || (marker >= 0xC8 && marker <= 0xCB) || marker >= 0xF0)
     {
@@ -63,7 +63,7 @@ BoltProtocolV1Type BoltProtocolV1_markerType(uint8_t marker)
     }
 }
 
-int BoltProtocolV1_loadString(BoltConnection* connection, const char* string, int32_t size)
+int BoltProtocolV1_loadString(struct BoltConnection* connection, const char* string, int32_t size)
 {
     // TODO: longer strings
     BoltBuffer_load(connection->buffer, "\xD0", 1);
@@ -71,13 +71,13 @@ int BoltProtocolV1_loadString(BoltConnection* connection, const char* string, in
     BoltBuffer_load(connection->buffer, string, size);
 }
 
-int BoltProtocolV1_loadMap(BoltConnection* connection, BoltValue* value)
+int BoltProtocolV1_loadMap(struct BoltConnection* connection, struct BoltValue* value)
 {
     // TODO: bigger maps
     BoltBuffer_load_uint8(connection->buffer, (uint8_t)(0xA0 + value->size));
     for (int32_t i = 0; i < value->size; i++)
     {
-        BoltValue* key = BoltUTF8Dictionary_key(value, i);
+        struct BoltValue* key = BoltUTF8Dictionary_key(value, i);
         if (key != NULL)
         {
             const char* key_string = BoltUTF8_get(key);
@@ -87,7 +87,7 @@ int BoltProtocolV1_loadMap(BoltConnection* connection, BoltValue* value)
     }
 }
 
-int BoltProtocolV1_load(BoltConnection* connection, BoltValue* value)
+int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* value)
 {
     switch (BoltValue_type(value))
     {
@@ -101,11 +101,11 @@ int BoltProtocolV1_load(BoltConnection* connection, BoltValue* value)
     }
 }
 
-int BoltProtocolV1_loadInit(BoltConnection* connection, const char* user, const char* password)
+int BoltProtocolV1_loadInit(struct BoltConnection* connection, const char* user, const char* password)
 {
     BoltBuffer_load(connection->buffer, "\xB2\x01", 2);
     BoltProtocolV1_loadString(connection, connection->user_agent, strlen(connection->user_agent));
-    BoltValue* auth = BoltValue_create();
+    struct BoltValue* auth = BoltValue_create();
     BoltValue_toUTF8Dictionary(auth, 3);
     BoltValue_toUTF8(BoltUTF8Dictionary_withKey(auth, 0, "scheme", 6), "basic", 5);
     BoltValue_toUTF8(BoltUTF8Dictionary_withKey(auth, 1, "principal", 9), user, strlen(user));
@@ -115,7 +115,7 @@ int BoltProtocolV1_loadInit(BoltConnection* connection, const char* user, const 
     BoltBuffer_pushStop(connection->buffer);
 }
 
-int BoltProtocolV1_loadRun(BoltConnection* connection, const char* statement)
+int BoltProtocolV1_loadRun(struct BoltConnection* connection, const char* statement)
 {
     BoltBuffer_load(connection->buffer, "\xB2\x10", 2);
     BoltProtocolV1_loadString(connection, statement, strlen(statement));
@@ -123,15 +123,15 @@ int BoltProtocolV1_loadRun(BoltConnection* connection, const char* statement)
     BoltBuffer_pushStop(connection->buffer);
 }
 
-int BoltProtocolV1_loadPull(BoltConnection* connection)
+int BoltProtocolV1_loadPull(struct BoltConnection* connection)
 {
     BoltBuffer_load(connection->buffer, "\xB0\x3F", 2);
     BoltBuffer_pushStop(connection->buffer);
 }
 
-int _unload(BoltConnection* connection, BoltValue* value);
+int _unload(struct BoltConnection* connection, struct BoltValue* value);
 
-int _unloadNull(BoltConnection* connection, BoltValue* value)
+int _unloadNull(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     BoltBuffer_unload_uint8(connection->buffer, &marker);
@@ -145,7 +145,7 @@ int _unloadNull(BoltConnection* connection, BoltValue* value)
     }
 }
 
-int _unloadBoolean(BoltConnection* connection, BoltValue* value)
+int _unloadBoolean(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     BoltBuffer_unload_uint8(connection->buffer, &marker);
@@ -163,7 +163,7 @@ int _unloadBoolean(BoltConnection* connection, BoltValue* value)
     }
 }
 
-int _unloadInteger(BoltConnection* connection, BoltValue* value)
+int _unloadInteger(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     BoltBuffer_unload_uint8(connection->buffer, &marker);
@@ -205,7 +205,7 @@ int _unloadInteger(BoltConnection* connection, BoltValue* value)
     }
 }
 
-int _unloadString(BoltConnection* connection, BoltValue* value)
+int _unloadString(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     BoltBuffer_unload_uint8(connection->buffer, &marker);
@@ -245,7 +245,7 @@ int _unloadString(BoltConnection* connection, BoltValue* value)
     return -1;  // BOLT_ERROR_WRONG_TYPE
 }
 
-int _unloadList(BoltConnection* connection, BoltValue* value)
+int _unloadList(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     int32_t size;
@@ -264,7 +264,7 @@ int _unloadList(BoltConnection* connection, BoltValue* value)
     return -1;  // BOLT_ERROR_WRONG_TYPE
 }
 
-int _unloadMap(BoltConnection* connection, BoltValue* value)
+int _unloadMap(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     int32_t size;
@@ -284,7 +284,7 @@ int _unloadMap(BoltConnection* connection, BoltValue* value)
     return -1;  // BOLT_ERROR_WRONG_TYPE
 }
 
-int _unload(BoltConnection* connection, BoltValue* value)
+int _unload(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     BoltBuffer_peek_uint8(connection->buffer, &marker);
@@ -308,7 +308,7 @@ int _unload(BoltConnection* connection, BoltValue* value)
     }
 }
 
-int BoltProtocolV1_unload(BoltConnection* connection, BoltValue* value)
+int BoltProtocolV1_unload(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     uint8_t code;
@@ -325,7 +325,7 @@ int BoltProtocolV1_unload(BoltConnection* connection, BoltValue* value)
                 _unload(connection, value);
                 if (size > 1)
                 {
-                    BoltValue* black_hole = BoltValue_create();
+                    struct BoltValue* black_hole = BoltValue_create();
                     for (int i = 1; i < size; i++)
                     {
                         _unload(connection, black_hole);

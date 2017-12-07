@@ -71,3 +71,6 @@ CTestTestfile.cmake
 # Python
 *.py[co]
 __pycache__
+
+# Docs
+docs/

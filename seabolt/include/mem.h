@@ -17,6 +17,10 @@
  * limitations under the License.
  */
 
+/**
+ * @file
+ */
+
 #ifndef SEABOLT_MEMORY
 #define SEABOLT_MEMORY
 

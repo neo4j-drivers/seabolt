@@ -43,7 +43,7 @@
 static const char* DEFAULT_USER_AGENT = "seabolt/1.0.0a";
 
 
-int _open(BoltConnection* connection, const char* host, int port)
+int _open(struct BoltConnection* connection, const char* host, int port)
 {
     connection->host = host;
     connection->port = port;
@@ -65,18 +65,18 @@ int _open(BoltConnection* connection, const char* host, int port)
 
 }
 
-BoltConnection* BoltConnection_openSocket(const char* host, int port)
+struct BoltConnection* BoltConnection_openSocket(const char* host, int port)
 {
-    BoltConnection* connection = BoltMem_allocate(sizeof(BoltConnection));
+    struct BoltConnection* connection = BoltMem_allocate(sizeof(struct BoltConnection));
     connection->bio = BIO_new(BIO_s_connect());
     return_if(connection->bio == NULL, BOLT_SOCKET_ERROR, 0, NULL);
     _open(connection, host, port);
     return connection;
 }
 
-BoltConnection* BoltConnection_openSecureSocket(const char* host, int port)
+struct BoltConnection* BoltConnection_openSecureSocket(const char* host, int port)
 {
-    BoltConnection* connection = BoltMem_allocate(sizeof(BoltConnection));
+    struct BoltConnection* connection = BoltMem_allocate(sizeof(struct BoltConnection));
     // Ensure SSL has been initialised
     SSL_library_init();
     SSL_load_error_strings();
@@ -101,16 +101,16 @@ BoltConnection* BoltConnection_openSecureSocket(const char* host, int port)
     return connection;
 }
 
-void BoltConnection_close(BoltConnection* connection)
+void BoltConnection_close(struct BoltConnection* connection)
 {
     BoltBuffer_destroy(connection->buffer);
     BoltValue_destroy(connection->incoming);
     BIO_free_all(connection->bio);
     SSL_CTX_free(connection->ssl_context);
-    BoltMem_deallocate(connection, sizeof(BoltConnection));
+    BoltMem_deallocate(connection, sizeof(struct BoltConnection));
 }
 
-int _transmit(BoltConnection* connection, const char* data, int len)
+int _transmit(struct BoltConnection* connection, const char* data, int len)
 {
     int sent = BIO_write(connection->bio, data, len);
     if (sent > 0)
@@ -127,7 +127,7 @@ int _transmit(BoltConnection* connection, const char* data, int len)
     return -1;
 }
 
-int BoltConnection_transmit(BoltConnection* connection)
+int BoltConnection_transmit(struct BoltConnection* connection)
 {
     switch (connection->protocol_version)
     {
@@ -164,7 +164,7 @@ int BoltConnection_transmit(BoltConnection* connection)
     }
 }
 
-int _receive(BoltConnection* connection, char* buffer, int size)
+int _receive(struct BoltConnection* connection, char* buffer, int size)
 {
     int received = BIO_read(connection->bio, buffer, size);
     if (received == 0)
@@ -185,7 +185,7 @@ int _receive(BoltConnection* connection, char* buffer, int size)
     return received;
 }
 
-int BoltConnection_receive(BoltConnection* connection)
+int BoltConnection_receive(struct BoltConnection* connection)
 {
     switch (connection->protocol_version)
     {
@@ -210,7 +210,7 @@ int BoltConnection_receive(BoltConnection* connection)
     }
 }
 
-int BoltConnection_handshake(BoltConnection* connection, int32_t first, int32_t second, int32_t third, int32_t fourth)
+int BoltConnection_handshake(struct BoltConnection* connection, int32_t first, int32_t second, int32_t third, int32_t fourth)
 {
     BoltBuffer_load(connection->buffer, "\x60\x60\xB0\x17", 4);
     BoltBuffer_load_int32be(connection->buffer, first);
@@ -227,7 +227,7 @@ int BoltConnection_handshake(BoltConnection* connection, int32_t first, int32_t 
  *
  * @return
  */
-int BoltConnection_init(BoltConnection* connection, const char* user, const char* password)
+int BoltConnection_init(struct BoltConnection* connection, const char* user, const char* password)
 {
     switch (connection->protocol_version)
     {
@@ -243,7 +243,7 @@ int BoltConnection_init(BoltConnection* connection, const char* user, const char
     }
 }
 
-int BoltConnection_loadRun(BoltConnection* connection, const char* statement)
+int BoltConnection_loadRun(struct BoltConnection* connection, const char* statement)
 {
     switch (connection->protocol_version)
     {
@@ -255,7 +255,7 @@ int BoltConnection_loadRun(BoltConnection* connection, const char* statement)
     }
 }
 
-int BoltConnection_loadPull(BoltConnection* connection)
+int BoltConnection_loadPull(struct BoltConnection* connection)
 {
     switch (connection->protocol_version)
     {

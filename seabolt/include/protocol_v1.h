@@ -17,6 +17,10 @@
  * limitations under the License.
  */
 
+/**
+ * @file
+ */
+
 #ifndef SEABOLT_PROTOCOL_V1
 #define SEABOLT_PROTOCOL_V1
 
@@ -24,7 +28,8 @@
 #include "values.h"
 
 
-typedef enum {
+enum BoltProtocolV1Type
+{
     BOLT_V1_NULL,
     BOLT_V1_BOOLEAN,
     BOLT_V1_INTEGER,
@@ -35,21 +40,21 @@ typedef enum {
     BOLT_V1_MAP,
     BOLT_V1_STRUCTURE,
     BOLT_V1_RESERVED,
-} BoltProtocolV1Type;
+} ;
 
-BoltProtocolV1Type BoltProtocolV1_markerType(uint8_t marker);
+enum BoltProtocolV1Type BoltProtocolV1_markerType(uint8_t marker);
 
-int BoltProtocolV1_loadString(BoltConnection* connection, const char* string, int32_t size);
+int BoltProtocolV1_loadString(struct BoltConnection* connection, const char* string, int32_t size);
 
-int BoltProtocolV1_loadMap(BoltConnection* connection, BoltValue* value);
+int BoltProtocolV1_loadMap(struct BoltConnection* connection, struct BoltValue* value);
 
-int BoltProtocolV1_load(BoltConnection* connection, BoltValue* value);
+int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* value);
 
-int BoltProtocolV1_loadInit(BoltConnection* connection, const char* user, const char* password);
+int BoltProtocolV1_loadInit(struct BoltConnection* connection, const char* user, const char* password);
 
-int BoltProtocolV1_loadRun(BoltConnection* connection, const char* statement);
+int BoltProtocolV1_loadRun(struct BoltConnection* connection, const char* statement);
 
-int BoltProtocolV1_loadPull(BoltConnection* connection);
+int BoltProtocolV1_loadPull(struct BoltConnection* connection);
 
 /**
  * Top-level unload.
@@ -61,7 +66,7 @@ int BoltProtocolV1_loadPull(BoltConnection* connection);
  * @param value
  * @return
  */
-int BoltProtocolV1_unload(BoltConnection* connection, BoltValue* value);
+int BoltProtocolV1_unload(struct BoltConnection* connection, struct BoltValue* value);
 
 
 #endif // SEABOLT_PROTOCOL_V1

@@ -17,6 +17,10 @@
  * limitations under the License.
  */
 
+/**
+ * @file
+ */
+
 #ifndef SEABOLT_BUFFER
 #define SEABOLT_BUFFER
 
@@ -28,7 +32,7 @@
 #include "mem.h"
 
 
-typedef struct
+struct BoltBuffer
 {
     size_t size;
     int extent;
@@ -36,48 +40,48 @@ typedef struct
     char* data;
     int* stops;
     int num_stops;
-} BoltBuffer;
+};
 
 
-BoltBuffer* BoltBuffer_create(size_t size);
+struct BoltBuffer* BoltBuffer_create(size_t size);
 
-void BoltBuffer_destroy(BoltBuffer* buffer);
+void BoltBuffer_destroy(struct BoltBuffer* buffer);
 
-int BoltBuffer_loadable(BoltBuffer* buffer);
+int BoltBuffer_loadable(struct BoltBuffer* buffer);
 
-char* BoltBuffer_loadTarget(BoltBuffer* buffer, int size);
+char* BoltBuffer_loadTarget(struct BoltBuffer* buffer, int size);
 
-void BoltBuffer_load(BoltBuffer* buffer, const char* data, int size);
+void BoltBuffer_load(struct BoltBuffer* buffer, const char* data, int size);
 
-void BoltBuffer_load_uint8(BoltBuffer* buffer, uint8_t x);
+void BoltBuffer_load_uint8(struct BoltBuffer* buffer, uint8_t x);
 
-void BoltBuffer_load_int32be(BoltBuffer* buffer, int32_t x);
+void BoltBuffer_load_int32be(struct BoltBuffer* buffer, int32_t x);
 
-void BoltBuffer_pushStop(BoltBuffer* buffer);
+void BoltBuffer_pushStop(struct BoltBuffer* buffer);
 
-int BoltBuffer_nextStop(BoltBuffer* buffer);
+int BoltBuffer_nextStop(struct BoltBuffer* buffer);
 
-void BoltBuffer_pullStop(BoltBuffer* buffer);
+void BoltBuffer_pullStop(struct BoltBuffer* buffer);
 
-int BoltBuffer_unloadable(BoltBuffer* buffer);
+int BoltBuffer_unloadable(struct BoltBuffer* buffer);
 
-char* BoltBuffer_unloadTarget(BoltBuffer* buffer, int size);
+char* BoltBuffer_unloadTarget(struct BoltBuffer* buffer, int size);
 
-int BoltBuffer_unload(BoltBuffer* buffer, char* data, int size);
+int BoltBuffer_unload(struct BoltBuffer* buffer, char* data, int size);
 
-int BoltBuffer_peek_uint8(BoltBuffer* buffer, uint8_t* x);
+int BoltBuffer_peek_uint8(struct BoltBuffer* buffer, uint8_t* x);
 
-int BoltBuffer_unload_uint8(BoltBuffer* buffer, uint8_t* x);
+int BoltBuffer_unload_uint8(struct BoltBuffer* buffer, uint8_t* x);
 
-int BoltBuffer_unload_uint16be(BoltBuffer* buffer, uint16_t* x);
+int BoltBuffer_unload_uint16be(struct BoltBuffer* buffer, uint16_t* x);
 
-int BoltBuffer_unload_int8(BoltBuffer* buffer, int8_t* x);
+int BoltBuffer_unload_int8(struct BoltBuffer* buffer, int8_t* x);
 
-int BoltBuffer_unload_int16be(BoltBuffer* buffer, int16_t* x);
+int BoltBuffer_unload_int16be(struct BoltBuffer* buffer, int16_t* x);
 
-int BoltBuffer_unload_int32be(BoltBuffer* buffer, int32_t* x);
+int BoltBuffer_unload_int32be(struct BoltBuffer* buffer, int32_t* x);
 
-int BoltBuffer_unload_int64be(BoltBuffer* buffer, int64_t* x);
+int BoltBuffer_unload_int64be(struct BoltBuffer* buffer, int64_t* x);
 
 
 #endif // SEABOLT_BUFFER

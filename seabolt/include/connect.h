@@ -17,6 +17,10 @@
  * limitations under the License.
  */
 
+/**
+ * @file
+ */
+
 #ifndef SEABOLT_CONNECT
 #define SEABOLT_CONNECT
 
@@ -31,7 +35,7 @@
 #define try(code) { int status = (code); if (status == -1) return status; }
 
 
-typedef struct
+struct BoltConnection
 {
     const char* host;
     int port;
@@ -40,30 +44,30 @@ typedef struct
     struct bio_st* bio;
     int32_t protocol_version;
     const char* user_agent;
-    BoltBuffer* buffer;
+    struct BoltBuffer* buffer;
     unsigned long bolt_error;
     unsigned long library_error;
-    BoltValue* incoming; // holder for incoming messages (one at a time so we can reuse this)
-} BoltConnection;
+    struct BoltValue* incoming; // holder for incoming messages (one at a time so we can reuse this)
+};
 
 
-BoltConnection* BoltConnection_openSocket(const char* host, int port);
+struct BoltConnection* BoltConnection_openSocket(const char* host, int port);
 
-BoltConnection* BoltConnection_openSecureSocket(const char* host, int port);
+struct BoltConnection* BoltConnection_openSecureSocket(const char* host, int port);
 
-void BoltConnection_close(BoltConnection* connection);
+void BoltConnection_close(struct BoltConnection* connection);
 
-int BoltConnection_transmit(BoltConnection* connection);
+int BoltConnection_transmit(struct BoltConnection* connection);
 
-int BoltConnection_receive(BoltConnection* connection);
+int BoltConnection_receive(struct BoltConnection* connection);
 
-int32_t BoltConnection_handshake(BoltConnection* connection, int32_t first, int32_t second, int32_t third, int32_t fourth);
+int32_t BoltConnection_handshake(struct BoltConnection* connection, int32_t first, int32_t second, int32_t third, int32_t fourth);
 
-int BoltConnection_init(BoltConnection* connection, const char* user, const char* password);
+int BoltConnection_init(struct BoltConnection* connection, const char* user, const char* password);
 
-int BoltConnection_loadRun(BoltConnection* connection, const char*);
+int BoltConnection_loadRun(struct BoltConnection* connection, const char*);
 
-int BoltConnection_loadPull(BoltConnection* connection);
+int BoltConnection_loadPull(struct BoltConnection* connection);
 
 
 #endif // SEABOLT_CONNECT

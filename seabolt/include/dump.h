@@ -17,13 +17,17 @@
  * limitations under the License.
  */
 
+/**
+ * @file
+ */
+
 #ifndef SEABOLT_DUMP
 #define SEABOLT_DUMP
 
 #include "values.h"
 
-int BoltValue_dump(BoltValue* value);
+int BoltValue_dump(struct BoltValue* value);
 
-void BoltValue_dumpLine(BoltValue* value);
+void BoltValue_dumpLine(struct BoltValue* value);
 
 #endif // SEABOLT_DUMP

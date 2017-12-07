@@ -2,6 +2,10 @@
 // Created by technige on 06/12/17.
 //
 
+/**
+ * @file
+ */
+
 #ifndef SEABOLT_ERR
 #define SEABOLT_ERR
 
