@@ -17,11 +17,41 @@
  * limitations under the License.
  */
 
+
+#include <stdarg.h>
 #include <stddef.h>
 #include <malloc.h>
-#include <logging.h>
 
-#include "mem.h"
+#include "warden.h"
+
+
+void BoltLog_info(const char* message, ...)
+{
+    if (bolt_log_file == NULL) return;
+    int use_colour = (bolt_log_file == stderr);
+    if (use_colour) fprintf(bolt_log_file, "\x1B[36m");
+    va_list args;
+    va_start(args, message);
+    vfprintf(bolt_log_file, message, args);
+    va_end(args);
+    if (use_colour) fprintf(bolt_log_file, "\x1B[0m");
+    fprintf(bolt_log_file, "\n");
+}
+
+void BoltLog_error(const char* message, ...)
+{
+    if (bolt_log_file == NULL) return;
+    int use_colour = (bolt_log_file == stderr);
+    if (use_colour) fprintf(bolt_log_file, "\x1B[33m");
+    va_list args;
+    va_start(args, message);
+    vfprintf(bolt_log_file, message, args);
+    va_end(args);
+    if (use_colour) fprintf(bolt_log_file, "\x1B[0m");
+    fprintf(bolt_log_file, "\n");
+}
+
+
 
 
 static size_t __memory = 0;
@@ -32,7 +62,7 @@ void* BoltMem_allocate(size_t new_size)
 {
     void* p = malloc(new_size);
     __memory += new_size;
-    log("[MEM] Allocated %ld bytes (balance: %lu)", new_size, __memory);
+    BoltLog_info("[MEM] Allocated %ld bytes (balance: %lu)", new_size, __memory);
     __activity += 1;
     return p;
 }
@@ -41,7 +71,7 @@ void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size)
 {
     void* p = realloc(ptr, new_size);
     __memory = __memory - old_size + new_size;
-    log("[MEM] Reallocated %ld bytes as %ld bytes (balance: %lu)", old_size, new_size, __memory);
+    BoltLog_info("[MEM] Reallocated %ld bytes as %ld bytes (balance: %lu)", old_size, new_size, __memory);
     __activity += 1;
     return p;
 }
@@ -50,7 +80,7 @@ void* BoltMem_deallocate(void* ptr, size_t old_size)
 {
     free(ptr);
     __memory -= old_size;
-    log("[MEM] Freed %ld bytes (balance: %lu)", old_size, __memory);
+    BoltLog_info("[MEM] Freed %ld bytes (balance: %lu)", old_size, __memory);
     __activity += 1;
     return NULL;
 }

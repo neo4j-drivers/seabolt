@@ -881,8 +881,11 @@ int run(const char* statement)
 
 }
 
+FILE* bolt_log_file;
+
 int main(int argc, char *argv[])
 {
+    bolt_log_file = stderr;
 //    test_types();
     if (argc >= 2)
     {

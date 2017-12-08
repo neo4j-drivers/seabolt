@@ -17,12 +17,30 @@
  * limitations under the License.
  */
 
-/**
- * @file
- */
+/// This module....
+/// Logging, resource management, "try" and exception macros
+/// General flow management
 
-#ifndef SEABOLT_MEMORY
-#define SEABOLT_MEMORY
+#ifndef SEABOLT_WARDEN
+#define SEABOLT_WARDEN
+
+#include "stdio.h"
+
+
+static const unsigned long BOLT_UNKNOWN_ERROR    = 0xB017E000;
+static const unsigned long BOLT_SOCKET_ERROR     = 0xB017E001;
+static const unsigned long BOLT_TLS_ERROR        = 0xB017E002;
+
+//#define BOLT_PROTOCOL_VIOLATION        0xB017E004
+
+
+extern FILE* bolt_log_file;
+
+
+void BoltLog_info(const char* message, ...);
+
+void BoltLog_error(const char* message, ...);
+
 
 
 /**
@@ -71,4 +89,4 @@ void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
 long long BoltMem_activity();
 
 
-#endif // SEABOLT_MEMORY
+#endif // SEABOLT_WARDEN

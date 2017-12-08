@@ -30,7 +30,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "mem.h"
+#include "warden.h"
 
 #if CHAR_BIT != 8
 #error "Cannot compile if `char` is not 8-bit"

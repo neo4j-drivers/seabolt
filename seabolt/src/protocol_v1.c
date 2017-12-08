@@ -18,7 +18,7 @@
  */
 
 
-#include <logging.h>
+#include <warden.h>
 #include "stdint.h"
 #include "protocol_v1.h"
 
@@ -241,7 +241,7 @@ int _unloadString(struct BoltConnection* connection, struct BoltValue* value)
         BoltBuffer_unload(connection->buffer, BoltUTF8_get(value), size);
         return 0;
     }
-    log_error("Wrong marker type: %d", marker);
+    BoltLog_error("Wrong marker type: %d", marker);
     return -1;  // BOLT_ERROR_WRONG_TYPE
 }
 
@@ -303,7 +303,7 @@ int _unload(struct BoltConnection* connection, struct BoltValue* value)
         case BOLT_V1_MAP:
             return _unloadMap(connection, value);
         default:
-            log_error("Unsupported marker: %d", marker);
+            BoltLog_error("Unsupported marker: %d", marker);
             return -1;  // BOLT_UNSUPPORTED_MARKER
     }
 }

@@ -22,7 +22,7 @@
 #include <openssl/ssl.h>
 #include <connect.h>
 #include <protocol_v1.h>
-#include <logging.h>
+#include <warden.h>
 #include <err.h>
 
 
@@ -113,7 +113,7 @@ int _transmit(struct BoltConnection* connection, const char* data, int len)
     int sent = BIO_write(connection->bio, data, len);
     if (sent > 0)
     {
-        log("[CON] Transmitted %d bytes", sent);
+        BoltLog_info("[CON] Transmitted %d bytes", sent);
         return sent;
     }
     if (BIO_should_retry(connection->bio))
@@ -179,7 +179,7 @@ int _receive(struct BoltConnection* connection, char* buffer, int size)
         printf("%s", ERR_error_string(ERR_get_error(), NULL));
         return -1;
     }
-    log("[CON] Received %d bytes", received);
+    BoltLog_info("[CON] Received %d bytes", received);
     return received;
 }
 

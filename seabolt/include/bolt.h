@@ -20,6 +20,7 @@
 #ifndef SEABOLT_BOLT
 #define SEABOLT_BOLT
 
+#include "warden.h"
 #include "connect.h"
 #include "values.h"
 
