@@ -47,6 +47,8 @@ struct BoltBuffer* BoltBuffer_create(size_t size);
 
 void BoltBuffer_destroy(struct BoltBuffer* buffer);
 
+void BoltBuffer_compact(struct BoltBuffer* buffer);
+
 int BoltBuffer_loadable(struct BoltBuffer* buffer);
 
 char* BoltBuffer_loadTarget(struct BoltBuffer* buffer, int size);

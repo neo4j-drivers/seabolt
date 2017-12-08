@@ -34,8 +34,9 @@ static const unsigned long BOLT_TLS_ERROR        = 0xB017E002;
 //#define BOLT_PROTOCOL_VIOLATION        0xB017E004
 
 
-extern FILE* bolt_log_file;
+static FILE* __bolt_log_file;
 
+void BoltLog_setFile(FILE* log_file);
 
 void BoltLog_info(const char* message, ...);
 

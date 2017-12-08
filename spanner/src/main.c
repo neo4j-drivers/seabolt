@@ -879,13 +879,15 @@ int run(const char* statement)
     timespec_diff(&t[0], &t[6], &t[5]);
     printf("shutdown             : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
-}
+    timespec_diff(&t[0], &t[6], &t[1]);
+    printf("=====================================\n");
+    printf("TOTAL                : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
-FILE* bolt_log_file;
+}
 
 int main(int argc, char *argv[])
 {
-    bolt_log_file = stderr;
+    BoltLog_setFile(NULL);
 //    test_types();
     if (argc >= 2)
     {

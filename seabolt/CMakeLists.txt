@@ -30,7 +30,7 @@ file(GLOB H_FILES include/*.h)
 file(GLOB C_FILES src/*.c)
 add_library(${PROJECT_NAME} SHARED ${H_FILES} ${C_FILES})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
-set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 target_link_libraries(${PROJECT_NAME})
 
 set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include

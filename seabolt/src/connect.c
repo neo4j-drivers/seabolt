@@ -164,11 +164,12 @@ int BoltConnection_transmit(struct BoltConnection* connection)
 
 int _receive(struct BoltConnection* connection, char* buffer, int size)
 {
+    if (size == 0) return 0;
     int received = BIO_read(connection->bio, buffer, size);
-    if (received == 0)
+    if (received > 0)
     {
-        printf("Unable to read from a closed connection.");
-        return -1;
+        BoltLog_info("[CON] Received %d bytes", received);
+        return received;
     }
     if (received < 0)
     {
@@ -179,8 +180,8 @@ int _receive(struct BoltConnection* connection, char* buffer, int size)
         printf("%s", ERR_error_string(ERR_get_error(), NULL));
         return -1;
     }
-    BoltLog_info("[CON] Received %d bytes", received);
-    return received;
+    printf("Unable to read from a closed connection.");
+    return -1;
 }
 
 int BoltConnection_receive(struct BoltConnection* connection)
@@ -212,6 +213,7 @@ struct BoltValue* BoltConnection_fetch(struct BoltConnection* connection)
 {
     BoltConnection_receive(connection);
     BoltProtocolV1_unload(connection, connection->incoming);
+    BoltBuffer_compact(connection->buffer);
     return connection->incoming;
 }
 

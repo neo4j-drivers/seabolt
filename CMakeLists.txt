@@ -4,6 +4,7 @@ project(seabolt-all)
 enable_testing()
 
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_custom_target(seabolt-all)
 add_dependencies(seabolt-all seabolt spanner)
