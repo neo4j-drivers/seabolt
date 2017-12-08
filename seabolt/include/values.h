@@ -305,6 +305,10 @@ enum BoltType BoltValue_type(const struct BoltValue* value);
  */
 void BoltValue_destroy(struct BoltValue* value);
 
+int BoltValue_dump(struct BoltValue* value);
+
+void BoltValue_dumpLine(struct BoltValue* value);
+
 
 
 void BoltList_resize(struct BoltValue* value, int32_t size);

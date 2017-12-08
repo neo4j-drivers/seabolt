@@ -61,6 +61,8 @@ int BoltConnection_transmit(struct BoltConnection* connection);
 
 int BoltConnection_receive(struct BoltConnection* connection);
 
+struct BoltValue* BoltConnection_fetch(struct BoltConnection* connection);
+
 int32_t BoltConnection_handshake(struct BoltConnection* connection, int32_t first, int32_t second, int32_t third, int32_t fourth);
 
 int BoltConnection_init(struct BoltConnection* connection, const char* user, const char* password);

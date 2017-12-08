@@ -22,10 +22,8 @@
 #include <openssl/ssl.h>
 #include <connect.h>
 #include <protocol_v1.h>
-#include <dump.h>
 #include <logging.h>
 #include <err.h>
-#include <buffer.h>
 
 
 #define return_if(predicate, bolt_err, lib_err, return_value)       \
@@ -208,6 +206,13 @@ int BoltConnection_receive(struct BoltConnection* connection)
             return -1;
         }
     }
+}
+
+struct BoltValue* BoltConnection_fetch(struct BoltConnection* connection)
+{
+    BoltConnection_receive(connection);
+    BoltProtocolV1_unload(connection, connection->incoming);
+    return connection->incoming;
 }
 
 int BoltConnection_handshake(struct BoltConnection* connection, int32_t first, int32_t second, int32_t third, int32_t fourth)

@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "dump.h"
+#include "values.h"
 
 
 static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',

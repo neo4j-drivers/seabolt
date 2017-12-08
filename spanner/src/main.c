@@ -21,11 +21,9 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
-#include <protocol_v1.h>
 
-#include "connect.h"
-#include "values.h"
-#include "dump.h"
+#include "bolt.h"
+
 
 void test_null()
 {
@@ -839,21 +837,20 @@ int run(const char* statement)
 
     timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission
 
-    try(BoltConnection_receive(connection));
-    BoltProtocolV1_unload(connection, connection->incoming);
-//    BoltValue_dumpLine(connection->incoming);
+    struct BoltValue* current = BoltConnection_fetch(connection);
+//    BoltValue_dumpLine(current);
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
-    long record_count = 0;
-    do
+    int done = 0;
+    long record_count;
+    for (record_count = 0; !done; record_count++)
     {
-        try(BoltConnection_receive(connection));
-        BoltProtocolV1_unload(connection, connection->incoming);
-//        BoltValue_dumpLine(connection->incoming);
-        record_count += 1;
-    } while (BoltValue_type(connection->incoming) != BOLT_SUMMARY);
-//    BoltValue_dumpLine(connection->incoming);
+        current = BoltConnection_fetch(connection);
+//        BoltValue_dumpLine(current);
+        done = BoltValue_type(current) == BOLT_SUMMARY;
+    }
+//    BoltValue_dumpLine(current);
     record_count -= 1;
 
     timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
