@@ -50,33 +50,34 @@ struct BoltConnection
     struct ssl_ctx_st* ssl_context;
     int32_t protocol_version;
     const char* user_agent;
-    struct BoltBuffer* tx_buffer;
-    struct BoltBuffer* rx_buffer;
+    struct BoltBuffer* tx_buffer;       // transmit buffer
+    struct BoltBuffer* rx_buffer;       // receive buffer after chunk processing
+    struct BoltBuffer* raw_rx_buffer;   // receive buffer before chunk processing
     unsigned long bolt_error;
     unsigned long openssl_error;
     struct BoltValue* incoming; // holder for incoming messages (one at a time so we can reuse this)
 };
 
 
-struct BoltConnection* BoltConnection_openSocket(const char* host, int port);
+struct BoltConnection* BoltConnection_open_socket_b(const char* host, int port);
 
-struct BoltConnection* BoltConnection_openSecureSocket(const char* host, int port);
+struct BoltConnection* BoltConnection_open_secure_socket_b(const char* host, int port);
 
-void BoltConnection_close(struct BoltConnection* connection);
+void BoltConnection_close_b(struct BoltConnection* connection);
 
-int BoltConnection_transmit(struct BoltConnection* connection);
+int BoltConnection_transmit_b(struct BoltConnection* connection);
 
-int BoltConnection_receive(struct BoltConnection* connection);
+int BoltConnection_receive_b(struct BoltConnection* connection);
 
-struct BoltValue* BoltConnection_fetch(struct BoltConnection* connection);
+struct BoltValue* BoltConnection_fetch_b(struct BoltConnection* connection);
 
-int32_t BoltConnection_handshake(struct BoltConnection* connection, int32_t first, int32_t second, int32_t third, int32_t fourth);
+int32_t BoltConnection_handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int32_t _3, int32_t _4);
 
-int BoltConnection_init(struct BoltConnection* connection, const char* user, const char* password);
+int BoltConnection_init_b(struct BoltConnection* connection, const char* user, const char* password);
 
-int BoltConnection_loadRun(struct BoltConnection* connection, const char*);
+int BoltConnection_load_run(struct BoltConnection* connection, const char*);
 
-int BoltConnection_loadPull(struct BoltConnection* connection);
+int BoltConnection_load_pull(struct BoltConnection* connection);
 
 
 #endif // SEABOLT_CONNECT

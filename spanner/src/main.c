@@ -836,25 +836,25 @@ int run(const char* statement)
     struct BoltConnection* connection;
     if (strcmp(BOLT_SECURE, "1") == 0)
     {
-        connection = BoltConnection_openSecureSocket(BOLT_HOST, 7687);
+        connection = BoltConnection_open_secure_socket_b(BOLT_HOST, 7687);
     }
     else
     {
-        connection = BoltConnection_openSocket(BOLT_HOST, 7687);
+        connection = BoltConnection_open_socket_b(BOLT_HOST, 7687);
     }
-    BoltConnection_handshake(connection, 1, 0, 0, 0);
+    BoltConnection_handshake_b(connection, 1, 0, 0, 0);
     printf("Using Bolt v%d\n", connection->protocol_version);
-    BoltConnection_init(connection, "neo4j", "password");
+    BoltConnection_init_b(connection, "neo4j", "password");
 
     timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after handshake and initialisation
 
-    BoltConnection_loadRun(connection, statement);
-    BoltConnection_loadPull(connection);
-    BoltConnection_transmit(connection);
+    BoltConnection_load_run(connection, statement);
+    BoltConnection_load_pull(connection);
+    BoltConnection_transmit_b(connection);
 
     timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission
 
-    struct BoltValue* current = BoltConnection_fetch(connection);
+    struct BoltValue* current = BoltConnection_fetch_b(connection);
 //    BoltValue_dumpLine(current);
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
@@ -863,7 +863,7 @@ int run(const char* statement)
     long record_count;
     for (record_count = 0; !done; record_count++)
     {
-        current = BoltConnection_fetch(connection);
+        current = BoltConnection_fetch_b(connection);
 //        BoltValue_dumpLine(current);
         done = BoltValue_type(current) == BOLT_SUMMARY;
     }
@@ -872,7 +872,7 @@ int run(const char* statement)
 
     timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
 
-    BoltConnection_close(connection);
+    BoltConnection_close_b(connection);
 
     timespec_get(&t[6], TIME_UTC);    // Checkpoint 6 - after close
 
