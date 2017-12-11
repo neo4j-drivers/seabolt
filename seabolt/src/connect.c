@@ -45,7 +45,8 @@ struct BoltConnection* _create(size_t buffer_size)
     struct BoltConnection* connection = BoltMem_allocate(sizeof(struct BoltConnection));
     memset(connection, 0, sizeof(struct BoltConnection));
     connection->user_agent = DEFAULT_USER_AGENT;
-    connection->buffer = BoltBuffer_create(buffer_size);
+    connection->tx_buffer = BoltBuffer_create(buffer_size);
+    connection->rx_buffer = BoltBuffer_create(buffer_size);
     connection->incoming = BoltValue_create();
 }
 
@@ -82,7 +83,8 @@ void _destroy(struct BoltConnection* connection)
 {
     connection->bio = NULL;
     BoltValue_destroy(connection->incoming);
-    BoltBuffer_destroy(connection->buffer);
+    BoltBuffer_destroy(connection->rx_buffer);
+    BoltBuffer_destroy(connection->tx_buffer);
     BoltMem_deallocate(connection, sizeof(struct BoltConnection));
 }
 
@@ -139,6 +141,7 @@ int _transmit(struct BoltConnection* connection, const char* data, int len)
     if (sent > 0)
     {
         BoltLog_info("[CON] Transmitted %d bytes", sent);
+        BoltBuffer_compact(connection->tx_buffer);
         return sent;
     }
     if (BIO_should_retry(connection->bio))
@@ -157,30 +160,30 @@ int BoltConnection_transmit(struct BoltConnection* connection)
         case 1:
         {
             // TODO: more chunks if size is too big
-            int size = BoltBuffer_unloadable(connection->buffer);
+            int size = BoltBuffer_unloadable(connection->tx_buffer);
             while (size > 0)
             {
                 char header[2];
                 header[0] = (char)(size >> 8);
                 header[1] = (char)(size);
                 try(_transmit(connection, &header[0], 2));
-                try(_transmit(connection, BoltBuffer_unloadTarget(connection->buffer, size), size));
+                try(_transmit(connection, BoltBuffer_unloadTarget(connection->tx_buffer, size), size));
                 header[0] = (char)(0);
                 header[1] = (char)(0);
                 try(_transmit(connection, &header[0], 2));
-                BoltBuffer_pullStop(connection->buffer);
-                size = BoltBuffer_unloadable(connection->buffer);
+                BoltBuffer_pullStop(connection->tx_buffer);
+                size = BoltBuffer_unloadable(connection->tx_buffer);
             }
             return 0;
         }
         default:
         {
-            int size = BoltBuffer_unloadable(connection->buffer);
+            int size = BoltBuffer_unloadable(connection->tx_buffer);
             while (size > 0)
             {
-                try(_transmit(connection, BoltBuffer_unloadTarget(connection->buffer, size), size));
-                BoltBuffer_pullStop(connection->buffer);
-                size = BoltBuffer_unloadable(connection->buffer);
+                try(_transmit(connection, BoltBuffer_unloadTarget(connection->tx_buffer, size), size));
+                BoltBuffer_pullStop(connection->tx_buffer);
+                size = BoltBuffer_unloadable(connection->tx_buffer);
             }
             return 0;
         }
@@ -220,7 +223,7 @@ int BoltConnection_receive(struct BoltConnection* connection)
             int chunk_size = char_to_int16be(header);
             while (chunk_size != 0)
             {
-                try(_receive(connection, BoltBuffer_loadTarget(connection->buffer, chunk_size), chunk_size));
+                try(_receive(connection, BoltBuffer_loadTarget(connection->rx_buffer, chunk_size), chunk_size));
                 try(_receive(connection, &header[0], 2));
                 chunk_size = char_to_int16be(header);
             }
@@ -238,20 +241,20 @@ struct BoltValue* BoltConnection_fetch(struct BoltConnection* connection)
 {
     BoltConnection_receive(connection);
     BoltProtocolV1_unload(connection, connection->incoming);
-    BoltBuffer_compact(connection->buffer);
+    BoltBuffer_compact(connection->rx_buffer);
     return connection->incoming;
 }
 
 int BoltConnection_handshake(struct BoltConnection* connection, int32_t first, int32_t second, int32_t third, int32_t fourth)
 {
-    BoltBuffer_load(connection->buffer, "\x60\x60\xB0\x17", 4);
-    BoltBuffer_load_int32be(connection->buffer, first);
-    BoltBuffer_load_int32be(connection->buffer, second);
-    BoltBuffer_load_int32be(connection->buffer, third);
-    BoltBuffer_load_int32be(connection->buffer, fourth);
+    BoltBuffer_load(connection->tx_buffer, "\x60\x60\xB0\x17", 4);
+    BoltBuffer_load_int32be(connection->tx_buffer, first);
+    BoltBuffer_load_int32be(connection->tx_buffer, second);
+    BoltBuffer_load_int32be(connection->tx_buffer, third);
+    BoltBuffer_load_int32be(connection->tx_buffer, fourth);
     try(BoltConnection_transmit(connection));
-    try(_receive(connection, BoltBuffer_loadTarget(connection->buffer, 4), 4));
-    BoltBuffer_unload_int32be(connection->buffer, &connection->protocol_version);
+    try(_receive(connection, BoltBuffer_loadTarget(connection->rx_buffer, 4), 4));
+    BoltBuffer_unload_int32be(connection->rx_buffer, &connection->protocol_version);
 }
 
 /**

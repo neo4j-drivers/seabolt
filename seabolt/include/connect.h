@@ -50,7 +50,8 @@ struct BoltConnection
     struct ssl_ctx_st* ssl_context;
     int32_t protocol_version;
     const char* user_agent;
-    struct BoltBuffer* buffer;
+    struct BoltBuffer* tx_buffer;
+    struct BoltBuffer* rx_buffer;
     unsigned long bolt_error;
     unsigned long openssl_error;
     struct BoltValue* incoming; // holder for incoming messages (one at a time so we can reuse this)
