@@ -28,7 +28,7 @@
 
 
 #define INITIAL_TX_BUFFER_SIZE 8192
-#define INITIAL_RX_BUFFER_SIZE 524288
+#define INITIAL_RX_BUFFER_SIZE 131072
 
 #define char_to_int16be(array) (header[0] << 8) | (header[1]);
 
@@ -63,6 +63,7 @@ void _open(struct BoltConnection* connection, const char* address)
         connection->status = BOLT_CONNECTED;
         return;
     }
+
     connection->status = BOLT_CONNECTION_FAILED;
     connection->openssl_error = ERR_get_error();
     if (BIO_should_retry(connection->bio))
