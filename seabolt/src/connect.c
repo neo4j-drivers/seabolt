@@ -26,14 +26,7 @@
 #include <err.h>
 
 
-#define return_if(predicate, bolt_err, lib_err, return_value)       \
-    if (predicate)                                                  \
-    {                                                               \
-        connection->bolt_error = (bolt_err);                        \
-        connection->library_error = (lib_err);                      \
-        return (return_value);                                      \
-    }
-
+#define INITIAL_BUFFER_SIZE 8192
 
 #define char_to_int16be(array) (header[0] << 8) | (header[1]);
 
@@ -41,71 +34,103 @@
 static const char* DEFAULT_USER_AGENT = "seabolt/1.0.0a";
 
 
-int _open(struct BoltConnection* connection, const char* host, int port)
-{
-    connection->host = host;
-    connection->port = port;
-    char address[strlen(connection->host) + 6];
-    sprintf(&address[0], "%s:%d", connection->host, connection->port);
-    BIO_set_conn_hostname(connection->bio, address);
-    return_if(BIO_do_connect(connection->bio) <= 0, BOLT_SOCKET_ERROR, ERR_get_error(), EXIT_FAILURE);
-    if (connection->_ssl != NULL)
-    {
-        if (SSL_get_verify_result(connection->_ssl) != X509_V_OK)
-        {
-            SSL_set_verify_result(connection->_ssl, X509_V_OK);
-        }
-    }
-    connection->buffer = BoltBuffer_create(8192);
-    connection->protocol_version = 0;
-    connection->user_agent = DEFAULT_USER_AGENT;
-    connection->incoming = BoltValue_create();
+struct BoltConnection* _create(size_t buffer_size);
+void _open(struct BoltConnection* connection, const char* host, int port);
+void _close(struct BoltConnection* connection);
+void _destroy(struct BoltConnection* connection);
 
+
+struct BoltConnection* _create(size_t buffer_size)
+{
+    struct BoltConnection* connection = BoltMem_allocate(sizeof(struct BoltConnection));
+    memset(connection, 0, sizeof(struct BoltConnection));
+    connection->user_agent = DEFAULT_USER_AGENT;
+    connection->buffer = BoltBuffer_create(buffer_size);
+    connection->incoming = BoltValue_create();
+}
+
+void _open(struct BoltConnection* connection, const char* host, int port)
+{
+    BoltLog_info("[CON] Opening connection to %s on port %d", host, port);
+    assert(connection->bio != NULL);
+    BIO_set_conn_hostname(connection->bio, host);
+    BIO_set_conn_int_port(connection->bio, &port);
+    if (BIO_do_connect(connection->bio) == 1)
+    {
+        connection->status = BOLT_CONNECTED;
+        return;
+    }
+    connection->status = BOLT_CONNECTION_FAILED;
+    connection->openssl_error = ERR_get_error();
+    if (BIO_should_retry(connection->bio))
+    {
+        return _open(connection, host, port);
+    }
+}
+
+void _close(struct BoltConnection* connection)
+{
+    if (connection->ssl_context != NULL)   {
+        SSL_CTX_free(connection->ssl_context);
+        connection->ssl_context = NULL;
+    }
+    BIO_free_all(connection->bio);
+    connection->status = BOLT_DISCONNECTED;
+}
+
+void _destroy(struct BoltConnection* connection)
+{
+    connection->bio = NULL;
+    BoltValue_destroy(connection->incoming);
+    BoltBuffer_destroy(connection->buffer);
+    BoltMem_deallocate(connection, sizeof(struct BoltConnection));
 }
 
 struct BoltConnection* BoltConnection_openSocket(const char* host, int port)
 {
-    struct BoltConnection* connection = BoltMem_allocate(sizeof(struct BoltConnection));
+    struct BoltConnection* connection =_create(INITIAL_BUFFER_SIZE);
+
     connection->bio = BIO_new(BIO_s_connect());
-    return_if(connection->bio == NULL, BOLT_SOCKET_ERROR, 0, NULL);
     _open(connection, host, port);
+
     return connection;
 }
 
 struct BoltConnection* BoltConnection_openSecureSocket(const char* host, int port)
 {
-    struct BoltConnection* connection = BoltMem_allocate(sizeof(struct BoltConnection));
-    // Ensure SSL has been initialised
+    struct BoltConnection* connection =_create(INITIAL_BUFFER_SIZE);
+
+    BoltLog_info("[CON] Initialising OpenSSL");
     SSL_library_init();
     SSL_load_error_strings();
-
-    // create a new TLS 1.2 context
     connection->ssl_context = SSL_CTX_new(TLSv1_2_client_method());
-    return_if(connection->ssl_context == NULL, BOLT_TLS_ERROR, ERR_get_error(), NULL);
-
-    // set CA cert store to the defaults
-    return_if(SSL_CTX_set_default_verify_paths(connection->ssl_context) <= 0,
-              BOLT_TLS_ERROR, ERR_get_error(), NULL);
+    if (connection->ssl_context == NULL || SSL_CTX_set_default_verify_paths(connection->ssl_context) != 1)
+    {
+        connection->status = BOLT_CONNECTION_TLS_FAILED;
+        connection->openssl_error = ERR_get_error();
+        return connection;
+    }
 
     connection->bio = BIO_new_ssl_connect(connection->ssl_context);
-    return_if(connection->bio == NULL, BOLT_TLS_ERROR, ERR_get_error(), NULL);
-
-    BIO_get_ssl(connection->bio, &connection->_ssl);
-    return_if(connection->_ssl == NULL, BOLT_TLS_ERROR, ERR_get_error(), NULL);
-
-    SSL_set_mode(connection->_ssl, SSL_MODE_AUTO_RETRY);
-
     _open(connection, host, port);
+
+    struct ssl_st* _ssl;
+    BIO_get_ssl(connection->bio, &_ssl);
+    if (_ssl == NULL)
+    {
+        connection->status = BOLT_CONNECTION_TLS_FAILED;
+        connection->openssl_error = ERR_get_error();
+        return connection;
+    }
+    SSL_set_mode(_ssl, SSL_MODE_AUTO_RETRY);
+
     return connection;
 }
 
 void BoltConnection_close(struct BoltConnection* connection)
 {
-    BoltBuffer_destroy(connection->buffer);
-    BoltValue_destroy(connection->incoming);
-    BIO_free_all(connection->bio);
-    SSL_CTX_free(connection->ssl_context);
-    BoltMem_deallocate(connection, sizeof(struct BoltConnection));
+    _close(connection);
+    _destroy(connection);
 }
 
 int _transmit(struct BoltConnection* connection, const char* data, int len)

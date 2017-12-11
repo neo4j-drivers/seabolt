@@ -35,18 +35,24 @@
 #define try(code) { int status = (code); if (status == -1) return status; }
 
 
+enum BoltConnectionStatus
+{
+    BOLT_DISCONNECTED,
+    BOLT_CONNECTED,
+    BOLT_CONNECTION_TLS_FAILED,
+    BOLT_CONNECTION_FAILED,
+
+};
 struct BoltConnection
 {
-    const char* host;
-    int port;
-    struct ssl_ctx_st* ssl_context;
-    struct ssl_st* _ssl;
+    enum BoltConnectionStatus status;
     struct bio_st* bio;
+    struct ssl_ctx_st* ssl_context;
     int32_t protocol_version;
     const char* user_agent;
     struct BoltBuffer* buffer;
     unsigned long bolt_error;
-    unsigned long library_error;
+    unsigned long openssl_error;
     struct BoltValue* incoming; // holder for incoming messages (one at a time so we can reuse this)
 };
 

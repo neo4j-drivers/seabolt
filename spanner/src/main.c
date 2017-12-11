@@ -818,13 +818,30 @@ void timespec_diff(struct timespec *t, struct timespec *t0, struct timespec *t1)
     }
 }
 
+const char* getenv_or_default(const char* name, const char* default_value)
+{
+    const char* value = getenv(name);
+    return (value == NULL) ? default_value : value;
+}
+
 int run(const char* statement)
 {
+    const char* BOLT_HOST = getenv_or_default("BOLT_HOST", "localhost");
+    const char* BOLT_SECURE = getenv_or_default("BOLT_SECURE", "1");
+
     struct timespec t[7];
 
     timespec_get(&t[1], TIME_UTC);    // Checkpoint 1 - right at the start
 
-    struct BoltConnection* connection = BoltConnection_openSecureSocket("localhost", 7687);
+    struct BoltConnection* connection;
+    if (strcmp(BOLT_SECURE, "1") == 0)
+    {
+        connection = BoltConnection_openSecureSocket(BOLT_HOST, 7687);
+    }
+    else
+    {
+        connection = BoltConnection_openSocket(BOLT_HOST, 7687);
+    }
     BoltConnection_handshake(connection, 1, 0, 0, 0);
     printf("Using Bolt v%d\n", connection->protocol_version);
     BoltConnection_init(connection, "neo4j", "password");
@@ -887,7 +904,19 @@ int run(const char* statement)
 
 int main(int argc, char *argv[])
 {
-    BoltLog_setFile(NULL);
+    const char* BOLT_LOG = getenv_or_default("BOLT_LOG", "0");
+    if (strcmp(BOLT_LOG, "1") == 0)
+    {
+        BoltLog_setFile(stdout);
+    }
+    if (strcmp(BOLT_LOG, "2") == 0)
+    {
+        BoltLog_setFile(stderr);
+    }
+    else
+    {
+        BoltLog_setFile(NULL);
+    }
 //    test_types();
     if (argc >= 2)
     {
