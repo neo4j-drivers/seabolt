@@ -59,9 +59,9 @@ struct BoltConnection
 };
 
 
-struct BoltConnection* BoltConnection_open_socket_b(const char* host, int port);
+struct BoltConnection* BoltConnection_open_socket_b(const char* address);
 
-struct BoltConnection* BoltConnection_open_secure_socket_b(const char* host, int port);
+struct BoltConnection* BoltConnection_open_secure_socket_b(const char* address);
 
 void BoltConnection_close_b(struct BoltConnection* connection);
 

@@ -37,7 +37,7 @@ static const char* DEFAULT_USER_AGENT = "seabolt/1.0.0a";
 
 
 struct BoltConnection* _create();
-void _open(struct BoltConnection* connection, const char* host, int port);
+void _open(struct BoltConnection* connection, const char* address);
 void _close(struct BoltConnection* connection);
 void _destroy(struct BoltConnection* connection);
 
@@ -53,12 +53,11 @@ struct BoltConnection* _create()
     connection->incoming = BoltValue_create();
 }
 
-void _open(struct BoltConnection* connection, const char* host, int port)
+void _open(struct BoltConnection* connection, const char* address)
 {
-    BoltLog_info("[CON] Opening connection to %s on port %d", host, port);
+    BoltLog_info("[CON] Opening connection to %s", address);
     assert(connection->bio != NULL);
-    BIO_set_conn_hostname(connection->bio, host);
-    BIO_set_conn_int_port(connection->bio, &port);
+    BIO_set_conn_hostname(connection->bio, address);
     if (BIO_do_connect(connection->bio) == 1)
     {
         connection->status = BOLT_CONNECTED;
@@ -68,7 +67,7 @@ void _open(struct BoltConnection* connection, const char* host, int port)
     connection->openssl_error = ERR_get_error();
     if (BIO_should_retry(connection->bio))
     {
-        return _open(connection, host, port);
+        return _open(connection, address);
     }
 }
 
@@ -92,17 +91,17 @@ void _destroy(struct BoltConnection* connection)
     BoltMem_deallocate(connection, sizeof(struct BoltConnection));
 }
 
-struct BoltConnection* BoltConnection_open_socket_b(const char* host, int port)
+struct BoltConnection* BoltConnection_open_socket_b(const char* address)
 {
     struct BoltConnection* connection =_create();
 
     connection->bio = BIO_new(BIO_s_connect());
-    _open(connection, host, port);
+    _open(connection, address);
 
     return connection;
 }
 
-struct BoltConnection* BoltConnection_open_secure_socket_b(const char* host, int port)
+struct BoltConnection* BoltConnection_open_secure_socket_b(const char* address)
 {
     struct BoltConnection* connection =_create();
 
@@ -118,7 +117,7 @@ struct BoltConnection* BoltConnection_open_secure_socket_b(const char* host, int
     }
 
     connection->bio = BIO_new_ssl_connect(connection->ssl_context);
-    _open(connection, host, port);
+    _open(connection, address);
 
     struct ssl_st* _ssl;
     BIO_get_ssl(connection->bio, &_ssl);

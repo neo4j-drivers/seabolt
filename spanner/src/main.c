@@ -826,7 +826,7 @@ const char* getenv_or_default(const char* name, const char* default_value)
 
 int run(const char* statement)
 {
-    const char* BOLT_HOST = getenv_or_default("BOLT_HOST", "localhost");
+    const char* BOLT_ADDRESS = getenv_or_default("BOLT_ADDRESS", "localhost:7687");
     const char* BOLT_SECURE = getenv_or_default("BOLT_SECURE", "1");
 
     struct timespec t[7];
@@ -836,11 +836,11 @@ int run(const char* statement)
     struct BoltConnection* connection;
     if (strcmp(BOLT_SECURE, "1") == 0)
     {
-        connection = BoltConnection_open_secure_socket_b(BOLT_HOST, 7687);
+        connection = BoltConnection_open_secure_socket_b(BOLT_ADDRESS);
     }
     else
     {
-        connection = BoltConnection_open_socket_b(BOLT_HOST, 7687);
+        connection = BoltConnection_open_socket_b(BOLT_ADDRESS);
     }
     BoltConnection_handshake_b(connection, 1, 0, 0, 0);
     printf("Using Bolt v%d\n", connection->protocol_version);
