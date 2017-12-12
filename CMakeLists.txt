@@ -7,7 +7,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_custom_target(seabolt-all)
-add_dependencies(seabolt-all seabolt spanner)
+add_dependencies(seabolt-all seabolt seabolt-cli)
 
 add_subdirectory(seabolt)
-add_subdirectory(spanner)
+add_subdirectory(seabolt-cli)
