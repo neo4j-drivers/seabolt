@@ -25,9 +25,10 @@ BOLT_PASSWORD=password bin/seabolt "UNWIND range(1, 1000000) AS n RETURN n"
 By default, this will simply display stats for the query execution.
 The following environment variables can be used:
 ```
-BOLT_SECURE=1|0
+BOLT_SECURE=0|1
 BOLT_HOST=<host name, IPv4 or IPv6 address>
 BOLT_PORT=7687
 BOLT_USER=neo4j
 BOLT_PASSWORD=password
+BOLT_LOG=0|1|2
 ```
