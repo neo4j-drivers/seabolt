@@ -27,6 +27,7 @@
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <netdb.h>
 
 #include "buffer.h"
 #include "values.h"
@@ -35,19 +36,36 @@
 #define try(code) { int status = (code); if (status == -1) return status; }
 
 
+enum BoltTransport
+{
+    BOLT_SOCKET,
+    BOLT_SECURE_SOCKET,
+};
+
 enum BoltConnectionStatus
 {
     BOLT_DISCONNECTED,
     BOLT_CONNECTED,
     BOLT_CONNECTION_TLS_FAILED,
     BOLT_CONNECTION_FAILED,
-
+    BOLT_RECEIVE_FAILED,
+    BOLT_CONNECTION_REFUSED,
+    BOLT_RECEIVED_ZERO,
+    BOLT_INIT_FAILED,
+    BOLT_PROTOCOL_VIOLATION,
+    BOLT_READY,
+    BOLT_PROTOCOL_VERSION_UNSUPPORTED,
+    BOLT_SENT_ZERO,
+    BOLT_SEND_FAILED,
 };
+
 struct BoltConnection
 {
+    enum BoltTransport transport;
     enum BoltConnectionStatus status;
-    struct bio_st* bio;
+    int socket;
     struct ssl_ctx_st* ssl_context;
+    struct ssl_st* ssl;
     int32_t protocol_version;
     const char* user_agent;
     struct BoltBuffer* tx_buffer;       // transmit buffer
@@ -59,9 +77,7 @@ struct BoltConnection
 };
 
 
-struct BoltConnection* BoltConnection_open_socket_b(const char* address);
-
-struct BoltConnection* BoltConnection_open_secure_socket_b(const char* address);
+struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const struct addrinfo* address);
 
 void BoltConnection_close_b(struct BoltConnection* connection);
 

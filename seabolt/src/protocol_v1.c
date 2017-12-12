@@ -106,10 +106,17 @@ int BoltProtocolV1_loadInit(struct BoltConnection* connection, const char* user,
     BoltBuffer_load(connection->tx_buffer, "\xB2\x01", 2);
     BoltProtocolV1_loadString(connection, connection->user_agent, strlen(connection->user_agent));
     struct BoltValue* auth = BoltValue_create();
-    BoltValue_toUTF8Dictionary(auth, 3);
-    BoltValue_toUTF8(BoltUTF8Dictionary_withKey(auth, 0, "scheme", 6), "basic", 5);
-    BoltValue_toUTF8(BoltUTF8Dictionary_withKey(auth, 1, "principal", 9), user, strlen(user));
-    BoltValue_toUTF8(BoltUTF8Dictionary_withKey(auth, 2, "credentials", 11), password, strlen(password));
+    if (user == NULL || password == NULL)
+    {
+        BoltValue_toUTF8Dictionary(auth, 0);
+    }
+    else
+    {
+        BoltValue_toUTF8Dictionary(auth, 3);
+        BoltValue_toUTF8(BoltUTF8Dictionary_withKey(auth, 0, "scheme", 6), "basic", 5);
+        BoltValue_toUTF8(BoltUTF8Dictionary_withKey(auth, 1, "principal", 9), user, strlen(user));
+        BoltValue_toUTF8(BoltUTF8Dictionary_withKey(auth, 2, "credentials", 11), password, strlen(password));
+    }
     BoltProtocolV1_load(connection, auth);
     BoltValue_destroy(auth);
     BoltBuffer_pushStop(connection->tx_buffer);
@@ -241,7 +248,7 @@ int _unloadString(struct BoltConnection* connection, struct BoltValue* value)
         BoltBuffer_unload(connection->rx_buffer, BoltUTF8_get(value), size);
         return 0;
     }
-    BoltLog_error("Wrong marker type: %d", marker);
+    BoltLog_error("[NET] Wrong marker type: %d", marker);
     return -1;  // BOLT_ERROR_WRONG_TYPE
 }
 
@@ -303,7 +310,7 @@ int _unload(struct BoltConnection* connection, struct BoltValue* value)
         case BOLT_V1_MAP:
             return _unloadMap(connection, value);
         default:
-            BoltLog_error("Unsupported marker: %d", marker);
+            BoltLog_error("[NET] Unsupported marker: %d", marker);
             return -1;  // BOLT_UNSUPPORTED_MARKER
     }
 }
