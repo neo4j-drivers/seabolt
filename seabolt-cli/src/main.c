@@ -89,7 +89,7 @@ int run(const char* statement)
     timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after handshake and initialisation
 
     BoltConnection_load_run(connection, statement);
-    BoltConnection_load_pull(connection);
+    BoltConnection_load_pull(connection, -1);
     BoltConnection_transmit_b(connection);
 
     timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission

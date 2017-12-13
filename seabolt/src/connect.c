@@ -33,6 +33,14 @@
 
 #define char_to_int16be(array) (header[0] << 8) | (header[1]);
 
+#define SOCKET(domain, type, protocol) socket(domain, type, protocol)
+#define CONNECT(socket, address, address_size) connect(socket, address, address_size)
+#define SHUTDOWN(socket, how) shutdown(socket, how)
+#define TRANSMIT(socket, data, size, flags) (int)(send(socket, data, (size_t)(size), flags))
+#define TRANSMIT_S(socket, data, size, flags) SSL_write(socket, data, size)
+#define RECEIVE(socket, buffer, size, flags) (int)(recv(socket, buffer, (size_t)(size), flags))
+#define RECEIVE_S(socket, buffer, size, flags) SSL_read(socket, buffer, size)
+
 
 static const char* DEFAULT_USER_AGENT = "seabolt/1.0.0a";
 
@@ -60,9 +68,9 @@ void _destroy(struct BoltConnection* connection)
 
 int _open_b(struct BoltConnection* connection, const struct addrinfo* address)
 {
-    connection->socket = socket(address->ai_family, address->ai_socktype, 0);
+    connection->socket = SOCKET(address->ai_family, address->ai_socktype, 0);
     BoltLog_info("[NET] Opening connection to %s", address->ai_canonname);
-    int connected = connect(connection->socket, address->ai_addr, address->ai_addrlen);
+    int connected = CONNECT(connection->socket, address->ai_addr, address->ai_addrlen);
     if(connected == 0)
     {
         connection->status = BOLT_CONNECTED;
@@ -82,7 +90,7 @@ void _close_b(struct BoltConnection* connection)
     {
         case BOLT_SOCKET:
         {
-            shutdown(connection->socket, 2);
+            SHUTDOWN(connection->socket, 2);
             break;
         }
         case BOLT_SECURE_SOCKET:
@@ -96,7 +104,7 @@ void _close_b(struct BoltConnection* connection)
                 SSL_CTX_free(connection->ssl_context);
                 connection->ssl_context = NULL;
             }
-            shutdown(connection->socket, 2);
+            SHUTDOWN(connection->socket, 2);
             break;
         }
     }
@@ -118,12 +126,12 @@ int _transmit_b(struct BoltConnection* connection, const char* data, int size)
         {
             case BOLT_SOCKET:
             {
-                sent = (int)(send(connection->socket, data, (size_t)(size), 0));
+                sent = TRANSMIT(connection->socket, data, size, 0);
                 break;
             }
             case BOLT_SECURE_SOCKET:
             {
-                sent = SSL_write(connection->ssl, data, size);
+                sent = TRANSMIT_S(connection->ssl, data, size, 0);
                 break;
             }
         }
@@ -186,10 +194,10 @@ int _receive_b(struct BoltConnection* connection, char* buffer, int min_size, in
         switch (connection->transport)
         {
             case BOLT_SOCKET:
-                received = (int)(recv(connection->socket, buffer, (size_t)(max_remaining), 0));
+                received = RECEIVE(connection->socket, buffer, max_remaining, 0);
                 break;
             case BOLT_SECURE_SOCKET:
-                received = SSL_read(connection->ssl, buffer, max_remaining);
+                received = RECEIVE_S(connection->ssl, buffer, max_remaining, 0);
                 break;
         }
         if (received > 0)
@@ -401,11 +409,6 @@ struct BoltValue* BoltConnection_current(struct BoltConnection* connection)
     return connection->current;
 }
 
-/**
- * Initialise with basic auth.
- *
- * @return
- */
 int BoltConnection_init_b(struct BoltConnection* connection, const char* user, const char* password)
 {
     switch (connection->protocol_version)
@@ -415,8 +418,7 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user, c
             try(BoltConnection_transmit_b(connection));
             try(BoltConnection_receive_b(connection));
             BoltProtocolV1_unload(connection, connection->current);
-//            _dump(connection->current);
-            switch(BoltSummary_code(connection->current))
+            switch (BoltSummary_code(connection->current))
             {
                 case 0x70:  // SUCCESS
                     BoltLog_info("[NET] INIT succeeded for user %s", user);
@@ -450,13 +452,20 @@ int BoltConnection_load_run(struct BoltConnection* connection, const char* state
     }
 }
 
-int BoltConnection_load_pull(struct BoltConnection* connection)
+int BoltConnection_load_pull(struct BoltConnection* connection, int n)
 {
     switch (connection->protocol_version)
     {
         case 1:
-            BoltProtocolV1_load_pull(connection);
-            return 0;
+            if (n >= 0)
+            {
+                return -1;
+            }
+            else
+            {
+                BoltProtocolV1_load_pull(connection);
+                return 0;
+            }
         default:
             return -1;
     }

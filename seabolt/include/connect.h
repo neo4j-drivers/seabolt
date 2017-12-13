@@ -71,12 +71,24 @@ struct BoltConnection
 };
 
 
+/**
+ * Open a connection to a Bolt server.
+ *
+ * @param transport
+ * @param address
+ * @return
+ */
 struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const struct addrinfo* address);
 
+/**
+ * Close a connection.
+ *
+ * @param connection
+ */
 void BoltConnection_close_b(struct BoltConnection* connection);
 
 /**
- * Transmit all queued outgoing data.
+ * Transmit all queued outgoing messages.
  *
  * @param connection
  * @return
@@ -100,13 +112,39 @@ int BoltConnection_receive_b(struct BoltConnection* connection);
  */
 int BoltConnection_fetch_b(struct BoltConnection* connection);
 
+/**
+ * Accessor for the current message in the result stream.
+ *
+ * @param connection
+ * @return
+ */
 struct BoltValue* BoltConnection_current(struct BoltConnection* connection);
 
+/**
+ * Initialise the connection and authenticate using the basic
+ * authentication scheme.
+ *
+ * @return
+ */
 int BoltConnection_init_b(struct BoltConnection* connection, const char* user, const char* password);
 
-int BoltConnection_load_run(struct BoltConnection* connection, const char*);
+/**
+ * Load a RUN message into the outgoing message queue.
+ *
+ * @param connection
+ * @param statement
+ * @return
+ */
+int BoltConnection_load_run(struct BoltConnection* connection, const char* statement);
 
-int BoltConnection_load_pull(struct BoltConnection* connection);
+/**
+ * Load a PULL message into the outgoing message queue.
+ *
+ * @param connection
+ * @param n
+ * @return
+ */
+int BoltConnection_load_pull(struct BoltConnection* connection, int n);
 
 
 #endif // SEABOLT_CONNECT
