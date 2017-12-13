@@ -38,25 +38,20 @@ enum BoltTransport
 
 enum BoltConnectionStatus
 {
-    BOLT_DISCONNECTED,
-    BOLT_CONNECTED,
-    BOLT_CONNECTION_TLS_FAILED,
-    BOLT_CONNECTION_FAILED,
-    BOLT_RECEIVE_FAILED,
-    BOLT_CONNECTION_REFUSED,
-    BOLT_RECEIVED_ZERO,
-    BOLT_INIT_FAILED,
-    BOLT_PROTOCOL_VIOLATION,
-    BOLT_READY,
-    BOLT_PROTOCOL_VERSION_UNSUPPORTED,
-    BOLT_SENT_ZERO,
-    BOLT_SEND_FAILED,
+    BOLT_DISCONNECTED,      // not connected
+    BOLT_CONNECTED,         // connected but not authenticated
+    BOLT_READY,             // connected and authenticated
+    BOLT_FAILED,            // recoverable failure
+    BOLT_DEFUNCT,           // unrecoverable failure
 };
 
 struct BoltConnection
 {
     enum BoltTransport transport;
     enum BoltConnectionStatus status;
+    char address_string[INET6_ADDRSTRLEN];
+    int error;
+    int error_s;
     int socket;
     struct ssl_ctx_st* ssl_context;
     struct ssl_st* ssl;

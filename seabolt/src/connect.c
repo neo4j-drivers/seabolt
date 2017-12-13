@@ -25,6 +25,7 @@
 #include <buffer.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 #include <bolt.h>
 
 
@@ -66,26 +67,79 @@ void _destroy(struct BoltConnection* connection)
     BoltMem_deallocate(connection, sizeof(struct BoltConnection));
 }
 
+void _set_status(struct BoltConnection* connection, enum BoltConnectionStatus status, int error)
+{
+    connection->status = status;
+    connection->error = error;
+    switch (connection->status)
+    {
+        case BOLT_DISCONNECTED:
+            BoltLog_info("bolt: Disconnected");
+            break;
+        case BOLT_CONNECTED:
+            BoltLog_info("bolt: Connected to %s", &connection->address_string);
+            break;
+        case BOLT_READY:
+            BoltLog_info("bolt: Ready");
+            break;
+        case BOLT_FAILED:
+            BoltLog_info("bolt: FAILURE");
+            break;
+        case BOLT_DEFUNCT:
+            BoltLog_info("bolt: DEFUNCT");
+            break;
+    }
+}
+
 int _open_b(struct BoltConnection* connection, const struct addrinfo* address)
 {
+    inet_ntop(address->ai_family, &((struct sockaddr_in *)(address->ai_addr))->sin_addr,
+              &connection->address_string[0], sizeof(connection->address_string));
+    switch (address->ai_family)
+    {
+        case AF_INET:
+            BoltLog_info("bolt: Opening IPv4 connection to %s", &connection->address_string);
+            break;
+        case AF_INET6:
+            BoltLog_info("bolt: Opening IPv6 connection to %s", &connection->address_string);
+            break;
+        default:
+            BoltLog_error("bolt: Unsupported address family %d", address->ai_family);
+            return -1;
+    }
     connection->socket = SOCKET(address->ai_family, address->ai_socktype, 0);
-    BoltLog_info("[NET] Opening connection to %s", address->ai_canonname);
     int connected = CONNECT(connection->socket, address->ai_addr, address->ai_addrlen);
     if(connected == 0)
     {
-        connection->status = BOLT_CONNECTED;
+        _set_status(connection, BOLT_CONNECTED, 0);
         return 0;
     }
-    switch(errno)
-    {
-        default:
-            connection->status = BOLT_CONNECTION_FAILED;
-    }
+    _set_status(connection, BOLT_DEFUNCT, errno);
     return -1;
+}
+
+int _secure_b(struct BoltConnection* connection)
+{
+    BoltLog_info("bolt: Securing socket");
+    SSL_library_init();
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+    // SSL Context
+    connection->ssl_context = SSL_CTX_new(TLSv1_2_client_method());
+    if (connection->ssl_context == NULL || SSL_CTX_set_default_verify_paths(connection->ssl_context) != 1)
+    {
+        _set_status(connection, BOLT_DEFUNCT, ERR_get_error());
+        return -1;
+    }
+    // SSL
+    connection->ssl = SSL_new(connection->ssl_context);
+    int linked_socket = SSL_set_fd(connection->ssl, connection->socket);
+    int connected = SSL_connect(connection->ssl);
 }
 
 void _close_b(struct BoltConnection* connection)
 {
+    BoltLog_info("bolt: Closing connection");
     switch(connection->transport)
     {
         case BOLT_SOCKET:
@@ -108,7 +162,7 @@ void _close_b(struct BoltConnection* connection)
             break;
         }
     }
-    connection->status = BOLT_DISCONNECTED;
+    _set_status(connection, BOLT_DISCONNECTED, 0);
 }
 
 int _transmit_b(struct BoltConnection* connection, const char* data, int size)
@@ -135,39 +189,25 @@ int _transmit_b(struct BoltConnection* connection, const char* data, int size)
                 break;
             }
         }
-        if (sent > 0)
+        if (sent >= 0)
         {
             total_sent += sent;
             remaining -= sent;
-        }
-        else if (sent == 0)
-        {
-            // TODO: can this happen?
-            connection->status = BOLT_SENT_ZERO;
-            break;
         }
         else
         {
             switch (connection->transport)
             {
                 case BOLT_SOCKET:
-                    switch (errno)
-                    {
-                        default:
-                            connection->status = BOLT_SEND_FAILED;
-                            return -1;
-                    }
+                    _set_status(connection, BOLT_DEFUNCT, errno);
+                    break;
                 case BOLT_SECURE_SOCKET:
-                    switch (SSL_get_error(connection->ssl, sent))
-                    {
-                        default:
-                            connection->status = BOLT_SEND_FAILED;
-                            return -1;
-                    }
+                    _set_status(connection, BOLT_DEFUNCT, SSL_get_error(connection->ssl, sent));
+                    break;
             }
         }
     }
-    BoltLog_info("[NET] Sent %d bytes (requested %d)", total_sent, size);
+    BoltLog_info("bolt: Sent %d out of %d bytes", total_sent, size);
     return total_sent;
 }
 
@@ -207,7 +247,8 @@ int _receive_b(struct BoltConnection* connection, char* buffer, int min_size, in
         }
         else if (received == 0)
         {
-            connection->status = BOLT_RECEIVED_ZERO;
+            BoltLog_info("bolt: Detected end of transmission");
+            _set_status(connection, BOLT_DISCONNECTED, 0);
             break;
         }
         else
@@ -215,26 +256,18 @@ int _receive_b(struct BoltConnection* connection, char* buffer, int min_size, in
             switch (connection->transport)
             {
                 case BOLT_SOCKET:
-                    switch (errno)
-                    {
-                        case ECONNREFUSED:
-                            connection->status = BOLT_CONNECTION_REFUSED;
-                            return -1;
-                        default:
-                            connection->status = BOLT_RECEIVE_FAILED;
-                            return -1;
-                    }
+                    _set_status(connection, BOLT_DEFUNCT, errno);
+                    BoltLog_error("bolt: Socket error %d on receive", connection->error);
+                    break;
                 case BOLT_SECURE_SOCKET:
-                    switch (SSL_get_error(connection->ssl, received))
-                    {
-                        default:
-                            connection->status = BOLT_RECEIVE_FAILED;
-                            return -1;
-                    }
+                    _set_status(connection, BOLT_DEFUNCT, SSL_get_error(connection->ssl, received));
+                    BoltLog_error("bolt: SSL error %d on receive", connection->error);
+                    break;
             }
+            return -1;
         }
     }
-    BoltLog_info("[NET] Received %d bytes (requested %d..%d)", total_received, min_size, max_size);
+    BoltLog_info("bolt: Received %d out of %d..%d bytes", total_received, min_size, max_size);
     return total_received;
 }
 
@@ -254,14 +287,12 @@ int _take_b(struct BoltConnection* connection, char* buffer, int size)
             }
             max_size = delta > max_size ? delta : max_size;
             int received = _receive_b(connection, BoltBuffer_load_target(connection->raw_rx_buffer, max_size), delta, max_size);
-            if (received == 0)
+            if (received == -1)
             {
-                connection->status = BOLT_RECEIVED_ZERO;
-                return 0;
+                return -1;
             }
             // adjust the buffer extent based on the actual amount of data received
             connection->raw_rx_buffer->extent = connection->raw_rx_buffer->extent - max_size + received;
-            if (received == -1) { return -1; }
             delta -= received;
         }
     }
@@ -271,6 +302,7 @@ int _take_b(struct BoltConnection* connection, char* buffer, int size)
 
 int _handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int32_t _3, int32_t _4)
 {
+    BoltLog_info("bolt: Performing handshake");
     BoltBuffer_load(connection->tx_buffer, "\x60\x60\xB0\x17", 4);
     BoltBuffer_load_int32be(connection->tx_buffer, _1);
     BoltBuffer_load_int32be(connection->tx_buffer, _2);
@@ -279,47 +311,27 @@ int _handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int3
     try(BoltConnection_transmit_b(connection));
     try(_take_b(connection, BoltBuffer_load_target(connection->rx_buffer, 4), 4));
     BoltBuffer_unload_int32be(connection->rx_buffer, &connection->protocol_version);
-    BoltLog_info("[NET] Using Bolt v%d", connection->protocol_version);
+    BoltLog_info("bolt: Using Bolt v%d", connection->protocol_version);
 }
 
 struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const struct addrinfo* address)
 {
     struct BoltConnection* connection = _create(transport);
-    switch(transport)
+    int opened = _open_b(connection, address);
+    if (opened == -1)
     {
-        case BOLT_SOCKET:
+        return NULL;
+    }
+    if (transport == BOLT_SECURE_SOCKET)
+    {
+        int secured = _secure_b(connection);
+        if (secured == -1)
         {
-            _open_b(connection, address);
-            _handshake_b(connection, 1, 0, 0, 0);
-            return connection;
-        }
-        case BOLT_SECURE_SOCKET:
-        {
-            _open_b(connection, address);
-            if (connection->status != BOLT_CONNECTED)
-            {
-                return connection;
-            }
-            BoltLog_info("[NET] Securing socket");
-            SSL_library_init();
-            SSL_load_error_strings();
-            OpenSSL_add_all_algorithms();
-            // SSL Context
-            connection->ssl_context = SSL_CTX_new(TLSv1_2_client_method());
-            if (connection->ssl_context == NULL || SSL_CTX_set_default_verify_paths(connection->ssl_context) != 1)
-            {
-                connection->status = BOLT_CONNECTION_TLS_FAILED;
-                connection->openssl_error = ERR_get_error();
-                return connection;
-            }
-            // SSL
-            connection->ssl = SSL_new(connection->ssl_context);
-            int linked_socket = SSL_set_fd(connection->ssl, connection->socket);
-            int connected = SSL_connect(connection->ssl);
-            _handshake_b(connection, 1, 0, 0, 0);
-            return connection;
+            return NULL;
         }
     }
+    _handshake_b(connection, 1, 0, 0, 0);
+    return connection;
 }
 
 void BoltConnection_close_b(struct BoltConnection* connection)
@@ -411,6 +423,7 @@ struct BoltValue* BoltConnection_current(struct BoltConnection* connection)
 
 int BoltConnection_init_b(struct BoltConnection* connection, const char* user, const char* password)
 {
+    BoltLog_info("bolt: Initialising connection for user '%s'", user);
     switch (connection->protocol_version)
     {
         case 1:
@@ -421,21 +434,18 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user, c
             switch (BoltSummary_code(connection->current))
             {
                 case 0x70:  // SUCCESS
-                    BoltLog_info("[NET] INIT succeeded for user %s", user);
-                    connection->status = BOLT_READY;
+                    _set_status(connection, BOLT_READY, 0);
                     return 0;
                 case 0x7F:  // FAILURE
-                    BoltLog_error("[NET] INIT failed for user %s", user);
-                    connection->status = BOLT_INIT_FAILED;
+                    _set_status(connection, BOLT_DEFUNCT, -1);
                     return -1;
                 default:
-                    BoltLog_error("[NET] Protocol violation");
-                    connection->status = BOLT_PROTOCOL_VIOLATION;
+                    _set_status(connection, BOLT_DEFUNCT, -1);
                     return -1;
             }
         default:
-            BoltLog_error("[NET] Protocol violation");
-            connection->status = BOLT_PROTOCOL_VERSION_UNSUPPORTED;
+            BoltLog_error("bolt: Protocol version unsupported");
+            _set_status(connection, BOLT_DEFUNCT, -1);
             return -1;
     }
 }
