@@ -21,6 +21,8 @@
 #include <buffer.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <bolt.h>
+#include <memory.h>
 
 
 struct BoltBuffer* BoltBuffer_create(size_t size)
