@@ -20,19 +20,19 @@
 #include <values.h>
 
 
-void BoltValue_toFloat32(struct BoltValue* value, float x)
+void BoltValue_to_Float32(struct BoltValue* value, float x)
 {
     _format(value, BOLT_FLOAT32, 1, NULL, 0);
     value->data.as_float[0] = x;
 }
 
-void BoltValue_toFloat64(struct BoltValue* value, double x)
+void BoltValue_to_Float64(struct BoltValue* value, double x)
 {
     _format(value, BOLT_FLOAT64, 1, NULL, 0);
     value->data.as_double[0] = x;
 }
 
-void BoltValue_toFloat32Array(struct BoltValue* value, float* array, int32_t size)
+void BoltValue_to_Float32Array(struct BoltValue* value, float* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(float))
     {
@@ -45,7 +45,7 @@ void BoltValue_toFloat32Array(struct BoltValue* value, float* array, int32_t siz
     }
 }
 
-void BoltValue_toFloat64Array(struct BoltValue* value, double* array, int32_t size)
+void BoltValue_to_Float64Array(struct BoltValue* value, double* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(double))
     {

@@ -84,7 +84,15 @@ void* BoltMem_deallocate(void* ptr, size_t old_size);
 void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
 
 /**
- * Get an activity count for memory (de/re/-)allocation
+ * Retrieve the amount of memory currently allocated.
+ *
+ * @return
+ */
+size_t BoltMem_allocated();
+
+/**
+ * Get an activity count for memory (de/re/-)allocation.
+ *
  * @return
  */
 long long BoltMem_activity();

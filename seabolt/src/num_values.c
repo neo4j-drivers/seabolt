@@ -22,31 +22,31 @@
 #include "values.h"
 
 
-void BoltValue_toNum8(struct BoltValue* value, uint8_t x)
+void BoltValue_to_Num8(struct BoltValue* value, uint8_t x)
 {
     _format(value, BOLT_NUM8, 1, NULL, 0);
     value->data.as_uint8[0] = x;
 }
 
-void BoltValue_toNum16(struct BoltValue* value, uint16_t x)
+void BoltValue_to_Num16(struct BoltValue* value, uint16_t x)
 {
     _format(value, BOLT_NUM16, 1, NULL, 0);
     value->data.as_uint16[0] = x;
 }
 
-void BoltValue_toNum32(struct BoltValue* value, uint32_t x)
+void BoltValue_to_Num32(struct BoltValue* value, uint32_t x)
 {
     _format(value, BOLT_NUM32, 1, NULL, 0);
     value->data.as_uint32[0] = x;
 }
 
-void BoltValue_toNum64(struct BoltValue* value, uint64_t x)
+void BoltValue_to_Num64(struct BoltValue* value, uint64_t x)
 {
     _format(value, BOLT_NUM64, 1, NULL, 0);
     value->data.as_uint64[0] = x;
 }
 
-void BoltValue_toNum8Array(struct BoltValue* value, uint8_t* array, int32_t size)
+void BoltValue_to_Num8Array(struct BoltValue* value, uint8_t* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(uint8_t))
     {
@@ -59,7 +59,7 @@ void BoltValue_toNum8Array(struct BoltValue* value, uint8_t* array, int32_t size
     }
 }
 
-void BoltValue_toNum16Array(struct BoltValue* value, uint16_t* array, int32_t size)
+void BoltValue_to_Num16Array(struct BoltValue* value, uint16_t* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(uint16_t))
     {
@@ -72,7 +72,7 @@ void BoltValue_toNum16Array(struct BoltValue* value, uint16_t* array, int32_t si
     }
 }
 
-void BoltValue_toNum32Array(struct BoltValue* value, uint32_t* array, int32_t size)
+void BoltValue_to_Num32Array(struct BoltValue* value, uint32_t* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(uint32_t))
     {
@@ -85,7 +85,7 @@ void BoltValue_toNum32Array(struct BoltValue* value, uint32_t* array, int32_t si
     }
 }
 
-void BoltValue_toNum64Array(struct BoltValue* value, uint64_t* array, int32_t size)
+void BoltValue_to_Num64Array(struct BoltValue* value, uint64_t* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(uint64_t))
     {

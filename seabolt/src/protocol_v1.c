@@ -23,7 +23,7 @@
 #include "protocol_v1.h"
 
 
-enum BoltProtocolV1Type BoltProtocolV1_markerType(uint8_t marker)
+enum BoltProtocolV1Type BoltProtocolV1_marker_type(uint8_t marker)
 {
     if (marker < 0x80 || (marker >= 0xC8 && marker <= 0xCB) || marker >= 0xF0)
     {
@@ -63,7 +63,7 @@ enum BoltProtocolV1Type BoltProtocolV1_markerType(uint8_t marker)
     }
 }
 
-int BoltProtocolV1_loadString(struct BoltConnection* connection, const char* string, int32_t size)
+int BoltProtocolV1_load_string(struct BoltConnection* connection, const char* string, int32_t size)
 {
     // TODO: longer strings
     BoltBuffer_load(connection->tx_buffer, "\xD0", 1);
@@ -71,7 +71,7 @@ int BoltProtocolV1_loadString(struct BoltConnection* connection, const char* str
     BoltBuffer_load(connection->tx_buffer, string, size);
 }
 
-int BoltProtocolV1_loadMap(struct BoltConnection* connection, struct BoltValue* value)
+int BoltProtocolV1_load_map(struct BoltConnection* connection, struct BoltValue* value)
 {
     // TODO: bigger maps
     BoltBuffer_load_uint8(connection->tx_buffer, (uint8_t)(0xA0 + value->size));
@@ -81,7 +81,7 @@ int BoltProtocolV1_loadMap(struct BoltConnection* connection, struct BoltValue* 
         if (key != NULL)
         {
             const char* key_string = BoltUTF8_get(key);
-            BoltProtocolV1_loadString(connection, key_string, key->size);
+            BoltProtocolV1_load_string(connection, key_string, key->size);
             BoltProtocolV1_load(connection, BoltUTF8Dictionary_value(value, i));
         }
     }
@@ -92,48 +92,48 @@ int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* val
     switch (BoltValue_type(value))
     {
         case BOLT_UTF8:
-            return BoltProtocolV1_loadString(connection, BoltUTF8_get(value), value->size);
+            return BoltProtocolV1_load_string(connection, BoltUTF8_get(value), value->size);
         case BOLT_UTF8_DICTIONARY:
-            return BoltProtocolV1_loadMap(connection, value);
+            return BoltProtocolV1_load_map(connection, value);
         default:
             // TODO:  TYPE_NOT_SUPPORTED (vs TYPE_NOT_IMPLEMENTED)
             return EXIT_FAILURE;
     }
 }
 
-int BoltProtocolV1_loadInit(struct BoltConnection* connection, const char* user, const char* password)
+int BoltProtocolV1_load_init(struct BoltConnection* connection, const char* user, const char* password)
 {
     BoltBuffer_load(connection->tx_buffer, "\xB2\x01", 2);
-    BoltProtocolV1_loadString(connection, connection->user_agent, strlen(connection->user_agent));
+    BoltProtocolV1_load_string(connection, connection->user_agent, strlen(connection->user_agent));
     struct BoltValue* auth = BoltValue_create();
     if (user == NULL || password == NULL)
     {
-        BoltValue_toUTF8Dictionary(auth, 0);
+        BoltValue_to_UTF8Dictionary(auth, 0);
     }
     else
     {
-        BoltValue_toUTF8Dictionary(auth, 3);
-        BoltValue_toUTF8(BoltUTF8Dictionary_withKey(auth, 0, "scheme", 6), "basic", 5);
-        BoltValue_toUTF8(BoltUTF8Dictionary_withKey(auth, 1, "principal", 9), user, strlen(user));
-        BoltValue_toUTF8(BoltUTF8Dictionary_withKey(auth, 2, "credentials", 11), password, strlen(password));
+        BoltValue_to_UTF8Dictionary(auth, 3);
+        BoltValue_to_UTF8(BoltUTF8Dictionary_with_key(auth, 0, "scheme", 6), "basic", 5);
+        BoltValue_to_UTF8(BoltUTF8Dictionary_with_key(auth, 1, "principal", 9), user, strlen(user));
+        BoltValue_to_UTF8(BoltUTF8Dictionary_with_key(auth, 2, "credentials", 11), password, strlen(password));
     }
     BoltProtocolV1_load(connection, auth);
     BoltValue_destroy(auth);
-    BoltBuffer_pushStop(connection->tx_buffer);
+    BoltBuffer_push_stop(connection->tx_buffer);
 }
 
-int BoltProtocolV1_loadRun(struct BoltConnection* connection, const char* statement)
+int BoltProtocolV1_load_run(struct BoltConnection* connection, const char* statement)
 {
     BoltBuffer_load(connection->tx_buffer, "\xB2\x10", 2);
-    BoltProtocolV1_loadString(connection, statement, strlen(statement));
+    BoltProtocolV1_load_string(connection, statement, strlen(statement));
     BoltBuffer_load(connection->tx_buffer, "\xA0", 2);
-    BoltBuffer_pushStop(connection->tx_buffer);
+    BoltBuffer_push_stop(connection->tx_buffer);
 }
 
-int BoltProtocolV1_loadPull(struct BoltConnection* connection)
+int BoltProtocolV1_load_pull(struct BoltConnection* connection)
 {
     BoltBuffer_load(connection->tx_buffer, "\xB0\x3F", 2);
-    BoltBuffer_pushStop(connection->tx_buffer);
+    BoltBuffer_push_stop(connection->tx_buffer);
 }
 
 int _unload(struct BoltConnection* connection, struct BoltValue* value);
@@ -144,7 +144,7 @@ int _unloadNull(struct BoltConnection* connection, struct BoltValue* value)
     BoltBuffer_unload_uint8(connection->rx_buffer, &marker);
     if (marker == 0xC0)
     {
-        BoltValue_toNull(value);
+        BoltValue_to_Null(value);
     }
     else
     {
@@ -158,11 +158,11 @@ int _unloadBoolean(struct BoltConnection* connection, struct BoltValue* value)
     BoltBuffer_unload_uint8(connection->rx_buffer, &marker);
     if (marker == 0xC3)
     {
-        BoltValue_toBit(value, 1);
+        BoltValue_to_Bit(value, 1);
     }
     else if (marker == 0xC2)
     {
-        BoltValue_toBit(value, 0);
+        BoltValue_to_Bit(value, 0);
     }
     else
     {
@@ -176,35 +176,35 @@ int _unloadInteger(struct BoltConnection* connection, struct BoltValue* value)
     BoltBuffer_unload_uint8(connection->rx_buffer, &marker);
     if (marker < 0x80)
     {
-        BoltValue_toInt64(value, marker);
+        BoltValue_to_Int64(value, marker);
     }
     else if (marker >= 0xF0)
     {
-        BoltValue_toInt64(value, marker - 0x100);
+        BoltValue_to_Int64(value, marker - 0x100);
     }
     else if (marker == 0xC8)
     {
         int8_t x;
         BoltBuffer_unload_int8(connection->rx_buffer, &x);
-        BoltValue_toInt64(value, x);
+        BoltValue_to_Int64(value, x);
     }
     else if (marker == 0xC9)
     {
         int16_t x;
         BoltBuffer_unload_int16be(connection->rx_buffer, &x);
-        BoltValue_toInt64(value, x);
+        BoltValue_to_Int64(value, x);
     }
     else if (marker == 0xCA)
     {
         int32_t x;
         BoltBuffer_unload_int32be(connection->rx_buffer, &x);
-        BoltValue_toInt64(value, x);
+        BoltValue_to_Int64(value, x);
     }
     else if (marker == 0xCB)
     {
         int64_t x;
         BoltBuffer_unload_int64be(connection->rx_buffer, &x);
-        BoltValue_toInt64(value, x);
+        BoltValue_to_Int64(value, x);
     }
     else
     {
@@ -220,7 +220,7 @@ int _unloadString(struct BoltConnection* connection, struct BoltValue* value)
     {
         int32_t size;
         size = marker & 0x0F;
-        BoltValue_toUTF8(value, NULL, size);
+        BoltValue_to_UTF8(value, NULL, size);
         BoltBuffer_unload(connection->rx_buffer, BoltUTF8_get(value), size);
         return 0;
     }
@@ -228,7 +228,7 @@ int _unloadString(struct BoltConnection* connection, struct BoltValue* value)
     {
         uint8_t size;
         BoltBuffer_unload_uint8(connection->rx_buffer, &size);
-        BoltValue_toUTF8(value, NULL, size);
+        BoltValue_to_UTF8(value, NULL, size);
         BoltBuffer_unload(connection->rx_buffer, BoltUTF8_get(value), size);
         return 0;
     }
@@ -236,7 +236,7 @@ int _unloadString(struct BoltConnection* connection, struct BoltValue* value)
     {
         uint16_t size;
         BoltBuffer_unload_uint16be(connection->rx_buffer, &size);
-        BoltValue_toUTF8(value, NULL, size);
+        BoltValue_to_UTF8(value, NULL, size);
         BoltBuffer_unload(connection->rx_buffer, BoltUTF8_get(value), size);
         return 0;
     }
@@ -244,7 +244,7 @@ int _unloadString(struct BoltConnection* connection, struct BoltValue* value)
     {
         int32_t size;
         BoltBuffer_unload_int32be(connection->rx_buffer, &size);
-        BoltValue_toUTF8(value, NULL, size);
+        BoltValue_to_UTF8(value, NULL, size);
         BoltBuffer_unload(connection->rx_buffer, BoltUTF8_get(value), size);
         return 0;
     }
@@ -260,7 +260,7 @@ int _unloadList(struct BoltConnection* connection, struct BoltValue* value)
     if (marker >= 0x90 && marker <= 0x9F)
     {
         size = marker & 0x0F;
-        BoltValue_toList(value, size);
+        BoltValue_to_List(value, size);
         for (int i = 0; i < size; i++)
         {
             _unload(connection, BoltList_value(value, i));
@@ -279,7 +279,7 @@ int _unloadMap(struct BoltConnection* connection, struct BoltValue* value)
     if (marker >= 0xA0 && marker <= 0xAF)
     {
         size = marker & 0x0F;
-        BoltValue_toUTF8Dictionary(value, size);
+        BoltValue_to_UTF8Dictionary(value, size);
         for (int i = 0; i < size; i++)
         {
             _unload(connection, BoltUTF8Dictionary_key(value, i));
@@ -295,7 +295,7 @@ int _unload(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     BoltBuffer_peek_uint8(connection->rx_buffer, &marker);
-    switch(BoltProtocolV1_markerType(marker))
+    switch(BoltProtocolV1_marker_type(marker))
     {
         case BOLT_V1_NULL:
             return _unloadNull(connection, value);
@@ -321,7 +321,7 @@ int BoltProtocolV1_unload(struct BoltConnection* connection, struct BoltValue* v
     uint8_t code;
     int32_t size;
     BoltBuffer_unload_uint8(connection->rx_buffer, &marker);
-    if (BoltProtocolV1_markerType(marker) == BOLT_V1_STRUCTURE)
+    if (BoltProtocolV1_marker_type(marker) == BOLT_V1_STRUCTURE)
     {
         size = marker & 0x0F;
         BoltBuffer_unload_uint8(connection->rx_buffer, &code);
@@ -342,12 +342,12 @@ int BoltProtocolV1_unload(struct BoltConnection* connection, struct BoltValue* v
             }
             else
             {
-                BoltValue_toNull(value);
+                BoltValue_to_Null(value);
             }
         }
         else
         {
-            BoltValue_toSummary(value, code, size);
+            BoltValue_to_Summary(value, code, size);
             for (int i = 0; i < size; i++)
             {
                 _unload(connection, BoltSummary_value(value, i));

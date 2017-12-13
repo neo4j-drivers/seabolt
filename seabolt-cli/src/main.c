@@ -90,7 +90,7 @@ int run(const char* statement)
     timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission
 
     struct BoltValue* current = BoltConnection_fetch_b(connection);
-//    BoltValue_dumpLine(current);
+//    _dump(current);
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
@@ -99,10 +99,10 @@ int run(const char* statement)
     for (record_count = 0; !done; record_count++)
     {
         current = BoltConnection_fetch_b(connection);
-//        BoltValue_dumpLine(current);
+//        _dump(current);
         done = BoltValue_type(current) == BOLT_SUMMARY;
     }
-//    BoltValue_dumpLine(current);
+//    _dump(current);
     record_count -= 1;
 
     timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer

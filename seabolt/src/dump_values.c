@@ -36,478 +36,472 @@ static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
 
 #define hex0(mem, offset) HEX_DIGITS[(mem)[offset] & 0x0F]
 
-void _bolt_dump_string(const char* data, size_t size)
+
+void _write_string(FILE* file, const char* data, size_t size)
 {
-    printf("\"");
+    fprintf(file, "\"");
     for (size_t i = 0; i < size; i++)
     {
-        printf("%c", data[i]);
+        fprintf(file, "%c", data[i]);
     }
-    printf("\"");
+    fprintf(file, "\"");
 }
 
-int BoltNull_dump(const struct BoltValue* value)
+int BoltNull_write(FILE* file, const struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NULL);
-    printf("~");
+    fprintf(file, "~");
     return EXIT_SUCCESS;
 }
 
-int BoltBit_dump(const struct BoltValue* value)
+int BoltBit_write(FILE* file, const struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_BIT);
-    printf("b(%d)", BoltBit_get(value));
+    fprintf(file, "b(%d)", BoltBit_get(value));
     return EXIT_SUCCESS;
 }
 
-int BoltBitArray_dump(const struct BoltValue* value)
+int BoltBitArray_write(FILE* file, const struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_BIT_ARRAY);
-    printf("b[");
+    fprintf(file, "b[");
     for (int i = 0; i < value->size; i++)
     {
-        printf("%d", BoltBitArray_get(value, i));
+        fprintf(file, "%d", BoltBitArray_get(value, i));
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltByte_dump(const struct BoltValue* value)
+int BoltByte_write(FILE* file, const struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_BYTE);
     char byte = BoltByte_get(value);
-    printf("b8(#%c%c)", hex1(&byte, 0), hex0(&byte, 0));
+    fprintf(file, "b8(#%c%c)", hex1(&byte, 0), hex0(&byte, 0));
     return EXIT_SUCCESS;
 }
 
-int BoltByteArray_dump(const struct BoltValue* value)
+int BoltByteArray_write(FILE* file, const struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_BYTE_ARRAY);
-    printf("b8[#");
+    fprintf(file, "b8[#");
     for (int i = 0; i < value->size; i++)
     {
         char b = BoltByteArray_get(value, i);
-        printf("%c%c", hex1(&b, 0), hex0(&b, 0));
+        fprintf(file, "%c%c", hex1(&b, 0), hex0(&b, 0));
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltUTF8_dump(struct BoltValue* value)
+int BoltUTF8_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_UTF8);
     char* data = BoltUTF8_get(value);
-    printf("u8(\"");
+    fprintf(file, "s8(\"");
     for (int i = 0; i < value->size; i++)
     {
-        printf("%c", data[i]);
+        fprintf(file, "%c", data[i]);
     }
-    printf("\")");
+    fprintf(file, "\")");
     return EXIT_SUCCESS;
 }
 
-int BoltUTF8Array_dump(struct BoltValue* value)
+int BoltUTF8Array_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_UTF8_ARRAY);
-    printf("u8[");
+    fprintf(file, "s8[");
     for (long i = 0; i < value->size; i++)
     {
-        if (i > 0) { printf(", "); }
+        if (i > 0) { fprintf(file, ", "); }
         struct array_t string = value->data.extended.as_array[i];
         if (string.size == 0)
         {
-            printf("\"\"");
+            fprintf(file, "\"\"");
         }
         else
         {
-            _bolt_dump_string(string.data.as_char, (size_t)(string.size));
+            _write_string(file, string.data.as_char, (size_t)(string.size));
         }
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltUTF8Dictionary_dump(struct BoltValue* value)
+int BoltUTF8Dictionary_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
-    printf("d8[");
+    fprintf(file, "d8[");
     int comma = 0;
     for (int i = 0; i < value->size; i++)
     {
         struct BoltValue* key = BoltUTF8Dictionary_key(value, i);
         if (key != NULL)
         {
-            if (comma) printf(", ");
-            _bolt_dump_string(BoltUTF8_get(key), (size_t)(key->size));
-            printf(" ");
-            BoltValue_dump(BoltUTF8Dictionary_value(value, i));
+            if (comma) fprintf(file, ", ");
+            _write_string(file, BoltUTF8_get(key), (size_t)(key->size));
+            fprintf(file, " ");
+            BoltValue_write(file, BoltUTF8Dictionary_value(value, i));
             comma = 1;
         }
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltNum8_dump(struct BoltValue* value)
+int BoltNum8_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NUM8);
-    printf("n8(%u)", BoltNum8_get(value));
+    fprintf(file, "n8(%u)", BoltNum8_get(value));
     return EXIT_SUCCESS;
 }
 
-int BoltNum16_dump(struct BoltValue* value)
+int BoltNum16_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NUM16);
-    printf("n16(%u)", BoltNum16_get(value));
+    fprintf(file, "n16(%u)", BoltNum16_get(value));
     return EXIT_SUCCESS;
 }
 
-int BoltNum32_dump(struct BoltValue* value)
+int BoltNum32_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NUM32);
-    printf("n32(%u)", BoltNum32_get(value));
+    fprintf(file, "n32(%u)", BoltNum32_get(value));
     return EXIT_SUCCESS;
 }
 
-int BoltNum64_dump(struct BoltValue* value)
+int BoltNum64_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NUM64);
-    printf("n64(%lu)", BoltNum64_get(value));
+    fprintf(file, "n64(%lu)", BoltNum64_get(value));
     return EXIT_SUCCESS;
 }
 
-int BoltNum8Array_dump(struct BoltValue* value)
+int BoltNum8Array_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NUM8_ARRAY);
-    printf("n8[");
+    fprintf(file, "n8[");
     for (int i = 0; i < value->size; i++)
     {
-        printf(i == 0 ? "%u" : ", %u", BoltNum8Array_get(value, i));
+        fprintf(file, i == 0 ? "%u" : ", %u", BoltNum8Array_get(value, i));
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltNum16Array_dump(struct BoltValue* value)
+int BoltNum16Array_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NUM16_ARRAY);
-    printf("n16[");
+    fprintf(file, "n16[");
     for (int i = 0; i < value->size; i++)
     {
-        printf(i == 0 ? "%u" : ", %u", BoltNum16Array_get(value, i));
+        fprintf(file, i == 0 ? "%u" : ", %u", BoltNum16Array_get(value, i));
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltNum32Array_dump(struct BoltValue* value)
+int BoltNum32Array_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NUM32_ARRAY);
-    printf("n32[");
+    fprintf(file, "n32[");
     for (int i = 0; i < value->size; i++)
     {
-        printf(i == 0 ? "%u" : ", %u", BoltNum32Array_get(value, i));
+        fprintf(file, i == 0 ? "%u" : ", %u", BoltNum32Array_get(value, i));
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltNum64Array_dump(struct BoltValue* value)
+int BoltNum64Array_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NUM64_ARRAY);
-    printf("n64[");
+    fprintf(file, "n64[");
     for (int i = 0; i < value->size; i++)
     {
-        printf(i == 0 ? "%lu" : ", %lu", BoltNum64Array_get(value, i));
+        fprintf(file, i == 0 ? "%lu" : ", %lu", BoltNum64Array_get(value, i));
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltInt8_dump(struct BoltValue* value)
+int BoltInt8_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT8);
-    printf("i8(%d)", BoltInt8_get(value));
+    fprintf(file, "i8(%d)", BoltInt8_get(value));
     return EXIT_SUCCESS;
 }
 
-int BoltInt16_dump(struct BoltValue* value)
+int BoltInt16_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT16);
-    printf("i16(%d)", BoltInt16_get(value));
+    fprintf(file, "i16(%d)", BoltInt16_get(value));
     return EXIT_SUCCESS;
 }
 
-int BoltInt32_dump(struct BoltValue* value)
+int BoltInt32_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT32);
-    printf("i32(%d)", BoltInt32_get(value));
+    fprintf(file, "i32(%d)", BoltInt32_get(value));
     return EXIT_SUCCESS;
 }
 
-int BoltInt64_dump(struct BoltValue* value)
+int BoltInt64_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT64);
-    printf("i64(%ld)", BoltInt64_get(value));
+    fprintf(file, "i64(%ld)", BoltInt64_get(value));
     return EXIT_SUCCESS;
 }
 
-int BoltInt8Array_dump(struct BoltValue* value)
+int BoltInt8Array_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT8_ARRAY);
-    printf("i8[");
+    fprintf(file, "i8[");
     for (int i = 0; i < value->size; i++)
     {
-        printf(i == 0 ? "%d" : ", %d", BoltInt8Array_get(value, i));
+        fprintf(file, i == 0 ? "%d" : ", %d", BoltInt8Array_get(value, i));
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltInt16Array_dump(struct BoltValue* value)
+int BoltInt16Array_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT16_ARRAY);
-    printf("i16[");
+    fprintf(file, "i16[");
     for (int i = 0; i < value->size; i++)
     {
-        printf(i == 0 ? "%d" : ", %d", BoltInt16Array_get(value, i));
+        fprintf(file, i == 0 ? "%d" : ", %d", BoltInt16Array_get(value, i));
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltInt32Array_dump(struct BoltValue* value)
+int BoltInt32Array_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT32_ARRAY);
-    printf("i32[");
+    fprintf(file, "i32[");
     for (int i = 0; i < value->size; i++)
     {
-        printf(i == 0 ? "%d" : ", %d", BoltInt32Array_get(value, i));
+        fprintf(file, i == 0 ? "%d" : ", %d", BoltInt32Array_get(value, i));
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltInt64Array_dump(struct BoltValue* value)
+int BoltInt64Array_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT64_ARRAY);
-    printf("i64[");
+    fprintf(file, "i64[");
     for (int i = 0; i < value->size; i++)
     {
-        printf(i == 0 ? "%ld" : ", %ld", BoltInt64Array_get(value, i));
+        fprintf(file, i == 0 ? "%ld" : ", %ld", BoltInt64Array_get(value, i));
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltFloat32_dump(struct BoltValue* value)
+int BoltFloat32_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT32);
-    printf("f32(%f)", BoltFloat32_get(value));
+    fprintf(file, "f32(%f)", BoltFloat32_get(value));
     return EXIT_SUCCESS;
 }
 
-int BoltFloat32Array_dump(struct BoltValue* value)
+int BoltFloat32Array_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT32_ARRAY);
-    printf("f32[");
+    fprintf(file, "f32[");
     for (int i = 0; i < value->size; i++)
     {
-        printf(i == 0 ? "%f" : ", %f", BoltFloat32Array_get(value, i));
+        fprintf(file, i == 0 ? "%f" : ", %f", BoltFloat32Array_get(value, i));
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltFloat64_dump(struct BoltValue* value)
+int BoltFloat64_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT64);
-    printf("f64(%f)", BoltFloat64_get(value));
+    fprintf(file, "f64(%f)", BoltFloat64_get(value));
     return EXIT_SUCCESS;
 }
 
-int BoltFloat64Array_dump(struct BoltValue* value)
+int BoltFloat64Array_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT64_ARRAY);
-    printf("f64[");
+    fprintf(file, "f64[");
     for (int i = 0; i < value->size; i++)
     {
-        printf(i == 0 ? "%f" : ", %f", BoltFloat64Array_get(value, i));
+        fprintf(file, i == 0 ? "%f" : ", %f", BoltFloat64Array_get(value, i));
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltStructure_dump(struct BoltValue* value)
+int BoltStructure_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_STRUCTURE);
     int16_t code = BoltStructure_code(value);
-    printf("$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
-    printf("(");
+    fprintf(file, "$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+    fprintf(file, "(");
     for (int i = 0; i < value->size; i++)
     {
-        if (i > 0) printf(" ");
-        BoltValue_dump(BoltStructure_value(value, i));
+        if (i > 0) fprintf(file, " ");
+        BoltValue_write(file, BoltStructure_value(value, i));
     }
-    printf(")");
+    fprintf(file, ")");
     return EXIT_SUCCESS;
 }
 
-int BoltStructureArray_dump(struct BoltValue* value)
+int BoltStructureArray_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_STRUCTURE_ARRAY);
     int16_t code = BoltStructure_code(value);
-    printf("$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
-    printf("[");
+    fprintf(file, "$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+    fprintf(file, "[");
     for (int i = 0; i < value->size; i++)
     {
-        if (i > 0) printf(", ");
-        for (int j = 0; j < BoltStructureArray_getSize(value, i); j++)
+        if (i > 0) fprintf(file, ", ");
+        for (int j = 0; j < BoltStructureArray_get_size(value, i); j++)
         {
-            if (j > 0) printf(" ");
-            BoltValue_dump(BoltStructureArray_at(value, i, j));
+            if (j > 0) fprintf(file, " ");
+            BoltValue_write(file, BoltStructureArray_at(value, i, j));
         }
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltRequest_dump(struct BoltValue* value)
+int BoltRequest_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_REQUEST);
     int16_t code = BoltRequest_code(value);
     switch (code)
     {
         default:
-            printf("Request<#%c%c%c%c>", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+            fprintf(file, "Request<#%c%c%c%c>", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
     }
-    printf("(");
+    fprintf(file, "(");
     for (int i = 0; i < value->size; i++)
     {
-        if (i > 0) printf(" ");
-        BoltValue_dump(BoltRequest_value(value, i));
+        if (i > 0) fprintf(file, " ");
+        BoltValue_write(file, BoltRequest_value(value, i));
     }
-    printf(")");
+    fprintf(file, ")");
     return EXIT_SUCCESS;
 }
 
-int BoltSummary_dump(struct BoltValue* value)
+int BoltSummary_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_SUMMARY);
     int16_t code = BoltSummary_code(value);
     switch (code)
     {
         default:
-            printf("Summary<#%c%c%c%c>", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+            fprintf(file, "Summary<#%c%c%c%c>", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
     }
-    printf("(");
+    fprintf(file, "(");
     for (int i = 0; i < value->size; i++)
     {
-        if (i > 0) printf(" ");
-        BoltValue_dump(BoltSummary_value(value, i));
+        if (i > 0) fprintf(file, " ");
+        BoltValue_write(file, BoltSummary_value(value, i));
     }
-    printf(")");
+    fprintf(file, ")");
     return EXIT_SUCCESS;
 }
 
-int BoltList_dump(const struct BoltValue* value)
+int BoltList_write(FILE* file, const struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_LIST);
-    printf("[");
+    fprintf(file, "[");
     for (int i = 0; i < value->size; i++)
     {
-        if (i > 0) printf(", ");
-        BoltValue_dump(BoltList_value(value, i));
+        if (i > 0) fprintf(file, ", ");
+        BoltValue_write(file, BoltList_value(value, i));
     }
-    printf("]");
+    fprintf(file, "]");
     return EXIT_SUCCESS;
 }
 
-int BoltValue_dump(struct BoltValue* value)
+int BoltValue_write(FILE* file, struct BoltValue* value)
 {
     switch (BoltValue_type(value))
     {
         case BOLT_NULL:
-            return BoltNull_dump(value);
+            return BoltNull_write(file, value);
         case BOLT_BIT:
-            return BoltBit_dump(value);
+            return BoltBit_write(file, value);
         case BOLT_BYTE:
-            return BoltByte_dump(value);
+            return BoltByte_write(file, value);
         case BOLT_BIT_ARRAY:
-            return BoltBitArray_dump(value);
+            return BoltBitArray_write(file, value);
         case BOLT_BYTE_ARRAY:
-            return BoltByteArray_dump(value);
+            return BoltByteArray_write(file, value);
         case BOLT_UTF8:
-            return BoltUTF8_dump(value);
+            return BoltUTF8_write(file, value);
         case BOLT_UTF16:
             return EXIT_FAILURE;
         case BOLT_UTF8_ARRAY:
-            return BoltUTF8Array_dump(value);
+            return BoltUTF8Array_write(file, value);
         case BOLT_UTF16_ARRAY:
             return EXIT_FAILURE;
         case BOLT_UTF8_DICTIONARY:
-            return BoltUTF8Dictionary_dump(value);
+            return BoltUTF8Dictionary_write(file, value);
         case BOLT_UTF16_DICTIONARY:
             return EXIT_FAILURE;
         case BOLT_NUM8:
-            return BoltNum8_dump(value);
+            return BoltNum8_write(file, value);
         case BOLT_NUM16:
-            return BoltNum16_dump(value);
+            return BoltNum16_write(file, value);
         case BOLT_NUM32:
-            return BoltNum32_dump(value);
+            return BoltNum32_write(file, value);
         case BOLT_NUM64:
-            return BoltNum64_dump(value);
+            return BoltNum64_write(file, value);
         case BOLT_NUM8_ARRAY:
-            return BoltNum8Array_dump(value);
+            return BoltNum8Array_write(file, value);
         case BOLT_NUM16_ARRAY:
-            return BoltNum16Array_dump(value);
+            return BoltNum16Array_write(file, value);
         case BOLT_NUM32_ARRAY:
-            return BoltNum32Array_dump(value);
+            return BoltNum32Array_write(file, value);
         case BOLT_NUM64_ARRAY:
-            return BoltNum64Array_dump(value);
+            return BoltNum64Array_write(file, value);
         case BOLT_INT8:
-            return BoltInt8_dump(value);
+            return BoltInt8_write(file, value);
         case BOLT_INT16:
-            return BoltInt16_dump(value);
+            return BoltInt16_write(file, value);
         case BOLT_INT32:
-            return BoltInt32_dump(value);
+            return BoltInt32_write(file, value);
         case BOLT_INT64:
-            return BoltInt64_dump(value);
+            return BoltInt64_write(file, value);
         case BOLT_INT8_ARRAY:
-            return BoltInt8Array_dump(value);
+            return BoltInt8Array_write(file, value);
         case BOLT_INT16_ARRAY:
-            return BoltInt16Array_dump(value);
+            return BoltInt16Array_write(file, value);
         case BOLT_INT32_ARRAY:
-            return BoltInt32Array_dump(value);
+            return BoltInt32Array_write(file, value);
         case BOLT_INT64_ARRAY:
-            return BoltInt64Array_dump(value);
+            return BoltInt64Array_write(file, value);
         case BOLT_FLOAT32:
-            return BoltFloat32_dump(value);
+            return BoltFloat32_write(file, value);
         case BOLT_FLOAT32_ARRAY:
-            return BoltFloat32Array_dump(value);
+            return BoltFloat32Array_write(file, value);
         case BOLT_FLOAT64:
-            return BoltFloat64_dump(value);
+            return BoltFloat64_write(file, value);
         case BOLT_FLOAT64_ARRAY:
-            return BoltFloat64Array_dump(value);
+            return BoltFloat64Array_write(file, value);
         case BOLT_STRUCTURE:
-            return BoltStructure_dump(value);
+            return BoltStructure_write(file, value);
         case BOLT_STRUCTURE_ARRAY:
-            return BoltStructureArray_dump(value);
+            return BoltStructureArray_write(file, value);
         case BOLT_REQUEST:
-            return BoltRequest_dump(value);
+            return BoltRequest_write(file, value);
         case BOLT_SUMMARY:
-            return BoltSummary_dump(value);
+            return BoltSummary_write(file, value);
         case BOLT_LIST:
-            return BoltList_dump(value);
+            return BoltList_write(file, value);
         default:
-            printf("?");
+            fprintf(file, "?");
             return EXIT_FAILURE;
     }
 }
-
-void BoltValue_dumpLine(struct BoltValue* value)
-{
-    BoltValue_dump(value);
-    printf("\n");
-}
-

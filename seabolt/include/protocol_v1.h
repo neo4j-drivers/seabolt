@@ -42,19 +42,19 @@ enum BoltProtocolV1Type
     BOLT_V1_RESERVED,
 } ;
 
-enum BoltProtocolV1Type BoltProtocolV1_markerType(uint8_t marker);
+enum BoltProtocolV1Type BoltProtocolV1_marker_type(uint8_t marker);
 
-int BoltProtocolV1_loadString(struct BoltConnection* connection, const char* string, int32_t size);
+int BoltProtocolV1_load_string(struct BoltConnection* connection, const char* string, int32_t size);
 
-int BoltProtocolV1_loadMap(struct BoltConnection* connection, struct BoltValue* value);
+int BoltProtocolV1_load_map(struct BoltConnection* connection, struct BoltValue* value);
 
 int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* value);
 
-int BoltProtocolV1_loadInit(struct BoltConnection* connection, const char* user, const char* password);
+int BoltProtocolV1_load_init(struct BoltConnection* connection, const char* user, const char* password);
 
-int BoltProtocolV1_loadRun(struct BoltConnection* connection, const char* statement);
+int BoltProtocolV1_load_run(struct BoltConnection* connection, const char* statement);
 
-int BoltProtocolV1_loadPull(struct BoltConnection* connection);
+int BoltProtocolV1_load_pull(struct BoltConnection* connection);
 
 /**
  * Top-level unload.

@@ -51,7 +51,7 @@ void BoltBuffer_compact(struct BoltBuffer* buffer);
 
 int BoltBuffer_loadable(struct BoltBuffer* buffer);
 
-char* BoltBuffer_loadTarget(struct BoltBuffer* buffer, int size);
+char* BoltBuffer_load_target(struct BoltBuffer* buffer, int size);
 
 void BoltBuffer_load(struct BoltBuffer* buffer, const char* data, int size);
 
@@ -59,15 +59,15 @@ void BoltBuffer_load_uint8(struct BoltBuffer* buffer, uint8_t x);
 
 void BoltBuffer_load_int32be(struct BoltBuffer* buffer, int32_t x);
 
-void BoltBuffer_pushStop(struct BoltBuffer* buffer);
+void BoltBuffer_push_stop(struct BoltBuffer* buffer);
 
-int BoltBuffer_nextStop(struct BoltBuffer* buffer);
+int BoltBuffer_next_stop(struct BoltBuffer* buffer);
 
-void BoltBuffer_pullStop(struct BoltBuffer* buffer);
+void BoltBuffer_pull_stop(struct BoltBuffer* buffer);
 
 int BoltBuffer_unloadable(struct BoltBuffer* buffer);
 
-char* BoltBuffer_unloadTarget(struct BoltBuffer* buffer, int size);
+char* BoltBuffer_unload_target(struct BoltBuffer* buffer, int size);
 
 int BoltBuffer_unload(struct BoltBuffer* buffer, char* data, int size);
 

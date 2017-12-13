@@ -28,30 +28,30 @@ void _to_structure(struct BoltValue* value, enum BoltType type, int16_t code, in
                                                  sizeof_n(struct BoltValue, size));
     value->data_size = sizeof_n(struct BoltValue, size);
     memset(value->data.extended.as_char, 0, value->data_size);
-    _setType(value, type, size);
+    _set_type(value, type, size);
     value->code = code;
 }
 
-void BoltValue_toStructure(struct BoltValue* value, int16_t code, int32_t size)
+void BoltValue_to_Structure(struct BoltValue* value, int16_t code, int32_t size)
 {
     _to_structure(value, BOLT_STRUCTURE, code, size);
 }
 
-void BoltValue_toStructureArray(struct BoltValue* value, int16_t code, int32_t size)
+void BoltValue_to_StructureArray(struct BoltValue* value, int16_t code, int32_t size)
 {
     _to_structure(value, BOLT_STRUCTURE_ARRAY, code, size);
     for (long i = 0; i < size; i++)
     {
-        BoltValue_toList(&value->data.extended.as_value[i], 0);
+        BoltValue_to_List(&value->data.extended.as_value[i], 0);
     }
 }
 
-void BoltValue_toRequest(struct BoltValue* value, int16_t code, int32_t size)
+void BoltValue_to_Request(struct BoltValue* value, int16_t code, int32_t size)
 {
     _to_structure(value, BOLT_REQUEST, code, size);
 }
 
-void BoltValue_toSummary(struct BoltValue* value, int16_t code, int32_t size)
+void BoltValue_to_Summary(struct BoltValue* value, int16_t code, int32_t size)
 {
     _to_structure(value, BOLT_SUMMARY, code, size);
 }
@@ -92,12 +92,12 @@ struct BoltValue* BoltSummary_value(const struct BoltValue* value, int32_t index
     return &value->data.extended.as_value[index];
 }
 
-int32_t BoltStructureArray_getSize(const struct BoltValue* value, int32_t index)
+int32_t BoltStructureArray_get_size(const struct BoltValue* value, int32_t index)
 {
     return value->data.extended.as_value[index].size;
 }
 
-void BoltStructureArray_setSize(struct BoltValue* value, int32_t index, int32_t size)
+void BoltStructureArray_set_size(struct BoltValue* value, int32_t index, int32_t size)
 {
     BoltList_resize(&value->data.extended.as_value[index], size);
 }

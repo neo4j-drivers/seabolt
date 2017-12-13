@@ -253,7 +253,7 @@ int _take_b(struct BoltConnection* connection, char* buffer, int size)
                 BoltBuffer_compact(connection->raw_rx_buffer);
             }
             max_size = delta > max_size ? delta : max_size;
-            int received = _receive_b(connection, BoltBuffer_loadTarget(connection->raw_rx_buffer, max_size), delta, max_size);
+            int received = _receive_b(connection, BoltBuffer_load_target(connection->raw_rx_buffer, max_size), delta, max_size);
             if (received == 0)
             {
                 connection->status = BOLT_RECEIVED_ZERO;
@@ -328,11 +328,11 @@ int BoltConnection_transmit_b(struct BoltConnection* connection)
                 header[0] = (char)(size >> 8);
                 header[1] = (char)(size);
                 try(_transmit_b(connection, &header[0], 2));
-                try(_transmit_b(connection, BoltBuffer_unloadTarget(connection->tx_buffer, size), size));
+                try(_transmit_b(connection, BoltBuffer_unload_target(connection->tx_buffer, size), size));
                 header[0] = (char)(0);
                 header[1] = (char)(0);
                 try(_transmit_b(connection, &header[0], 2));
-                BoltBuffer_pullStop(connection->tx_buffer);
+                BoltBuffer_pull_stop(connection->tx_buffer);
                 size = BoltBuffer_unloadable(connection->tx_buffer);
             }
             return 0;
@@ -342,8 +342,8 @@ int BoltConnection_transmit_b(struct BoltConnection* connection)
             int size = BoltBuffer_unloadable(connection->tx_buffer);
             while (size > 0)
             {
-                try(_transmit_b(connection, BoltBuffer_unloadTarget(connection->tx_buffer, size), size));
-                BoltBuffer_pullStop(connection->tx_buffer);
+                try(_transmit_b(connection, BoltBuffer_unload_target(connection->tx_buffer, size), size));
+                BoltBuffer_pull_stop(connection->tx_buffer);
                 size = BoltBuffer_unloadable(connection->tx_buffer);
             }
             return 0;
@@ -364,7 +364,7 @@ int BoltConnection_receive_b(struct BoltConnection* connection)
             int chunk_size = char_to_int16be(header);
             while (chunk_size != 0)
             {
-                try(_take_b(connection, BoltBuffer_loadTarget(connection->rx_buffer, chunk_size), chunk_size));
+                try(_take_b(connection, BoltBuffer_load_target(connection->rx_buffer, chunk_size), chunk_size));
                 try(_take_b(connection, &header[0], 2));
                 chunk_size = char_to_int16be(header);
             }
@@ -394,7 +394,7 @@ int BoltConnection_handshake_b(struct BoltConnection* connection, int32_t _1, in
     BoltBuffer_load_int32be(connection->tx_buffer, _3);
     BoltBuffer_load_int32be(connection->tx_buffer, _4);
     try(BoltConnection_transmit_b(connection));
-    try(_take_b(connection, BoltBuffer_loadTarget(connection->rx_buffer, 4), 4));
+    try(_take_b(connection, BoltBuffer_load_target(connection->rx_buffer, 4), 4));
     BoltBuffer_unload_int32be(connection->rx_buffer, &connection->protocol_version);
 }
 
@@ -408,11 +408,11 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user, c
     switch (connection->protocol_version)
     {
         case 1:
-            BoltProtocolV1_loadInit(connection, user, password);
+            BoltProtocolV1_load_init(connection, user, password);
             try(BoltConnection_transmit_b(connection));
             try(BoltConnection_receive_b(connection));
             BoltProtocolV1_unload(connection, connection->incoming);
-//            BoltValue_dumpLine(connection->incoming);
+//            _dump(connection->incoming);
             switch(BoltSummary_code(connection->incoming))
             {
                 case 0x70:  // SUCCESS
@@ -440,7 +440,7 @@ int BoltConnection_load_run(struct BoltConnection* connection, const char* state
     switch (connection->protocol_version)
     {
         case 1:
-            BoltProtocolV1_loadRun(connection, statement);
+            BoltProtocolV1_load_run(connection, statement);
             return 0;
         default:
             return -1;
@@ -452,7 +452,7 @@ int BoltConnection_load_pull(struct BoltConnection* connection)
     switch (connection->protocol_version)
     {
         case 1:
-            BoltProtocolV1_loadPull(connection);
+            BoltProtocolV1_load_pull(connection);
             return 0;
         default:
             return -1;

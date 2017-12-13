@@ -24,14 +24,6 @@
 #include <values.h>
 
 
-void _copyData(struct BoltValue* value, const void* data, size_t offset, size_t length)
-{
-    if (length > 0)
-    {
-        memcpy(value->data.extended.as_char + offset, data, length);
-    }
-}
-
 /**
  * Clean up a value for reuse.
  *
@@ -46,7 +38,7 @@ void _recycle(struct BoltValue* value)
     {
         for (long i = 0; i < value->size; i++)
         {
-            BoltValue_toNull(&value->data.extended.as_value[i]);
+            BoltValue_to_Null(&value->data.extended.as_value[i]);
         }
     }
     else if (type == BOLT_UTF8_ARRAY)
@@ -64,7 +56,7 @@ void _recycle(struct BoltValue* value)
     {
         for (long i = 0; i < 2 * value->size; i++)
         {
-            BoltValue_toNull(&value->data.extended.as_value[i]);
+            BoltValue_to_Null(&value->data.extended.as_value[i]);
         }
     }
     else if (type == BOLT_UTF16_DICTIONARY)
@@ -73,7 +65,7 @@ void _recycle(struct BoltValue* value)
     }
 }
 
-void _setType(struct BoltValue* value, enum BoltType type, int size)
+void _set_type(struct BoltValue* value, enum BoltType type, int size)
 {
     assert(type < 0x80);
     value->type = (char)(type);
@@ -85,11 +77,11 @@ void _format(struct BoltValue* value, enum BoltType type, int size, const void* 
     _recycle(value);
     value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
     value->data_size = data_size;
-    if (data != NULL)
+    if (data != NULL && data_size > 0)
     {
-        _copyData(value, data, 0, data_size);
+        memcpy(value->data.extended.as_char + 0, data, data_size);
     }
-    _setType(value, type, size);
+    _set_type(value, type, size);
 }
 
 
@@ -119,7 +111,7 @@ void _resize(struct BoltValue* value, int32_t size, int multiplier)
         // shrink logically
         for (long i = multiplier * size; i < multiplier * value->size; i++)
         {
-            BoltValue_toNull(&value->data.extended.as_value[i]);
+            BoltValue_to_Null(&value->data.extended.as_value[i]);
         }
         value->size = size;
         // shrink physically
@@ -137,14 +129,14 @@ struct BoltValue* BoltValue_create()
 {
     size_t size = sizeof(struct BoltValue);
     struct BoltValue* value = BoltMem_allocate(size);
-    _setType(value, BOLT_NULL, 0);
+    _set_type(value, BOLT_NULL, 0);
     value->data_size = 0;
     value->data.as_uint64[0] = 0;
     value->data.extended.as_ptr = NULL;
     return value;
 }
 
-void BoltValue_toNull(struct BoltValue* value)
+void BoltValue_to_Null(struct BoltValue* value)
 {
     if (BoltValue_type(value) != BOLT_NULL)
     {
@@ -152,7 +144,7 @@ void BoltValue_toNull(struct BoltValue* value)
     }
 }
 
-void BoltValue_toList(struct BoltValue* value, int32_t size)
+void BoltValue_to_List(struct BoltValue* value, int32_t size)
 {
     if (BoltValue_type(value) == BOLT_LIST)
     {
@@ -165,7 +157,7 @@ void BoltValue_toList(struct BoltValue* value, int32_t size)
         value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
         value->data_size = data_size;
         memset(value->data.extended.as_char, 0, data_size);
-        _setType(value, BOLT_LIST, size);
+        _set_type(value, BOLT_LIST, size);
     }
 }
 
@@ -176,7 +168,7 @@ enum BoltType BoltValue_type(const struct BoltValue* value)
 
 void BoltValue_destroy(struct BoltValue* value)
 {
-    BoltValue_toNull(value);
+    BoltValue_to_Null(value);
     BoltMem_deallocate(value, sizeof(struct BoltValue));
 }
 

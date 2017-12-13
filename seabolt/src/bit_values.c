@@ -20,19 +20,19 @@
 #include <values.h>
 
 
-void BoltValue_toBit(struct BoltValue* value, char x)
+void BoltValue_to_Bit(struct BoltValue* value, char x)
 {
     _format(value, BOLT_BIT, 1, NULL, 0);
     value->data.as_char[0] = x;
 }
 
-void BoltValue_toByte(struct BoltValue* value, char x)
+void BoltValue_to_Byte(struct BoltValue* value, char x)
 {
     _format(value, BOLT_BYTE, 1, NULL, 0);
     value->data.as_char[0] = x;
 }
 
-void BoltValue_toBitArray(struct BoltValue* value, char* array, int32_t size)
+void BoltValue_to_BitArray(struct BoltValue* value, char* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(char))
     {
@@ -45,7 +45,7 @@ void BoltValue_toBitArray(struct BoltValue* value, char* array, int32_t size)
     }
 }
 
-void BoltValue_toByteArray(struct BoltValue* value, char* array, int32_t size)
+void BoltValue_to_ByteArray(struct BoltValue* value, char* array, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(char))
     {
