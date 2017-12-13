@@ -11,3 +11,4 @@ add_dependencies(seabolt-all seabolt seabolt-cli)
 
 add_subdirectory(seabolt)
 add_subdirectory(seabolt-cli)
+add_subdirectory(seabolt-test)
