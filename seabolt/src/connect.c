@@ -40,9 +40,9 @@ static const char* DEFAULT_USER_AGENT = "seabolt/1.0.0a";
 
 
 struct BoltConnection* _create(enum BoltTransport transport);
-int _open(struct BoltConnection* connection, const struct addrinfo* address);
-void _close(struct BoltConnection* connection);
 void _destroy(struct BoltConnection* connection);
+int _open_b(struct BoltConnection* connection, const struct addrinfo* address);
+void _close_b(struct BoltConnection* connection);
 
 
 struct BoltConnection* _create(enum BoltTransport transport)
@@ -54,10 +54,19 @@ struct BoltConnection* _create(enum BoltTransport transport)
     connection->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
     connection->rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
     connection->raw_rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
-    connection->incoming = BoltValue_create();
+    connection->current = BoltValue_create();
 }
 
-int _open(struct BoltConnection* connection, const struct addrinfo* address)
+void _destroy(struct BoltConnection* connection)
+{
+    BoltValue_destroy(connection->current);
+    BoltBuffer_destroy(connection->raw_rx_buffer);
+    BoltBuffer_destroy(connection->rx_buffer);
+    BoltBuffer_destroy(connection->tx_buffer);
+    BoltMem_deallocate(connection, sizeof(struct BoltConnection));
+}
+
+int _open_b(struct BoltConnection* connection, const struct addrinfo* address)
 {
     connection->socket = socket(address->ai_family, address->ai_socktype, 0);
     BoltLog_info("[NET] Opening connection to %s", address->ai_canonname);
@@ -75,7 +84,7 @@ int _open(struct BoltConnection* connection, const struct addrinfo* address)
     return -1;
 }
 
-void _close(struct BoltConnection* connection)
+void _close_b(struct BoltConnection* connection)
 {
     switch(connection->transport)
     {
@@ -100,15 +109,6 @@ void _close(struct BoltConnection* connection)
         }
     }
     connection->status = BOLT_DISCONNECTED;
-}
-
-void _destroy(struct BoltConnection* connection)
-{
-    BoltValue_destroy(connection->incoming);
-    BoltBuffer_destroy(connection->raw_rx_buffer);
-    BoltBuffer_destroy(connection->rx_buffer);
-    BoltBuffer_destroy(connection->tx_buffer);
-    BoltMem_deallocate(connection, sizeof(struct BoltConnection));
 }
 
 int _transmit_b(struct BoltConnection* connection, const char* data, int size)
@@ -269,6 +269,19 @@ int _take_b(struct BoltConnection* connection, char* buffer, int size)
     return size;
 }
 
+int _handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int32_t _3, int32_t _4)
+{
+    BoltBuffer_load(connection->tx_buffer, "\x60\x60\xB0\x17", 4);
+    BoltBuffer_load_int32be(connection->tx_buffer, _1);
+    BoltBuffer_load_int32be(connection->tx_buffer, _2);
+    BoltBuffer_load_int32be(connection->tx_buffer, _3);
+    BoltBuffer_load_int32be(connection->tx_buffer, _4);
+    try(BoltConnection_transmit_b(connection));
+    try(_take_b(connection, BoltBuffer_load_target(connection->rx_buffer, 4), 4));
+    BoltBuffer_unload_int32be(connection->rx_buffer, &connection->protocol_version);
+    BoltLog_info("[NET] Using Bolt v%d", connection->protocol_version);
+}
+
 struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const struct addrinfo* address)
 {
     struct BoltConnection* connection = _create(transport);
@@ -276,12 +289,13 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const
     {
         case BOLT_SOCKET:
         {
-            _open(connection, address);
+            _open_b(connection, address);
+            _handshake_b(connection, 1, 0, 0, 0);
             return connection;
         }
         case BOLT_SECURE_SOCKET:
         {
-            _open(connection, address);
+            _open_b(connection, address);
             if (connection->status != BOLT_CONNECTED)
             {
                 return connection;
@@ -302,6 +316,7 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const
             connection->ssl = SSL_new(connection->ssl_context);
             int linked_socket = SSL_set_fd(connection->ssl, connection->socket);
             int connected = SSL_connect(connection->ssl);
+            _handshake_b(connection, 1, 0, 0, 0);
             return connection;
         }
     }
@@ -309,7 +324,7 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const
 
 void BoltConnection_close_b(struct BoltConnection* connection)
 {
-    _close(connection);
+    _close_b(connection);
     _destroy(connection);
 }
 
@@ -353,6 +368,16 @@ int BoltConnection_transmit_b(struct BoltConnection* connection)
 
 int BoltConnection_receive_b(struct BoltConnection* connection)
 {
+    int records = 0;
+    while (BoltConnection_fetch_b(connection))
+    {
+        records += 1;
+    }
+    return records;
+}
+
+int BoltConnection_fetch_b(struct BoltConnection* connection)
+{
     BoltBuffer_compact(connection->rx_buffer);
     BoltBuffer_compact(connection->raw_rx_buffer);
     switch (connection->protocol_version)
@@ -368,7 +393,8 @@ int BoltConnection_receive_b(struct BoltConnection* connection)
                 try(_take_b(connection, &header[0], 2));
                 chunk_size = char_to_int16be(header);
             }
-            return 0;
+            BoltProtocolV1_unload(connection, connection->current);
+            return (BoltValue_type(connection->current) == BOLT_SUMMARY) ? 0 : 1;
         }
         default:
         {
@@ -378,24 +404,9 @@ int BoltConnection_receive_b(struct BoltConnection* connection)
     }
 }
 
-struct BoltValue* BoltConnection_fetch_b(struct BoltConnection* connection)
+struct BoltValue* BoltConnection_current(struct BoltConnection* connection)
 {
-    BoltConnection_receive_b(connection);
-    BoltProtocolV1_unload(connection, connection->incoming);
-    return connection->incoming;
-}
-
-int BoltConnection_handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int32_t _3,
-                               int32_t _4)
-{
-    BoltBuffer_load(connection->tx_buffer, "\x60\x60\xB0\x17", 4);
-    BoltBuffer_load_int32be(connection->tx_buffer, _1);
-    BoltBuffer_load_int32be(connection->tx_buffer, _2);
-    BoltBuffer_load_int32be(connection->tx_buffer, _3);
-    BoltBuffer_load_int32be(connection->tx_buffer, _4);
-    try(BoltConnection_transmit_b(connection));
-    try(_take_b(connection, BoltBuffer_load_target(connection->rx_buffer, 4), 4));
-    BoltBuffer_unload_int32be(connection->rx_buffer, &connection->protocol_version);
+    return connection->current;
 }
 
 /**
@@ -411,9 +422,9 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user, c
             BoltProtocolV1_load_init(connection, user, password);
             try(BoltConnection_transmit_b(connection));
             try(BoltConnection_receive_b(connection));
-            BoltProtocolV1_unload(connection, connection->incoming);
-//            _dump(connection->incoming);
-            switch(BoltSummary_code(connection->incoming))
+            BoltProtocolV1_unload(connection, connection->current);
+//            _dump(connection->current);
+            switch(BoltSummary_code(connection->current))
             {
                 case 0x70:  // SUCCESS
                     BoltLog_info("[NET] INIT succeeded for user %s", user);

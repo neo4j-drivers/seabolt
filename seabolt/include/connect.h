@@ -73,7 +73,7 @@ struct BoltConnection
     struct BoltBuffer* raw_rx_buffer;   // receive buffer before chunk processing
     unsigned long bolt_error;
     unsigned long openssl_error;
-    struct BoltValue* incoming; // holder for incoming messages (one at a time so we can reuse this)
+    struct BoltValue* current; // holder for current messages (one at a time so we can reuse this)
 };
 
 
@@ -81,13 +81,32 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const
 
 void BoltConnection_close_b(struct BoltConnection* connection);
 
+/**
+ * Transmit all queued outgoing data.
+ *
+ * @param connection
+ * @return
+ */
 int BoltConnection_transmit_b(struct BoltConnection* connection);
 
+/**
+ * Receive the next response in its entirety, up to and including the
+ * trailing summary.
+ *
+ * @param connection
+ * @return
+ */
 int BoltConnection_receive_b(struct BoltConnection* connection);
 
-struct BoltValue* BoltConnection_fetch_b(struct BoltConnection* connection);
+/**
+ * Receive the next message and load into the "current" slot.
+ *
+ * @param connection
+ * @return
+ */
+int BoltConnection_fetch_b(struct BoltConnection* connection);
 
-int32_t BoltConnection_handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int32_t _3, int32_t _4);
+struct BoltValue* BoltConnection_current(struct BoltConnection* connection);
 
 int BoltConnection_init_b(struct BoltConnection* connection, const char* user, const char* password);
 

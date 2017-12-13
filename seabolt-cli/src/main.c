@@ -76,9 +76,10 @@ int run(const char* statement)
     freeaddrinfo(address);
     assert(connection->status == BOLT_CONNECTED);
 
-    BoltConnection_handshake_b(connection, 1, 0, 0, 0);
-    BoltLog_info("[NET] Using Bolt v%d", connection->protocol_version);
     BoltConnection_init_b(connection, BOLT_USER, BOLT_PASSWORD);
+    struct BoltValue* current = BoltConnection_current(connection);
+    BoltValue_write(stderr, current);
+    fprintf(stderr, "\n");
     assert(connection->status == BOLT_READY);
 
     timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after handshake and initialisation
@@ -89,21 +90,23 @@ int run(const char* statement)
 
     timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission
 
-    struct BoltValue* current = BoltConnection_fetch_b(connection);
-//    _dump(current);
+    BoltConnection_receive_b(connection);
+    current = BoltConnection_current(connection);
+    BoltValue_write(stderr, current);
+    fprintf(stderr, "\n");
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
-    int done = 0;
-    long record_count;
-    for (record_count = 0; !done; record_count++)
+    long record_count = 0;
+    while (BoltConnection_fetch_b(connection))
     {
-        current = BoltConnection_fetch_b(connection);
-//        _dump(current);
-        done = BoltValue_type(current) == BOLT_SUMMARY;
+        current = BoltConnection_current(connection);
+        BoltValue_write(stdout, current);
+        fprintf(stdout, "\n");
+        record_count += 1;
     }
-//    _dump(current);
-    record_count -= 1;
+    BoltValue_write(stderr, current);
+    fprintf(stderr, "\n");
 
     timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
 
