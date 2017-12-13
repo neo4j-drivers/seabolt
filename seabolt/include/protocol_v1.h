@@ -24,8 +24,7 @@
 #ifndef SEABOLT_PROTOCOL_V1
 #define SEABOLT_PROTOCOL_V1
 
-#include "connect.h"
-#include "values.h"
+#include <stdint.h>
 
 
 enum BoltProtocolV1Type

@@ -24,12 +24,8 @@
 #ifndef SEABOLT_BUFFER
 #define SEABOLT_BUFFER
 
-
 #include <stddef.h>
-#include <string.h>
 #include <stdint.h>
-
-#include "warden.h"
 
 
 struct BoltBuffer

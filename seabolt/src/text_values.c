@@ -17,7 +17,9 @@
  * limitations under the License.
  */
 
+#include <assert.h>
 #include <stdint.h>
+#include <string.h>
 #include <values.h>
 
 

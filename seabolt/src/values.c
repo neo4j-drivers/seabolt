@@ -19,8 +19,8 @@
 
 
 #include <assert.h>
-#include <stdint.h>
 #include <memory.h>
+#include <stdint.h>
 #include <values.h>
 
 

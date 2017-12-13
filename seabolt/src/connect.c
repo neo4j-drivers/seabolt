@@ -22,12 +22,10 @@
 #include <openssl/ssl.h>
 #include <connect.h>
 #include <protocol_v1.h>
+#include <buffer.h>
 #include <sys/socket.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <warden.h>
-#include <err.h>
 #include <netdb.h>
+#include <bolt.h>
 
 
 #define INITIAL_TX_BUFFER_SIZE 8192
@@ -37,12 +35,6 @@
 
 
 static const char* DEFAULT_USER_AGENT = "seabolt/1.0.0a";
-
-
-struct BoltConnection* _create(enum BoltTransport transport);
-void _destroy(struct BoltConnection* connection);
-int _open_b(struct BoltConnection* connection, const struct addrinfo* address);
-void _close_b(struct BoltConnection* connection);
 
 
 struct BoltConnection* _create(enum BoltTransport transport)

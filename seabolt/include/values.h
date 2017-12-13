@@ -24,11 +24,7 @@
 #ifndef SEABOLT_VALUES
 #define SEABOLT_VALUES
 
-#include <assert.h>
 #include <limits.h>
-#include <memory.h>
-#include <stdint.h>
-#include <string.h>
 
 #include "warden.h"
 

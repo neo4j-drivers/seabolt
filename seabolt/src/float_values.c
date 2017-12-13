@@ -17,6 +17,8 @@
  * limitations under the License.
  */
 
+#include <stdint.h>
+#include <string.h>
 #include <values.h>
 
 

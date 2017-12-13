@@ -24,13 +24,7 @@
 #ifndef SEABOLT_CONNECT
 #define SEABOLT_CONNECT
 
-#include <openssl/bio.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
 #include <netdb.h>
-
-#include "buffer.h"
-#include "values.h"
 
 
 #define try(code) { int status = (code); if (status == -1) return status; }

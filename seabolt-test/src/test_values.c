@@ -18,6 +18,8 @@
  */
 
 #include <math.h>
+#include <assert.h>
+#include <memory.h>
 #include "bolt.h"
 #include "test_values.h"
 

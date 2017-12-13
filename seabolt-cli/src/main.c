@@ -18,6 +18,10 @@
  */
 
 #include <netdb.h>
+#include <stdlib.h>
+#include <time.h>
+#include <memory.h>
+#include <assert.h>
 
 #include "bolt.h"
 

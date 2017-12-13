@@ -18,8 +18,10 @@
  */
 
 
-#include <warden.h>
-#include "stdint.h"
+#include <stdlib.h>
+#include <bolt.h>
+#include <memory.h>
+#include "buffer.h"
 #include "protocol_v1.h"
 
 
