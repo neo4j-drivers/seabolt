@@ -27,13 +27,6 @@
 #include "stdio.h"
 
 
-static const unsigned long BOLT_UNKNOWN_ERROR    = 0xB017E000;
-static const unsigned long BOLT_SOCKET_ERROR     = 0xB017E001;
-static const unsigned long BOLT_TLS_ERROR        = 0xB017E002;
-
-//#define BOLT_PROTOCOL_VIOLATION        0xB017E004
-
-
 static FILE* __bolt_log_file;
 
 void BoltLog_setFile(FILE* log_file);

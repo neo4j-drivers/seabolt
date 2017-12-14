@@ -33,26 +33,20 @@ void BoltLog_setFile(FILE* log_file)
 void BoltLog_info(const char* message, ...)
 {
     if (__bolt_log_file == NULL) return;
-    int use_colour = (__bolt_log_file == stderr);
-    if (use_colour) fprintf(__bolt_log_file, "\x1B[36m");
     va_list args;
     va_start(args, message);
     vfprintf(__bolt_log_file, message, args);
     va_end(args);
-    if (use_colour) fprintf(__bolt_log_file, "\x1B[0m");
     fprintf(__bolt_log_file, "\n");
 }
 
 void BoltLog_error(const char* message, ...)
 {
     if (__bolt_log_file == NULL) return;
-    int use_colour = (__bolt_log_file == stderr);
-    if (use_colour) fprintf(__bolt_log_file, "\x1B[33m");
     va_list args;
     va_start(args, message);
     vfprintf(__bolt_log_file, message, args);
     va_end(args);
-    if (use_colour) fprintf(__bolt_log_file, "\x1B[0m");
     fprintf(__bolt_log_file, "\n");
 }
 

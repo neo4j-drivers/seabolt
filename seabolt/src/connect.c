@@ -212,7 +212,7 @@ int _transmit_b(struct BoltConnection* connection, const char* data, int size)
             return -1;
         }
     }
-    BoltLog_info("bolt: Sent %d out of %d bytes", total_sent, size);
+    BoltLog_info("bolt: Sent %d of %d bytes", total_sent, size);
     return total_sent;
 }
 
@@ -272,7 +272,7 @@ int _receive_b(struct BoltConnection* connection, char* buffer, int min_size, in
             return -1;
         }
     }
-    BoltLog_info("bolt: Received %d out of %d..%d bytes", total_received, min_size, max_size);
+    BoltLog_info("bolt: Received %d of %d..%d bytes", total_received, min_size, max_size);
     return total_received;
 }
 
@@ -289,6 +289,7 @@ int _take_b(struct BoltConnection* connection, char* buffer, int size)
             if (max_size == 0)
             {
                 BoltBuffer_compact(connection->rx_buffer_0);
+                max_size = BoltBuffer_loadable(connection->rx_buffer_0);
             }
             max_size = delta > max_size ? delta : max_size;
             int received = _receive_b(connection, BoltBuffer_load_target(connection->rx_buffer_0, max_size), delta, max_size);
