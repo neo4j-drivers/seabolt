@@ -319,6 +319,10 @@ int _unload(struct BoltConnection* connection, struct BoltValue* value)
 
 int BoltProtocolV1_unload(struct BoltConnection* connection, struct BoltValue* value)
 {
+    if (BoltBuffer_unloadable(connection->rx_buffer_1) == 0)
+    {
+        return 0;
+    }
     uint8_t marker;
     uint8_t code;
     int32_t size;
@@ -355,7 +359,7 @@ int BoltProtocolV1_unload(struct BoltConnection* connection, struct BoltValue* v
                 _unload(connection, BoltSummary_value(value, i));
             }
         }
-        return 0;
+        return 1;
 
     }
     return -1;  // BOLT_ERROR_WRONG_TYPE
