@@ -103,6 +103,21 @@ int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* val
     }
 }
 
+int _compile(struct BoltConnection* connection)
+{
+    // TODO: more chunks if size is too big
+    int size = BoltBuffer_unloadable(connection->tx_buffer_1);
+    char header[2];
+    header[0] = (char)(size >> 8);
+    header[1] = (char)(size);
+    BoltBuffer_load(connection->tx_buffer_0, &header[0], sizeof(header));
+    BoltBuffer_load(connection->tx_buffer_0, BoltBuffer_unload_target(connection->tx_buffer_1, size), size);
+    header[0] = (char)(0);
+    header[1] = (char)(0);
+    BoltBuffer_load(connection->tx_buffer_0, &header[0], sizeof(header));
+    BoltBuffer_compact(connection->tx_buffer_1);
+}
+
 int BoltProtocolV1_load_init(struct BoltConnection* connection, const char* user, const char* password)
 {
     BoltBuffer_load(connection->tx_buffer_1, "\xB2\x01", 2);
@@ -121,7 +136,7 @@ int BoltProtocolV1_load_init(struct BoltConnection* connection, const char* user
     }
     BoltProtocolV1_load(connection, auth);
     BoltValue_destroy(auth);
-    BoltBuffer_push_stop(connection->tx_buffer_1);
+    _compile(connection);
 }
 
 int BoltProtocolV1_load_run(struct BoltConnection* connection, const char* statement)
@@ -129,13 +144,13 @@ int BoltProtocolV1_load_run(struct BoltConnection* connection, const char* state
     BoltBuffer_load(connection->tx_buffer_1, "\xB2\x10", 2);
     BoltProtocolV1_load_string(connection, statement, strlen(statement));
     BoltBuffer_load(connection->tx_buffer_1, "\xA0", 2);
-    BoltBuffer_push_stop(connection->tx_buffer_1);
+    _compile(connection);
 }
 
 int BoltProtocolV1_load_pull(struct BoltConnection* connection)
 {
     BoltBuffer_load(connection->tx_buffer_1, "\xB0\x3F", 2);
-    BoltBuffer_push_stop(connection->tx_buffer_1);
+    _compile(connection);
 }
 
 int _unload(struct BoltConnection* connection, struct BoltValue* value);

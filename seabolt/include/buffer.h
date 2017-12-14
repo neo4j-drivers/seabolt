@@ -34,8 +34,6 @@ struct BoltBuffer
     int extent;
     int cursor;
     char* data;
-    int* stops;
-    int num_stops;
 };
 
 
@@ -54,12 +52,6 @@ void BoltBuffer_load(struct BoltBuffer* buffer, const char* data, int size);
 void BoltBuffer_load_uint8(struct BoltBuffer* buffer, uint8_t x);
 
 void BoltBuffer_load_int32be(struct BoltBuffer* buffer, int32_t x);
-
-void BoltBuffer_push_stop(struct BoltBuffer* buffer);
-
-int BoltBuffer_next_stop(struct BoltBuffer* buffer);
-
-void BoltBuffer_pull_stop(struct BoltBuffer* buffer);
 
 int BoltBuffer_unloadable(struct BoltBuffer* buffer);
 

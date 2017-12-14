@@ -31,15 +31,12 @@ struct BoltBuffer* BoltBuffer_create(size_t size)
     buffer->data = BoltMem_allocate(buffer->size);
     buffer->extent = 0;
     buffer->cursor = 0;
-    buffer->num_stops = 0;
-    buffer->stops = BoltMem_allocate(0);
     return buffer;
 }
 
 void BoltBuffer_destroy(struct BoltBuffer* buffer)
 {
     buffer->data = BoltMem_deallocate(buffer->data, buffer->size);
-    buffer->stops = BoltMem_deallocate(buffer->stops, buffer->num_stops * sizeof(int));
     BoltMem_deallocate(buffer, sizeof(struct BoltBuffer));
 }
 
@@ -98,34 +95,9 @@ void BoltBuffer_load_int32be(struct BoltBuffer* buffer, int32_t x)
     target[3] = (char)(x);
 }
 
-void BoltBuffer_push_stop(struct BoltBuffer* buffer)
-{
-    int num_stops = buffer->num_stops + 1;
-    buffer->stops = BoltMem_reallocate(buffer->stops, buffer->num_stops * sizeof(int), num_stops * sizeof(int));
-    buffer->stops[buffer->num_stops] = buffer->extent;
-    buffer->num_stops = num_stops;
-}
-
-int BoltBuffer_next_stop(struct BoltBuffer* buffer)
-{
-    return buffer->num_stops == 0 ? -1 : buffer->stops[0];
-}
-
-void BoltBuffer_pull_stop(struct BoltBuffer* buffer)
-{
-    if (buffer->num_stops > 0)
-    {
-        int num_stops = buffer->num_stops - 1;
-        memcpy(&buffer->stops[0], &buffer->stops[1], num_stops * sizeof(int));
-        buffer->stops = BoltMem_reallocate(buffer->stops, buffer->num_stops * sizeof(int), num_stops * sizeof(int));
-        buffer->num_stops = num_stops;
-    }
-}
-
 int BoltBuffer_unloadable(struct BoltBuffer* buffer)
 {
-    int stop = BoltBuffer_next_stop(buffer);
-    return (stop == -1 ? buffer->extent : stop) - buffer->cursor;
+    return buffer->extent - buffer->cursor;
 }
 
 char* BoltBuffer_unload_target(struct BoltBuffer* buffer, int size)
