@@ -26,7 +26,7 @@
 
 void _dump(struct BoltValue* value)
 {
-    BoltValue_write(stdout, value);
+    BoltValue_write(stdout, value, 0);
     fprintf(stdout, "\n");
 }
 

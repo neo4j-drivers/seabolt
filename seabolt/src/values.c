@@ -190,24 +190,26 @@ int BoltNull_write(FILE* file, const struct BoltValue* value)
     fprintf(file, "~");
 }
 
-int BoltList_write(FILE* file, const struct BoltValue* value)
+int BoltList_write(FILE* file, const struct BoltValue* value, int32_t protocol_version)
 {
     assert(BoltValue_type(value) == BOLT_LIST);
     fprintf(file, "[");
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) fprintf(file, ", ");
-        BoltValue_write(file, BoltList_value(value, i));
+        BoltValue_write(file, BoltList_value(value, i), protocol_version);
     }
     fprintf(file, "]");
 }
 
-int BoltValue_write(FILE* file, struct BoltValue* value)
+int BoltValue_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
 {
     switch (BoltValue_type(value))
     {
         case BOLT_NULL:
             return BoltNull_write(file, value);
+        case BOLT_LIST:
+            return BoltList_write(file, value, protocol_version);
         case BOLT_BIT:
             return BoltBit_write(file, value);
         case BOLT_BYTE:
@@ -225,7 +227,7 @@ int BoltValue_write(FILE* file, struct BoltValue* value)
         case BOLT_UTF16_ARRAY:
             return -1;
         case BOLT_UTF8_DICTIONARY:
-            return BoltUTF8Dictionary_write(file, value);
+            return BoltUTF8Dictionary_write(file, value, protocol_version);
         case BOLT_UTF16_DICTIONARY:
             return -1;
         case BOLT_NUM8:
@@ -269,44 +271,15 @@ int BoltValue_write(FILE* file, struct BoltValue* value)
         case BOLT_FLOAT64_ARRAY:
             return BoltFloat64Array_write(file, value);
         case BOLT_STRUCTURE:
-            return BoltStructure_write(file, value);
+            return BoltStructure_write(file, value, protocol_version);
         case BOLT_STRUCTURE_ARRAY:
-            return BoltStructureArray_write(file, value);
+            return BoltStructureArray_write(file, value, protocol_version);
         case BOLT_REQUEST:
-            fprintf(file, "<REQUEST>");
-            return 0;
+            return BoltRequest_write(file, value, protocol_version);
         case BOLT_SUMMARY:
-            fprintf(file, "<SUMMARY>");
-            return 0;
+            return BoltSummary_write(file, value, protocol_version);
         default:
             fprintf(file, "?");
             return -1;
-    }
-}
-
-int BoltValue_write_line(FILE* file, struct BoltValue* value)
-{
-    switch (BoltValue_type(value))
-    {
-        case BOLT_REQUEST:
-            return BoltRequest_write_line(file, value, NULL);
-        case BOLT_SUMMARY:
-            return BoltSummary_write_line(file, value, NULL);
-        case BOLT_LIST:
-        {
-            for (int i = 0; i < value->size; i++)
-            {
-                if (i > 0) fprintf(file, "\t");
-                BoltValue_write(file, BoltList_value(value, i));
-            }
-            fprintf(file, "\n");
-            return 0;
-        }
-        default:
-        {
-            int written = BoltValue_write(file, value);
-            fprintf(file, "\n");
-            return written;
-        }
     }
 }

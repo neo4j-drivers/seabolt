@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <values.h>
+#include <protocol_v1.h>
 
 
 static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
@@ -121,25 +122,45 @@ struct BoltValue* BoltStructureArray_at(const struct BoltValue* value, int32_t a
     return BoltList_value(&value->data.extended.as_value[array_index], structure_index);
 }
 
-int BoltStructure_write(FILE* file, struct BoltValue* value)
+int BoltStructure_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
 {
     assert(BoltValue_type(value) == BOLT_STRUCTURE);
     int16_t code = BoltStructure_code(value);
-    fprintf(file, "$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+    switch (protocol_version)
+    {
+        case 1:
+        {
+            const char* name = BoltProtocolV1_structure_name(code);
+            fprintf(file, "$%s", name);
+            break;
+        }
+        default:
+            fprintf(file, "$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+    }
     fprintf(file, "(");
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) fprintf(file, " ");
-        BoltValue_write(file, BoltStructure_value(value, i));
+        BoltValue_write(file, BoltStructure_value(value, i), protocol_version);
     }
     fprintf(file, ")");
 }
 
-int BoltStructureArray_write(FILE* file, struct BoltValue* value)
+int BoltStructureArray_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
 {
     assert(BoltValue_type(value) == BOLT_STRUCTURE_ARRAY);
     int16_t code = BoltStructure_code(value);
-    fprintf(file, "$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+    switch (protocol_version)
+    {
+        case 1:
+        {
+            const char* name = BoltProtocolV1_structure_name(code);
+            fprintf(file, "$%s", name);
+            break;
+        }
+        default:
+            fprintf(file, "$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+    }
     fprintf(file, "[");
     for (int i = 0; i < value->size; i++)
     {
@@ -147,50 +168,56 @@ int BoltStructureArray_write(FILE* file, struct BoltValue* value)
         for (int j = 0; j < BoltStructureArray_get_size(value, i); j++)
         {
             if (j > 0) fprintf(file, " ");
-            BoltValue_write(file, BoltStructureArray_at(value, i, j));
+            BoltValue_write(file, BoltStructureArray_at(value, i, j), protocol_version);
         }
     }
     fprintf(file, "]");
 }
 
-int BoltRequest_write_line(FILE* file, struct BoltValue* value, const char* name)
+int BoltRequest_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
 {
     assert(BoltValue_type(value) == BOLT_REQUEST);
     int16_t code = BoltRequest_code(value);
-    if (name == NULL)
+    switch (protocol_version)
     {
-        fprintf(file, "C: Request<#%c%c>", hex1(&code, 0), hex0(&code, 0));
+        case 1:
+        {
+            const char* name = BoltProtocolV1_request_name(code);
+            fprintf(file, "%s", name);
+            break;
+        }
+        default:
+            fprintf(file, "Request<#%c%c>", hex1(&code, 0), hex0(&code, 0));
     }
-    else
-    {
-        fprintf(file, "C: %s", name);
-    }
-    fprintf(file, " ");
+    fprintf(file, "(");
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) fprintf(file, " ");
-        BoltValue_write(file, BoltRequest_value(value, i));
+        BoltValue_write(file, BoltRequest_value(value, i), protocol_version);
     }
-    fprintf(file, "\n");
+    fprintf(file, ")");
 }
 
-int BoltSummary_write_line(FILE* file, struct BoltValue* value, const char* name)
+int BoltSummary_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
 {
     assert(BoltValue_type(value) == BOLT_SUMMARY);
     int16_t code = BoltSummary_code(value);
-    if (name == NULL)
+    switch (protocol_version)
     {
-        fprintf(file, "S: Summary<#%c%c>", hex1(&code, 0), hex0(&code, 0));
+        case 1:
+        {
+            const char* name = BoltProtocolV1_summary_name(code);
+            fprintf(file, "%s", name);
+            break;
+        }
+        default:
+            fprintf(file, "Summary<#%c%c>", hex1(&code, 0), hex0(&code, 0));
     }
-    else
-    {
-        fprintf(file, "S: %s", name);
-    }
-    fprintf(file, " ");
+    fprintf(file, "(");
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) fprintf(file, " ");
-        BoltValue_write(file, BoltSummary_value(value, i));
+        BoltValue_write(file, BoltSummary_value(value, i), protocol_version);
     }
-    fprintf(file, "\n");
+    fprintf(file, ")");
 }

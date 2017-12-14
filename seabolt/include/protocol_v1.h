@@ -25,6 +25,7 @@
 #define SEABOLT_PROTOCOL_V1
 
 #include <stdint.h>
+#include <connect.h>
 
 
 enum BoltProtocolV1Type
@@ -67,7 +68,11 @@ int BoltProtocolV1_load_pull(struct BoltConnection* connection);
  */
 int BoltProtocolV1_unload(struct BoltConnection* connection, struct BoltValue* value);
 
-int BoltProtocolV1_write_line(FILE* file, struct BoltValue* value);
+const char* BoltProtocolV1_structure_name(int16_t code);
+
+const char* BoltProtocolV1_request_name(int16_t code);
+
+const char* BoltProtocolV1_summary_name(int16_t code);
 
 
 #endif // SEABOLT_PROTOCOL_V1

@@ -308,6 +308,27 @@ int _unloadMap(struct BoltConnection* connection, struct BoltValue* value)
     return -1;  // BOLT_ERROR_WRONG_TYPE
 }
 
+int _unload_structure(struct BoltConnection* connection, struct BoltValue* value)
+{
+    uint8_t marker;
+    int8_t code;
+    int32_t size;
+    BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
+    if (marker >= 0xB0 && marker <= 0xBF)
+    {
+        size = marker & 0x0F;
+        BoltBuffer_unload_int8(connection->rx_buffer_1, &code);
+        BoltValue_to_Structure(value, code, size);
+        for (int i = 0; i < size; i++)
+        {
+            _unload(connection, BoltStructure_value(value, i));
+        }
+        return 0;
+    }
+    // TODO: bigger structures (that are never actually used)
+    return -1;  // BOLT_ERROR_WRONG_TYPE
+}
+
 int _unload(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
@@ -326,6 +347,8 @@ int _unload(struct BoltConnection* connection, struct BoltValue* value)
             return _unloadList(connection, value);
         case BOLT_V1_MAP:
             return _unloadMap(connection, value);
+        case BOLT_V1_STRUCTURE:
+            return _unload_structure(connection, value);
         default:
             BoltLog_error("[NET] Unsupported marker: %d", marker);
             return -1;  // BOLT_UNSUPPORTED_MARKER
@@ -380,36 +403,41 @@ int BoltProtocolV1_unload(struct BoltConnection* connection, struct BoltValue* v
     return -1;  // BOLT_ERROR_WRONG_TYPE
 }
 
-int BoltProtocolV1_write_line(FILE* file, struct BoltValue* value)
+const char* BoltProtocolV1_structure_name(int16_t code)
 {
-    if (value == NULL)
+    switch(code)
     {
-        return -1;
-    }
-    switch (BoltValue_type(value))
-    {
-        case BOLT_REQUEST:
-            switch(BoltRequest_code(value))
-            {
-                case 0x01:
-                    return BoltRequest_write_line(file, value, "INIT");
-                // TODO
-                default:
-                    return BoltRequest_write_line(file, value, NULL);
-            }
-        case BOLT_SUMMARY:
-            switch(BoltSummary_code(value))
-            {
-                case 0x70:
-                    return BoltSummary_write_line(file, value, "SUCCESS");
-                case 0x7E:
-                    return BoltSummary_write_line(file, value, "IGNORED");
-                case 0x7F:
-                    return BoltSummary_write_line(file, value, "FAILURE");
-                default:
-                    return BoltSummary_write_line(file, value, NULL);
-            }
+        case 'N':
+            return "Node";
+            // TODO
         default:
-            return BoltValue_write_line(file, value);
+            return NULL;
+    }
+}
+
+const char* BoltProtocolV1_request_name(int16_t code)
+{
+    switch(code)
+    {
+        case 0x01:
+            return "INIT";
+            // TODO
+        default:
+            return NULL;
+    }
+}
+
+const char* BoltProtocolV1_summary_name(int16_t code)
+{
+    switch(code)
+    {
+        case 0x70:
+            return "SUCCESS";
+        case 0x7E:
+            return "IGNORED";
+        case 0x7F:
+            return "FAILURE";
+        default:
+            return NULL;
     }
 }

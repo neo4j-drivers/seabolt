@@ -299,9 +299,7 @@ enum BoltType BoltValue_type(const struct BoltValue* value);
  */
 void BoltValue_destroy(struct BoltValue* value);
 
-int BoltValue_write(FILE* file, struct BoltValue* value);
-
-int BoltList_write_record(FILE* file, struct BoltValue* value);
+int BoltValue_write(FILE* file, struct BoltValue* value, int32_t protocol_version);
 
 
 
@@ -312,7 +310,7 @@ void BoltList_resize(struct BoltValue* value, int32_t size);
 
 struct BoltValue* BoltList_value(const struct BoltValue* value, int32_t index);
 
-int BoltValue_write_line(FILE* file, struct BoltValue* value);
+int BoltList_write(FILE* file, const struct BoltValue* value, int32_t protocol_version);
 
 
 char BoltBit_get(const struct BoltValue* value);
@@ -379,7 +377,7 @@ int BoltUTF8_write(FILE* file, struct BoltValue* value);
 
 int BoltUTF8Array_write(FILE* file, struct BoltValue* value);
 
-int BoltUTF8Dictionary_write(FILE* file, struct BoltValue* value);
+int BoltUTF8Dictionary_write(FILE* file, struct BoltValue* value, int32_t protocol_version);
 
 
 
@@ -527,13 +525,13 @@ void BoltStructureArray_set_size(struct BoltValue* value, int32_t index, int32_t
 
 struct BoltValue* BoltStructureArray_at(const struct BoltValue* value, int32_t array_index, int32_t structure_index);
 
-int BoltStructure_write(FILE* file, struct BoltValue* value);
+int BoltStructure_write(FILE* file, struct BoltValue* value, int32_t protocol_version);
 
-int BoltStructureArray_write(FILE* file, struct BoltValue* value);
+int BoltStructureArray_write(FILE* file, struct BoltValue* value, int32_t protocol_version);
 
-int BoltRequest_write_line(FILE* file, struct BoltValue* value, const char* name);
+int BoltRequest_write(FILE* file, struct BoltValue* value, int32_t protocol_version);
 
-int BoltSummary_write_line(FILE* file, struct BoltValue* value, const char* name);
+int BoltSummary_write(FILE* file, struct BoltValue* value, int32_t protocol_version);
 
 
 #endif // SEABOLT_VALUES

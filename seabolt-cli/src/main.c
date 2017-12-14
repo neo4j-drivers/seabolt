@@ -81,6 +81,9 @@ int run(const char* statement)
     assert(connection->status == BOLT_CONNECTED);
 
     BoltConnection_init_b(connection, BOLT_USER, BOLT_PASSWORD);
+    struct BoltValue* current = BoltConnection_current(connection);
+    BoltValue_write(stdout, current, connection->protocol_version);
+    fprintf(stdout, "\n");
     assert(connection->status == BOLT_READY);
 
     timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after handshake and initialisation
@@ -92,16 +95,23 @@ int run(const char* statement)
     timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission
 
     BoltConnection_receive_b(connection);
+    current = BoltConnection_current(connection);
+    BoltValue_write(stdout, current, connection->protocol_version);
+    fprintf(stdout, "\n");
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
     long record_count = 0;
     while (BoltConnection_fetch_b(connection))
     {
-        struct BoltValue* current = BoltConnection_current(connection);
-//        BoltValue_write_line(stdout, current);
+        current = BoltConnection_current(connection);
+        BoltValue_write(stdout, current, connection->protocol_version);
+        fprintf(stdout, "\n");
         record_count += 1;
     }
+    current = BoltConnection_current(connection);
+    BoltValue_write(stdout, current, connection->protocol_version);
+    fprintf(stdout, "\n");
 
     timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
 
