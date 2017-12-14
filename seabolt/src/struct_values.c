@@ -23,6 +23,18 @@
 #include <values.h>
 
 
+static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
+                                  '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+#define hex3(mem, offset) HEX_DIGITS[((mem)[offset] >> 12) & 0x0F]
+
+#define hex2(mem, offset) HEX_DIGITS[((mem)[offset] >> 8) & 0x0F]
+
+#define hex1(mem, offset) HEX_DIGITS[((mem)[offset] >> 4) & 0x0F]
+
+#define hex0(mem, offset) HEX_DIGITS[(mem)[offset] & 0x0F]
+
+
 void _to_structure(struct BoltValue* value, enum BoltType type, int16_t code, int32_t size)
 {
     _recycle(value);
@@ -107,4 +119,72 @@ void BoltStructureArray_set_size(struct BoltValue* value, int32_t index, int32_t
 struct BoltValue* BoltStructureArray_at(const struct BoltValue* value, int32_t array_index, int32_t structure_index)
 {
     return BoltList_value(&value->data.extended.as_value[array_index], structure_index);
+}
+
+int BoltStructure_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_STRUCTURE);
+    int16_t code = BoltStructure_code(value);
+    fprintf(file, "$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+    fprintf(file, "(");
+    for (int i = 0; i < value->size; i++)
+    {
+        if (i > 0) fprintf(file, " ");
+        BoltValue_write(file, BoltStructure_value(value, i));
+    }
+    fprintf(file, ")");
+}
+
+int BoltStructureArray_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_STRUCTURE_ARRAY);
+    int16_t code = BoltStructure_code(value);
+    fprintf(file, "$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+    fprintf(file, "[");
+    for (int i = 0; i < value->size; i++)
+    {
+        if (i > 0) fprintf(file, ", ");
+        for (int j = 0; j < BoltStructureArray_get_size(value, i); j++)
+        {
+            if (j > 0) fprintf(file, " ");
+            BoltValue_write(file, BoltStructureArray_at(value, i, j));
+        }
+    }
+    fprintf(file, "]");
+}
+
+int BoltRequest_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_REQUEST);
+    int16_t code = BoltRequest_code(value);
+    switch (code)
+    {
+        default:
+            fprintf(file, "Request<#%c%c%c%c>", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+    }
+    fprintf(file, "(");
+    for (int i = 0; i < value->size; i++)
+    {
+        if (i > 0) fprintf(file, " ");
+        BoltValue_write(file, BoltRequest_value(value, i));
+    }
+    fprintf(file, ")");
+}
+
+int BoltSummary_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_SUMMARY);
+    int16_t code = BoltSummary_code(value);
+    switch (code)
+    {
+        default:
+            fprintf(file, "Summary<#%c%c%c%c>", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+    }
+    fprintf(file, "(");
+    for (int i = 0; i < value->size; i++)
+    {
+        if (i > 0) fprintf(file, " ");
+        BoltValue_write(file, BoltSummary_value(value, i));
+    }
+    fprintf(file, ")");
 }

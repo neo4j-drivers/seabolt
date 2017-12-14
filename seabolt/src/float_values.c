@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <values.h>
+#include <assert.h>
 
 
 void BoltValue_to_Float32(struct BoltValue* value, float x)
@@ -82,4 +83,38 @@ double BoltFloat64Array_get(const struct BoltValue* value, int32_t index)
     const double* data = value->size <= sizeof(value->data) / sizeof(double) ?
                          value->data.as_double : value->data.extended.as_double;
     return data[index];
+}
+
+int BoltFloat32_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_FLOAT32);
+    fprintf(file, "f32(%f)", BoltFloat32_get(value));
+}
+
+int BoltFloat32Array_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_FLOAT32_ARRAY);
+    fprintf(file, "f32[");
+    for (int i = 0; i < value->size; i++)
+    {
+        fprintf(file, i == 0 ? "%f" : ", %f", BoltFloat32Array_get(value, i));
+    }
+    fprintf(file, "]");
+}
+
+int BoltFloat64_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_FLOAT64);
+    fprintf(file, "f64(%f)", BoltFloat64_get(value));
+}
+
+int BoltFloat64Array_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_FLOAT64_ARRAY);
+    fprintf(file, "f64[");
+    for (int i = 0; i < value->size; i++)
+    {
+        fprintf(file, i == 0 ? "%f" : ", %f", BoltFloat64Array_get(value, i));
+    }
+    fprintf(file, "]");
 }

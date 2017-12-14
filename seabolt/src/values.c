@@ -183,3 +183,103 @@ struct BoltValue* BoltList_value(const struct BoltValue* value, int32_t index)
     assert(BoltValue_type(value) == BOLT_LIST);
     return &value->data.extended.as_value[index];
 }
+
+int BoltNull_write(FILE* file, const struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_NULL);
+    fprintf(file, "~");
+}
+
+int BoltList_write(FILE* file, const struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_LIST);
+    fprintf(file, "[");
+    for (int i = 0; i < value->size; i++)
+    {
+        if (i > 0) fprintf(file, ", ");
+        BoltValue_write(file, BoltList_value(value, i));
+    }
+    fprintf(file, "]");
+}
+
+int BoltValue_write(FILE* file, struct BoltValue* value)
+{
+    switch (BoltValue_type(value))
+    {
+        case BOLT_NULL:
+            return BoltNull_write(file, value);
+        case BOLT_BIT:
+            return BoltBit_write(file, value);
+        case BOLT_BYTE:
+            return BoltByte_write(file, value);
+        case BOLT_BIT_ARRAY:
+            return BoltBitArray_write(file, value);
+        case BOLT_BYTE_ARRAY:
+            return BoltByteArray_write(file, value);
+        case BOLT_UTF8:
+            return BoltUTF8_write(file, value);
+        case BOLT_UTF16:
+            return -1;
+        case BOLT_UTF8_ARRAY:
+            return BoltUTF8Array_write(file, value);
+        case BOLT_UTF16_ARRAY:
+            return -1;
+        case BOLT_UTF8_DICTIONARY:
+            return BoltUTF8Dictionary_write(file, value);
+        case BOLT_UTF16_DICTIONARY:
+            return -1;
+        case BOLT_NUM8:
+            return BoltNum8_write(file, value);
+        case BOLT_NUM16:
+            return BoltNum16_write(file, value);
+        case BOLT_NUM32:
+            return BoltNum32_write(file, value);
+        case BOLT_NUM64:
+            return BoltNum64_write(file, value);
+        case BOLT_NUM8_ARRAY:
+            return BoltNum8Array_write(file, value);
+        case BOLT_NUM16_ARRAY:
+            return BoltNum16Array_write(file, value);
+        case BOLT_NUM32_ARRAY:
+            return BoltNum32Array_write(file, value);
+        case BOLT_NUM64_ARRAY:
+            return BoltNum64Array_write(file, value);
+        case BOLT_INT8:
+            return BoltInt8_write(file, value);
+        case BOLT_INT16:
+            return BoltInt16_write(file, value);
+        case BOLT_INT32:
+            return BoltInt32_write(file, value);
+        case BOLT_INT64:
+            return BoltInt64_write(file, value);
+        case BOLT_INT8_ARRAY:
+            return BoltInt8Array_write(file, value);
+        case BOLT_INT16_ARRAY:
+            return BoltInt16Array_write(file, value);
+        case BOLT_INT32_ARRAY:
+            return BoltInt32Array_write(file, value);
+        case BOLT_INT64_ARRAY:
+            return BoltInt64Array_write(file, value);
+        case BOLT_FLOAT32:
+            return BoltFloat32_write(file, value);
+        case BOLT_FLOAT32_ARRAY:
+            return BoltFloat32Array_write(file, value);
+        case BOLT_FLOAT64:
+            return BoltFloat64_write(file, value);
+        case BOLT_FLOAT64_ARRAY:
+            return BoltFloat64Array_write(file, value);
+        case BOLT_STRUCTURE:
+            return BoltStructure_write(file, value);
+        case BOLT_STRUCTURE_ARRAY:
+            return BoltStructureArray_write(file, value);
+        case BOLT_REQUEST:
+            return BoltRequest_write(file, value);
+        case BOLT_SUMMARY:
+            return BoltSummary_write(file, value);
+        case BOLT_LIST:
+            return BoltList_write(file, value);
+        default:
+            fprintf(file, "?");
+            return -1;
+    }
+}

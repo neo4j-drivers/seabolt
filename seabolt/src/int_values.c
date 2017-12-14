@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <values.h>
+#include <assert.h>
 
 
 void BoltValue_to_Int8(struct BoltValue* value, int8_t x)
@@ -144,4 +145,72 @@ int64_t BoltInt64Array_get(const struct BoltValue* value, int32_t index)
     const int64_t* data = value->size <= sizeof(value->data) / sizeof(int64_t) ?
                           value->data.as_int64 : value->data.extended.as_int64;
     return data[index];
+}
+
+int BoltInt8_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_INT8);
+    fprintf(file, "i8(%d)", BoltInt8_get(value));
+}
+
+int BoltInt16_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_INT16);
+    fprintf(file, "i16(%d)", BoltInt16_get(value));
+}
+
+int BoltInt32_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_INT32);
+    fprintf(file, "i32(%d)", BoltInt32_get(value));
+}
+
+int BoltInt64_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_INT64);
+    fprintf(file, "i64(%ld)", BoltInt64_get(value));
+}
+
+int BoltInt8Array_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_INT8_ARRAY);
+    fprintf(file, "i8[");
+    for (int i = 0; i < value->size; i++)
+    {
+        fprintf(file, i == 0 ? "%d" : ", %d", BoltInt8Array_get(value, i));
+    }
+    fprintf(file, "]");
+}
+
+int BoltInt16Array_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_INT16_ARRAY);
+    fprintf(file, "i16[");
+    for (int i = 0; i < value->size; i++)
+    {
+        fprintf(file, i == 0 ? "%d" : ", %d", BoltInt16Array_get(value, i));
+    }
+    fprintf(file, "]");
+}
+
+int BoltInt32Array_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_INT32_ARRAY);
+    fprintf(file, "i32[");
+    for (int i = 0; i < value->size; i++)
+    {
+        fprintf(file, i == 0 ? "%d" : ", %d", BoltInt32Array_get(value, i));
+    }
+    fprintf(file, "]");
+}
+
+int BoltInt64Array_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_INT64_ARRAY);
+    fprintf(file, "i64[");
+    for (int i = 0; i < value->size; i++)
+    {
+        fprintf(file, i == 0 ? "%ld" : ", %ld", BoltInt64Array_get(value, i));
+    }
+    fprintf(file, "]");
 }

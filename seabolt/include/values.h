@@ -303,9 +303,14 @@ int BoltValue_write(FILE* file, struct BoltValue* value);
 
 
 
+int BoltNull_write(FILE* file, const struct BoltValue* value);
+
+
 void BoltList_resize(struct BoltValue* value, int32_t size);
 
 struct BoltValue* BoltList_value(const struct BoltValue* value, int32_t index);
+
+int BoltList_write(FILE* file, const struct BoltValue* value);
 
 
 
@@ -316,6 +321,14 @@ char BoltByte_get(const struct BoltValue* value);
 char BoltBitArray_get(const struct BoltValue* value, int32_t index);
 
 char BoltByteArray_get(const struct BoltValue* value, int32_t index);
+
+int BoltBit_write(FILE* file, const struct BoltValue* value);
+
+int BoltBitArray_write(FILE* file, const struct BoltValue* value);
+
+int BoltByte_write(FILE* file, const struct BoltValue* value);
+
+int BoltByteArray_write(FILE* file, const struct BoltValue* value);
 
 
 
@@ -361,6 +374,12 @@ void BoltUTF8Dictionary_resize(struct BoltValue* value, int32_t size);
 
 void BoltUTF16Dictionary_resize(struct BoltValue* value, int32_t size);
 
+int BoltUTF8_write(FILE* file, struct BoltValue* value);
+
+int BoltUTF8Array_write(FILE* file, struct BoltValue* value);
+
+int BoltUTF8Dictionary_write(FILE* file, struct BoltValue* value);
+
 
 
 uint8_t BoltNum8_get(const struct BoltValue* value);
@@ -378,6 +397,22 @@ uint16_t BoltNum16Array_get(const struct BoltValue* value, int32_t index);
 uint32_t BoltNum32Array_get(const struct BoltValue* value, int32_t index);
 
 uint64_t BoltNum64Array_get(const struct BoltValue* value, int32_t index);
+
+int BoltNum8_write(FILE* file, struct BoltValue* value);
+
+int BoltNum16_write(FILE* file, struct BoltValue* value);
+
+int BoltNum32_write(FILE* file, struct BoltValue* value);
+
+int BoltNum64_write(FILE* file, struct BoltValue* value);
+
+int BoltNum8Array_write(FILE* file, struct BoltValue* value);
+
+int BoltNum16Array_write(FILE* file, struct BoltValue* value);
+
+int BoltNum32Array_write(FILE* file, struct BoltValue* value);
+
+int BoltNum64Array_write(FILE* file, struct BoltValue* value);
 
 
 
@@ -397,6 +432,21 @@ int32_t BoltInt32Array_get(const struct BoltValue* value, int32_t index);
 
 int64_t BoltInt64Array_get(const struct BoltValue* value, int32_t index);
 
+int BoltInt8_write(FILE* file, struct BoltValue* value);
+
+int BoltInt16_write(FILE* file, struct BoltValue* value);
+
+int BoltInt32_write(FILE* file, struct BoltValue* value);
+
+int BoltInt64_write(FILE* file, struct BoltValue* value);
+
+int BoltInt8Array_write(FILE* file, struct BoltValue* value);
+
+int BoltInt16Array_write(FILE* file, struct BoltValue* value);
+
+int BoltInt32Array_write(FILE* file, struct BoltValue* value);
+
+int BoltInt64Array_write(FILE* file, struct BoltValue* value);
 
 
 struct float_pair
@@ -449,6 +499,14 @@ double BoltFloat64_get(const struct BoltValue* value);
 
 double BoltFloat64Array_get(const struct BoltValue* value, int32_t index);
 
+int BoltFloat32_write(FILE* file, struct BoltValue* value);
+
+int BoltFloat32Array_write(FILE* file, struct BoltValue* value);
+
+int BoltFloat64_write(FILE* file, struct BoltValue* value);
+
+int BoltFloat64Array_write(FILE* file, struct BoltValue* value);
+
 
 int16_t BoltStructure_code(const struct BoltValue* value);
 
@@ -467,6 +525,14 @@ int32_t BoltStructureArray_get_size(const struct BoltValue* value, int32_t index
 void BoltStructureArray_set_size(struct BoltValue* value, int32_t index, int32_t size);
 
 struct BoltValue* BoltStructureArray_at(const struct BoltValue* value, int32_t array_index, int32_t structure_index);
+
+int BoltStructure_write(FILE* file, struct BoltValue* value);
+
+int BoltStructureArray_write(FILE* file, struct BoltValue* value);
+
+int BoltRequest_write(FILE* file, struct BoltValue* value);
+
+int BoltSummary_write(FILE* file, struct BoltValue* value);
 
 
 #endif // SEABOLT_VALUES

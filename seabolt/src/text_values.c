@@ -162,3 +162,65 @@ void BoltUTF8Dictionary_resize(struct BoltValue* value, int32_t size)
     assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
     _resize(value, size, 2);
 }
+
+void _write_string(FILE* file, const char* data, size_t size)
+{
+    fprintf(file, "\"");
+    for (size_t i = 0; i < size; i++)
+    {
+        fprintf(file, "%c", data[i]);
+    }
+    fprintf(file, "\"");
+}
+
+int BoltUTF8_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_UTF8);
+    char* data = BoltUTF8_get(value);
+    fprintf(file, "s8(\"");
+    for (int i = 0; i < value->size; i++)
+    {
+        fprintf(file, "%c", data[i]);
+    }
+    fprintf(file, "\")");
+}
+
+int BoltUTF8Array_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_UTF8_ARRAY);
+    fprintf(file, "s8[");
+    for (long i = 0; i < value->size; i++)
+    {
+        if (i > 0) { fprintf(file, ", "); }
+        struct array_t string = value->data.extended.as_array[i];
+        if (string.size == 0)
+        {
+            fprintf(file, "\"\"");
+        }
+        else
+        {
+            _write_string(file, string.data.as_char, (size_t)(string.size));
+        }
+    }
+    fprintf(file, "]");
+}
+
+int BoltUTF8Dictionary_write(FILE* file, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
+    fprintf(file, "d8[");
+    int comma = 0;
+    for (int i = 0; i < value->size; i++)
+    {
+        struct BoltValue* key = BoltUTF8Dictionary_key(value, i);
+        if (key != NULL)
+        {
+            if (comma) fprintf(file, ", ");
+            _write_string(file, BoltUTF8_get(key), (size_t)(key->size));
+            fprintf(file, " ");
+            BoltValue_write(file, BoltUTF8Dictionary_value(value, i));
+            comma = 1;
+        }
+    }
+    fprintf(file, "]");
+}
