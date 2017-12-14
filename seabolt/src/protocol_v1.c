@@ -147,6 +147,12 @@ int BoltProtocolV1_load_run(struct BoltConnection* connection, const char* state
     _compile(connection);
 }
 
+int BoltProtocolV1_load_discard(struct BoltConnection* connection)
+{
+    BoltBuffer_load(connection->tx_buffer_1, "\xB0\x2F", 2);
+    _compile(connection);
+}
+
 int BoltProtocolV1_load_pull(struct BoltConnection* connection)
 {
     BoltBuffer_load(connection->tx_buffer_1, "\xB0\x3F", 2);

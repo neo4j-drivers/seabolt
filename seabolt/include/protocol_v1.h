@@ -54,6 +54,8 @@ int BoltProtocolV1_load_init(struct BoltConnection* connection, const char* user
 
 int BoltProtocolV1_load_run(struct BoltConnection* connection, const char* statement);
 
+int BoltProtocolV1_load_discard(struct BoltConnection* connection);
+
 int BoltProtocolV1_load_pull(struct BoltConnection* connection);
 
 /**

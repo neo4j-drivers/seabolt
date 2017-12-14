@@ -482,6 +482,25 @@ int BoltConnection_load_run(struct BoltConnection* connection, const char* state
     }
 }
 
+int BoltConnection_load_discard(struct BoltConnection* connection, int n)
+{
+    switch (connection->protocol_version)
+    {
+        case 1:
+            if (n >= 0)
+            {
+                return -1;
+            }
+            else
+            {
+                BoltProtocolV1_load_discard(connection);
+                return 0;
+            }
+        default:
+            return -1;
+    }
+}
+
 int BoltConnection_load_pull(struct BoltConnection* connection, int n)
 {
     switch (connection->protocol_version)

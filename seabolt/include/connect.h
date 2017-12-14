@@ -136,6 +136,15 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user, c
 int BoltConnection_load_run(struct BoltConnection* connection, const char* statement);
 
 /**
+ * Load a DISCARD message into the outgoing message queue.
+ *
+ * @param connection
+ * @param n
+ * @return
+ */
+int BoltConnection_load_discard(struct BoltConnection* connection, int n);
+
+/**
  * Load a PULL message into the outgoing message queue.
  *
  * @param connection
