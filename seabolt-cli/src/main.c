@@ -48,12 +48,6 @@ const char* getenv_or_default(const char* name, const char* default_value)
     return (value == NULL) ? default_value : value;
 }
 
-int fprint(FILE* file, struct BoltValue* value)
-{
-//    BoltValue_write(file, value);
-//    fprintf(file, "\n");
-}
-
 int run(const char* statement)
 {
     const char* BOLT_SECURE = getenv_or_default("BOLT_SECURE", "1");
@@ -87,8 +81,6 @@ int run(const char* statement)
     assert(connection->status == BOLT_CONNECTED);
 
     BoltConnection_init_b(connection, BOLT_USER, BOLT_PASSWORD);
-    struct BoltValue* current = BoltConnection_current(connection);
-    fprint(stderr, current);
     assert(connection->status == BOLT_READY);
 
     timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after handshake and initialisation
@@ -100,19 +92,16 @@ int run(const char* statement)
     timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission
 
     BoltConnection_receive_b(connection);
-    current = BoltConnection_current(connection);
-    fprint(stderr, current);
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
     long record_count = 0;
     while (BoltConnection_fetch_b(connection))
     {
-        current = BoltConnection_current(connection);
-        fprint(stdout, current);
+        struct BoltValue* current = BoltConnection_current(connection);
+//        BoltValue_write_line(stdout, current);
         record_count += 1;
     }
-    fprint(stderr, current);
 
     timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
 

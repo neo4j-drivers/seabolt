@@ -379,3 +379,37 @@ int BoltProtocolV1_unload(struct BoltConnection* connection, struct BoltValue* v
     }
     return -1;  // BOLT_ERROR_WRONG_TYPE
 }
+
+int BoltProtocolV1_write_line(FILE* file, struct BoltValue* value)
+{
+    if (value == NULL)
+    {
+        return -1;
+    }
+    switch (BoltValue_type(value))
+    {
+        case BOLT_REQUEST:
+            switch(BoltRequest_code(value))
+            {
+                case 0x01:
+                    return BoltRequest_write_line(file, value, "INIT");
+                // TODO
+                default:
+                    return BoltRequest_write_line(file, value, NULL);
+            }
+        case BOLT_SUMMARY:
+            switch(BoltSummary_code(value))
+            {
+                case 0x70:
+                    return BoltSummary_write_line(file, value, "SUCCESS");
+                case 0x7E:
+                    return BoltSummary_write_line(file, value, "IGNORED");
+                case 0x7F:
+                    return BoltSummary_write_line(file, value, "FAILURE");
+                default:
+                    return BoltSummary_write_line(file, value, NULL);
+            }
+        default:
+            return BoltValue_write_line(file, value);
+    }
+}

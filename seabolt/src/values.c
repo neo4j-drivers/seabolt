@@ -273,13 +273,40 @@ int BoltValue_write(FILE* file, struct BoltValue* value)
         case BOLT_STRUCTURE_ARRAY:
             return BoltStructureArray_write(file, value);
         case BOLT_REQUEST:
-            return BoltRequest_write(file, value);
+            fprintf(file, "<REQUEST>");
+            return 0;
         case BOLT_SUMMARY:
-            return BoltSummary_write(file, value);
-        case BOLT_LIST:
-            return BoltList_write(file, value);
+            fprintf(file, "<SUMMARY>");
+            return 0;
         default:
             fprintf(file, "?");
             return -1;
+    }
+}
+
+int BoltValue_write_line(FILE* file, struct BoltValue* value)
+{
+    switch (BoltValue_type(value))
+    {
+        case BOLT_REQUEST:
+            return BoltRequest_write_line(file, value, NULL);
+        case BOLT_SUMMARY:
+            return BoltSummary_write_line(file, value, NULL);
+        case BOLT_LIST:
+        {
+            for (int i = 0; i < value->size; i++)
+            {
+                if (i > 0) fprintf(file, "\t");
+                BoltValue_write(file, BoltList_value(value, i));
+            }
+            fprintf(file, "\n");
+            return 0;
+        }
+        default:
+        {
+            int written = BoltValue_write(file, value);
+            fprintf(file, "\n");
+            return written;
+        }
     }
 }

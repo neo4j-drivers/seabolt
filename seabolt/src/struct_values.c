@@ -153,38 +153,44 @@ int BoltStructureArray_write(FILE* file, struct BoltValue* value)
     fprintf(file, "]");
 }
 
-int BoltRequest_write(FILE* file, struct BoltValue* value)
+int BoltRequest_write_line(FILE* file, struct BoltValue* value, const char* name)
 {
     assert(BoltValue_type(value) == BOLT_REQUEST);
     int16_t code = BoltRequest_code(value);
-    switch (code)
+    if (name == NULL)
     {
-        default:
-            fprintf(file, "Request<#%c%c%c%c>", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+        fprintf(file, "C: Request<#%c%c>", hex1(&code, 0), hex0(&code, 0));
     }
-    fprintf(file, "(");
+    else
+    {
+        fprintf(file, "C: %s", name);
+    }
+    fprintf(file, " ");
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) fprintf(file, " ");
         BoltValue_write(file, BoltRequest_value(value, i));
     }
-    fprintf(file, ")");
+    fprintf(file, "\n");
 }
 
-int BoltSummary_write(FILE* file, struct BoltValue* value)
+int BoltSummary_write_line(FILE* file, struct BoltValue* value, const char* name)
 {
     assert(BoltValue_type(value) == BOLT_SUMMARY);
     int16_t code = BoltSummary_code(value);
-    switch (code)
+    if (name == NULL)
     {
-        default:
-            fprintf(file, "Summary<#%c%c%c%c>", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+        fprintf(file, "S: Summary<#%c%c>", hex1(&code, 0), hex0(&code, 0));
     }
-    fprintf(file, "(");
+    else
+    {
+        fprintf(file, "S: %s", name);
+    }
+    fprintf(file, " ");
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) fprintf(file, " ");
         BoltValue_write(file, BoltSummary_value(value, i));
     }
-    fprintf(file, ")");
+    fprintf(file, "\n");
 }

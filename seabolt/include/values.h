@@ -301,6 +301,8 @@ void BoltValue_destroy(struct BoltValue* value);
 
 int BoltValue_write(FILE* file, struct BoltValue* value);
 
+int BoltList_write_record(FILE* file, struct BoltValue* value);
+
 
 
 int BoltNull_write(FILE* file, const struct BoltValue* value);
@@ -310,8 +312,7 @@ void BoltList_resize(struct BoltValue* value, int32_t size);
 
 struct BoltValue* BoltList_value(const struct BoltValue* value, int32_t index);
 
-int BoltList_write(FILE* file, const struct BoltValue* value);
-
+int BoltValue_write_line(FILE* file, struct BoltValue* value);
 
 
 char BoltBit_get(const struct BoltValue* value);
@@ -530,9 +531,9 @@ int BoltStructure_write(FILE* file, struct BoltValue* value);
 
 int BoltStructureArray_write(FILE* file, struct BoltValue* value);
 
-int BoltRequest_write(FILE* file, struct BoltValue* value);
+int BoltRequest_write_line(FILE* file, struct BoltValue* value, const char* name);
 
-int BoltSummary_write(FILE* file, struct BoltValue* value);
+int BoltSummary_write_line(FILE* file, struct BoltValue* value, const char* name);
 
 
 #endif // SEABOLT_VALUES

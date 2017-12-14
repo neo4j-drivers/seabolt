@@ -67,5 +67,7 @@ int BoltProtocolV1_load_pull(struct BoltConnection* connection);
  */
 int BoltProtocolV1_unload(struct BoltConnection* connection, struct BoltValue* value);
 
+int BoltProtocolV1_write_line(FILE* file, struct BoltValue* value);
+
 
 #endif // SEABOLT_PROTOCOL_V1

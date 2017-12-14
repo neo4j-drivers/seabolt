@@ -27,6 +27,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <bolt.h>
+#include <stdbool.h>
 
 
 #define INITIAL_TX_BUFFER_SIZE 8192
@@ -85,7 +86,7 @@ void _set_status(struct BoltConnection* connection, enum BoltConnectionStatus st
             BoltLog_info("bolt: Ready");
             break;
         case BOLT_FAILED:
-            BoltLog_info("bolt: FAILURE");
+            BoltLog_info("bolt: FAILED");
             break;
         case BOLT_DEFUNCT:
             BoltLog_info("bolt: DEFUNCT");
@@ -396,7 +397,29 @@ int BoltConnection_fetch_b(struct BoltConnection* connection)
                 chunk_size = char_to_uint16be(header);
             }
             BoltProtocolV1_unload(connection, connection->current);
-            return (BoltValue_type(connection->current) == BOLT_SUMMARY) ? 0 : 1;
+            if (BoltValue_type(connection->current) != BOLT_SUMMARY)
+            {
+                return 1;
+            }
+            int16_t code = BoltSummary_code(connection->current);
+            switch (code)
+            {
+                case 0x70:  // SUCCESS
+                    BoltLog_info("bolt: Success");
+                    _set_status(connection, BOLT_READY, 0);
+                    return 0;
+                case 0x7E:  // IGNORED
+                    BoltLog_info("bolt: Ignored");
+                    return 0;
+                case 0x7F:  // FAILURE
+                    BoltLog_error("bolt: Failure");
+                    _set_status(connection, BOLT_FAILED, -1);
+                    return -1;
+                default:
+                    BoltLog_error("bolt: Protocol violation (received summary code %d)", code);
+                    _set_status(connection, BOLT_DEFUNCT, -1);
+                    return -1;
+            }
         }
         default:
         {
@@ -419,20 +442,25 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user, c
         case 1:
             BoltProtocolV1_load_init(connection, user, password);
             try(BoltConnection_transmit_b(connection));
-            try(BoltConnection_receive_b(connection));
+            int records = 0;
+            while (BoltConnection_fetch_b(connection) == 1)
+            {
+                records += 1;
+            }
             int16_t code = BoltSummary_code(connection->current);
             switch (code)
             {
                 case 0x70:  // SUCCESS
+                    BoltLog_info("bolt: Initialisation SUCCESS");
                     _set_status(connection, BOLT_READY, 0);
-                    return 0;
+                    return records;
                 case 0x7F:  // FAILURE
+                    BoltLog_error("bolt: Initialisation FAILURE");
                     _set_status(connection, BOLT_DEFUNCT, -1);
-                    BoltLog_error("bolt: Initialisation failure");
                     return -1;
                 default:
+                    BoltLog_error("bolt: Protocol violation (received summary code %d)", code);
                     _set_status(connection, BOLT_DEFUNCT, -1);
-                    BoltLog_error("bolt: Protocol violation on initialisation (summary code %d)", code);
                     return -1;
             }
         default:
