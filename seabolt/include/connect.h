@@ -27,7 +27,7 @@
 #include <netdb.h>
 
 
-#define try(code) { int status = (code); if (status == -1) return status; }
+#define try(code) { int status = (code); if (status == -1) { return status; } }
 
 
 enum BoltTransport
@@ -52,14 +52,17 @@ struct BoltConnection
     char address_string[INET6_ADDRSTRLEN];
     int error;
     int error_s;
+    // TODO: better storage for various assorted error codes
     int socket;
     struct ssl_ctx_st* ssl_context;
     struct ssl_st* ssl;
     int32_t protocol_version;
     const char* user_agent;
-    struct BoltBuffer* tx_buffer;       // transmit buffer
-    struct BoltBuffer* rx_buffer;       // receive buffer after chunk processing
-    struct BoltBuffer* raw_rx_buffer;   // receive buffer before chunk processing
+    // TODO raw_tx_buffer with chunks ("stop" moves data across buffers)
+    struct BoltBuffer* tx_buffer_1;     // transmit buffer without chunks
+    struct BoltBuffer* tx_buffer_0;     // transmit buffer with chunks
+    struct BoltBuffer* rx_buffer_0;     // receive buffer with chunks
+    struct BoltBuffer* rx_buffer_1;     // receive buffer without chunks
     unsigned long bolt_error;
     unsigned long openssl_error;
     struct BoltValue* current; // holder for current messages (one at a time so we can reuse this)

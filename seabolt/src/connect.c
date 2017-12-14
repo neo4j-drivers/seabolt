@@ -52,18 +52,20 @@ struct BoltConnection* _create(enum BoltTransport transport)
     memset(connection, 0, sizeof(struct BoltConnection));
     connection->transport = transport;
     connection->user_agent = DEFAULT_USER_AGENT;
-    connection->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
-    connection->rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
-    connection->raw_rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
+    connection->tx_buffer_1 = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
+    connection->tx_buffer_0 = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
+    connection->rx_buffer_0 = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
+    connection->rx_buffer_1 = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
     connection->current = BoltValue_create();
 }
 
 void _destroy(struct BoltConnection* connection)
 {
     BoltValue_destroy(connection->current);
-    BoltBuffer_destroy(connection->raw_rx_buffer);
-    BoltBuffer_destroy(connection->rx_buffer);
-    BoltBuffer_destroy(connection->tx_buffer);
+    BoltBuffer_destroy(connection->rx_buffer_1);
+    BoltBuffer_destroy(connection->rx_buffer_0);
+    BoltBuffer_destroy(connection->tx_buffer_0);
+    BoltBuffer_destroy(connection->tx_buffer_1);
     BoltMem_deallocate(connection, sizeof(struct BoltConnection));
 }
 
@@ -200,9 +202,11 @@ int _transmit_b(struct BoltConnection* connection, const char* data, int size)
             {
                 case BOLT_SOCKET:
                     _set_status(connection, BOLT_DEFUNCT, errno);
+                    BoltLog_error("bolt: Socket error %d on transmit", connection->error);
                     break;
                 case BOLT_SECURE_SOCKET:
                     _set_status(connection, BOLT_DEFUNCT, SSL_get_error(connection->ssl, sent));
+                    BoltLog_error("bolt: SSL error %d on transmit", connection->error);
                     break;
             }
         }
@@ -274,43 +278,43 @@ int _receive_b(struct BoltConnection* connection, char* buffer, int min_size, in
 int _take_b(struct BoltConnection* connection, char* buffer, int size)
 {
     if (size == 0) return 0;
-    int available = BoltBuffer_unloadable(connection->raw_rx_buffer);
+    int available = BoltBuffer_unloadable(connection->rx_buffer_0);
     if (size > available)
     {
         int delta = size - available;
         while (delta > 0)
         {
-            int max_size = BoltBuffer_loadable(connection->raw_rx_buffer);
+            int max_size = BoltBuffer_loadable(connection->rx_buffer_0);
             if (max_size == 0)
             {
-                BoltBuffer_compact(connection->raw_rx_buffer);
+                BoltBuffer_compact(connection->rx_buffer_0);
             }
             max_size = delta > max_size ? delta : max_size;
-            int received = _receive_b(connection, BoltBuffer_load_target(connection->raw_rx_buffer, max_size), delta, max_size);
+            int received = _receive_b(connection, BoltBuffer_load_target(connection->rx_buffer_0, max_size), delta, max_size);
             if (received == -1)
             {
                 return -1;
             }
             // adjust the buffer extent based on the actual amount of data received
-            connection->raw_rx_buffer->extent = connection->raw_rx_buffer->extent - max_size + received;
+            connection->rx_buffer_0->extent = connection->rx_buffer_0->extent - max_size + received;
             delta -= received;
         }
     }
-    BoltBuffer_unload(connection->raw_rx_buffer, buffer, size);
+    BoltBuffer_unload(connection->rx_buffer_0, buffer, size);
     return size;
 }
 
 int _handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int32_t _3, int32_t _4)
 {
     BoltLog_info("bolt: Performing handshake");
-    BoltBuffer_load(connection->tx_buffer, "\x60\x60\xB0\x17", 4);
-    BoltBuffer_load_int32be(connection->tx_buffer, _1);
-    BoltBuffer_load_int32be(connection->tx_buffer, _2);
-    BoltBuffer_load_int32be(connection->tx_buffer, _3);
-    BoltBuffer_load_int32be(connection->tx_buffer, _4);
+    BoltBuffer_load(connection->tx_buffer_1, "\x60\x60\xB0\x17", 4);
+    BoltBuffer_load_int32be(connection->tx_buffer_1, _1);
+    BoltBuffer_load_int32be(connection->tx_buffer_1, _2);
+    BoltBuffer_load_int32be(connection->tx_buffer_1, _3);
+    BoltBuffer_load_int32be(connection->tx_buffer_1, _4);
     try(BoltConnection_transmit_b(connection));
-    try(_take_b(connection, BoltBuffer_load_target(connection->rx_buffer, 4), 4));
-    BoltBuffer_unload_int32be(connection->rx_buffer, &connection->protocol_version);
+    try(_take_b(connection, BoltBuffer_load_target(connection->rx_buffer_1, 4), 4));
+    BoltBuffer_unload_int32be(connection->rx_buffer_1, &connection->protocol_version);
     BoltLog_info("bolt: Using Bolt v%d", connection->protocol_version);
 }
 
@@ -342,36 +346,36 @@ void BoltConnection_close_b(struct BoltConnection* connection)
 
 int BoltConnection_transmit_b(struct BoltConnection* connection)
 {
-    BoltBuffer_compact(connection->tx_buffer);
+    BoltBuffer_compact(connection->tx_buffer_1);
     switch (connection->protocol_version)
     {
         case 1:
         {
             // TODO: more chunks if size is too big
-            int size = BoltBuffer_unloadable(connection->tx_buffer);
+            int size = BoltBuffer_unloadable(connection->tx_buffer_1);
             while (size > 0)
             {
                 char header[2];
                 header[0] = (char)(size >> 8);
                 header[1] = (char)(size);
                 try(_transmit_b(connection, &header[0], 2));
-                try(_transmit_b(connection, BoltBuffer_unload_target(connection->tx_buffer, size), size));
+                try(_transmit_b(connection, BoltBuffer_unload_target(connection->tx_buffer_1, size), size));
                 header[0] = (char)(0);
                 header[1] = (char)(0);
                 try(_transmit_b(connection, &header[0], 2));
-                BoltBuffer_pull_stop(connection->tx_buffer);
-                size = BoltBuffer_unloadable(connection->tx_buffer);
+                BoltBuffer_pull_stop(connection->tx_buffer_1);
+                size = BoltBuffer_unloadable(connection->tx_buffer_1);
             }
             return 0;
         }
         default:
         {
-            int size = BoltBuffer_unloadable(connection->tx_buffer);
+            int size = BoltBuffer_unloadable(connection->tx_buffer_1);
             while (size > 0)
             {
-                try(_transmit_b(connection, BoltBuffer_unload_target(connection->tx_buffer, size), size));
-                BoltBuffer_pull_stop(connection->tx_buffer);
-                size = BoltBuffer_unloadable(connection->tx_buffer);
+                try(_transmit_b(connection, BoltBuffer_unload_target(connection->tx_buffer_1, size), size));
+                BoltBuffer_pull_stop(connection->tx_buffer_1);
+                size = BoltBuffer_unloadable(connection->tx_buffer_1);
             }
             return 0;
         }
@@ -381,7 +385,7 @@ int BoltConnection_transmit_b(struct BoltConnection* connection)
 int BoltConnection_receive_b(struct BoltConnection* connection)
 {
     int records = 0;
-    while (BoltConnection_fetch_b(connection))
+    while (BoltConnection_fetch_b(connection) == 1)
     {
         records += 1;
     }
@@ -390,8 +394,8 @@ int BoltConnection_receive_b(struct BoltConnection* connection)
 
 int BoltConnection_fetch_b(struct BoltConnection* connection)
 {
-    BoltBuffer_compact(connection->rx_buffer);
-    BoltBuffer_compact(connection->raw_rx_buffer);
+    BoltBuffer_compact(connection->rx_buffer_1);
+    BoltBuffer_compact(connection->rx_buffer_0);
     switch (connection->protocol_version)
     {
         case 1:
@@ -401,7 +405,7 @@ int BoltConnection_fetch_b(struct BoltConnection* connection)
             int chunk_size = char_to_int16be(header);
             while (chunk_size != 0)
             {
-                try(_take_b(connection, BoltBuffer_load_target(connection->rx_buffer, chunk_size), chunk_size));
+                try(_take_b(connection, BoltBuffer_load_target(connection->rx_buffer_1, chunk_size), chunk_size));
                 try(_take_b(connection, &header[0], 2));
                 chunk_size = char_to_int16be(header);
             }
@@ -430,22 +434,24 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user, c
             BoltProtocolV1_load_init(connection, user, password);
             try(BoltConnection_transmit_b(connection));
             try(BoltConnection_receive_b(connection));
-            BoltProtocolV1_unload(connection, connection->current);
-            switch (BoltSummary_code(connection->current))
+            int16_t code = BoltSummary_code(connection->current);
+            switch (code)
             {
                 case 0x70:  // SUCCESS
                     _set_status(connection, BOLT_READY, 0);
                     return 0;
                 case 0x7F:  // FAILURE
                     _set_status(connection, BOLT_DEFUNCT, -1);
+                    BoltLog_error("bolt: Initialisation failure");
                     return -1;
                 default:
                     _set_status(connection, BOLT_DEFUNCT, -1);
+                    BoltLog_error("bolt: Protocol violation on initialisation (summary code %d)", code);
                     return -1;
             }
         default:
-            BoltLog_error("bolt: Protocol version unsupported");
             _set_status(connection, BOLT_DEFUNCT, -1);
+            BoltLog_error("bolt: Protocol version unsupported");
             return -1;
     }
 }
