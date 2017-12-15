@@ -161,7 +161,7 @@ int BoltProtocolV1_load_pull(struct BoltConnection* connection)
 
 int _unload(struct BoltConnection* connection, struct BoltValue* value);
 
-int _unloadNull(struct BoltConnection* connection, struct BoltValue* value)
+int _unload_null(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
@@ -175,7 +175,7 @@ int _unloadNull(struct BoltConnection* connection, struct BoltValue* value)
     }
 }
 
-int _unloadBoolean(struct BoltConnection* connection, struct BoltValue* value)
+int _unload_boolean(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
@@ -193,7 +193,7 @@ int _unloadBoolean(struct BoltConnection* connection, struct BoltValue* value)
     }
 }
 
-int _unloadInteger(struct BoltConnection* connection, struct BoltValue* value)
+int _unload_integer(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
@@ -235,7 +235,7 @@ int _unloadInteger(struct BoltConnection* connection, struct BoltValue* value)
     }
 }
 
-int _unloadString(struct BoltConnection* connection, struct BoltValue* value)
+int _unload_string(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
@@ -275,7 +275,7 @@ int _unloadString(struct BoltConnection* connection, struct BoltValue* value)
     return -1;  // BOLT_ERROR_WRONG_TYPE
 }
 
-int _unloadList(struct BoltConnection* connection, struct BoltValue* value)
+int _unload_list(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     int32_t size;
@@ -294,7 +294,7 @@ int _unloadList(struct BoltConnection* connection, struct BoltValue* value)
     return -1;  // BOLT_ERROR_WRONG_TYPE
 }
 
-int _unloadMap(struct BoltConnection* connection, struct BoltValue* value)
+int _unload_map(struct BoltConnection* connection, struct BoltValue* value)
 {
     uint8_t marker;
     int32_t size;
@@ -342,17 +342,17 @@ int _unload(struct BoltConnection* connection, struct BoltValue* value)
     switch(BoltProtocolV1_marker_type(marker))
     {
         case BOLT_V1_NULL:
-            return _unloadNull(connection, value);
+            return _unload_null(connection, value);
         case BOLT_V1_BOOLEAN:
-            return _unloadBoolean(connection, value);
+            return _unload_boolean(connection, value);
         case BOLT_V1_INTEGER:
-            return _unloadInteger(connection, value);
+            return _unload_integer(connection, value);
         case BOLT_V1_STRING:
-            return _unloadString(connection, value);
+            return _unload_string(connection, value);
         case BOLT_V1_LIST:
-            return _unloadList(connection, value);
+            return _unload_list(connection, value);
         case BOLT_V1_MAP:
-            return _unloadMap(connection, value);
+            return _unload_map(connection, value);
         case BOLT_V1_STRUCTURE:
             return _unload_structure(connection, value);
         default:
@@ -415,7 +415,12 @@ const char* BoltProtocolV1_structure_name(int16_t code)
     {
         case 'N':
             return "Node";
-            // TODO
+        case 'R':
+            return "Relationship";
+        case 'r':
+            return "UnboundRelationship";
+        case 'P':
+            return "Path";
         default:
             return NULL;
     }

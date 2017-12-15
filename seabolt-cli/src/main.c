@@ -26,6 +26,56 @@
 #include "bolt.h"
 
 
+struct Bolt
+{
+    struct BoltConnection* connection;
+    enum BoltTransport transport;
+    struct addrinfo* address;
+    const char* user;
+    const char* password;
+    struct
+    {
+        struct timespec connect_time;
+        struct timespec init_time;
+    } stats;
+};
+
+const char* getenv_or_default(const char* name, const char* default_value)
+{
+    const char* value = getenv(name);
+    return (value == NULL) ? default_value : value;
+}
+
+struct Bolt* Bolt_create(int argc, char* argv[])
+{
+    const char* BOLT_SECURE = getenv_or_default("BOLT_SECURE", "1");
+    const char* BOLT_HOST = getenv_or_default("BOLT_HOST", "localhost");
+    const char* BOLT_PORT = getenv_or_default("BOLT_PORT", "7687");
+    const char* BOLT_USER = getenv_or_default("BOLT_USER", "neo4j");
+    const char* BOLT_PASSWORD = getenv("BOLT_PASSWORD");
+
+    struct Bolt* bolt = BoltMem_allocate(sizeof(struct Bolt));
+    bolt->transport = (strcmp(BOLT_SECURE, "1") == 0) ? BOLT_SECURE_SOCKET : BOLT_SOCKET;
+
+    int res = getaddrinfo(BOLT_HOST, BOLT_PORT, NULL, &bolt->address);
+    if (res != 0)
+    {
+        BoltLog_error("[NET] Could not resolve address '%s' for port '%s' (error %d)", BOLT_HOST, BOLT_PORT, res);
+        return NULL;
+    }
+
+    bolt->user = BOLT_USER;
+    bolt->password = BOLT_PASSWORD;
+
+    return bolt;
+}
+
+void Bolt_destroy(struct Bolt* bolt)
+{
+    freeaddrinfo(bolt->address);
+    BoltMem_deallocate(bolt, sizeof(struct Bolt));
+}
+
 void timespec_diff(struct timespec* t, struct timespec* t0, struct timespec* t1)
 {
     t->tv_sec = t0->tv_sec - t1->tv_sec;
@@ -42,80 +92,69 @@ void timespec_diff(struct timespec* t, struct timespec* t0, struct timespec* t1)
     }
 }
 
-const char* getenv_or_default(const char* name, const char* default_value)
+int Bolt_connect(struct Bolt* bolt)
 {
-    const char* value = getenv(name);
-    return (value == NULL) ? default_value : value;
+    struct timespec t[2];
+    timespec_get(&t[0], TIME_UTC);
+    bolt->connection = BoltConnection_open_b(bolt->transport, bolt->address);
+    timespec_get(&t[1], TIME_UTC);
+    timespec_diff(&bolt->stats.connect_time, &t[1], &t[0]);
 }
 
-int run(const char* statement)
+int Bolt_init(struct Bolt* bolt)
 {
-    const char* BOLT_SECURE = getenv_or_default("BOLT_SECURE", "1");
-    const char* BOLT_HOST = getenv_or_default("BOLT_HOST", "localhost");
-    const char* BOLT_PORT = getenv_or_default("BOLT_PORT", "7687");
-    const char* BOLT_USER = getenv_or_default("BOLT_USER", "neo4j");
-    const char* BOLT_PASSWORD = getenv("BOLT_PASSWORD");
+    struct timespec t[2];
+    timespec_get(&t[0], TIME_UTC);
+    BoltConnection_init_b(bolt->connection, bolt->user, bolt->password);
+    struct BoltValue* current = BoltConnection_current(bolt->connection);
+    BoltValue_write(stdout, current, bolt->connection->protocol_version);
+    fprintf(stdout, "\n");
+    timespec_get(&t[1], TIME_UTC);
+    timespec_diff(&bolt->stats.init_time, &t[1], &t[0]);
+}
 
+int Bolt_run(struct Bolt* bolt, const char* statement)
+{
     struct timespec t[7];
 
     timespec_get(&t[1], TIME_UTC);    // Checkpoint 1 - right at the start
 
-    struct BoltConnection* connection;
+    Bolt_connect(bolt);
+    assert(bolt->connection->status == BOLT_CONNECTED);
 
-    struct addrinfo* address;
-    int res = getaddrinfo(BOLT_HOST, BOLT_PORT, NULL, &address);
-    if (res != 0)
-    {
-        BoltLog_error("[NET] Could not resolve address '%s' for port '%s' (error %d)", BOLT_HOST, BOLT_PORT, res);
-        return -1;
-    }
-    if (strcmp(BOLT_SECURE, "1") == 0)
-    {
-        connection = BoltConnection_open_b(BOLT_SECURE_SOCKET, address);
-    }
-    else
-    {
-        connection = BoltConnection_open_b(BOLT_SOCKET, address);
-    }
-    freeaddrinfo(address);
-    assert(connection->status == BOLT_CONNECTED);
-
-    BoltConnection_init_b(connection, BOLT_USER, BOLT_PASSWORD);
-    struct BoltValue* current = BoltConnection_current(connection);
-    BoltValue_write(stdout, current, connection->protocol_version);
-    fprintf(stdout, "\n");
-    assert(connection->status == BOLT_READY);
+    Bolt_init(bolt);
+    assert(bolt->connection->status == BOLT_READY);
 
     timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after handshake and initialisation
 
-    BoltConnection_load_run(connection, statement);
-    BoltConnection_load_pull(connection, -1);
-    BoltConnection_transmit_b(connection);
+    BoltConnection_load_run(bolt->connection, statement);
+    BoltConnection_load_pull(bolt->connection, -1);
+    BoltConnection_transmit_b(bolt->connection);
 
     timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission
 
-    BoltConnection_receive_b(connection);
-    current = BoltConnection_current(connection);
-    BoltValue_write(stdout, current, connection->protocol_version);
+    BoltConnection_receive_b(bolt->connection);
+    struct BoltValue* current = BoltConnection_current(bolt->connection);
+    BoltValue_write(stdout, current, bolt->connection->protocol_version);
     fprintf(stdout, "\n");
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
     long record_count = 0;
-    while (BoltConnection_fetch_b(connection))
+    while (BoltConnection_fetch_b(bolt->connection))
     {
-        current = BoltConnection_current(connection);
-        BoltValue_write(stdout, current, connection->protocol_version);
+        current = BoltConnection_current(bolt->connection);
+        BoltValue_write(stdout, current, bolt->connection->protocol_version);
         fprintf(stdout, "\n");
         record_count += 1;
     }
-    current = BoltConnection_current(connection);
-    BoltValue_write(stdout, current, connection->protocol_version);
+    current = BoltConnection_current(bolt->connection);
+    BoltValue_write(stdout, current, bolt->connection->protocol_version);
     fprintf(stdout, "\n");
 
     timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
 
-    BoltConnection_close_b(connection);
+    BoltConnection_close_b(bolt->connection);
 
     timespec_get(&t[6], TIME_UTC);    // Checkpoint 6 - after close
 
@@ -147,6 +186,8 @@ int run(const char* statement)
 
 int main(int argc, char* argv[])
 {
+    struct Bolt* bolt = Bolt_create(argc, argv);
+
     const char* BOLT_LOG = getenv_or_default("BOLT_LOG", "0");
     if (strcmp(BOLT_LOG, "1") == 0)
     {
@@ -162,10 +203,12 @@ int main(int argc, char* argv[])
     }
     if (argc >= 2)
     {
-        run(argv[1]);
+        Bolt_run(bolt, argv[1]);
     }
     else
     {
-        run("RETURN 1");
+        Bolt_run(bolt, "RETURN 1");
     }
+
+    Bolt_destroy(bolt);
 }
