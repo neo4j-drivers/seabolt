@@ -25,6 +25,18 @@
 #include "warden.h"
 
 
+void* memcpyr(void *dest, const void *src, size_t n)
+{
+    char* dest_c = (char*)(dest);
+    const char* src_c = (const char*)(src);
+    for (size_t i = 0; i < n; i++)
+    {
+        dest_c[i] = src_c[n - i - 1];
+    }
+    return dest;
+}
+
+
 void BoltLog_setFile(FILE* log_file)
 {
     __bolt_log_file = log_file;

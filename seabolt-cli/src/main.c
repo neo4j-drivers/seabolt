@@ -160,27 +160,27 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
 
     ///////////////////////////////////////////////////////////////////
 
-    printf("query                : %s\n", statement);
-    printf("record count         : %ld\n", record_count);
+    fprintf(stderr, "query                : %s\n", statement);
+    fprintf(stderr, "record count         : %ld\n", record_count);
 
     timespec_diff(&t[0], &t[2], &t[1]);
-    printf("initialisation       : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    fprintf(stderr, "initialisation       : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[3], &t[2]);
-    printf("query transmission   : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    fprintf(stderr, "query transmission   : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[4], &t[3]);
-    printf("query processing     : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    fprintf(stderr, "query processing     : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[5], &t[4]);
-    printf("result processing    : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    fprintf(stderr, "result processing    : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[6], &t[5]);
-    printf("shutdown             : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    fprintf(stderr, "shutdown             : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[6], &t[1]);
-    printf("=====================================\n");
-    printf("TOTAL                : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    fprintf(stderr, "=====================================\n");
+    fprintf(stderr, "TOTAL                : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
 }
 

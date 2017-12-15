@@ -44,9 +44,17 @@ enum BoltProtocolV1Type
 
 enum BoltProtocolV1Type BoltProtocolV1_marker_type(uint8_t marker);
 
-int BoltProtocolV1_load_string(struct BoltConnection* connection, const char* string, int32_t size);
+int BoltProtocolV1_load_null(struct BoltConnection* connection);
 
-int BoltProtocolV1_load_map(struct BoltConnection* connection, struct BoltValue* value);
+int BoltProtocolV1_load_boolean(struct BoltConnection* connection, int value);
+
+int BoltProtocolV1_load_integer(struct BoltConnection* connection, int64_t value);
+
+int BoltProtocolV1_load_float(struct BoltConnection* connection, double value);
+
+int BoltProtocolV1_load_bytes(struct BoltConnection* connection, const char* string, int32_t size);
+
+int BoltProtocolV1_load_string(struct BoltConnection* connection, const char* string, int32_t size);
 
 int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* value);
 

@@ -95,6 +95,12 @@ char BoltByteArray_get(const struct BoltValue* value, int32_t index)
     return data[index];
 }
 
+char* BoltByteArray_get_all(struct BoltValue* value)
+{
+    return value->size <= sizeof(value->data) / sizeof(char) ?
+           value->data.as_char : value->data.extended.as_char;
+}
+
 int BoltBit_write(FILE* file, const struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_BIT);

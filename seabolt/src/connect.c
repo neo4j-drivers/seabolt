@@ -311,13 +311,13 @@ int _handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int3
 {
     BoltLog_info("bolt: Performing handshake");
     BoltBuffer_load(connection->tx_buffer_0, "\x60\x60\xB0\x17", 4);
-    BoltBuffer_load_int32be(connection->tx_buffer_0, _1);
-    BoltBuffer_load_int32be(connection->tx_buffer_0, _2);
-    BoltBuffer_load_int32be(connection->tx_buffer_0, _3);
-    BoltBuffer_load_int32be(connection->tx_buffer_0, _4);
+    BoltBuffer_load_int32_be(connection->tx_buffer_0, _1);
+    BoltBuffer_load_int32_be(connection->tx_buffer_0, _2);
+    BoltBuffer_load_int32_be(connection->tx_buffer_0, _3);
+    BoltBuffer_load_int32_be(connection->tx_buffer_0, _4);
     try(BoltConnection_transmit_b(connection));
     try(_take_b(connection, BoltBuffer_load_target(connection->rx_buffer_1, 4), 4));
-    BoltBuffer_unload_int32be(connection->rx_buffer_1, &connection->protocol_version);
+    BoltBuffer_unload_int32_be(connection->rx_buffer_1, &connection->protocol_version);
     BoltLog_info("bolt: Using Bolt v%d", connection->protocol_version);
 }
 

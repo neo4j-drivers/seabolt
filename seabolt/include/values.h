@@ -321,6 +321,8 @@ char BoltBitArray_get(const struct BoltValue* value, int32_t index);
 
 char BoltByteArray_get(const struct BoltValue* value, int32_t index);
 
+char* BoltByteArray_get_all(struct BoltValue* value);
+
 int BoltBit_write(FILE* file, const struct BoltValue* value);
 
 int BoltBitArray_write(FILE* file, const struct BoltValue* value);

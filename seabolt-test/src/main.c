@@ -18,10 +18,12 @@
  */
 
 
+#include "test_mem.h"
 #include "test_values.h"
 
 
 int main(int argc, char* argv[])
 {
-    test_types();
+//    test_types();
+    test_memcpyr();
 }
