@@ -58,13 +58,13 @@ int BoltProtocolV1_load_string(struct BoltConnection* connection, const char* st
 
 int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* value);
 
-int BoltProtocolV1_load_init(struct BoltConnection* connection, const char* user, const char* password);
+int BoltProtocolV1_Value_to_INIT(struct BoltValue* value, const char* user_agent, const char* user, const char* password);
 
-int BoltProtocolV1_load_run(struct BoltConnection* connection, const char* statement);
+int BoltProtocolV1_Value_to_RUN(struct BoltValue* value, const char* statement);
 
-int BoltProtocolV1_load_discard(struct BoltConnection* connection);
+int BoltProtocolV1_Value_to_DISCARD_ALL(struct BoltValue* value);
 
-int BoltProtocolV1_load_pull(struct BoltConnection* connection);
+int BoltProtocolV1_Value_to_PULL_ALL(struct BoltValue* value);
 
 /**
  * Top-level unload.

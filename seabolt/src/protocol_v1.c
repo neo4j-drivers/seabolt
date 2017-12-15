@@ -220,57 +220,14 @@ int _load_map_header(struct BoltConnection* connection, int32_t size)
     }
 }
 
-int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* value)
+int _load_structure_header(struct BoltConnection* connection, int16_t code, int8_t size)
 {
-    switch (BoltValue_type(value))
+    if (code < 0 || size < 0 || size >= 0x10)
     {
-        case BOLT_NULL:
-            return BoltProtocolV1_load_null(connection);
-        case BOLT_BIT:
-            return BoltProtocolV1_load_boolean(connection, BoltBit_get(value));
-        case BOLT_BIT_ARRAY:
-        {
-            _load_list_header(connection, value->size);
-            for (int32_t i = 0; i < value->size; i++)
-            {
-                return BoltProtocolV1_load_boolean(connection, BoltBitArray_get(value, i));
-            }
-        }
-        case BOLT_BYTE:
-            // A Byte is coerced to an Integer (Int64)
-            return BoltProtocolV1_load_integer(connection, BoltByte_get(value));
-        case BOLT_BYTE_ARRAY:
-            return BoltProtocolV1_load_bytes(connection, BoltByteArray_get_all(value), value->size);
-        case BOLT_UTF8:
-            return BoltProtocolV1_load_string(connection, BoltUTF8_get(value), value->size);
-        case BOLT_UTF8_DICTIONARY:
-        {
-            _load_map_header(connection, value->size);
-            for (int32_t i = 0; i < value->size; i++)
-            {
-                struct BoltValue* key = BoltUTF8Dictionary_key(value, i);
-                if (key != NULL)
-                {
-                    const char* key_string = BoltUTF8_get(key);
-                    BoltProtocolV1_load_string(connection, key_string, key->size);
-                    BoltProtocolV1_load(connection, BoltUTF8Dictionary_value(value, i));
-                }
-            }
-            return 0;
-        }
-        case BOLT_LIST:
-        {
-            _load_list_header(connection, value->size);
-            for (int32_t i = 0; i < value->size; i++)
-            {
-                BoltProtocolV1_load(connection, BoltList_value(value, i));
-            }
-            return 0;
-        }
-        default:
-            // TODO:  TYPE_NOT_SUPPORTED (vs TYPE_NOT_IMPLEMENTED)
-            return EXIT_FAILURE;
+        return -1;
     }
+    BoltBuffer_load_uint8(connection->tx_buffer_1, (uint8_t)(0xB0 + size));
+    BoltBuffer_load_int8(connection->tx_buffer_1, code);
 }
 
 int _compile(struct BoltConnection* connection)
@@ -288,11 +245,181 @@ int _compile(struct BoltConnection* connection)
     BoltBuffer_compact(connection->tx_buffer_1);
 }
 
-int BoltProtocolV1_load_init(struct BoltConnection* connection, const char* user, const char* password)
+int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* value)
 {
-    BoltBuffer_load(connection->tx_buffer_1, "\xB2\x01", 2);
-    BoltProtocolV1_load_string(connection, connection->user_agent, strlen(connection->user_agent));
-    struct BoltValue* auth = BoltValue_create();
+    switch (BoltValue_type(value))
+    {
+        case BOLT_NULL:
+            return BoltProtocolV1_load_null(connection);
+        case BOLT_BIT:
+            return BoltProtocolV1_load_boolean(connection, BoltBit_get(value));
+        case BOLT_BIT_ARRAY:
+        {
+            try(_load_list_header(connection, value->size));
+            for (int32_t i = 0; i < value->size; i++)
+            {
+                try(BoltProtocolV1_load_boolean(connection, BoltBitArray_get(value, i)));
+            }
+            return 0;
+        }
+        case BOLT_BYTE:
+            // A Byte is coerced to an Integer (Int64)
+            return BoltProtocolV1_load_integer(connection, BoltByte_get(value));
+        case BOLT_BYTE_ARRAY:
+            return BoltProtocolV1_load_bytes(connection, BoltByteArray_get_all(value), value->size);
+        case BOLT_CHAR16:
+            return -1;
+        case BOLT_CHAR32:
+            return -1;
+        case BOLT_CHAR16_ARRAY:
+            return -1;
+        case BOLT_CHAR32_ARRAY:
+            return -1;
+        case BOLT_UTF8:
+            return BoltProtocolV1_load_string(connection, BoltUTF8_get(value), value->size);
+        case BOLT_UTF16:
+            return -1;
+        case BOLT_UTF8_ARRAY:
+            return -1;
+        case BOLT_UTF16_ARRAY:
+            return -1;
+        case BOLT_UTF8_DICTIONARY:
+        {
+            try(_load_map_header(connection, value->size));
+            for (int32_t i = 0; i < value->size; i++)
+            {
+                struct BoltValue* key = BoltUTF8Dictionary_key(value, i);
+                if (key != NULL)
+                {
+                    const char* key_string = BoltUTF8_get(key);
+                    try(BoltProtocolV1_load_string(connection, key_string, key->size));
+                    try(BoltProtocolV1_load(connection, BoltUTF8Dictionary_value(value, i)));
+                }
+            }
+            return 0;
+        }
+        case BOLT_UTF16_DICTIONARY:
+            return -1;
+        case BOLT_NUM8:
+            return BoltProtocolV1_load_integer(connection, BoltNum8_get(value));
+        case BOLT_NUM16:
+            return BoltProtocolV1_load_integer(connection, BoltNum16_get(value));
+        case BOLT_NUM32:
+            return BoltProtocolV1_load_integer(connection, BoltNum32_get(value));
+        case BOLT_NUM64:
+            return -1;  // An int64 can't (necessarily) hold a num64; coerce to string?
+        case BOLT_NUM8_ARRAY:
+            return -1;
+        case BOLT_NUM16_ARRAY:
+            return -1;
+        case BOLT_NUM32_ARRAY:
+            return -1;
+        case BOLT_NUM64_ARRAY:
+            return -1;
+        case BOLT_INT8:
+            return BoltProtocolV1_load_integer(connection, BoltInt8_get(value));
+        case BOLT_INT16:
+            return BoltProtocolV1_load_integer(connection, BoltInt16_get(value));
+        case BOLT_INT32:
+            return BoltProtocolV1_load_integer(connection, BoltInt32_get(value));
+        case BOLT_INT64:
+            return BoltProtocolV1_load_integer(connection, BoltInt64_get(value));
+        case BOLT_INT8_ARRAY:
+            return -1;
+        case BOLT_INT16_ARRAY:
+            return -1;
+        case BOLT_INT32_ARRAY:
+            return -1;
+        case BOLT_INT64_ARRAY:
+            return -1;
+        case BOLT_FLOAT32:
+            return BoltProtocolV1_load_float(connection, BoltFloat32_get(value));
+        case BOLT_FLOAT32_PAIR:
+            return -1;
+        case BOLT_FLOAT32_TRIPLE:
+            return -1;
+        case BOLT_FLOAT32_QUAD:
+            return -1;
+        case BOLT_FLOAT32_ARRAY:
+            return -1;
+        case BOLT_FLOAT32_PAIR_ARRAY:
+            return -1;
+        case BOLT_FLOAT32_TRIPLE_ARRAY:
+            return -1;
+        case BOLT_FLOAT32_QUAD_ARRAY:
+            return -1;
+        case BOLT_FLOAT64:
+            return BoltProtocolV1_load_float(connection, BoltFloat64_get(value));
+        case BOLT_FLOAT64_PAIR:
+//        {
+//            try(_load_list_header(connection, 2));
+//            try(BoltProtocolV1_load_float(connection, BoltFloat64Pair_get_first(value)));
+//            try(BoltProtocolV1_load_float(connection, BoltFloat64Pair_get_second(value)));
+//            return 0;
+//        }
+            return -1;
+        case BOLT_FLOAT64_TRIPLE:
+//        {
+//            try(_load_list_header(connection, 3));
+//            try(BoltProtocolV1_load_float(connection, BoltFloat64Triple_get_first(value)));
+//            try(BoltProtocolV1_load_float(connection, BoltFloat64Triple_get_second(value)));
+//            try(BoltProtocolV1_load_float(connection, BoltFloat64Triple_get_third(value)));
+//            return 0;
+//        }
+            return -1;
+        case BOLT_FLOAT64_QUAD:
+            return -1;
+        case BOLT_FLOAT64_ARRAY:
+            return -1;
+        case BOLT_FLOAT64_PAIR_ARRAY:
+            return -1;
+        case BOLT_FLOAT64_TRIPLE_ARRAY:
+            return -1;
+        case BOLT_FLOAT64_QUAD_ARRAY:
+            return -1;
+        case BOLT_STRUCTURE:
+        {
+            try(_load_structure_header(connection, BoltStructure_code(value), value->size));
+            for (int32_t i = 0; i < value->size; i++)
+            {
+                try(BoltProtocolV1_load(connection, BoltStructure_value(value, i)));
+            }
+            return 0;
+        }
+        case BOLT_STRUCTURE_ARRAY:
+            return -1;
+        case BOLT_REQUEST:
+        {
+            try(_load_structure_header(connection, BoltRequest_code(value), value->size));
+            for (int32_t i = 0; i < value->size; i++)
+            {
+                try(BoltProtocolV1_load(connection, BoltRequest_value(value, i)));
+            }
+            _compile(connection);
+            return 0;
+        }
+        case BOLT_SUMMARY:
+            return -1;
+        case BOLT_LIST:
+        {
+            try(_load_list_header(connection, value->size));
+            for (int32_t i = 0; i < value->size; i++)
+            {
+                try(BoltProtocolV1_load(connection, BoltList_value(value, i)));
+            }
+            return 0;
+        }
+        default:
+            // TODO:  TYPE_NOT_SUPPORTED (vs TYPE_NOT_IMPLEMENTED)
+            return EXIT_FAILURE;
+    }
+}
+
+int BoltProtocolV1_Value_to_INIT(struct BoltValue* value, const char* user_agent, const char* user, const char* password)
+{
+    BoltValue_to_Request(value, 0x01, 2);
+    BoltValue_to_UTF8(BoltRequest_value(value, 0), user_agent, strlen(user_agent));
+    struct BoltValue* auth = BoltRequest_value(value, 1);
     if (user == NULL || password == NULL)
     {
         BoltValue_to_UTF8Dictionary(auth, 0);
@@ -304,29 +431,24 @@ int BoltProtocolV1_load_init(struct BoltConnection* connection, const char* user
         BoltValue_to_UTF8(BoltUTF8Dictionary_with_key(auth, 1, "principal", 9), user, strlen(user));
         BoltValue_to_UTF8(BoltUTF8Dictionary_with_key(auth, 2, "credentials", 11), password, strlen(password));
     }
-    BoltProtocolV1_load(connection, auth);
-    BoltValue_destroy(auth);
-    _compile(connection);
 }
 
-int BoltProtocolV1_load_run(struct BoltConnection* connection, const char* statement)
+int BoltProtocolV1_Value_to_RUN(struct BoltValue* value, const char* statement)
 {
-    BoltBuffer_load(connection->tx_buffer_1, "\xB2\x10", 2);
-    BoltProtocolV1_load_string(connection, statement, strlen(statement));
-    BoltBuffer_load(connection->tx_buffer_1, "\xA0", 2);
-    _compile(connection);
+    BoltValue_to_Request(value, 0x10, 2);
+    BoltValue_to_UTF8(BoltRequest_value(value, 0), statement, strlen(statement));
+    struct BoltValue* parameters = BoltRequest_value(value, 1);
+    BoltValue_to_UTF8Dictionary(parameters, 0);
 }
 
-int BoltProtocolV1_load_discard(struct BoltConnection* connection)
+int BoltProtocolV1_Value_to_DISCARD_ALL(struct BoltValue* value)
 {
-    BoltBuffer_load(connection->tx_buffer_1, "\xB0\x2F", 2);
-    _compile(connection);
+    BoltValue_to_Request(value, 0x2F, 0);
 }
 
-int BoltProtocolV1_load_pull(struct BoltConnection* connection)
+int BoltProtocolV1_Value_to_PULL_ALL(struct BoltValue* value)
 {
-    BoltBuffer_load(connection->tx_buffer_1, "\xB0\x3F", 2);
-    _compile(connection);
+    BoltValue_to_Request(value, 0x3F, 0);
 }
 
 int _unload(struct BoltConnection* connection, struct BoltValue* value);

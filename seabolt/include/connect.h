@@ -65,6 +65,10 @@ struct BoltConnection
     struct BoltBuffer* rx_buffer_1;     // receive buffer without chunks
     unsigned long bolt_error;
     unsigned long openssl_error;
+    struct BoltValue* init;
+    struct BoltValue* run;
+    struct BoltValue* discard;
+    struct BoltValue* pull;
     struct BoltValue* current; // holder for current messages (one at a time so we can reuse this)
 };
 
