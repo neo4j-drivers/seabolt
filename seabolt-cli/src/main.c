@@ -131,19 +131,19 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
 
     timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after handshake and initialisation
 
-    BoltValue_to_UTF8(bolt->connection->cypher_statement, statement, (int32_t)(strlen(statement)));
-    BoltUTF8Dictionary_resize(bolt->connection->cypher_parameters, 1);
-    BoltUTF8Dictionary_with_key(bolt->connection->cypher_parameters, 0, "x", 1);
+    BoltValue_to_String8(bolt->connection->cypher_statement, statement, (int32_t)(strlen(statement)));
+    BoltValue_to_Dictionary8(bolt->connection->cypher_parameters, 1);
+    BoltDictionary8_with_key(bolt->connection->cypher_parameters, 0, "x", 1);
 
-    BoltValue_to_Int32(BoltUTF8Dictionary_value(bolt->connection->cypher_parameters, 0), 1234);
+    BoltValue_to_Int32(BoltDictionary8_value(bolt->connection->cypher_parameters, 0), 1234);
     BoltConnection_load_run(bolt->connection);
     BoltConnection_load_pull(bolt->connection, -1);
 
-    BoltValue_to_Float64(BoltUTF8Dictionary_value(bolt->connection->cypher_parameters, 0), 3.1415);
+    BoltValue_to_Float64(BoltDictionary8_value(bolt->connection->cypher_parameters, 0), 3.1415);
     BoltConnection_load_run(bolt->connection);
     BoltConnection_load_pull(bolt->connection, -1);
 
-    BoltValue_to_UTF8(BoltUTF8Dictionary_value(bolt->connection->cypher_parameters, 0), "three", 5);
+    BoltValue_to_String8(BoltDictionary8_value(bolt->connection->cypher_parameters, 0), "three", 5);
     BoltConnection_load_run(bolt->connection);
     BoltConnection_load_pull(bolt->connection, -1);
 
@@ -160,7 +160,7 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
 
         timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
-        while (BoltConnection_receive_b(bolt->connection))
+        while (BoltConnection_receive_one_b(bolt->connection))
         {
             Bolt_dump_received(bolt);
             record_count += 1;

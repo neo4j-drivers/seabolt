@@ -35,19 +35,19 @@ void BoltValue_to_Char32(struct BoltValue* value, uint32_t x)
     value->data.as_uint32[0] = x;
 }
 
-void BoltValue_to_UTF8(struct BoltValue* value, const char* string, int32_t size)
+void BoltValue_to_String8(struct BoltValue* value, const char* string, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(char))
     {
         // If the string is short, it can fit entirely within the
         // BoltValue instance
-        _format(value, BOLT_UTF8, size, NULL, 0);
+        _format(value, BOLT_STRING8, size, NULL, 0);
         if (string != NULL)
         {
             memcpy(value->data.as_char, string, (size_t)(size));
         }
     }
-    else if (BoltValue_type(value) == BOLT_UTF8)
+    else if (BoltValue_type(value) == BOLT_STRING8)
     {
         // This is already a UTF-8 string so we can just tweak it
         size_t data_size = size >= 0 ? (size_t)(size) : 0;
@@ -62,20 +62,20 @@ void BoltValue_to_UTF8(struct BoltValue* value, const char* string, int32_t size
     else
     {
         // If all else fails, allocate some new external data space
-        _format(value, BOLT_UTF8, size, string, sizeof_n(char, size));
+        _format(value, BOLT_STRING8, size, string, sizeof_n(char, size));
     }
 }
 
-void BoltValue_to_UTF16(struct BoltValue* value, uint16_t* string, int32_t size)
+void BoltValue_to_String16(struct BoltValue* value, uint16_t* string, int32_t size)
 {
     if (size <= sizeof(value->data) / sizeof(uint16_t))
     {
-        _format(value, BOLT_UTF16, size, NULL, 0);
+        _format(value, BOLT_STRING16, size, NULL, 0);
         memcpy(value->data.as_uint16, string, (size_t)(size));
     }
     else
     {
-        _format(value, BOLT_UTF16, size, string, sizeof_n(uint16_t, size));
+        _format(value, BOLT_STRING16, size, string, sizeof_n(uint16_t, size));
     }
 }
 
@@ -89,9 +89,9 @@ void BoltValue_to_Char32Array(struct BoltValue* value, uint32_t* array, int32_t 
     _format(value, BOLT_CHAR32_ARRAY, size, array, sizeof_n(uint32_t, size));
 }
 
-void BoltValue_to_UTF8Array(struct BoltValue* value, int32_t size)
+void BoltValue_to_String8Array(struct BoltValue* value, int32_t size)
 {
-    _format(value, BOLT_UTF8_ARRAY, size, NULL, sizeof_n(struct array_t, size));
+    _format(value, BOLT_STRING8_ARRAY, size, NULL, sizeof_n(struct array_t, size));
     for (int i = 0; i < size; i++)
     {
         value->data.extended.as_array[i].size = 0;
@@ -99,35 +99,42 @@ void BoltValue_to_UTF8Array(struct BoltValue* value, int32_t size)
     }
 }
 
-void BoltValue_to_UTF8Dictionary(struct BoltValue* value, int32_t size)
+void BoltValue_to_Dictionary8(struct BoltValue* value, int32_t size)
 {
-    size_t unit_size = sizeof(struct BoltValue);
-    size_t data_size = 2 * unit_size * size;
-    _recycle(value);
-    value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
-    value->data_size = data_size;
-    memset(value->data.extended.as_char, 0, data_size);
-    _set_type(value, BOLT_UTF8_DICTIONARY, size);
+    if (value->type == BOLT_DICTIONARY8)
+    {
+        _resize(value, size, 2);
+    }
+    else
+    {
+        size_t unit_size = sizeof(struct BoltValue);
+        size_t data_size = 2 * unit_size * size;
+        _recycle(value);
+        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
+        value->data_size = data_size;
+        memset(value->data.extended.as_char, 0, data_size);
+        _set_type(value, BOLT_DICTIONARY8, size);
+    }
 }
 
-char* BoltUTF8_get(struct BoltValue* value)
+char* BoltString8_get(struct BoltValue* value)
 {
     return value->size <= sizeof(value->data) / sizeof(char) ?
            value->data.as_char : value->data.extended.as_char;
 }
 
-char* BoltUTF8Array_get(struct BoltValue* value, int32_t index)
+char* BoltString8Array_get(struct BoltValue* value, int32_t index)
 {
     struct array_t string = value->data.extended.as_array[index];
     return string.size == 0 ? NULL : string.data.as_char;
 }
 
-int32_t BoltUTF8Array_get_size(struct BoltValue* value, int32_t index)
+int32_t BoltString8Array_get_size(struct BoltValue* value, int32_t index)
 {
     return value->data.extended.as_array[index].size;
 }
 
-void BoltUTF8Array_put(struct BoltValue* value, int32_t index, const char* string, int32_t size)
+void BoltString8Array_put(struct BoltValue* value, int32_t index, const char* string, int32_t size)
 {
     struct array_t* s = &value->data.extended.as_array[index];
     s->data.as_ptr = BoltMem_adjust(s->data.as_ptr, (size_t)(s->size), (size_t)(size));
@@ -138,29 +145,24 @@ void BoltUTF8Array_put(struct BoltValue* value, int32_t index, const char* strin
     }
 }
 
-struct BoltValue* BoltUTF8Dictionary_key(struct BoltValue* value, int32_t index)
+struct BoltValue* BoltDictionary8_key(struct BoltValue* value, int32_t index)
 {
-    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_DICTIONARY8);
     return &value->data.extended.as_value[2 * index];
 }
 
-struct BoltValue* BoltUTF8Dictionary_with_key(struct BoltValue* value, int32_t index, const char* key, int32_t key_size)
+struct BoltValue* BoltDictionary8_with_key(struct BoltValue* value, int32_t index, const char* key,
+                                           int32_t key_size)
 {
-    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
-    BoltValue_to_UTF8(&value->data.extended.as_value[2 * index], key, key_size);
+    assert(BoltValue_type(value) == BOLT_DICTIONARY8);
+    BoltValue_to_String8(&value->data.extended.as_value[2 * index], key, key_size);
     return &value->data.extended.as_value[2 * index + 1];
 }
 
-struct BoltValue* BoltUTF8Dictionary_value(struct BoltValue* value, int32_t index)
+struct BoltValue* BoltDictionary8_value(struct BoltValue* value, int32_t index)
 {
-    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_DICTIONARY8);
     return &value->data.extended.as_value[2 * index + 1];
-}
-
-void BoltUTF8Dictionary_resize(struct BoltValue* value, int32_t size)
-{
-    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
-    _resize(value, size, 2);
 }
 
 void _write_string(FILE* file, const char* data, size_t size)
@@ -173,10 +175,10 @@ void _write_string(FILE* file, const char* data, size_t size)
     fprintf(file, "\"");
 }
 
-int BoltUTF8_write(FILE* file, struct BoltValue* value)
+int BoltString8_write(FILE* file, struct BoltValue* value)
 {
-    assert(BoltValue_type(value) == BOLT_UTF8);
-    char* data = BoltUTF8_get(value);
+    assert(BoltValue_type(value) == BOLT_STRING8);
+    char* data = BoltString8_get(value);
     fprintf(file, "s8(\"");
     for (int i = 0; i < value->size; i++)
     {
@@ -185,9 +187,9 @@ int BoltUTF8_write(FILE* file, struct BoltValue* value)
     fprintf(file, "\")");
 }
 
-int BoltUTF8Array_write(FILE* file, struct BoltValue* value)
+int BoltString8Array_write(FILE* file, struct BoltValue* value)
 {
-    assert(BoltValue_type(value) == BOLT_UTF8_ARRAY);
+    assert(BoltValue_type(value) == BOLT_STRING8_ARRAY);
     fprintf(file, "s8[");
     for (long i = 0; i < value->size; i++)
     {
@@ -205,20 +207,20 @@ int BoltUTF8Array_write(FILE* file, struct BoltValue* value)
     fprintf(file, "]");
 }
 
-int BoltUTF8Dictionary_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
+int BoltDictionary8_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
 {
-    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_DICTIONARY8);
     fprintf(file, "d8[");
     int comma = 0;
     for (int i = 0; i < value->size; i++)
     {
-        struct BoltValue* key = BoltUTF8Dictionary_key(value, i);
+        struct BoltValue* key = BoltDictionary8_key(value, i);
         if (key != NULL)
         {
             if (comma) fprintf(file, ", ");
-            _write_string(file, BoltUTF8_get(key), (size_t)(key->size));
+            _write_string(file, BoltString8_get(key), (size_t)(key->size));
             fprintf(file, " ");
-            BoltValue_write(file, BoltUTF8Dictionary_value(value, i), protocol_version);
+            BoltValue_write(file, BoltDictionary8_value(value, i), protocol_version);
             comma = 1;
         }
     }

@@ -65,6 +65,10 @@ struct BoltConnection
     struct BoltBuffer* rx_buffer_1;     // receive buffer without chunks
     unsigned long bolt_error;
     unsigned long openssl_error;
+
+    int requests_queued;
+    int requests_running;
+
     struct BoltValue* run;
     struct BoltValue* cypher_statement;
     struct BoltValue* cypher_parameters;
@@ -99,6 +103,14 @@ void BoltConnection_close_b(struct BoltConnection* connection);
 int BoltConnection_transmit_b(struct BoltConnection* connection);
 
 /**
+ * Receive all outstanding responses.
+ *
+ * @param connection
+ * @return
+ */
+int BoltConnection_receive_b(struct BoltConnection* connection);
+
+/**
  * Receive the next response in its entirety, up to and including the
  * trailing summary.
  *
@@ -113,7 +125,7 @@ int BoltConnection_receive_summary_b(struct BoltConnection* connection);
  * @param connection
  * @return
  */
-int BoltConnection_receive_b(struct BoltConnection* connection);
+int BoltConnection_receive_one_b(struct BoltConnection* connection);
 
 /**
  * Initialise the connection and authenticate using the basic
@@ -122,6 +134,10 @@ int BoltConnection_receive_b(struct BoltConnection* connection);
  * @return
  */
 int BoltConnection_init_b(struct BoltConnection* connection, const char* user, const char* password);
+
+int BoltConnection_set_statement(struct BoltConnection* connection, const char* statement, size_t size);
+
+int BoltConnection_resize_parameters(struct BoltConnection* connection, int32_t size);
 
 int BoltConnection_load_run(struct BoltConnection* connection);
 

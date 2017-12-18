@@ -170,3 +170,33 @@ SCENARIO("Test init with invalid credentials", "[integration]")
         BoltConnection_close_b(connection);
     }
 }
+
+struct BoltConnection* _open_and_init_b(enum BoltTransport transport, const char* host, const char* port,
+                                    const char* user, const char* password)
+{
+    struct BoltConnection* connection = _open_b(transport, host, port);
+    BoltConnection_init_b(connection, user, password);
+    REQUIRE(connection->status == BOLT_READY);
+    return connection;
+}
+
+SCENARIO("Test execution of simple Cypher statement", "[integration]")
+{
+    GIVEN("an open and initialised connection")
+    {
+        struct BoltConnection* connection = _open_and_init_b(BOLT_SECURE_SOCKET, BOLT_HOST, BOLT_PORT,
+                                                             BOLT_USER, BOLT_PASSWORD);
+        WHEN("successfully executed Cypher")
+        {
+            BoltValue_to_String8(connection->cypher_statement, "RETURN 1", 8);
+            BoltValue_to_Dictionary8(connection->cypher_parameters, 0);
+            BoltConnection_load_run(connection);
+            BoltConnection_load_pull(connection, -1);
+            int requests = BoltConnection_transmit_b(connection);
+            int responses = BoltConnection_receive_b(connection);
+            REQUIRE(requests == 2);
+            REQUIRE(responses == 2);
+        }
+        BoltConnection_close_b(connection);
+    }
+}

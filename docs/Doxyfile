@@ -1269,7 +1269,7 @@ HTML_INDEX_NUM_ENTRIES = 100
 # environment (see: http://developer.apple.com/tools/xcode/), introduced with
 # OSX 10.5 (Leopard). To create a documentation set, doxygen will generate a
 # Makefile in the HTML output directory. Running make will produce the docset in
-# that directory and running make install will install the docset in
+# that directory and requests_running make install will install the docset in
 # ~/Library/Developer/Shared/Documentation/DocSets so that Xcode will find it at
 # startup. See http://developer.apple.com/tools/creatingdocsetswithdoxygen.html
 # for more information.
@@ -1787,7 +1787,7 @@ PDF_HYPERLINKS         = YES
 USE_PDFLATEX           = YES
 
 # If the LATEX_BATCHMODE tag is set to YES, doxygen will add the \batchmode
-# command to the generated LaTeX files. This will instruct LaTeX to keep running
+# command to the generated LaTeX files. This will instruct LaTeX to keep requests_running
 # if errors occur, instead of asking the user for help. This option is also used
 # when generating formulas in HTML.
 # The default value is: NO.

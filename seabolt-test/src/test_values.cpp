@@ -164,7 +164,7 @@ SCENARIO("Test ByteArray values", "[ByteArray]")
     }
 }
 
-SCENARIO("Test UTF8 values")
+SCENARIO("Test String8 values")
 {
     GIVEN("a new value")
     {
@@ -173,10 +173,10 @@ SCENARIO("Test UTF8 values")
         {
             const char* text = "";
             int32_t text_size = 0;
-            BoltValue_to_UTF8(value, text, text_size);
-            THEN("the type should be UTF8")
+            BoltValue_to_String8(value, text, text_size);
+            THEN("the type should be String8")
             {
-                REQUIRE(BoltValue_type(value) == BOLT_UTF8);
+                REQUIRE(BoltValue_type(value) == BOLT_STRING8);
             }
             THEN("the size should be correct")
             {
@@ -184,7 +184,7 @@ SCENARIO("Test UTF8 values")
             }
             THEN("the inner value should be correct")
             {
-                const char* stored_text = BoltUTF8_get(value);
+                const char* stored_text = BoltString8_get(value);
                 REQUIRE(strncmp(text, stored_text, text_size) == 0);
             }
         }
@@ -192,10 +192,10 @@ SCENARIO("Test UTF8 values")
         {
             const char* text = "hello, world";
             int32_t text_size = 12;
-            BoltValue_to_UTF8(value, text, text_size);
-            THEN("the type should be UTF8")
+            BoltValue_to_String8(value, text, text_size);
+            THEN("the type should be String8")
             {
-                REQUIRE(BoltValue_type(value) == BOLT_UTF8);
+                REQUIRE(BoltValue_type(value) == BOLT_STRING8);
             }
             THEN("the size should be correct")
             {
@@ -203,7 +203,7 @@ SCENARIO("Test UTF8 values")
             }
             THEN("the inner value should be correct")
             {
-                const char* stored_text = BoltUTF8_get(value);
+                const char* stored_text = BoltString8_get(value);
                 REQUIRE(strncmp(text, stored_text, text_size) == 0);
             }
         }
@@ -211,10 +211,10 @@ SCENARIO("Test UTF8 values")
         {
             const char* text = "there is a null character -> \x00 <- in the middle of this string";
             int32_t text_size = 62;
-            BoltValue_to_UTF8(value, text, text_size);
-            THEN("the type should be UTF8")
+            BoltValue_to_String8(value, text, text_size);
+            THEN("the type should be String8")
             {
-                REQUIRE(BoltValue_type(value) == BOLT_UTF8);
+                REQUIRE(BoltValue_type(value) == BOLT_STRING8);
             }
             THEN("the size should be correct")
             {
@@ -222,7 +222,7 @@ SCENARIO("Test UTF8 values")
             }
             THEN("the inner value should be correct")
             {
-                const char* stored_text = BoltUTF8_get(value);
+                const char* stored_text = BoltString8_get(value);
                 REQUIRE(strncmp(text, stored_text, text_size) == 0);
             }
         }
@@ -230,10 +230,10 @@ SCENARIO("Test UTF8 values")
         {
             const char* text = "back to a short one";
             int32_t text_size = 19;
-            BoltValue_to_UTF8(value, text, text_size);
-            THEN("the type should be UTF8")
+            BoltValue_to_String8(value, text, text_size);
+            THEN("the type should be String8")
             {
-                REQUIRE(BoltValue_type(value) == BOLT_UTF8);
+                REQUIRE(BoltValue_type(value) == BOLT_STRING8);
             }
             THEN("the size should be correct")
             {
@@ -241,7 +241,7 @@ SCENARIO("Test UTF8 values")
             }
             THEN("the inner value should be correct")
             {
-                const char* stored_text = BoltUTF8_get(value);
+                const char* stored_text = BoltString8_get(value);
                 REQUIRE(strncmp(text, stored_text, text_size) == 0);
             }
         }
@@ -249,20 +249,20 @@ SCENARIO("Test UTF8 values")
     }
 }
 
-SCENARIO("Test UTF8Array values")
+SCENARIO("Test String8Array values")
 {
     GIVEN("a new value")
     {
         struct BoltValue* value = BoltValue_create();
-        BoltValue_to_UTF8Array(value, 5);
-        BoltUTF8Array_put(value, 0, "hello", 5);
-        BoltUTF8Array_put(value, 1, "world", 5);
-        BoltUTF8Array_put(value, 2, "here is a very very very very very very very very long string", 61);
-        BoltUTF8Array_put(value, 3, "", 0);
-        BoltUTF8Array_put(value, 4, "that last one was empty!!", 25);
-        THEN("the type should be UTF8Array")
+        BoltValue_to_String8Array(value, 5);
+        BoltString8Array_put(value, 0, "hello", 5);
+        BoltString8Array_put(value, 1, "world", 5);
+        BoltString8Array_put(value, 2, "here is a very very very very very very very very long string", 61);
+        BoltString8Array_put(value, 3, "", 0);
+        BoltString8Array_put(value, 4, "that last one was empty!!", 25);
+        THEN("the type should be String8Array")
         {
-            REQUIRE(BoltValue_type(value) == BOLT_UTF8_ARRAY);
+            REQUIRE(BoltValue_type(value) == BOLT_STRING8_ARRAY);
         }
         THEN("the size should be correct")
         {
@@ -273,24 +273,24 @@ SCENARIO("Test UTF8Array values")
             char* text;
             int32_t size;
 
-            text = BoltUTF8Array_get(value, 0);
-            size = BoltUTF8Array_get_size(value, 0);
+            text = BoltString8Array_get(value, 0);
+            size = BoltString8Array_get_size(value, 0);
             REQUIRE(strncmp(text, "hello", (size_t)(size)) == 0);
 
-            text = BoltUTF8Array_get(value, 1);
-            size = BoltUTF8Array_get_size(value, 1);
+            text = BoltString8Array_get(value, 1);
+            size = BoltString8Array_get_size(value, 1);
             REQUIRE(strncmp(text, "world", (size_t)(size)) == 0);
 
-            text = BoltUTF8Array_get(value, 2);
-            size = BoltUTF8Array_get_size(value, 2);
+            text = BoltString8Array_get(value, 2);
+            size = BoltString8Array_get_size(value, 2);
             REQUIRE(strncmp(text, "here is a very very very very very very very very long string", (size_t)(size)) == 0);
 
-            text = BoltUTF8Array_get(value, 3);
-            size = BoltUTF8Array_get_size(value, 3);
+            text = BoltString8Array_get(value, 3);
+            size = BoltString8Array_get_size(value, 3);
             REQUIRE(strncmp(text, "", (size_t)(size)) == 0);
 
-            text = BoltUTF8Array_get(value, 4);
-            size = BoltUTF8Array_get_size(value, 4);
+            text = BoltString8Array_get(value, 4);
+            size = BoltString8Array_get_size(value, 4);
             REQUIRE(strncmp(text, "that last one was empty!!", (size_t)(size)) == 0);
         }
         BoltValue_destroy(value);
@@ -314,7 +314,7 @@ void _test_list()
     BoltValue_to_Int32(BoltList_value(value, 0), 1234567);
     BoltValue_to_Int32(BoltList_value(value, 1), 2345678);
     BoltValue_to_Int32(BoltList_value(value, 2), 3456789);
-    BoltValue_to_UTF8(BoltList_value(value, 3), "hello", 5);
+    BoltValue_to_String8(BoltList_value(value, 3), "hello", 5);
     BoltValue_to_List(BoltList_value(value, 5), 3);
     BoltValue_to_Num8(BoltList_value(BoltList_value(value, 5), 0), 77);
     BoltValue_to_Num8(BoltList_value(BoltList_value(value, 5), 1), 88);
@@ -384,12 +384,12 @@ void test_list()
 void _test_utf8_dictionary()
 {
     struct BoltValue* value = BoltValue_create();
-    BoltValue_to_UTF8Dictionary(value, 4);
-    BoltValue_to_Int8(BoltUTF8Dictionary_with_key(value, 0, "a", 1), 1);
-    BoltValue_to_Int8(BoltUTF8Dictionary_with_key(value, 1, "b", 1), 2);
-    BoltValue_to_Int8(BoltUTF8Dictionary_with_key(value, 2, "c", 1), 3);
+    BoltValue_to_Dictionary8(value, 4);
+    BoltValue_to_Int8(BoltDictionary8_with_key(value, 0, "a", 1), 1);
+    BoltValue_to_Int8(BoltDictionary8_with_key(value, 1, "b", 1), 2);
+    BoltValue_to_Int8(BoltDictionary8_with_key(value, 2, "c", 1), 3);
     _dump(value);
-    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_DICTIONARY8);
     assert(value->size == 4);
     BoltValue_destroy(value);
 }
@@ -397,9 +397,9 @@ void _test_utf8_dictionary()
 void _test_empty_utf8_dictionary()
 {
     struct BoltValue* value = BoltValue_create();
-    BoltValue_to_UTF8Dictionary(value, 0);
+    BoltValue_to_Dictionary8(value, 0);
     _dump(value);
-    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_DICTIONARY8);
     assert(value->size == 0);
     BoltValue_destroy(value);
 }
@@ -407,10 +407,10 @@ void _test_empty_utf8_dictionary()
 void _test_single_entry_utf8_dictionary()
 {
     struct BoltValue* value = BoltValue_create();
-    BoltValue_to_UTF8Dictionary(value, 1);
-    BoltValue_to_UTF8(BoltUTF8Dictionary_with_key(value, 0, "hello", 5), "world", 5);
+    BoltValue_to_Dictionary8(value, 1);
+    BoltValue_to_String8(BoltDictionary8_with_key(value, 0, "hello", 5), "world", 5);
     _dump(value);
-    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_DICTIONARY8);
     assert(value->size == 1);
     BoltValue_destroy(value);
 }
@@ -418,17 +418,17 @@ void _test_single_entry_utf8_dictionary()
 void _test_utf8_dictionary_growth()
 {
     struct BoltValue* value = BoltValue_create();
-    BoltValue_to_UTF8Dictionary(value, 0);
+    BoltValue_to_Dictionary8(value, 0);
     _dump(value);
-    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
+    assert(BoltValue_type(value) == BOLT_DICTIONARY8);
     assert(value->size == 0);
     for (int i = 0; i < 3; i++)
     {
         int size = i + 1;
-        BoltUTF8Dictionary_resize(value, size);
-        BoltValue_to_Int8(BoltUTF8Dictionary_with_key(value, i, "key", 3), (int8_t)(size));
+        BoltValue_to_Dictionary8(value, size);
+        BoltValue_to_Int8(BoltDictionary8_with_key(value, i, "key", 3), (int8_t)(size));
         _dump(value);
-        assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
+        assert(BoltValue_type(value) == BOLT_DICTIONARY8);
         assert(value->size == size);
     }
     BoltValue_destroy(value);
@@ -437,17 +437,17 @@ void _test_utf8_dictionary_growth()
 void _test_utf8_dictionary_shrinkage()
 {
     struct BoltValue* value = BoltValue_create();
-    BoltValue_to_UTF8Dictionary(value, 3);
-    BoltValue_to_Int8(BoltUTF8Dictionary_with_key(value, 0, "a", 1), 1);
-    BoltValue_to_Int8(BoltUTF8Dictionary_with_key(value, 1, "b", 1), 2);
-    BoltValue_to_Int8(BoltUTF8Dictionary_with_key(value, 2, "c", 1), 3);
-    assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
+    BoltValue_to_Dictionary8(value, 3);
+    BoltValue_to_Int8(BoltDictionary8_with_key(value, 0, "a", 1), 1);
+    BoltValue_to_Int8(BoltDictionary8_with_key(value, 1, "b", 1), 2);
+    BoltValue_to_Int8(BoltDictionary8_with_key(value, 2, "c", 1), 3);
+    assert(BoltValue_type(value) == BOLT_DICTIONARY8);
     assert(value->size == 3);
     for (int size = 3; size >= 0; size--)
     {
-        BoltUTF8Dictionary_resize(value, size);
+        BoltValue_to_Dictionary8(value, size);
         _dump(value);
-        assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
+        assert(BoltValue_type(value) == BOLT_DICTIONARY8);
         assert(value->size == size);
     }
     BoltValue_destroy(value);
@@ -850,12 +850,12 @@ void test_structure()
     struct BoltValue* labels = BoltStructure_value(value, 1);
     struct BoltValue* properties = BoltStructure_value(value, 2);
     BoltValue_to_Int64(id, 123);
-    BoltValue_to_UTF8Array(labels, 2);
-    BoltUTF8Array_put(labels, 0, "Person", 6);
-    BoltUTF8Array_put(labels, 1, "Employee", 8);
-    BoltValue_to_UTF8Dictionary(properties, 2);
-    BoltValue_to_UTF8(BoltUTF8Dictionary_with_key(properties, 0, "name", 4), "Alice", 5);
-    BoltValue_to_Num8(BoltUTF8Dictionary_with_key(properties, 1, "age", 3), 33);
+    BoltValue_to_String8Array(labels, 2);
+    BoltString8Array_put(labels, 0, "Person", 6);
+    BoltString8Array_put(labels, 1, "Employee", 8);
+    BoltValue_to_Dictionary8(properties, 2);
+    BoltValue_to_String8(BoltDictionary8_with_key(properties, 0, "name", 4), "Alice", 5);
+    BoltValue_to_Num8(BoltDictionary8_with_key(properties, 1, "age", 3), 33);
     _dump(value);
     assert(BoltValue_type(value) == BOLT_STRUCTURE && BoltStructure_code(value) == NODE);
     assert(value->size == 3);
@@ -874,13 +874,13 @@ void test_structure_array()
         struct BoltValue* labels = BoltStructureArray_at(value, i, 1);
         struct BoltValue* properties = BoltStructureArray_at(value, i, 2);
         BoltValue_to_Int64(id, 123 + 1);
-        BoltValue_to_UTF8Array(labels, 2);
-        BoltUTF8Array_put(labels, 0, "Person", 6);
-        BoltUTF8Array_put(labels, 1, "Employee", 8);
-        BoltValue_to_UTF8Dictionary(properties, 2);
-        BoltValue_to_UTF8(BoltUTF8Dictionary_with_key(properties, 0, "name", 4),
-                          i == 0 ? "Alice" : "Bob", i == 0 ? 5 : 3);
-        BoltValue_to_Num8(BoltUTF8Dictionary_with_key(properties, 1, "age", 3), (uint8_t)(i == 0 ? 33 : 44));
+        BoltValue_to_String8Array(labels, 2);
+        BoltString8Array_put(labels, 0, "Person", 6);
+        BoltString8Array_put(labels, 1, "Employee", 8);
+        BoltValue_to_Dictionary8(properties, 2);
+        BoltValue_to_String8(BoltDictionary8_with_key(properties, 0, "name", 4),
+                             i == 0 ? "Alice" : "Bob", i == 0 ? 5 : 3);
+        BoltValue_to_Num8(BoltDictionary8_with_key(properties, 1, "age", 3), (uint8_t)(i == 0 ? 33 : 44));
     }
     _dump(value);
     assert(BoltValue_type(value) == BOLT_STRUCTURE_ARRAY && BoltStructure_code(value) == NODE);
@@ -895,9 +895,9 @@ void test_request()
     BoltValue_to_Request(value, RUN, 2);
     struct BoltValue* statement = BoltRequest_value(value, 0);
     struct BoltValue* parameters = BoltRequest_value(value, 1);
-    BoltValue_to_UTF8(statement, "RETURN $x", 9);
-    BoltValue_to_UTF8Dictionary(parameters, 1);
-    BoltValue_to_Int64(BoltUTF8Dictionary_with_key(parameters, 0, "x", 1), 1);
+    BoltValue_to_String8(statement, "RETURN $x", 9);
+    BoltValue_to_Dictionary8(parameters, 1);
+    BoltValue_to_Int64(BoltDictionary8_with_key(parameters, 0, "x", 1), 1);
     _dump(value);
     assert(BoltValue_type(value) == BOLT_REQUEST && BoltRequest_code(value) == RUN);
     assert(value->size == 2);
@@ -910,9 +910,9 @@ void test_summary()
     const int SUCCESS = 0xA0;
     BoltValue_to_Summary(value, SUCCESS, 1);
     struct BoltValue* metadata = BoltSummary_value(value, 0);
-    BoltValue_to_UTF8Dictionary(metadata, 2);
-    BoltValue_to_Int64(BoltUTF8Dictionary_with_key(metadata, 0, "results", 7), 100);
-    BoltValue_to_Int64(BoltUTF8Dictionary_with_key(metadata, 1, "time", 4), 123456789);
+    BoltValue_to_Dictionary8(metadata, 2);
+    BoltValue_to_Int64(BoltDictionary8_with_key(metadata, 0, "results", 7), 100);
+    BoltValue_to_Int64(BoltDictionary8_with_key(metadata, 1, "time", 4), 123456789);
     _dump(value);
     assert(BoltValue_type(value) == BOLT_SUMMARY && BoltSummary_code(value) == SUCCESS);
     assert(value->size == 1);

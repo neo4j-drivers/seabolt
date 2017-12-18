@@ -6220,7 +6220,7 @@ namespace Catch {
         // http://developer.apple.com/library/mac/#qa/qa2004/qa1361.html
 
         // Returns true if the current process is being debugged (either
-        // running under the debugger or has a debugger attached post facto).
+        // requests_running under the debugger or has a debugger attached post facto).
         bool isDebuggerActive(){
 
             int                 mib[4];
@@ -8449,7 +8449,7 @@ namespace Catch {
     }
 
     // Store the streambuf from cout up-front because
-    // cout may get redirected when running tests
+    // cout may get redirected when requests_running tests
     CoutStream::CoutStream()
     :   m_os( Catch::cout().rdbuf() )
     {}

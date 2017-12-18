@@ -65,7 +65,7 @@ struct BoltConnection* _create(enum BoltTransport transport)
     BoltValue_to_Request(connection->run, 0x10, 2);
     connection->cypher_statement = BoltRequest_value(connection->run, 0);
     connection->cypher_parameters = BoltRequest_value(connection->run, 1);
-    BoltValue_to_UTF8Dictionary(connection->cypher_parameters, 0);
+    BoltValue_to_Dictionary8(connection->cypher_parameters, 0);
 
     connection->discard = BoltValue_create();
     BoltValue_to_Request(connection->discard, 0x2F, 0);
@@ -374,23 +374,41 @@ void BoltConnection_close_b(struct BoltConnection* connection)
 
 int BoltConnection_transmit_b(struct BoltConnection* connection)
 {
+    int requests = connection->requests_queued;
     int size = BoltBuffer_unloadable(connection->tx_buffer_0);
     int transmitted = _transmit_b(connection, BoltBuffer_unload_target(connection->tx_buffer_0, size), size);
+    if (transmitted == -1)
+    {
+        return -1;
+    }
+    connection->requests_queued = 0;
+    connection->requests_running += requests;
     BoltBuffer_compact(connection->tx_buffer_0);
-    return transmitted;
+    return requests;
+}
+
+int BoltConnection_receive_b(struct BoltConnection* connection)
+{
+    int responses = 0;
+    while (connection->requests_running > 0)
+    {
+        BoltConnection_receive_summary_b(connection);
+        responses += 1;
+    }
+    return responses;
 }
 
 int BoltConnection_receive_summary_b(struct BoltConnection* connection)
 {
     int records = 0;
-    while (BoltConnection_receive_b(connection) == 1)
+    while (BoltConnection_receive_one_b(connection) == 1)
     {
         records += 1;
     }
     return records;
 }
 
-int BoltConnection_receive_b(struct BoltConnection* connection)
+int BoltConnection_receive_one_b(struct BoltConnection* connection)
 {
     BoltBuffer_compact(connection->rx_buffer_1);
     switch (connection->protocol_version)
@@ -426,6 +444,7 @@ int BoltConnection_receive_b(struct BoltConnection* connection)
             {
                 return 1;
             }
+            connection->requests_running -= 1;
             int16_t code = BoltSummary_code(connection->received);
             switch (code)
             {
@@ -467,7 +486,7 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user, c
             BoltValue_destroy(init);
             try(BoltConnection_transmit_b(connection));
             int records = 0;
-            while (BoltConnection_receive_b(connection) == 1)
+            while (BoltConnection_receive_one_b(connection) == 1)
             {
                 records += 1;
             }
@@ -493,6 +512,21 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user, c
             BoltLog_error("bolt: Protocol version unsupported");
             return -1;
     }
+}
+
+int BoltConnection_set_statement(struct BoltConnection* connection, const char* statement, size_t size)
+{
+    if (size <= INT32_MAX)
+    {
+        BoltValue_to_String8(connection->cypher_statement, statement, (int32_t)(size));
+        return 0;
+    }
+    return -1;
+}
+
+int BoltConnection_resize_parameters(struct BoltConnection* connection, int32_t size)
+{
+    BoltValue_to_Dictionary8(connection->cypher_parameters, size);
 }
 
 int BoltConnection_load_run(struct BoltConnection* connection)

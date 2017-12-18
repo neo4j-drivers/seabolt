@@ -41,7 +41,7 @@ void _recycle(struct BoltValue* value)
             BoltValue_to_Null(&value->data.extended.as_value[i]);
         }
     }
-    else if (type == BOLT_UTF8_ARRAY)
+    else if (type == BOLT_STRING8_ARRAY)
     {
         for (long i = 0; i < value->size; i++)
         {
@@ -52,14 +52,14 @@ void _recycle(struct BoltValue* value)
             }
         }
     }
-    else if (type == BOLT_UTF8_DICTIONARY)
+    else if (type == BOLT_DICTIONARY8)
     {
         for (long i = 0; i < 2 * value->size; i++)
         {
             BoltValue_to_Null(&value->data.extended.as_value[i]);
         }
     }
-    else if (type == BOLT_UTF16_DICTIONARY)
+    else if (type == BOLT_DICTIONARY16)
     {
         // TODO
     }
@@ -218,17 +218,17 @@ int BoltValue_write(FILE* file, struct BoltValue* value, int32_t protocol_versio
             return BoltBitArray_write(file, value);
         case BOLT_BYTE_ARRAY:
             return BoltByteArray_write(file, value);
-        case BOLT_UTF8:
-            return BoltUTF8_write(file, value);
-        case BOLT_UTF16:
+        case BOLT_STRING8:
+            return BoltString8_write(file, value);
+        case BOLT_STRING16:
             return -1;
-        case BOLT_UTF8_ARRAY:
-            return BoltUTF8Array_write(file, value);
-        case BOLT_UTF16_ARRAY:
+        case BOLT_STRING8_ARRAY:
+            return BoltString8Array_write(file, value);
+        case BOLT_STRING16_ARRAY:
             return -1;
-        case BOLT_UTF8_DICTIONARY:
-            return BoltUTF8Dictionary_write(file, value, protocol_version);
-        case BOLT_UTF16_DICTIONARY:
+        case BOLT_DICTIONARY8:
+            return BoltDictionary8_write(file, value, protocol_version);
+        case BOLT_DICTIONARY16:
             return -1;
         case BOLT_NUM8:
             return BoltNum8_write(file, value);
