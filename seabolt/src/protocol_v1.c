@@ -105,7 +105,7 @@ int BoltProtocolV1_load_integer(struct BoltConnection* connection, int64_t value
 
 int BoltProtocolV1_load_float(struct BoltConnection* connection, double value)
 {
-    BoltBuffer_load_uint8(connection->tx_buffer_1, 0xC0);
+    BoltBuffer_load_uint8(connection->tx_buffer_1, 0xC1);
     BoltBuffer_load_double_be(connection->tx_buffer_1, value);
 }
 
@@ -230,7 +230,7 @@ int _load_structure_header(struct BoltConnection* connection, int16_t code, int8
     BoltBuffer_load_int8(connection->tx_buffer_1, code);
 }
 
-int _compile(struct BoltConnection* connection)
+int _add_chunks_to_pending(struct BoltConnection* connection)
 {
     // TODO: more chunks if size is too big
     int size = BoltBuffer_unloadable(connection->tx_buffer_1);
@@ -395,7 +395,7 @@ int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* val
             {
                 try(BoltProtocolV1_load(connection, BoltRequest_value(value, i)));
             }
-            _compile(connection);
+            _add_chunks_to_pending(connection);
             return 0;
         }
         case BOLT_SUMMARY:
@@ -415,7 +415,7 @@ int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* val
     }
 }
 
-int BoltProtocolV1_Value_to_INIT(struct BoltValue* value, const char* user_agent, const char* user, const char* password)
+int BoltProtocolV1_compile_INIT(struct BoltValue* value, const char* user_agent, const char* user, const char* password)
 {
     BoltValue_to_Request(value, 0x01, 2);
     BoltValue_to_UTF8(BoltRequest_value(value, 0), user_agent, strlen(user_agent));
@@ -433,20 +433,20 @@ int BoltProtocolV1_Value_to_INIT(struct BoltValue* value, const char* user_agent
     }
 }
 
-int BoltProtocolV1_Value_to_RUN(struct BoltValue* value, const char* statement)
+int BoltProtocolV1_compile_RUN(struct BoltValue* value, const char* statement, struct BoltValue** parameters)
 {
     BoltValue_to_Request(value, 0x10, 2);
     BoltValue_to_UTF8(BoltRequest_value(value, 0), statement, strlen(statement));
-    struct BoltValue* parameters = BoltRequest_value(value, 1);
-    BoltValue_to_UTF8Dictionary(parameters, 0);
+    *parameters = BoltRequest_value(value, 1);
+    BoltValue_to_UTF8Dictionary(*parameters, 0);
 }
 
-int BoltProtocolV1_Value_to_DISCARD_ALL(struct BoltValue* value)
+int BoltProtocolV1_compile_DISCARD_ALL(struct BoltValue* value)
 {
     BoltValue_to_Request(value, 0x2F, 0);
 }
 
-int BoltProtocolV1_Value_to_PULL_ALL(struct BoltValue* value)
+int BoltProtocolV1_compile_PULL_ALL(struct BoltValue* value)
 {
     BoltValue_to_Request(value, 0x3F, 0);
 }
@@ -520,6 +520,22 @@ int _unload_integer(struct BoltConnection* connection, struct BoltValue* value)
         int64_t x;
         BoltBuffer_unload_int64_be(connection->rx_buffer_1, &x);
         BoltValue_to_Int64(value, x);
+    }
+    else
+    {
+        return -1;  // BOLT_ERROR_WRONG_TYPE
+    }
+}
+
+int _unload_float(struct BoltConnection* connection, struct BoltValue* value)
+{
+    uint8_t marker;
+    BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
+    if (marker == 0xC1)
+    {
+        double x;
+        BoltBuffer_unload_double_be(connection->rx_buffer_1, &x);
+        BoltValue_to_Float64(value, x);
     }
     else
     {
@@ -639,6 +655,8 @@ int _unload(struct BoltConnection* connection, struct BoltValue* value)
             return _unload_boolean(connection, value);
         case BOLT_V1_INTEGER:
             return _unload_integer(connection, value);
+        case BOLT_V1_FLOAT:
+            return _unload_float(connection, value);
         case BOLT_V1_STRING:
             return _unload_string(connection, value);
         case BOLT_V1_LIST:
@@ -667,7 +685,7 @@ int BoltProtocolV1_unload(struct BoltConnection* connection, struct BoltValue* v
     {
         size = marker & 0x0F;
         BoltBuffer_unload_uint8(connection->rx_buffer_1, &code);
-        if (code == 0x71)
+        if (code == 0x71)  // RECORD
         {
             if (size >= 1)
             {
@@ -724,7 +742,16 @@ const char* BoltProtocolV1_request_name(int16_t code)
     {
         case 0x01:
             return "INIT";
-            // TODO
+        case 0x0E:
+            return "ACK_FAILURE";
+        case 0x0F:
+            return "RESET";
+        case 0x10:
+            return "RUN";
+        case 0x2F:
+            return "DISCARD_ALL";
+        case 0x3F:
+            return "PULL_ALL";
         default:
             return NULL;
     }

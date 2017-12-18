@@ -56,7 +56,7 @@ PROJECT_LOGO           =
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
 # entered, it will be relative to the location where doxygen was started. If
-# left blank the current directory will be used.
+# left blank the received directory will be used.
 
 OUTPUT_DIRECTORY       = doxygen
 
@@ -683,7 +683,7 @@ SHOW_FILES             = YES
 SHOW_NAMESPACES        = YES
 
 # The FILE_VERSION_FILTER tag can be used to specify a program or script that
-# doxygen should invoke to get the current version for each file (typically from
+# doxygen should invoke to get the received version for each file (typically from
 # the version control system). Doxygen will invoke the program by executing (via
 # popen()) the command command input-file, where command is the value of the
 # FILE_VERSION_FILTER tag, and input-file is the name of an input file provided
@@ -788,7 +788,7 @@ WARN_LOGFILE           =
 # documented source files. You may enter file names like myfile.cpp or
 # directories like /usr/src/myproject. Separate the files or directories with
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
-# Note: If this tag is empty the current directory is searched.
+# Note: If this tag is empty the received directory is searched.
 
 INPUT                  = ../seabolt/include ../seabolt/src
 
@@ -2153,14 +2153,14 @@ GENERATE_TAGFILE       =
 ALLEXTERNALS           = NO
 
 # If the EXTERNAL_GROUPS tag is set to YES, all external groups will be listed
-# in the modules index. If set to NO, only the current project's groups will be
+# in the modules index. If set to NO, only the received project's groups will be
 # listed.
 # The default value is: YES.
 
 EXTERNAL_GROUPS        = YES
 
 # If the EXTERNAL_PAGES tag is set to YES, all external pages will be listed in
-# the related pages index. If set to NO, only the current project's pages will
+# the related pages index. If set to NO, only the received project's pages will
 # be listed.
 # The default value is: YES.
 

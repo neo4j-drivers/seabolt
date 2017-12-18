@@ -65,11 +65,12 @@ struct BoltConnection
     struct BoltBuffer* rx_buffer_1;     // receive buffer without chunks
     unsigned long bolt_error;
     unsigned long openssl_error;
-    struct BoltValue* init;
     struct BoltValue* run;
+    struct BoltValue* cypher_statement;
+    struct BoltValue* cypher_parameters;
     struct BoltValue* discard;
     struct BoltValue* pull;
-    struct BoltValue* current; // holder for current messages (one at a time so we can reuse this)
+    struct BoltValue* received; // holder for received messages (one at a time so we can reuse this)
 };
 
 
@@ -104,7 +105,7 @@ int BoltConnection_transmit_b(struct BoltConnection* connection);
  * @param connection
  * @return
  */
-int BoltConnection_receive_b(struct BoltConnection* connection);
+int BoltConnection_receive_summary_b(struct BoltConnection* connection);
 
 /**
  * Receive the next message and load into the "current" slot.
@@ -112,15 +113,7 @@ int BoltConnection_receive_b(struct BoltConnection* connection);
  * @param connection
  * @return
  */
-int BoltConnection_fetch_b(struct BoltConnection* connection);
-
-/**
- * Accessor for the current message in the result stream.
- *
- * @param connection
- * @return
- */
-struct BoltValue* BoltConnection_current(struct BoltConnection* connection);
+int BoltConnection_receive_b(struct BoltConnection* connection);
 
 /**
  * Initialise the connection and authenticate using the basic
@@ -130,32 +123,10 @@ struct BoltValue* BoltConnection_current(struct BoltConnection* connection);
  */
 int BoltConnection_init_b(struct BoltConnection* connection, const char* user, const char* password);
 
-/**
- * Load a RUN message into the outgoing message queue.
- *
- * @param connection
- * @param statement
- * @return
- */
-int BoltConnection_load_run(struct BoltConnection* connection, const char* statement);
+int BoltConnection_load_run(struct BoltConnection* connection);
 
-/**
- * Load a DISCARD message into the outgoing message queue.
- *
- * @param connection
- * @param n
- * @return
- */
-int BoltConnection_load_discard(struct BoltConnection* connection, int n);
+int BoltConnection_load_discard(struct BoltConnection* connection, int32_t n);
 
-/**
- * Load a PULL message into the outgoing message queue.
- *
- * @param connection
- * @param n
- * @return
- */
-int BoltConnection_load_pull(struct BoltConnection* connection, int n);
-
+int BoltConnection_load_pull(struct BoltConnection* connection, int32_t n);
 
 #endif // SEABOLT_CONNECT

@@ -101,14 +101,18 @@ int Bolt_connect(struct Bolt* bolt)
     timespec_diff(&bolt->stats.connect_time, &t[1], &t[0]);
 }
 
+int Bolt_dump_received(struct Bolt* bolt)
+{
+    BoltValue_write(stdout, bolt->connection->received, bolt->connection->protocol_version);
+    fprintf(stdout, "\n");
+}
+
 int Bolt_init(struct Bolt* bolt)
 {
     struct timespec t[2];
     timespec_get(&t[0], TIME_UTC);
     BoltConnection_init_b(bolt->connection, bolt->user, bolt->password);
-    struct BoltValue* current = BoltConnection_current(bolt->connection);
-    BoltValue_write(stdout, current, bolt->connection->protocol_version);
-    fprintf(stdout, "\n");
+    Bolt_dump_received(bolt);
     timespec_get(&t[1], TIME_UTC);
     timespec_diff(&bolt->stats.init_time, &t[1], &t[0]);
 }
@@ -127,30 +131,43 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
 
     timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after handshake and initialisation
 
-    BoltConnection_load_run(bolt->connection, statement);
+    BoltValue_to_UTF8(bolt->connection->cypher_statement, statement, (int32_t)(strlen(statement)));
+    BoltUTF8Dictionary_resize(bolt->connection->cypher_parameters, 1);
+    BoltUTF8Dictionary_with_key(bolt->connection->cypher_parameters, 0, "x", 1);
+
+    BoltValue_to_Int32(BoltUTF8Dictionary_value(bolt->connection->cypher_parameters, 0), 1234);
+    BoltConnection_load_run(bolt->connection);
     BoltConnection_load_pull(bolt->connection, -1);
+
+    BoltValue_to_Float64(BoltUTF8Dictionary_value(bolt->connection->cypher_parameters, 0), 3.1415);
+    BoltConnection_load_run(bolt->connection);
+    BoltConnection_load_pull(bolt->connection, -1);
+
+    BoltValue_to_UTF8(BoltUTF8Dictionary_value(bolt->connection->cypher_parameters, 0), "three", 5);
+    BoltConnection_load_run(bolt->connection);
+    BoltConnection_load_pull(bolt->connection, -1);
+
     BoltConnection_transmit_b(bolt->connection);
 
     timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission
 
-    BoltConnection_receive_b(bolt->connection);
-    struct BoltValue* current = BoltConnection_current(bolt->connection);
-    BoltValue_write(stdout, current, bolt->connection->protocol_version);
-    fprintf(stdout, "\n");
-
-    timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
-
     long record_count = 0;
-    while (BoltConnection_fetch_b(bolt->connection))
+    for (int i = 0; i < 3; i++)
     {
-        current = BoltConnection_current(bolt->connection);
-        BoltValue_write(stdout, current, bolt->connection->protocol_version);
-        fprintf(stdout, "\n");
-        record_count += 1;
+
+        BoltConnection_receive_summary_b(bolt->connection);
+        Bolt_dump_received(bolt);
+
+        timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
+
+        while (BoltConnection_receive_b(bolt->connection))
+        {
+            Bolt_dump_received(bolt);
+            record_count += 1;
+        }
+        Bolt_dump_received(bolt);
+
     }
-    current = BoltConnection_current(bolt->connection);
-    BoltValue_write(stdout, current, bolt->connection->protocol_version);
-    fprintf(stdout, "\n");
 
     timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
 

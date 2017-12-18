@@ -46,7 +46,7 @@ void test_memcpyr()
     int16_t* sh_p = &sh;
     const char* sh_digits = "\x0A\x0B";
     memcpy_be(sh_p, &sh_digits[0], 2);
-    assert(sh == 0x0B0A);
+    assert(sh == 0x0A0B);
 }
 
 #endif // SEABOLT_TEST_MEM

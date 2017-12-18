@@ -51,26 +51,37 @@ struct BoltConnection* _create(enum BoltTransport transport)
 {
     struct BoltConnection* connection = BoltMem_allocate(sizeof(struct BoltConnection));
     memset(connection, 0, sizeof(struct BoltConnection));
+
     connection->transport = transport;
     connection->user_agent = DEFAULT_USER_AGENT;
+
     connection->tx_buffer_1 = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
     connection->tx_buffer_0 = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
     connection->rx_buffer_0 = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
     connection->rx_buffer_1 = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
-    connection->init = BoltValue_create();
+
+    // TODO: this is protocol version specific
     connection->run = BoltValue_create();
+    BoltValue_to_Request(connection->run, 0x10, 2);
+    connection->cypher_statement = BoltRequest_value(connection->run, 0);
+    connection->cypher_parameters = BoltRequest_value(connection->run, 1);
+    BoltValue_to_UTF8Dictionary(connection->cypher_parameters, 0);
+
     connection->discard = BoltValue_create();
+    BoltValue_to_Request(connection->discard, 0x2F, 0);
+
     connection->pull = BoltValue_create();
-    connection->current = BoltValue_create();
+    BoltValue_to_Request(connection->pull, 0x3F, 0);
+
+    connection->received = BoltValue_create();
 }
 
 void _destroy(struct BoltConnection* connection)
 {
-    BoltValue_destroy(connection->current);
+    BoltValue_destroy(connection->received);
     BoltValue_destroy(connection->pull);
     BoltValue_destroy(connection->discard);
     BoltValue_destroy(connection->run);
-    BoltValue_destroy(connection->init);
     BoltBuffer_destroy(connection->rx_buffer_1);
     BoltBuffer_destroy(connection->rx_buffer_0);
     BoltBuffer_destroy(connection->tx_buffer_0);
@@ -363,17 +374,17 @@ int BoltConnection_transmit_b(struct BoltConnection* connection)
     return transmitted;
 }
 
-int BoltConnection_receive_b(struct BoltConnection* connection)
+int BoltConnection_receive_summary_b(struct BoltConnection* connection)
 {
     int records = 0;
-    while (BoltConnection_fetch_b(connection) == 1)
+    while (BoltConnection_receive_b(connection) == 1)
     {
         records += 1;
     }
     return records;
 }
 
-int BoltConnection_fetch_b(struct BoltConnection* connection)
+int BoltConnection_receive_b(struct BoltConnection* connection)
 {
     BoltBuffer_compact(connection->rx_buffer_1);
     switch (connection->protocol_version)
@@ -404,12 +415,12 @@ int BoltConnection_fetch_b(struct BoltConnection* connection)
                 }
                 chunk_size = char_to_uint16be(header);
             }
-            BoltProtocolV1_unload(connection, connection->current);
-            if (BoltValue_type(connection->current) != BOLT_SUMMARY)
+            BoltProtocolV1_unload(connection, connection->received);
+            if (BoltValue_type(connection->received) != BOLT_SUMMARY)
             {
                 return 1;
             }
-            int16_t code = BoltSummary_code(connection->current);
+            int16_t code = BoltSummary_code(connection->received);
             switch (code)
             {
                 case 0x70:  // SUCCESS
@@ -437,26 +448,24 @@ int BoltConnection_fetch_b(struct BoltConnection* connection)
     }
 }
 
-struct BoltValue* BoltConnection_current(struct BoltConnection* connection)
-{
-    return connection->current;
-}
-
 int BoltConnection_init_b(struct BoltConnection* connection, const char* user, const char* password)
 {
     BoltLog_info("bolt: Initialising connection for user '%s'", user);
     switch (connection->protocol_version)
     {
         case 1:
-            BoltProtocolV1_Value_to_INIT(connection->init, connection->user_agent, user, password);
-            BoltProtocolV1_load(connection, connection->init);
+        {
+            struct BoltValue* init = BoltValue_create();
+            BoltProtocolV1_compile_INIT(init, connection->user_agent, user, password);
+            BoltProtocolV1_load(connection, init);
+            BoltValue_destroy(init);
             try(BoltConnection_transmit_b(connection));
             int records = 0;
-            while (BoltConnection_fetch_b(connection) == 1)
+            while (BoltConnection_receive_b(connection) == 1)
             {
                 records += 1;
             }
-            int16_t code = BoltSummary_code(connection->current);
+            int16_t code = BoltSummary_code(connection->received);
             switch (code)
             {
                 case 0x70:  // SUCCESS
@@ -472,6 +481,7 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user, c
                     _set_status(connection, BOLT_DEFUNCT, -1);
                     return -1;
             }
+        }
         default:
             _set_status(connection, BOLT_DEFUNCT, -1);
             BoltLog_error("bolt: Protocol version unsupported");
@@ -479,12 +489,11 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user, c
     }
 }
 
-int BoltConnection_load_run(struct BoltConnection* connection, const char* statement)
+int BoltConnection_load_run(struct BoltConnection* connection)
 {
     switch (connection->protocol_version)
     {
         case 1:
-            BoltProtocolV1_Value_to_RUN(connection->run, statement);
             BoltProtocolV1_load(connection, connection->run);
             return 0;
         default:
@@ -492,7 +501,7 @@ int BoltConnection_load_run(struct BoltConnection* connection, const char* state
     }
 }
 
-int BoltConnection_load_discard(struct BoltConnection* connection, int n)
+int BoltConnection_load_discard(struct BoltConnection* connection, int32_t n)
 {
     switch (connection->protocol_version)
     {
@@ -503,16 +512,15 @@ int BoltConnection_load_discard(struct BoltConnection* connection, int n)
             }
             else
             {
-                BoltProtocolV1_Value_to_DISCARD_ALL(connection->discard);
                 BoltProtocolV1_load(connection, connection->discard);
-                return 0;
             }
+            return 0;
         default:
             return -1;
     }
 }
 
-int BoltConnection_load_pull(struct BoltConnection* connection, int n)
+int BoltConnection_load_pull(struct BoltConnection* connection, int32_t n)
 {
     switch (connection->protocol_version)
     {
@@ -523,10 +531,9 @@ int BoltConnection_load_pull(struct BoltConnection* connection, int n)
             }
             else
             {
-                BoltProtocolV1_Value_to_PULL_ALL(connection->pull);
                 BoltProtocolV1_load(connection, connection->pull);
-                return 0;
             }
+            return 0;
         default:
             return -1;
     }

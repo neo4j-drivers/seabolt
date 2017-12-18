@@ -155,7 +155,14 @@ int BoltStructureArray_write(FILE* file, struct BoltValue* value, int32_t protoc
         case 1:
         {
             const char* name = BoltProtocolV1_structure_name(code);
-            fprintf(file, "$%s", name);
+            if (name == NULL)
+            {
+                fprintf(file, "$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+            }
+            else
+            {
+                fprintf(file, "$%s", name);
+            }
             break;
         }
         default:
@@ -183,7 +190,14 @@ int BoltRequest_write(FILE* file, struct BoltValue* value, int32_t protocol_vers
         case 1:
         {
             const char* name = BoltProtocolV1_request_name(code);
-            fprintf(file, "%s", name);
+            if (name == NULL)
+            {
+                fprintf(file, "Request<#%c%c>", hex1(&code, 0), hex0(&code, 0));
+            }
+            else
+            {
+                fprintf(file, "%s", name);
+            }
             break;
         }
         default:
@@ -207,7 +221,14 @@ int BoltSummary_write(FILE* file, struct BoltValue* value, int32_t protocol_vers
         case 1:
         {
             const char* name = BoltProtocolV1_summary_name(code);
-            fprintf(file, "%s", name);
+            if (name == NULL)
+            {
+                fprintf(file, "Summary<#%c%c>", hex1(&code, 0), hex0(&code, 0));
+            }
+            else
+            {
+                fprintf(file, "%s", name);
+            }
             break;
         }
         default:
