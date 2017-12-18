@@ -116,3 +116,57 @@ SCENARIO("Test insecure connection to dead port", "[integration]")
         freeaddrinfo(address);
     }
 }
+
+struct BoltConnection* _open_b(enum BoltTransport transport, const char* host, const char* port)
+{
+    struct addrinfo* address;
+    int gai_status = getaddrinfo(host, port, nullptr, &address);
+    REQUIRE(gai_status == 0);
+    struct BoltConnection* connection = BoltConnection_open_b(transport, address);
+    freeaddrinfo(address);
+    REQUIRE(connection->status == BOLT_CONNECTED);
+    return connection;
+}
+
+SCENARIO("Test init with valid credentials", "[integration]")
+{
+    GIVEN("an open connection")
+    {
+        struct BoltConnection* connection = _open_b(BOLT_SECURE_SOCKET, BOLT_HOST, BOLT_PORT);
+        WHEN("successfully initialised")
+        {
+            int rv = BoltConnection_init_b(connection, BOLT_USER, BOLT_PASSWORD);
+            THEN("return value should be 0")
+            {
+                REQUIRE(rv == 0);
+            }
+            THEN("status should change to READY")
+            {
+                REQUIRE(connection->status == BOLT_READY);
+            }
+        }
+        BoltConnection_close_b(connection);
+    }
+}
+
+SCENARIO("Test init with invalid credentials", "[integration]")
+{
+    GIVEN("an open connection")
+    {
+        struct BoltConnection* connection = _open_b(BOLT_SECURE_SOCKET, BOLT_HOST, BOLT_PORT);
+        WHEN("unsuccessfully initialised")
+        {
+            REQUIRE(strcmp(BOLT_PASSWORD, "X") != 0);
+            int rv = BoltConnection_init_b(connection, BOLT_USER, "X");
+            THEN("return value should not be 0")
+            {
+                REQUIRE(rv != 0);
+            }
+            THEN("status should change to DEFUNCT")
+            {
+                REQUIRE(connection->status == BOLT_DEFUNCT);
+            }
+        }
+        BoltConnection_close_b(connection);
+    }
+}
