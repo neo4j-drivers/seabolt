@@ -28,39 +28,278 @@ extern "C" {
 
 #include <catch.hpp>
 
+using namespace std;
 
-SCENARIO("Test null values")
+
+SCENARIO("Test Null")
 {
     GIVEN("a new value")
     {
-        size_t orig_mem_allocated = BoltMem_allocated();
         struct BoltValue* value = BoltValue_create();
-        THEN("there should be 32 more bytes of memory allocated")
-        {
-            REQUIRE(BoltMem_allocated() == orig_mem_allocated + 32);
-        }
-        THEN("and the initial type should be null")
+        THEN("the initial type should be Null")
         {
             REQUIRE(BoltValue_type(value) == BOLT_NULL);
         }
-        WHEN("the type is explicitly set to null")
+        WHEN("the type is explicitly set to Null")
         {
             BoltValue_to_Null(value);
-            THEN("and the type should still be null")
+            THEN("the type should still be Null")
             {
                 REQUIRE(BoltValue_type(value) == BOLT_NULL);
             }
         }
-        WHEN("the value is destroyed")
-        {
-            BoltValue_destroy(value);
-            THEN("the memory allocation should return to its previous level")
-            {
-                REQUIRE(BoltMem_allocated() == orig_mem_allocated);
-            }
-        }
+        BoltValue_destroy(value);
     }
 }
+
+SCENARIO("Test Bit values")
+{
+    GIVEN("a new value")
+    {
+        struct BoltValue* value = BoltValue_create();
+        WHEN("the value is mutated to a Bit")
+        {
+            for (int i = 0; i <= 1; i++)
+            {
+                BoltValue_to_Bit(value, (char)(i));
+                THEN("the type should be Bit")
+                {
+                    REQUIRE(BoltValue_type(value) == BOLT_BIT);
+                }
+                THEN("the inner value should be set to " + to_string(i))
+                {
+                    REQUIRE(BoltBit_get(value) == (char)(i));
+                }
+            }
+        }
+        BoltValue_destroy(value);
+    }
+}
+
+SCENARIO("Test BitArray values")
+{
+    GIVEN("a new value")
+    {
+        struct BoltValue* value = BoltValue_create();
+        WHEN("the value is mutated to a BitArray")
+        {
+            int32_t size = 2;
+            char array[] = {0, 1};
+            BoltValue_to_BitArray(value, array, size);
+            THEN("the type should be BitArray")
+            {
+                REQUIRE(BoltValue_type(value) == BOLT_BIT_ARRAY);
+            }
+            THEN("the inner values should be set correctly")
+            {
+                REQUIRE(BoltBitArray_get(value, 0) == 0);
+                REQUIRE(BoltBitArray_get(value, 1) == 1);
+            }
+        }
+        BoltValue_destroy(value);
+    }
+}
+
+SCENARIO("Test Byte values")
+{
+    GIVEN("a new value")
+    {
+        struct BoltValue* value = BoltValue_create();
+        WHEN("the value is mutated to a Byte")
+        {
+            for (int i = 0x00; i <= 0xFF; i++)
+            {
+                BoltValue_to_Byte(value, (char)(i));
+                THEN("the type should be Byte")
+                {
+                    REQUIRE(BoltValue_type(value) == BOLT_BYTE);
+                }
+                THEN("the inner value should be set to " + to_string(i))
+                {
+                    REQUIRE(BoltByte_get(value) == (char)(i));
+                }
+            }
+        }
+        BoltValue_destroy(value);
+    }
+}
+
+SCENARIO("Test ByteArray values", "[ByteArray]")
+{
+    GIVEN("a new value")
+    {
+        struct BoltValue* value = BoltValue_create();
+        WHEN("the value is mutated to a ByteArray")
+        {
+            for (int32_t size = 0; size <= 0x100; size += 8)
+            {
+                char array[] = ("\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f"
+                                "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
+                                " !\"#$%&'()*+,-./0123456789:;<=>?"
+                                "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+                                "`abcdefghijklmnopqrstuvwxyz{|}~\x7f"
+                                "\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f"
+                                "\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f"
+                                "\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf"
+                                "\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf"
+                                "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf"
+                                "\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf"
+                                "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef"
+                                "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff");
+                BoltValue_to_ByteArray(value, array, size);
+                THEN("the type should be ByteArray (size = " + to_string(size) + ")")
+                {
+                    REQUIRE(BoltValue_type(value) == BOLT_BYTE_ARRAY);
+                }
+                THEN("the inner values should be set correctly (size = " + to_string(size) + ")")
+                {
+                    for (int i = 0; i < size; i++)
+                    {
+                        REQUIRE(BoltByteArray_get(value, i) == (char)(i));
+                    }
+                }
+            }
+        }
+        BoltValue_destroy(value);
+    }
+}
+
+SCENARIO("Test UTF8 values")
+{
+    GIVEN("a new value")
+    {
+        struct BoltValue* value = BoltValue_create();
+        WHEN("set to an empty string")
+        {
+            const char* text = "";
+            int32_t text_size = 0;
+            BoltValue_to_UTF8(value, text, text_size);
+            THEN("the type should be UTF8")
+            {
+                REQUIRE(BoltValue_type(value) == BOLT_UTF8);
+            }
+            THEN("the size should be correct")
+            {
+                REQUIRE(value->size == text_size);
+            }
+            THEN("the inner value should be correct")
+            {
+                const char* stored_text = BoltUTF8_get(value);
+                REQUIRE(strncmp(text, stored_text, text_size) == 0);
+            }
+        }
+        WHEN("set to a simple string")
+        {
+            const char* text = "hello, world";
+            int32_t text_size = 12;
+            BoltValue_to_UTF8(value, text, text_size);
+            THEN("the type should be UTF8")
+            {
+                REQUIRE(BoltValue_type(value) == BOLT_UTF8);
+            }
+            THEN("the size should be correct")
+            {
+                REQUIRE(value->size == text_size);
+            }
+            THEN("the inner value should be correct")
+            {
+                const char* stored_text = BoltUTF8_get(value);
+                REQUIRE(strncmp(text, stored_text, text_size) == 0);
+            }
+        }
+        WHEN("set to a long string containing a zero byte")
+        {
+            const char* text = "there is a null character -> \x00 <- in the middle of this string";
+            int32_t text_size = 62;
+            BoltValue_to_UTF8(value, text, text_size);
+            THEN("the type should be UTF8")
+            {
+                REQUIRE(BoltValue_type(value) == BOLT_UTF8);
+            }
+            THEN("the size should be correct")
+            {
+                REQUIRE(value->size == text_size);
+            }
+            THEN("the inner value should be correct")
+            {
+                const char* stored_text = BoltUTF8_get(value);
+                REQUIRE(strncmp(text, stored_text, text_size) == 0);
+            }
+        }
+        WHEN("set back to a simple string")
+        {
+            const char* text = "back to a short one";
+            int32_t text_size = 19;
+            BoltValue_to_UTF8(value, text, text_size);
+            THEN("the type should be UTF8")
+            {
+                REQUIRE(BoltValue_type(value) == BOLT_UTF8);
+            }
+            THEN("the size should be correct")
+            {
+                REQUIRE(value->size == text_size);
+            }
+            THEN("the inner value should be correct")
+            {
+                const char* stored_text = BoltUTF8_get(value);
+                REQUIRE(strncmp(text, stored_text, text_size) == 0);
+            }
+        }
+        BoltValue_destroy(value);
+    }
+}
+
+SCENARIO("Test UTF8Array values")
+{
+    GIVEN("a new value")
+    {
+        struct BoltValue* value = BoltValue_create();
+        BoltValue_to_UTF8Array(value, 5);
+        BoltUTF8Array_put(value, 0, "hello", 5);
+        BoltUTF8Array_put(value, 1, "world", 5);
+        BoltUTF8Array_put(value, 2, "here is a very very very very very very very very long string", 61);
+        BoltUTF8Array_put(value, 3, "", 0);
+        BoltUTF8Array_put(value, 4, "that last one was empty!!", 25);
+        THEN("the type should be UTF8Array")
+        {
+            REQUIRE(BoltValue_type(value) == BOLT_UTF8_ARRAY);
+        }
+        THEN("the size should be correct")
+        {
+            REQUIRE(value->size == 5);
+        }
+        THEN("the values should be correct")
+        {
+            char* text;
+            int32_t size;
+
+            text = BoltUTF8Array_get(value, 0);
+            size = BoltUTF8Array_get_size(value, 0);
+            REQUIRE(strncmp(text, "hello", (size_t)(size)) == 0);
+
+            text = BoltUTF8Array_get(value, 1);
+            size = BoltUTF8Array_get_size(value, 1);
+            REQUIRE(strncmp(text, "world", (size_t)(size)) == 0);
+
+            text = BoltUTF8Array_get(value, 2);
+            size = BoltUTF8Array_get_size(value, 2);
+            REQUIRE(strncmp(text, "here is a very very very very very very very very long string", (size_t)(size)) == 0);
+
+            text = BoltUTF8Array_get(value, 3);
+            size = BoltUTF8Array_get_size(value, 3);
+            REQUIRE(strncmp(text, "", (size_t)(size)) == 0);
+
+            text = BoltUTF8Array_get(value, 4);
+            size = BoltUTF8Array_get_size(value, 4);
+            REQUIRE(strncmp(text, "that last one was empty!!", (size_t)(size)) == 0);
+        }
+        BoltValue_destroy(value);
+    }
+}
+
+
+
+
 
 void _dump(struct BoltValue* value)
 {
@@ -221,132 +460,6 @@ void test_utf8_dictionary()
     _test_single_entry_utf8_dictionary();
     _test_utf8_dictionary_growth();
     _test_utf8_dictionary_shrinkage();
-}
-
-void test_bit()
-{
-    struct BoltValue* value = BoltValue_create();
-    for (char i = 0; i <= 1; i++)
-    {
-        BoltValue_to_Bit(value, i);
-        _dump(value);
-        assert(BoltValue_type(value) == BOLT_BIT);
-        assert(BoltBit_get(value) == i);
-    }
-    BoltValue_destroy(value);
-}
-
-void test_bit_array()
-{
-    struct BoltValue* value = BoltValue_create();
-    int32_t size = 2;
-    char array[] = {0, 1};
-    BoltValue_to_BitArray(value, array, size);
-    _dump(value);
-    assert(BoltValue_type(value) == BOLT_BIT_ARRAY);
-    for (int i = 0; i < size; i++)
-    {
-        assert(BoltBitArray_get(value, i) == array[i]);
-    }
-    BoltValue_destroy(value);
-}
-
-void test_byte()
-{
-    struct BoltValue* value = BoltValue_create();
-    for (int i = 0x00; i <= 0xFF; i++)
-    {
-        BoltValue_to_Byte(value, (char)(i));
-        _dump(value);
-        assert(BoltValue_type(value) == BOLT_BYTE);
-        assert(BoltByte_get(value) == (char)(i));
-    }
-    BoltValue_destroy(value);
-}
-
-void test_byte_array()
-{
-    struct BoltValue* value = BoltValue_create();
-    char array[] = ("\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f"
-            "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
-            " !\"#$%&'()*+,-./0123456789:;<=>?"
-            "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-            "`abcdefghijklmnopqrstuvwxyz{|}~\x7f"
-            "\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f"
-            "\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f"
-            "\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf"
-            "\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf"
-            "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf"
-            "\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf"
-            "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef"
-            "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff");
-    int32_t size = sizeof(array) - 1;
-    BoltValue_to_ByteArray(value, array, size);
-    _dump(value);
-    assert(BoltValue_type(value) == BOLT_BYTE_ARRAY);
-    for (int i = 0; i < size; i++)
-    {
-        assert(BoltByteArray_get(value, i) == array[i]);
-    }
-    BoltValue_destroy(value);
-}
-
-void _test_utf8(const char* text, int32_t text_size)
-{
-    struct BoltValue* value = BoltValue_create();
-    BoltValue_to_UTF8(value, text, text_size);
-    _dump(value);
-    assert(BoltValue_type(value) == BOLT_UTF8);
-    assert(value->size == text_size);
-    const char* stored_text = BoltUTF8_get(value);
-    assert(strncmp(text, stored_text, (size_t)(text_size)) == 0);
-    BoltValue_destroy(value);
-}
-
-void test_utf8()
-{
-    _test_utf8("", 0);
-    _test_utf8("hello, world", 12);
-    _test_utf8("there is a null character -> \x00 <- in the middle of this string", 62);
-    _test_utf8("back to a short one", 19);
-}
-
-void test_utf8_array()
-{
-    struct BoltValue* value = BoltValue_create();
-    char* text;
-    int32_t size;
-    BoltValue_to_UTF8Array(value, 5);
-    BoltUTF8Array_put(value, 0, "hello", 5);
-    BoltUTF8Array_put(value, 1, "world", 5);
-    BoltUTF8Array_put(value, 2, "here is a very very very very very very very very long string", 61);
-    BoltUTF8Array_put(value, 3, "", 0);
-    BoltUTF8Array_put(value, 4, "that last one was empty!!", 25);
-    _dump(value);
-    assert(BoltValue_type(value) == BOLT_UTF8_ARRAY);
-    assert(value->size == 5);
-
-    text = BoltUTF8Array_get(value, 0);
-    size = BoltUTF8Array_get_size(value, 0);
-    assert(strncmp(text, "hello", (size_t)(size)) == 0);
-
-    text = BoltUTF8Array_get(value, 1);
-    size = BoltUTF8Array_get_size(value, 1);
-    assert(strncmp(text, "world", (size_t)(size)) == 0);
-
-    text = BoltUTF8Array_get(value, 2);
-    size = BoltUTF8Array_get_size(value, 2);
-    assert(strncmp(text, "here is a very very very very very very very very long string", (size_t)(size)) == 0);
-
-    text = BoltUTF8Array_get(value, 3);
-    size = BoltUTF8Array_get_size(value, 3);
-    assert(strncmp(text, "", (size_t)(size)) == 0);
-
-    text = BoltUTF8Array_get(value, 4);
-    size = BoltUTF8Array_get_size(value, 4);
-    assert(strncmp(text, "that last one was empty!!", (size_t)(size)) == 0);
-
-    BoltValue_destroy(value);
 }
 
 int test_num8()
@@ -808,14 +921,7 @@ void test_summary()
 
 int test_types()
 {
-    test_null();
     test_list();
-    test_bit();
-    test_bit_array();
-    test_byte();
-    test_byte_array();
-    test_utf8();
-    test_utf8_array();
     test_utf8_dictionary();
     test_num8_array(test_num8());
     test_num16_array(test_num16());
