@@ -18,12 +18,5 @@
  */
 
 
-#include "test_mem.h"
-#include "test_values.h"
-
-
-int main(int argc, char* argv[])
-{
-//    test_types();
-    test_memcpyr();
-}
+#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main()
+#include "catch.hpp"

@@ -25,7 +25,7 @@
 #include "warden.h"
 
 
-void* memcpyr(void *dest, const void *src, size_t n)
+void* memcpy_r(void* dest, const void* src, size_t n)
 {
     char* dest_c = (char*)(dest);
     const char* src_c = (const char*)(src);

@@ -351,9 +351,9 @@ char* BoltUTF8Array_get(struct BoltValue* value, int32_t index);
 
 uint16_t* BoltUTF16Array_get(struct BoltValue* value, int32_t index);
 
-void BoltUTF8Array_put(struct BoltValue* value, int32_t index, char* string, int32_t size);
+void BoltUTF8Array_put(struct BoltValue* value, int32_t index, const char* string, int32_t size);
 
-void BoltUTF16Array_put(struct BoltValue* value, int32_t index, uint16_t* string, int32_t size);
+void BoltUTF16Array_put(struct BoltValue* value, int32_t index, const uint16_t* string, int32_t size);
 
 int32_t BoltUTF8Array_get_size(struct BoltValue* value, int32_t index);
 
@@ -363,9 +363,9 @@ struct BoltValue* BoltUTF8Dictionary_key(struct BoltValue* value, int32_t index)
 
 struct BoltValue* BoltUTF16Dictionary_key(struct BoltValue* value, int32_t index);
 
-struct BoltValue* BoltUTF8Dictionary_with_key(struct BoltValue* value, int32_t index, char* key, int32_t key_size);
+struct BoltValue* BoltUTF8Dictionary_with_key(struct BoltValue* value, int32_t index, const char* key, int32_t key_size);
 
-struct BoltValue* BoltUTF16Dictionary_with_key(struct BoltValue* value, int32_t index, uint16_t* key, int32_t key_size);
+struct BoltValue* BoltUTF16Dictionary_with_key(struct BoltValue* value, int32_t index, const uint16_t* key, int32_t key_size);
 
 struct BoltValue* BoltUTF8Dictionary_value(struct BoltValue* value, int32_t index);
 

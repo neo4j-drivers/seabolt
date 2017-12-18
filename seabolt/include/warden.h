@@ -26,7 +26,7 @@
 
 #include "stdio.h"
 
-void* memcpyr(void *dest, const void *src, size_t n);
+void* memcpy_r(void* dest, const void* src, size_t n);
 
 #ifdef _WIN32
     // Windows endianness is always LE (I think)
@@ -36,7 +36,7 @@ void* memcpyr(void *dest, const void *src, size_t n);
     #if __BYTE_ORDER == __BIG_ENDIAN
         #define memcpy_be(target, src, n) memcpy(target, src, n)
     #else
-        #define memcpy_be(target, src, n) memcpyr(target, src, n)
+        #define memcpy_be(target, src, n) memcpy_r(target, src, n)
     #endif
 #endif
 

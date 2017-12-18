@@ -20,23 +20,52 @@
 #include <math.h>
 #include <assert.h>
 #include <memory.h>
-#include "bolt.h"
-#include "test_values.h"
+#include "test_values.hpp"
 
+extern "C" {
+    #include "bolt.h"
+}
+
+#include <catch.hpp>
+
+
+SCENARIO("Test null values")
+{
+    GIVEN("a new value")
+    {
+        size_t orig_mem_allocated = BoltMem_allocated();
+        struct BoltValue* value = BoltValue_create();
+        THEN("there should be 32 more bytes of memory allocated")
+        {
+            REQUIRE(BoltMem_allocated() == orig_mem_allocated + 32);
+        }
+        THEN("and the initial type should be null")
+        {
+            REQUIRE(BoltValue_type(value) == BOLT_NULL);
+        }
+        WHEN("the type is explicitly set to null")
+        {
+            BoltValue_to_Null(value);
+            THEN("and the type should still be null")
+            {
+                REQUIRE(BoltValue_type(value) == BOLT_NULL);
+            }
+        }
+        WHEN("the value is destroyed")
+        {
+            BoltValue_destroy(value);
+            THEN("the memory allocation should return to its previous level")
+            {
+                REQUIRE(BoltMem_allocated() == orig_mem_allocated);
+            }
+        }
+    }
+}
 
 void _dump(struct BoltValue* value)
 {
     BoltValue_write(stdout, value, 0);
     fprintf(stdout, "\n");
-}
-
-void test_null()
-{
-    struct BoltValue* value = BoltValue_create();
-    BoltValue_to_Null(value);
-    _dump(value);
-    assert(BoltValue_type(value) == BOLT_NULL);
-    BoltValue_destroy(value);
 }
 
 void _test_list()
@@ -262,7 +291,7 @@ void test_byte_array()
     BoltValue_destroy(value);
 }
 
-void _test_utf8(char* text, int32_t text_size)
+void _test_utf8(const char* text, int32_t text_size)
 {
     struct BoltValue* value = BoltValue_create();
     BoltValue_to_UTF8(value, text, text_size);

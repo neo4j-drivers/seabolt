@@ -127,7 +127,7 @@ int32_t BoltUTF8Array_get_size(struct BoltValue* value, int32_t index)
     return value->data.extended.as_array[index].size;
 }
 
-void BoltUTF8Array_put(struct BoltValue* value, int32_t index, char* string, int32_t size)
+void BoltUTF8Array_put(struct BoltValue* value, int32_t index, const char* string, int32_t size)
 {
     struct array_t* s = &value->data.extended.as_array[index];
     s->data.as_ptr = BoltMem_adjust(s->data.as_ptr, (size_t)(s->size), (size_t)(size));
@@ -144,7 +144,7 @@ struct BoltValue* BoltUTF8Dictionary_key(struct BoltValue* value, int32_t index)
     return &value->data.extended.as_value[2 * index];
 }
 
-struct BoltValue* BoltUTF8Dictionary_with_key(struct BoltValue* value, int32_t index, char* key, int32_t key_size)
+struct BoltValue* BoltUTF8Dictionary_with_key(struct BoltValue* value, int32_t index, const char* key, int32_t key_size)
 {
     assert(BoltValue_type(value) == BOLT_UTF8_DICTIONARY);
     BoltValue_to_UTF8(&value->data.extended.as_value[2 * index], key, key_size);
