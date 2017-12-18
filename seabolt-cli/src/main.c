@@ -55,7 +55,7 @@ struct Bolt* Bolt_create(int argc, char* argv[])
     const char* BOLT_PASSWORD = getenv("BOLT_PASSWORD");
 
     struct Bolt* bolt = BoltMem_allocate(sizeof(struct Bolt));
-    bolt->transport = (strcmp(BOLT_SECURE, "1") == 0) ? BOLT_SECURE_SOCKET : BOLT_SOCKET;
+    bolt->transport = (strcmp(BOLT_SECURE, "1") == 0) ? BOLT_SECURE_SOCKET : BOLT_INSECURE_SOCKET;
 
     int res = getaddrinfo(BOLT_HOST, BOLT_PORT, NULL, &bolt->address);
     if (res != 0)

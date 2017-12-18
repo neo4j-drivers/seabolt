@@ -76,19 +76,6 @@ struct BoltConnection* _create(enum BoltTransport transport)
     connection->received = BoltValue_create();
 }
 
-void _destroy(struct BoltConnection* connection)
-{
-    BoltValue_destroy(connection->received);
-    BoltValue_destroy(connection->pull);
-    BoltValue_destroy(connection->discard);
-    BoltValue_destroy(connection->run);
-    BoltBuffer_destroy(connection->rx_buffer_1);
-    BoltBuffer_destroy(connection->rx_buffer_0);
-    BoltBuffer_destroy(connection->tx_buffer_0);
-    BoltBuffer_destroy(connection->tx_buffer_1);
-    BoltMem_deallocate(connection, sizeof(struct BoltConnection));
-}
-
 void _set_status(struct BoltConnection* connection, enum BoltConnectionStatus status, int error)
 {
     connection->status = status;
@@ -164,7 +151,7 @@ void _close_b(struct BoltConnection* connection)
     BoltLog_info("bolt: Closing connection");
     switch(connection->transport)
     {
-        case BOLT_SOCKET:
+        case BOLT_INSECURE_SOCKET:
         {
             SHUTDOWN(connection->socket, 2);
             break;
@@ -187,6 +174,23 @@ void _close_b(struct BoltConnection* connection)
     _set_status(connection, BOLT_DISCONNECTED, 0);
 }
 
+void _destroy(struct BoltConnection* connection)
+{
+    if (connection->status != BOLT_CONNECTED)
+    {
+        _close_b(connection);
+    }
+    BoltValue_destroy(connection->received);
+    BoltValue_destroy(connection->pull);
+    BoltValue_destroy(connection->discard);
+    BoltValue_destroy(connection->run);
+    BoltBuffer_destroy(connection->rx_buffer_1);
+    BoltBuffer_destroy(connection->rx_buffer_0);
+    BoltBuffer_destroy(connection->tx_buffer_0);
+    BoltBuffer_destroy(connection->tx_buffer_1);
+    BoltMem_deallocate(connection, sizeof(struct BoltConnection));
+}
+
 int _transmit_b(struct BoltConnection* connection, const char* data, int size)
 {
     if (size == 0)
@@ -200,7 +204,7 @@ int _transmit_b(struct BoltConnection* connection, const char* data, int size)
         int sent = 0;
         switch(connection->transport)
         {
-            case BOLT_SOCKET:
+            case BOLT_INSECURE_SOCKET:
             {
                 sent = TRANSMIT(connection->socket, data, size, 0);
                 break;
@@ -220,7 +224,7 @@ int _transmit_b(struct BoltConnection* connection, const char* data, int size)
         {
             switch (connection->transport)
             {
-                case BOLT_SOCKET:
+                case BOLT_INSECURE_SOCKET:
                     _set_status(connection, BOLT_DEFUNCT, errno);
                     BoltLog_error("bolt: Socket error %d on transmit", connection->error);
                     break;
@@ -258,7 +262,7 @@ int _receive_b(struct BoltConnection* connection, char* buffer, int min_size, in
         int received = 0;
         switch (connection->transport)
         {
-            case BOLT_SOCKET:
+            case BOLT_INSECURE_SOCKET:
                 received = RECEIVE(connection->socket, buffer, max_remaining, 0);
                 break;
             case BOLT_SECURE_SOCKET:
@@ -280,7 +284,7 @@ int _receive_b(struct BoltConnection* connection, char* buffer, int min_size, in
         {
             switch (connection->transport)
             {
-                case BOLT_SOCKET:
+                case BOLT_INSECURE_SOCKET:
                     _set_status(connection, BOLT_DEFUNCT, errno);
                     BoltLog_error("bolt: Socket error %d on receive", connection->error);
                     break;
@@ -346,6 +350,7 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const
     int opened = _open_b(connection, address);
     if (opened == -1)
     {
+        _destroy(connection);
         return NULL;
     }
     if (transport == BOLT_SECURE_SOCKET)
@@ -353,6 +358,7 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const
         int secured = _secure_b(connection);
         if (secured == -1)
         {
+            _destroy(connection);
             return NULL;
         }
     }

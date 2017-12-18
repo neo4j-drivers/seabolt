@@ -32,8 +32,8 @@
 
 enum BoltTransport
 {
-    BOLT_SOCKET,
     BOLT_SECURE_SOCKET,
+    BOLT_INSECURE_SOCKET,
 };
 
 enum BoltConnectionStatus
