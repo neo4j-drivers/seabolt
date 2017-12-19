@@ -250,7 +250,7 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
                                                              BOLT_USER, BOLT_PASSWORD);
         WHEN("successfully executed Cypher")
         {
-            BoltConnection_set_statement(connection, "RETURN $x", 8);
+            BoltConnection_set_statement(connection, "RETURN $x", 9);
             BoltValue_to_Dictionary8(connection->cypher_parameters, 1);
             BoltDictionary8_set_key(connection->cypher_parameters, 0, "x", 1);
             BoltValue* x = BoltDictionary8_value(connection->cypher_parameters, 0);
