@@ -33,14 +33,14 @@ const char* getenv_or_default(const char* name, const char* default_value)
     return (value == nullptr) ? default_value : value;
 }
 
-const char* BOLT_IPV4_HOST = getenv_or_default("BOLT_HOST", "127.0.0.1");
-const char* BOLT_IPV6_HOST = getenv_or_default("BOLT_HOST", "::1");
+const char* BOLT_IPV4_HOST = getenv_or_default("BOLT_IPV4_HOST", "127.0.0.1");
+const char* BOLT_IPV6_HOST = getenv_or_default("BOLT_IPV6_HOST", "::1");
 const char* BOLT_PORT = getenv_or_default("BOLT_PORT", "7687");
 const char* BOLT_USER = getenv_or_default("BOLT_USER", "neo4j");
 const char* BOLT_PASSWORD = getenv_or_default("BOLT_PASSWORD", "password");
 
 
-SCENARIO("Test basic secure connection (IPv4)", "[integration]")
+SCENARIO("Test basic secure connection (IPv4)", "[integration][ipv4][secure]")
 {
     GIVEN("a local server address")
     {
@@ -60,7 +60,7 @@ SCENARIO("Test basic secure connection (IPv4)", "[integration]")
     }
 }
 
-SCENARIO("Test basic secure connection (IPv6)", "[integration]")
+SCENARIO("Test basic secure connection (IPv6)", "[integration][ipv6][secure]")
 {
     GIVEN("a local server address")
     {
@@ -80,7 +80,7 @@ SCENARIO("Test basic secure connection (IPv6)", "[integration]")
     }
 }
 
-SCENARIO("Test basic insecure connection (IPv4)", "[integration]")
+SCENARIO("Test basic insecure connection (IPv4)", "[integration][ipv4][insecure]")
 {
     GIVEN("a local server address")
     {
@@ -100,7 +100,7 @@ SCENARIO("Test basic insecure connection (IPv4)", "[integration]")
     }
 }
 
-SCENARIO("Test basic insecure connection (IPv6)", "[integration]")
+SCENARIO("Test basic insecure connection (IPv6)", "[integration][ipv6][insecure]")
 {
     GIVEN("a local server address")
     {
@@ -120,7 +120,7 @@ SCENARIO("Test basic insecure connection (IPv6)", "[integration]")
     }
 }
 
-SCENARIO("Test secure connection to dead port", "[integration]")
+SCENARIO("Test secure connection to dead port", "[integration][ipv6][secure]")
 {
     GIVEN("a local server address")
     {
@@ -139,7 +139,7 @@ SCENARIO("Test secure connection to dead port", "[integration]")
     }
 }
 
-SCENARIO("Test insecure connection to dead port", "[integration]")
+SCENARIO("Test insecure connection to dead port", "[integration][ipv6][insecure]")
 {
     GIVEN("a local server address")
     {
@@ -169,7 +169,7 @@ struct BoltConnection* _open_b(enum BoltTransport transport, const char* host, c
     return connection;
 }
 
-SCENARIO("Test init with valid credentials", "[integration]")
+SCENARIO("Test init with valid credentials", "[integration][ipv6][secure]")
 {
     GIVEN("an open connection")
     {
@@ -190,7 +190,7 @@ SCENARIO("Test init with valid credentials", "[integration]")
     }
 }
 
-SCENARIO("Test init with invalid credentials", "[integration]")
+SCENARIO("Test init with invalid credentials", "[integration][ipv6][secure]")
 {
     GIVEN("an open connection")
     {
@@ -221,7 +221,7 @@ struct BoltConnection* _open_and_init_b(enum BoltTransport transport, const char
     return connection;
 }
 
-SCENARIO("Test execution of simple Cypher statement", "[integration]")
+SCENARIO("Test execution of simple Cypher statement", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection")
     {
@@ -242,7 +242,7 @@ SCENARIO("Test execution of simple Cypher statement", "[integration]")
     }
 }
 
-SCENARIO("Test parameterised Cypher statements", "[integration]")
+SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection")
     {
@@ -280,7 +280,7 @@ SCENARIO("Test parameterised Cypher statements", "[integration]")
     }
 }
 
-SCENARIO("Test execution of multiple Cypher statements transmitted together", "[integration]")
+SCENARIO("Test execution of multiple Cypher statements transmitted together", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection")
     {
