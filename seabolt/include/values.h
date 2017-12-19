@@ -42,22 +42,30 @@ struct BoltValue;
 
 enum BoltType
 {
-    BOLT_NULL,                          /* ALSO IN BOLT v1 (as Null) */
+    /// Container types
+    BOLT_NULL,                          /* Indicator of absence of value (Null in Bolt v1) */
+    BOLT_LIST,                          /* Variable-length value container (List in Bolt v1) */
+
+    /// Bit types
     BOLT_BIT,                           /* ALSO IN BOLT v1 (as Boolean) */
     BOLT_BYTE,
     BOLT_BIT_ARRAY,
     BOLT_BYTE_ARRAY,                    /* ALSO IN BOLT v1 */
-    BOLT_CHAR16,
-    BOLT_CHAR32,
-    BOLT_CHAR16_ARRAY,
-    BOLT_CHAR32_ARRAY,
-    BOLT_STRING8,                       /* ALSO IN BOLT v1 (as String) */
-    BOLT_STRING16,
-    BOLT_STRING8_ARRAY,
-    BOLT_STRING16_ARRAY,
-    BOLT_DICTIONARY8,                   /* ALSO IN BOLT v1 (as Map) */
-    BOLT_DICTIONARY16,
-    BOLT_NUM8,
+
+    /// Text types
+    BOLT_CHAR16,                        /* UTF-32 character */
+    BOLT_CHAR32,                        /* UTF-32 character */
+    BOLT_CHAR16_ARRAY,                  /* Array of UTF-16 characters */
+    BOLT_CHAR32_ARRAY,                  /* Array of UTF-32 characters */
+    BOLT_STRING8,                       /* UTF-8 string (String in Bolt v1) */
+    BOLT_STRING16,                      /* UTF-16 string */
+    BOLT_STRING8_ARRAY,                 /* Array of UTF-8 strings */
+    BOLT_STRING16_ARRAY,                /* Array of UTF-16 strings */
+    BOLT_DICTIONARY8,                   /* Sequence of UTF-8 keys paired with values (Map in Bolt v1) */
+    BOLT_DICTIONARY16,                  /* Sequence of UTF-16 keys paired with values */
+
+    /// Numeric types
+    BOLT_NUM8,                          /* Unsigned 8-bit integer */
     BOLT_NUM16,
     BOLT_NUM32,
     BOLT_NUM64,
@@ -89,11 +97,12 @@ enum BoltType
     BOLT_FLOAT64_PAIR_ARRAY,
     BOLT_FLOAT64_TRIPLE_ARRAY,
     BOLT_FLOAT64_QUAD_ARRAY,
+
+    /// Composite types
     BOLT_STRUCTURE,                     /* ALSO IN BOLT v1 (as Structure) */
     BOLT_STRUCTURE_ARRAY,
     BOLT_REQUEST,
     BOLT_SUMMARY,
-    BOLT_LIST,                          /* ALSO IN BOLT v1 (as List) */
 };
 
 union data_t
@@ -369,8 +378,7 @@ struct BoltValue* BoltDictionary8_key(struct BoltValue* value, int32_t index);
 
 struct BoltValue* BoltDictionary16_key(struct BoltValue* value, int32_t index);
 
-struct BoltValue* BoltDictionary8_with_key(struct BoltValue* value, int32_t index, const char* key,
-                                           int32_t key_size);
+int BoltDictionary8_set_key(struct BoltValue* value, int32_t index, const char* key, size_t key_size);
 
 struct BoltValue* BoltDictionary16_with_key(struct BoltValue* value, int32_t index, const uint16_t* key,
                                             int32_t key_size);

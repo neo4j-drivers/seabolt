@@ -401,14 +401,14 @@ int BoltConnection_receive_b(struct BoltConnection* connection)
 int BoltConnection_receive_summary_b(struct BoltConnection* connection)
 {
     int records = 0;
-    while (BoltConnection_receive_one_b(connection) == 1)
+    while (BoltConnection_receive_record_b(connection) == 1)
     {
         records += 1;
     }
     return records;
 }
 
-int BoltConnection_receive_one_b(struct BoltConnection* connection)
+int BoltConnection_receive_record_b(struct BoltConnection* connection)
 {
     BoltBuffer_compact(connection->rx_buffer_1);
     switch (connection->protocol_version)
@@ -486,7 +486,7 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user, c
             BoltValue_destroy(init);
             try(BoltConnection_transmit_b(connection));
             int records = 0;
-            while (BoltConnection_receive_one_b(connection) == 1)
+            while (BoltConnection_receive_record_b(connection) == 1)
             {
                 records += 1;
             }

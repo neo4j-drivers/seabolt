@@ -385,9 +385,12 @@ void _test_utf8_dictionary()
 {
     struct BoltValue* value = BoltValue_create();
     BoltValue_to_Dictionary8(value, 4);
-    BoltValue_to_Int8(BoltDictionary8_with_key(value, 0, "a", 1), 1);
-    BoltValue_to_Int8(BoltDictionary8_with_key(value, 1, "b", 1), 2);
-    BoltValue_to_Int8(BoltDictionary8_with_key(value, 2, "c", 1), 3);
+    BoltDictionary8_set_key(value, 0, "a", 1);
+    BoltDictionary8_set_key(value, 1, "b", 1);
+    BoltDictionary8_set_key(value, 2, "c", 1);
+    BoltValue_to_Int8(BoltDictionary8_value(value, 0), 1);
+    BoltValue_to_Int8(BoltDictionary8_value(value, 1), 2);
+    BoltValue_to_Int8(BoltDictionary8_value(value, 2), 3);
     _dump(value);
     assert(BoltValue_type(value) == BOLT_DICTIONARY8);
     assert(value->size == 4);
@@ -408,7 +411,8 @@ void _test_single_entry_utf8_dictionary()
 {
     struct BoltValue* value = BoltValue_create();
     BoltValue_to_Dictionary8(value, 1);
-    BoltValue_to_String8(BoltDictionary8_with_key(value, 0, "hello", 5), "world", 5);
+    BoltDictionary8_set_key(value, 0, "hello", 5);
+    BoltValue_to_String8(BoltDictionary8_value(value, 0), "world", 5);
     _dump(value);
     assert(BoltValue_type(value) == BOLT_DICTIONARY8);
     assert(value->size == 1);
@@ -426,7 +430,8 @@ void _test_utf8_dictionary_growth()
     {
         int size = i + 1;
         BoltValue_to_Dictionary8(value, size);
-        BoltValue_to_Int8(BoltDictionary8_with_key(value, i, "key", 3), (int8_t)(size));
+        BoltDictionary8_set_key(value, i, "key", 3);
+        BoltValue_to_Int8(BoltDictionary8_value(value, i), (int8_t)(size));
         _dump(value);
         assert(BoltValue_type(value) == BOLT_DICTIONARY8);
         assert(value->size == size);
@@ -438,9 +443,12 @@ void _test_utf8_dictionary_shrinkage()
 {
     struct BoltValue* value = BoltValue_create();
     BoltValue_to_Dictionary8(value, 3);
-    BoltValue_to_Int8(BoltDictionary8_with_key(value, 0, "a", 1), 1);
-    BoltValue_to_Int8(BoltDictionary8_with_key(value, 1, "b", 1), 2);
-    BoltValue_to_Int8(BoltDictionary8_with_key(value, 2, "c", 1), 3);
+    BoltDictionary8_set_key(value, 0, "a", 1);
+    BoltDictionary8_set_key(value, 1, "b", 1);
+    BoltDictionary8_set_key(value, 2, "c", 1);
+    BoltValue_to_Int8(BoltDictionary8_value(value, 0), 1);
+    BoltValue_to_Int8(BoltDictionary8_value(value, 1), 2);
+    BoltValue_to_Int8(BoltDictionary8_value(value, 2), 3);
     assert(BoltValue_type(value) == BOLT_DICTIONARY8);
     assert(value->size == 3);
     for (int size = 3; size >= 0; size--)
@@ -854,8 +862,10 @@ void test_structure()
     BoltString8Array_put(labels, 0, "Person", 6);
     BoltString8Array_put(labels, 1, "Employee", 8);
     BoltValue_to_Dictionary8(properties, 2);
-    BoltValue_to_String8(BoltDictionary8_with_key(properties, 0, "name", 4), "Alice", 5);
-    BoltValue_to_Num8(BoltDictionary8_with_key(properties, 1, "age", 3), 33);
+    BoltDictionary8_set_key(properties, 0, "name", 4);
+    BoltDictionary8_set_key(properties, 1, "age", 3);
+    BoltValue_to_String8(BoltDictionary8_value(properties, 0), "Alice", 5);
+    BoltValue_to_Num8(BoltDictionary8_value(properties, 1), 33);
     _dump(value);
     assert(BoltValue_type(value) == BOLT_STRUCTURE && BoltStructure_code(value) == NODE);
     assert(value->size == 3);
@@ -878,9 +888,10 @@ void test_structure_array()
         BoltString8Array_put(labels, 0, "Person", 6);
         BoltString8Array_put(labels, 1, "Employee", 8);
         BoltValue_to_Dictionary8(properties, 2);
-        BoltValue_to_String8(BoltDictionary8_with_key(properties, 0, "name", 4),
-                             i == 0 ? "Alice" : "Bob", i == 0 ? 5 : 3);
-        BoltValue_to_Num8(BoltDictionary8_with_key(properties, 1, "age", 3), (uint8_t)(i == 0 ? 33 : 44));
+        BoltDictionary8_set_key(properties, 0, "name", 4);
+        BoltDictionary8_set_key(properties, 1, "age", 3);
+        BoltValue_to_String8(BoltDictionary8_value(properties, 0), i == 0 ? "Alice" : "Bob", i == 0 ? 5 : 3);
+        BoltValue_to_Num8(BoltDictionary8_value(properties, 1), (uint8_t)(i == 0 ? 33 : 44));
     }
     _dump(value);
     assert(BoltValue_type(value) == BOLT_STRUCTURE_ARRAY && BoltStructure_code(value) == NODE);
@@ -897,7 +908,8 @@ void test_request()
     struct BoltValue* parameters = BoltRequest_value(value, 1);
     BoltValue_to_String8(statement, "RETURN $x", 9);
     BoltValue_to_Dictionary8(parameters, 1);
-    BoltValue_to_Int64(BoltDictionary8_with_key(parameters, 0, "x", 1), 1);
+    BoltDictionary8_set_key(parameters, 0, "x", 1);
+    BoltValue_to_Int64(BoltDictionary8_value(parameters, 0), 1);
     _dump(value);
     assert(BoltValue_type(value) == BOLT_REQUEST && BoltRequest_code(value) == RUN);
     assert(value->size == 2);
@@ -911,8 +923,10 @@ void test_summary()
     BoltValue_to_Summary(value, SUCCESS, 1);
     struct BoltValue* metadata = BoltSummary_value(value, 0);
     BoltValue_to_Dictionary8(metadata, 2);
-    BoltValue_to_Int64(BoltDictionary8_with_key(metadata, 0, "results", 7), 100);
-    BoltValue_to_Int64(BoltDictionary8_with_key(metadata, 1, "time", 4), 123456789);
+    BoltDictionary8_set_key(metadata, 0, "results", 7);
+    BoltDictionary8_set_key(metadata, 1, "time", 4);
+    BoltValue_to_Int64(BoltDictionary8_value(metadata, 0), 100);
+    BoltValue_to_Int64(BoltDictionary8_value(metadata, 1), 123456789);
     _dump(value);
     assert(BoltValue_type(value) == BOLT_SUMMARY && BoltSummary_code(value) == SUCCESS);
     assert(value->size == 1);

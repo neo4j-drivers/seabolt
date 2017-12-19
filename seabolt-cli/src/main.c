@@ -133,7 +133,7 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
 
     BoltValue_to_String8(bolt->connection->cypher_statement, statement, (int32_t)(strlen(statement)));
     BoltValue_to_Dictionary8(bolt->connection->cypher_parameters, 1);
-    BoltDictionary8_with_key(bolt->connection->cypher_parameters, 0, "x", 1);
+    BoltDictionary8_set_key(bolt->connection->cypher_parameters, 0, "x", 1);
 
     BoltValue_to_Int32(BoltDictionary8_value(bolt->connection->cypher_parameters, 0), 1234);
     BoltConnection_load_run(bolt->connection);
@@ -160,7 +160,7 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
 
         timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
-        while (BoltConnection_receive_one_b(bolt->connection))
+        while (BoltConnection_receive_record_b(bolt->connection))
         {
             Bolt_dump_received(bolt);
             record_count += 1;

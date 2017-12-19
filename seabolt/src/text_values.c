@@ -151,12 +151,18 @@ struct BoltValue* BoltDictionary8_key(struct BoltValue* value, int32_t index)
     return &value->data.extended.as_value[2 * index];
 }
 
-struct BoltValue* BoltDictionary8_with_key(struct BoltValue* value, int32_t index, const char* key,
-                                           int32_t key_size)
+int BoltDictionary8_set_key(struct BoltValue* value, int32_t index, const char* key, size_t key_size)
 {
-    assert(BoltValue_type(value) == BOLT_DICTIONARY8);
-    BoltValue_to_String8(&value->data.extended.as_value[2 * index], key, key_size);
-    return &value->data.extended.as_value[2 * index + 1];
+    if (key_size <= INT32_MAX)
+    {
+        assert(BoltValue_type(value) == BOLT_DICTIONARY8);
+        BoltValue_to_String8(&value->data.extended.as_value[2 * index], key, key_size);
+        return 0;
+    }
+    else
+    {
+        return -1;
+    }
 }
 
 struct BoltValue* BoltDictionary8_value(struct BoltValue* value, int32_t index)

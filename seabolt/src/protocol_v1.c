@@ -434,9 +434,12 @@ int BoltProtocolV1_compile_INIT(struct BoltValue* value, const char* user_agent,
     else
     {
         BoltValue_to_Dictionary8(auth, 3);
-        BoltValue_to_String8(BoltDictionary8_with_key(auth, 0, "scheme", 6), "basic", 5);
-        BoltValue_to_String8(BoltDictionary8_with_key(auth, 1, "principal", 9), user, strlen(user));
-        BoltValue_to_String8(BoltDictionary8_with_key(auth, 2, "credentials", 11), password, strlen(password));
+        BoltDictionary8_set_key(auth, 0, "scheme", 6);
+        BoltDictionary8_set_key(auth, 1, "principal", 9);
+        BoltDictionary8_set_key(auth, 2, "credentials", 11);
+        BoltValue_to_String8(BoltDictionary8_value(auth, 0), "basic", 5);
+        BoltValue_to_String8(BoltDictionary8_value(auth, 1), user, strlen(user));
+        BoltValue_to_String8(BoltDictionary8_value(auth, 2), password, strlen(password));
     }
 }
 

@@ -125,7 +125,7 @@ int BoltConnection_receive_summary_b(struct BoltConnection* connection);
  * @param connection
  * @return
  */
-int BoltConnection_receive_one_b(struct BoltConnection* connection);
+int BoltConnection_receive_record_b(struct BoltConnection* connection);
 
 /**
  * Initialise the connection and authenticate using the basic
