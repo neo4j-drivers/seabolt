@@ -167,6 +167,7 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
 
     fprintf(stderr, "query                : %s\n", statement);
     fprintf(stderr, "record count         : %ld\n", record_count);
+    fprintf(stderr, "=====================================\n");
 
     timespec_diff(&t[0], &t[2], &t[1]);
     fprintf(stderr, "initialisation       : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
@@ -216,5 +217,11 @@ int main(int argc, char* argv[])
         Bolt_run(bolt, "RETURN 1");
     }
     Bolt_destroy(bolt);
+
+    fprintf(stderr, "=====================================\n");
+    fprintf(stderr, "current allocation   : %ld\n", BoltMem_current_allocation());
+    fprintf(stderr, "peak allocation      : %ld\n", BoltMem_peak_allocation());
+    fprintf(stderr, "allocation events    : %lld\n", BoltMem_allocation_events());
+
     return 0;
 }

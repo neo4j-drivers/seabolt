@@ -68,34 +68,37 @@ void BoltLog_error(const char* message, ...)
 
 
 
-static size_t __allocated = 0;
-static long long __activity = 0;
+static size_t __allocation = 0;
+static size_t __peak_allocation = 0;
+static long long __allocation_events = 0;
 
 
 void* BoltMem_allocate(size_t new_size)
 {
     void* p = malloc(new_size);
-    __allocated += new_size;
-    BoltLog_info("bolt: (Allocated %ld bytes (balance: %lu))", new_size, __allocated);
-    __activity += 1;
+    __allocation += new_size;
+    if (__allocation > __peak_allocation) __peak_allocation = __allocation;
+//    BoltLog_info("bolt: (Allocated %ld bytes (balance: %lu))", new_size, __allocation);
+    __allocation_events += 1;
     return p;
 }
 
 void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size)
 {
     void* p = realloc(ptr, new_size);
-    __allocated = __allocated - old_size + new_size;
-    BoltLog_info("bolt: (Reallocated %ld bytes as %ld bytes (balance: %lu))", old_size, new_size, __allocated);
-    __activity += 1;
+    __allocation = __allocation - old_size + new_size;
+    if (__allocation > __peak_allocation) __peak_allocation = __allocation;
+//    BoltLog_info("bolt: (Reallocated %ld bytes as %ld bytes (balance: %lu))", old_size, new_size, __allocation);
+    __allocation_events += 1;
     return p;
 }
 
 void* BoltMem_deallocate(void* ptr, size_t old_size)
 {
     free(ptr);
-    __allocated -= old_size;
-    BoltLog_info("bolt: (Freed %ld bytes (balance: %lu))", old_size, __allocated);
-    __activity += 1;
+    __allocation -= old_size;
+//    BoltLog_info("bolt: (Freed %ld bytes (balance: %lu))", old_size, __allocation);
+    __allocation_events += 1;
     return NULL;
 }
 
@@ -136,12 +139,17 @@ void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size)
     return BoltMem_reallocate(ptr, old_size, new_size);
 }
 
-size_t BoltMem_allocated()
+size_t BoltMem_current_allocation()
 {
-    return __allocated;
+    return __allocation;
 }
 
-long long BoltMem_activity()
+size_t BoltMem_peak_allocation()
 {
-    return __activity;
+    return __peak_allocation;
+}
+
+long long BoltMem_allocation_events()
+{
+    return __allocation_events;
 }

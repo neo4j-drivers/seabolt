@@ -93,14 +93,20 @@ void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
  *
  * @return
  */
-size_t BoltMem_allocated();
+size_t BoltMem_current_allocation();
+
+/**
+ *
+ * @return
+ */
+size_t BoltMem_peak_allocation();
 
 /**
  * Get an activity count for memory (de/re/-)allocation.
  *
  * @return
  */
-long long BoltMem_activity();
+long long BoltMem_allocation_events();
 
 
 #endif // SEABOLT_WARDEN

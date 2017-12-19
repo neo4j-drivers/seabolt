@@ -953,6 +953,6 @@ int test_types()
     test_structure_array();
     test_request();
     test_summary();
-    assert(BoltMem_allocated() == 0);
-    printf("*******\nMemory activity: %lld\n*******\n", BoltMem_activity());
+    assert(BoltMem_current_allocation() == 0);
+    printf("*******\nMemory activity: %lld\n*******\n", BoltMem_allocation_events());
 }
