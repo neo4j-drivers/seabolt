@@ -165,12 +165,14 @@ int BoltBuffer_peek_uint8(struct BoltBuffer* buffer, uint8_t* x)
 {
     if (BoltBuffer_unloadable(buffer) < 1) return -1;
     *x = (uint8_t)(buffer->data[buffer->cursor]);
+    return 0;
 }
 
 int BoltBuffer_unload_uint8(struct BoltBuffer* buffer, uint8_t* x)
 {
     if (BoltBuffer_unloadable(buffer) < 1) return -1;
     *x = (uint8_t)(buffer->data[buffer->cursor++]);
+    return 0;
 }
 
 int BoltBuffer_unload_uint16_be(struct BoltBuffer* buffer, uint16_t* x)
@@ -178,6 +180,7 @@ int BoltBuffer_unload_uint16_be(struct BoltBuffer* buffer, uint16_t* x)
     if (BoltBuffer_unloadable(buffer) < sizeof(*x)) return -1;
     memcpy_be(x, &buffer->data[buffer->cursor], sizeof(*x));
     buffer->cursor += sizeof(*x);
+    return 0;
 }
 
 int BoltBuffer_unload_int8(struct BoltBuffer* buffer, int8_t* x)
@@ -185,6 +188,7 @@ int BoltBuffer_unload_int8(struct BoltBuffer* buffer, int8_t* x)
     if (BoltBuffer_unloadable(buffer) < sizeof(*x)) return -1;
     memcpy_be(x, &buffer->data[buffer->cursor], sizeof(*x));
     buffer->cursor += sizeof(*x);
+    return 0;
 }
 
 int BoltBuffer_unload_int16_be(struct BoltBuffer* buffer, int16_t* x)
@@ -192,6 +196,7 @@ int BoltBuffer_unload_int16_be(struct BoltBuffer* buffer, int16_t* x)
     if (BoltBuffer_unloadable(buffer) < sizeof(*x)) return -1;
     memcpy_be(x, &buffer->data[buffer->cursor], sizeof(*x));
     buffer->cursor += sizeof(*x);
+    return 0;
 }
 
 int BoltBuffer_unload_int32_be(struct BoltBuffer* buffer, int32_t* x)
@@ -199,6 +204,7 @@ int BoltBuffer_unload_int32_be(struct BoltBuffer* buffer, int32_t* x)
     if (BoltBuffer_unloadable(buffer) < sizeof(*x)) return -1;
     memcpy_be(x, &buffer->data[buffer->cursor], sizeof(*x));
     buffer->cursor += sizeof(*x);
+    return 0;
 }
 
 int BoltBuffer_unload_int64_be(struct BoltBuffer* buffer, int64_t* x)
@@ -206,6 +212,7 @@ int BoltBuffer_unload_int64_be(struct BoltBuffer* buffer, int64_t* x)
     if (BoltBuffer_unloadable(buffer) < sizeof(*x)) return -1;
     memcpy_be(x, &buffer->data[buffer->cursor], sizeof(*x));
     buffer->cursor += sizeof(*x);
+    return 0;
 }
 
 int BoltBuffer_unload_float_be(struct BoltBuffer* buffer, float* x)
@@ -213,6 +220,7 @@ int BoltBuffer_unload_float_be(struct BoltBuffer* buffer, float* x)
     if (BoltBuffer_unloadable(buffer) < sizeof(*x)) return -1;
     memcpy_be(x, &buffer->data[buffer->cursor], sizeof(*x));
     buffer->cursor += sizeof(*x);
+    return 0;
 }
 
 int BoltBuffer_unload_double_be(struct BoltBuffer* buffer, double* x)
@@ -220,4 +228,5 @@ int BoltBuffer_unload_double_be(struct BoltBuffer* buffer, double* x)
     if (BoltBuffer_unloadable(buffer) < sizeof(*x)) return -1;
     memcpy_be(x, &buffer->data[buffer->cursor], sizeof(*x));
     buffer->cursor += sizeof(*x);
+    return 0;
 }

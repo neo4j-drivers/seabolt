@@ -144,6 +144,7 @@ int BoltStructure_write(FILE* file, struct BoltValue* value, int32_t protocol_ve
         BoltValue_write(file, BoltStructure_value(value, i), protocol_version);
     }
     fprintf(file, ")");
+    return 0;
 }
 
 int BoltStructureArray_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
@@ -179,6 +180,7 @@ int BoltStructureArray_write(FILE* file, struct BoltValue* value, int32_t protoc
         }
     }
     fprintf(file, "]");
+    return 0;
 }
 
 int BoltRequest_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
@@ -210,6 +212,7 @@ int BoltRequest_write(FILE* file, struct BoltValue* value, int32_t protocol_vers
         BoltValue_write(file, BoltRequest_value(value, i), protocol_version);
     }
     fprintf(file, ")");
+    return 0;
 }
 
 int BoltSummary_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
@@ -241,4 +244,5 @@ int BoltSummary_write(FILE* file, struct BoltValue* value, int32_t protocol_vers
         BoltValue_write(file, BoltSummary_value(value, i), protocol_version);
     }
     fprintf(file, ")");
+    return 0;
 }

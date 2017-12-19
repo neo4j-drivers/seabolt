@@ -74,6 +74,7 @@ struct BoltConnection* _create(enum BoltTransport transport)
     BoltValue_to_Request(connection->pull, 0x3F, 0);
 
     connection->received = BoltValue_create();
+    return connection;
 }
 
 void _set_status(struct BoltConnection* connection, enum BoltConnectionStatus status, int error)
@@ -143,7 +144,16 @@ int _secure_b(struct BoltConnection* connection)
     // SSL
     connection->ssl = SSL_new(connection->ssl_context);
     int linked_socket = SSL_set_fd(connection->ssl, connection->socket);
+    if (linked_socket <= 0)
+    {
+        return -1;
+    }
     int connected = SSL_connect(connection->ssl);
+    if (connected <= 0)
+    {
+        return -1;
+    }
+    return 0;
 }
 
 void _close_b(struct BoltConnection* connection)
@@ -176,10 +186,6 @@ void _close_b(struct BoltConnection* connection)
 
 void _destroy(struct BoltConnection* connection)
 {
-    if (connection->status != BOLT_CONNECTED)
-    {
-        _close_b(connection);
-    }
     BoltValue_destroy(connection->received);
     BoltValue_destroy(connection->pull);
     BoltValue_destroy(connection->discard);
@@ -342,6 +348,7 @@ int _handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int3
     try(_take_b(connection, BoltBuffer_load_target(connection->rx_buffer_1, 4), 4));
     BoltBuffer_unload_int32_be(connection->rx_buffer_1, &connection->protocol_version);
     BoltLog_info("bolt: Using Bolt v%d", connection->protocol_version);
+    return 0;
 }
 
 struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const struct addrinfo* address)
@@ -368,7 +375,10 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const
 
 void BoltConnection_close_b(struct BoltConnection* connection)
 {
-    _close_b(connection);
+    if (connection->status != BOLT_DISCONNECTED)
+    {
+        _close_b(connection);
+    }
     _destroy(connection);
 }
 
@@ -527,6 +537,12 @@ int BoltConnection_set_statement(struct BoltConnection* connection, const char* 
 int BoltConnection_resize_parameters(struct BoltConnection* connection, int32_t size)
 {
     BoltValue_to_Dictionary8(connection->cypher_parameters, size);
+    return 0;
+}
+
+struct BoltValue* BoltConnection_parameter_value(struct BoltConnection* connection, int32_t index)
+{
+    return BoltDictionary8_value(connection->cypher_parameters, index);
 }
 
 int BoltConnection_load_run(struct BoltConnection* connection)

@@ -188,6 +188,7 @@ int BoltNull_write(FILE* file, const struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_NULL);
     fprintf(file, "~");
+    return 0;
 }
 
 int BoltList_write(FILE* file, const struct BoltValue* value, int32_t protocol_version)
@@ -200,6 +201,7 @@ int BoltList_write(FILE* file, const struct BoltValue* value, int32_t protocol_v
         BoltValue_write(file, BoltList_value(value, i), protocol_version);
     }
     fprintf(file, "]");
+    return 0;
 }
 
 int BoltValue_write(FILE* file, struct BoltValue* value, int32_t protocol_version)

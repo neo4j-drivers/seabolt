@@ -151,24 +151,28 @@ int BoltInt8_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT8);
     fprintf(file, "i8(%d)", BoltInt8_get(value));
+    return 0;
 }
 
 int BoltInt16_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT16);
     fprintf(file, "i16(%d)", BoltInt16_get(value));
+    return 0;
 }
 
 int BoltInt32_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT32);
     fprintf(file, "i32(%d)", BoltInt32_get(value));
+    return 0;
 }
 
 int BoltInt64_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_INT64);
     fprintf(file, "i64(%ld)", BoltInt64_get(value));
+    return 0;
 }
 
 int BoltInt8Array_write(FILE* file, struct BoltValue* value)
@@ -180,6 +184,7 @@ int BoltInt8Array_write(FILE* file, struct BoltValue* value)
         fprintf(file, i == 0 ? "%d" : ", %d", BoltInt8Array_get(value, i));
     }
     fprintf(file, "]");
+    return 0;
 }
 
 int BoltInt16Array_write(FILE* file, struct BoltValue* value)
@@ -191,6 +196,7 @@ int BoltInt16Array_write(FILE* file, struct BoltValue* value)
         fprintf(file, i == 0 ? "%d" : ", %d", BoltInt16Array_get(value, i));
     }
     fprintf(file, "]");
+    return 0;
 }
 
 int BoltInt32Array_write(FILE* file, struct BoltValue* value)
@@ -202,6 +208,7 @@ int BoltInt32Array_write(FILE* file, struct BoltValue* value)
         fprintf(file, i == 0 ? "%d" : ", %d", BoltInt32Array_get(value, i));
     }
     fprintf(file, "]");
+    return 0;
 }
 
 int BoltInt64Array_write(FILE* file, struct BoltValue* value)
@@ -213,4 +220,5 @@ int BoltInt64Array_write(FILE* file, struct BoltValue* value)
         fprintf(file, i == 0 ? "%ld" : ", %ld", BoltInt64Array_get(value, i));
     }
     fprintf(file, "]");
+    return 0;
 }

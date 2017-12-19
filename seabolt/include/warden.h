@@ -41,9 +41,7 @@ void* memcpy_r(void* dest, const void* src, size_t n);
 #endif
 
 
-static FILE* __bolt_log_file;
-
-void BoltLog_setFile(FILE* log_file);
+void BoltLog_set_file(FILE* log_file);
 
 void BoltLog_info(const char* message, ...);
 

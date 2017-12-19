@@ -105,6 +105,7 @@ int BoltBit_write(FILE* file, const struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_BIT);
     fprintf(file, "b(%d)", BoltBit_get(value));
+    return 0;
 }
 
 int BoltBitArray_write(FILE* file, const struct BoltValue* value)
@@ -116,6 +117,7 @@ int BoltBitArray_write(FILE* file, const struct BoltValue* value)
         fprintf(file, "%d", BoltBitArray_get(value, i));
     }
     fprintf(file, "]");
+    return 0;
 }
 
 int BoltByte_write(FILE* file, const struct BoltValue* value)
@@ -123,6 +125,7 @@ int BoltByte_write(FILE* file, const struct BoltValue* value)
     assert(BoltValue_type(value) == BOLT_BYTE);
     char byte = BoltByte_get(value);
     fprintf(file, "b8(#%c%c)", hex1(&byte, 0), hex0(&byte, 0));
+    return 0;
 }
 
 int BoltByteArray_write(FILE* file, const struct BoltValue* value)
@@ -135,4 +138,5 @@ int BoltByteArray_write(FILE* file, const struct BoltValue* value)
         fprintf(file, "%c%c", hex1(&b, 0), hex0(&b, 0));
     }
     fprintf(file, "]");
+    return 0;
 }

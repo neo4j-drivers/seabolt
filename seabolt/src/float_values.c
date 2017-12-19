@@ -89,6 +89,7 @@ int BoltFloat32_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT32);
     fprintf(file, "f32(%f)", BoltFloat32_get(value));
+    return 0;
 }
 
 int BoltFloat32Array_write(FILE* file, struct BoltValue* value)
@@ -100,12 +101,14 @@ int BoltFloat32Array_write(FILE* file, struct BoltValue* value)
         fprintf(file, i == 0 ? "%f" : ", %f", BoltFloat32Array_get(value, i));
     }
     fprintf(file, "]");
+    return 0;
 }
 
 int BoltFloat64_write(FILE* file, struct BoltValue* value)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT64);
     fprintf(file, "f64(%f)", BoltFloat64_get(value));
+    return 0;
 }
 
 int BoltFloat64Array_write(FILE* file, struct BoltValue* value)
@@ -117,4 +120,5 @@ int BoltFloat64Array_write(FILE* file, struct BoltValue* value)
         fprintf(file, i == 0 ? "%f" : ", %f", BoltFloat64Array_get(value, i));
     }
     fprintf(file, "]");
+    return 0;
 }

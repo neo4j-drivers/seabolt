@@ -99,12 +99,14 @@ int Bolt_connect(struct Bolt* bolt)
     bolt->connection = BoltConnection_open_b(bolt->transport, bolt->address);
     timespec_get(&t[1], TIME_UTC);
     timespec_diff(&bolt->stats.connect_time, &t[1], &t[0]);
+    return 0;
 }
 
 int Bolt_dump_received(struct Bolt* bolt)
 {
     BoltValue_write(stdout, bolt->connection->received, bolt->connection->protocol_version);
     fprintf(stdout, "\n");
+    return 0;
 }
 
 int Bolt_init(struct Bolt* bolt)
@@ -112,9 +114,10 @@ int Bolt_init(struct Bolt* bolt)
     struct timespec t[2];
     timespec_get(&t[0], TIME_UTC);
     BoltConnection_init_b(bolt->connection, bolt->user, bolt->password);
-    Bolt_dump_received(bolt);
+//    Bolt_dump_received(bolt);
     timespec_get(&t[1], TIME_UTC);
     timespec_diff(&bolt->stats.init_time, &t[1], &t[0]);
+    return 0;
 }
 
 int Bolt_run(struct Bolt* bolt, const char* statement)
@@ -131,19 +134,8 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
 
     timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after handshake and initialisation
 
-    BoltValue_to_String8(bolt->connection->cypher_statement, statement, (int32_t)(strlen(statement)));
-    BoltValue_to_Dictionary8(bolt->connection->cypher_parameters, 1);
-    BoltDictionary8_set_key(bolt->connection->cypher_parameters, 0, "x", 1);
-
-    BoltValue_to_Int32(BoltDictionary8_value(bolt->connection->cypher_parameters, 0), 1234);
-    BoltConnection_load_run(bolt->connection);
-    BoltConnection_load_pull(bolt->connection, -1);
-
-    BoltValue_to_Float64(BoltDictionary8_value(bolt->connection->cypher_parameters, 0), 3.1415);
-    BoltConnection_load_run(bolt->connection);
-    BoltConnection_load_pull(bolt->connection, -1);
-
-    BoltValue_to_String8(BoltDictionary8_value(bolt->connection->cypher_parameters, 0), "three", 5);
+    BoltConnection_set_statement(bolt->connection, statement, (int32_t)(strlen(statement)));
+    BoltValue_to_Dictionary8(bolt->connection->cypher_parameters, 0);
     BoltConnection_load_run(bolt->connection);
     BoltConnection_load_pull(bolt->connection, -1);
 
@@ -152,22 +144,18 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
     timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission
 
     long record_count = 0;
-    for (int i = 0; i < 3; i++)
+
+    BoltConnection_receive_summary_b(bolt->connection);
+//    Bolt_dump_received(bolt);
+
+    timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
+
+    while (BoltConnection_receive_record_b(bolt->connection))
     {
-
-        BoltConnection_receive_summary_b(bolt->connection);
-        Bolt_dump_received(bolt);
-
-        timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
-
-        while (BoltConnection_receive_record_b(bolt->connection))
-        {
-            Bolt_dump_received(bolt);
-            record_count += 1;
-        }
-        Bolt_dump_received(bolt);
-
+//        Bolt_dump_received(bolt);
+        record_count += 1;
     }
+//    Bolt_dump_received(bolt);
 
     timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
 
@@ -199,25 +187,26 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
     fprintf(stderr, "=====================================\n");
     fprintf(stderr, "TOTAL                : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
 
+    return 0;
 }
 
 int main(int argc, char* argv[])
 {
-    struct Bolt* bolt = Bolt_create(argc, argv);
-
     const char* BOLT_LOG = getenv_or_default("BOLT_LOG", "0");
     if (strcmp(BOLT_LOG, "1") == 0)
     {
-        BoltLog_setFile(stdout);
+        BoltLog_set_file(stdout);
     }
     if (strcmp(BOLT_LOG, "2") == 0)
     {
-        BoltLog_setFile(stderr);
+        BoltLog_set_file(stderr);
     }
     else
     {
-        BoltLog_setFile(NULL);
+        BoltLog_set_file(NULL);
     }
+
+    struct Bolt* bolt = Bolt_create(argc, argv);
     if (argc >= 2)
     {
         Bolt_run(bolt, argv[1]);
@@ -226,6 +215,6 @@ int main(int argc, char* argv[])
     {
         Bolt_run(bolt, "RETURN 1");
     }
-
     Bolt_destroy(bolt);
+    return 0;
 }

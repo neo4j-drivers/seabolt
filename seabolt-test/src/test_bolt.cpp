@@ -229,8 +229,8 @@ SCENARIO("Test execution of simple Cypher statement", "[integration][ipv6][secur
                                                              BOLT_USER, BOLT_PASSWORD);
         WHEN("successfully executed Cypher")
         {
-            BoltValue_to_String8(connection->cypher_statement, "RETURN 1", 8);
-            BoltValue_to_Dictionary8(connection->cypher_parameters, 0);
+            BoltConnection_set_statement(connection, "RETURN 1", 8);
+            BoltConnection_resize_parameters(connection, 0);
             BoltConnection_load_run(connection);
             BoltConnection_load_pull(connection, -1);
             int requests = BoltConnection_transmit_b(connection);
@@ -250,7 +250,7 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
                                                              BOLT_USER, BOLT_PASSWORD);
         WHEN("successfully executed Cypher")
         {
-            BoltValue_to_String8(connection->cypher_statement, "RETURN $x", 9);
+            BoltConnection_set_statement(connection, "RETURN $x", 8);
             BoltValue_to_Dictionary8(connection->cypher_parameters, 1);
             BoltDictionary8_set_key(connection->cypher_parameters, 0, "x", 1);
             BoltValue* x = BoltDictionary8_value(connection->cypher_parameters, 0);
@@ -288,7 +288,7 @@ SCENARIO("Test execution of multiple Cypher statements transmitted together", "[
                                                              BOLT_USER, BOLT_PASSWORD);
         WHEN("successfully executed Cypher")
         {
-            BoltValue_to_String8(connection->cypher_statement, "RETURN $x", 8);
+            BoltConnection_set_statement(connection, "RETURN $x", 8);
             BoltValue_to_Dictionary8(connection->cypher_parameters, 1);
             BoltDictionary8_set_key(connection->cypher_parameters, 0, "x", 1);
             BoltValue* x = BoltDictionary8_value(connection->cypher_parameters, 0);

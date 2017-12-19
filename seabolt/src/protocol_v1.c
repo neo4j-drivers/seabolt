@@ -68,11 +68,13 @@ enum BoltProtocolV1Type BoltProtocolV1_marker_type(uint8_t marker)
 int BoltProtocolV1_load_null(struct BoltConnection* connection)
 {
     BoltBuffer_load_uint8(connection->tx_buffer_1, 0xC0);
+    return 0;
 }
 
 int BoltProtocolV1_load_boolean(struct BoltConnection* connection, int value)
 {
     BoltBuffer_load_uint8(connection->tx_buffer_1, (value == 0) ? (uint8_t)(0xC2) : (uint8_t)(0xC3));
+    return 0;
 }
 
 int BoltProtocolV1_load_integer(struct BoltConnection* connection, int64_t value)
@@ -101,12 +103,14 @@ int BoltProtocolV1_load_integer(struct BoltConnection* connection, int64_t value
         BoltBuffer_load_uint8(connection->tx_buffer_1, 0xCB);
         BoltBuffer_load_int64_be(connection->tx_buffer_1, value);
     }
+    return 0;
 }
 
 int BoltProtocolV1_load_float(struct BoltConnection* connection, double value)
 {
     BoltBuffer_load_uint8(connection->tx_buffer_1, 0xC1);
     BoltBuffer_load_double_be(connection->tx_buffer_1, value);
+    return 0;
 }
 
 int BoltProtocolV1_load_bytes(struct BoltConnection* connection, const char* string, int32_t size)
@@ -133,6 +137,7 @@ int BoltProtocolV1_load_bytes(struct BoltConnection* connection, const char* str
         BoltBuffer_load_int32_be(connection->tx_buffer_1, size);
         BoltBuffer_load(connection->tx_buffer_1, string, size);
     }
+    return 0;
 }
 
 int BoltProtocolV1_load_string(struct BoltConnection* connection, const char* string, int32_t size)
@@ -164,6 +169,7 @@ int BoltProtocolV1_load_string(struct BoltConnection* connection, const char* st
         BoltBuffer_load_int32_be(connection->tx_buffer_1, size);
         BoltBuffer_load(connection->tx_buffer_1, string, size);
     }
+    return 0;
 }
 
 int _load_list_header(struct BoltConnection* connection, int32_t size)
@@ -191,6 +197,7 @@ int _load_list_header(struct BoltConnection* connection, int32_t size)
         BoltBuffer_load_uint8(connection->tx_buffer_1, 0xD6);
         BoltBuffer_load_int32_be(connection->tx_buffer_1, size);
     }
+    return 0;
 }
 
 int _load_map_header(struct BoltConnection* connection, int32_t size)
@@ -218,6 +225,7 @@ int _load_map_header(struct BoltConnection* connection, int32_t size)
         BoltBuffer_load_uint8(connection->tx_buffer_1, 0xDA);
         BoltBuffer_load_int32_be(connection->tx_buffer_1, size);
     }
+    return 0;
 }
 
 int _load_structure_header(struct BoltConnection* connection, int16_t code, int8_t size)
@@ -228,6 +236,7 @@ int _load_structure_header(struct BoltConnection* connection, int16_t code, int8
     }
     BoltBuffer_load_uint8(connection->tx_buffer_1, (uint8_t)(0xB0 + size));
     BoltBuffer_load_int8(connection->tx_buffer_1, code);
+    return 0;
 }
 
 /**
@@ -250,6 +259,7 @@ int _enqueue(struct BoltConnection* connection)
     BoltBuffer_load(connection->tx_buffer_0, &header[0], sizeof(header));
     BoltBuffer_compact(connection->tx_buffer_1);
     connection->requests_queued += 1;
+    return 0;
 }
 
 int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* value)
@@ -441,24 +451,7 @@ int BoltProtocolV1_compile_INIT(struct BoltValue* value, const char* user_agent,
         BoltValue_to_String8(BoltDictionary8_value(auth, 1), user, strlen(user));
         BoltValue_to_String8(BoltDictionary8_value(auth, 2), password, strlen(password));
     }
-}
-
-int BoltProtocolV1_compile_RUN(struct BoltValue* value, const char* statement, struct BoltValue** parameters)
-{
-    BoltValue_to_Request(value, 0x10, 2);
-    BoltValue_to_String8(BoltRequest_value(value, 0), statement, strlen(statement));
-    *parameters = BoltRequest_value(value, 1);
-    BoltValue_to_Dictionary8(*parameters, 0);
-}
-
-int BoltProtocolV1_compile_DISCARD_ALL(struct BoltValue* value)
-{
-    BoltValue_to_Request(value, 0x2F, 0);
-}
-
-int BoltProtocolV1_compile_PULL_ALL(struct BoltValue* value)
-{
-    BoltValue_to_Request(value, 0x3F, 0);
+    return 0;
 }
 
 int _unload(struct BoltConnection* connection, struct BoltValue* value);
@@ -475,6 +468,7 @@ int _unload_null(struct BoltConnection* connection, struct BoltValue* value)
     {
         return -1;  // BOLT_ERROR_WRONG_TYPE
     }
+    return 0;
 }
 
 int _unload_boolean(struct BoltConnection* connection, struct BoltValue* value)
@@ -493,6 +487,7 @@ int _unload_boolean(struct BoltConnection* connection, struct BoltValue* value)
     {
         return -1;  // BOLT_ERROR_WRONG_TYPE
     }
+    return 0;
 }
 
 int _unload_integer(struct BoltConnection* connection, struct BoltValue* value)
@@ -535,6 +530,7 @@ int _unload_integer(struct BoltConnection* connection, struct BoltValue* value)
     {
         return -1;  // BOLT_ERROR_WRONG_TYPE
     }
+    return 0;
 }
 
 int _unload_float(struct BoltConnection* connection, struct BoltValue* value)
@@ -551,6 +547,7 @@ int _unload_float(struct BoltConnection* connection, struct BoltValue* value)
     {
         return -1;  // BOLT_ERROR_WRONG_TYPE
     }
+    return 0;
 }
 
 int _unload_string(struct BoltConnection* connection, struct BoltValue* value)

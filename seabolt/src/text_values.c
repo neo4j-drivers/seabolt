@@ -191,6 +191,7 @@ int BoltString8_write(FILE* file, struct BoltValue* value)
         fprintf(file, "%c", data[i]);
     }
     fprintf(file, "\")");
+    return 0;
 }
 
 int BoltString8Array_write(FILE* file, struct BoltValue* value)
@@ -211,6 +212,7 @@ int BoltString8Array_write(FILE* file, struct BoltValue* value)
         }
     }
     fprintf(file, "]");
+    return 0;
 }
 
 int BoltDictionary8_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
@@ -231,4 +233,5 @@ int BoltDictionary8_write(FILE* file, struct BoltValue* value, int32_t protocol_
         }
     }
     fprintf(file, "]");
+    return 0;
 }
