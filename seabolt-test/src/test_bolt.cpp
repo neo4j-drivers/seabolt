@@ -130,10 +130,11 @@ SCENARIO("Test secure connection to dead port", "[integration][ipv6][secure]")
         WHEN("a secure connection attempt is made")
         {
             struct BoltConnection* connection = BoltConnection_open_b(BOLT_SECURE_SOCKET, address);
-            THEN("a NULL value should be returned")
+            THEN("a DEFUNCT connection should be returned")
             {
-                REQUIRE(connection == nullptr);
+                REQUIRE(connection->status == BOLT_DEFUNCT);
             }
+            BoltConnection_close_b(connection);
         }
         freeaddrinfo(address);
     }
@@ -149,10 +150,11 @@ SCENARIO("Test insecure connection to dead port", "[integration][ipv6][insecure]
         WHEN("an insecure connection attempt is made")
         {
             struct BoltConnection* connection = BoltConnection_open_b(BOLT_INSECURE_SOCKET, address);
-            THEN("a NULL value should be returned")
+            THEN("a DEFUNCT connection should be returned")
             {
-                REQUIRE(connection == nullptr);
+                REQUIRE(connection->status == BOLT_DEFUNCT);
             }
+            BoltConnection_close_b(connection);
         }
         freeaddrinfo(address);
     }
@@ -176,7 +178,7 @@ SCENARIO("Test init with valid credentials", "[integration][ipv6][secure]")
         struct BoltConnection* connection = _open_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT);
         WHEN("successfully initialised")
         {
-            int rv = BoltConnection_init_b(connection, BOLT_USER, BOLT_PASSWORD);
+            int rv = BoltConnection_init_b(connection, "seabolt/1.0.0a", BOLT_USER, BOLT_PASSWORD);
             THEN("return value should be 0")
             {
                 REQUIRE(rv == 0);
@@ -198,7 +200,7 @@ SCENARIO("Test init with invalid credentials", "[integration][ipv6][secure]")
         WHEN("unsuccessfully initialised")
         {
             REQUIRE(strcmp(BOLT_PASSWORD, "X") != 0);
-            int rv = BoltConnection_init_b(connection, BOLT_USER, "X");
+            int rv = BoltConnection_init_b(connection, "seabolt/1.0.0a", BOLT_USER, "X");
             THEN("return value should not be 0")
             {
                 REQUIRE(rv != 0);
@@ -216,7 +218,7 @@ struct BoltConnection* _open_and_init_b(enum BoltTransport transport, const char
                                     const char* user, const char* password)
 {
     struct BoltConnection* connection = _open_b(transport, host, port);
-    BoltConnection_init_b(connection, user, password);
+    BoltConnection_init_b(connection, "seabolt/1.0.0a", user, password);
     REQUIRE(connection->status == BOLT_READY);
     return connection;
 }
@@ -263,7 +265,7 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
             REQUIRE(records == 0);
             REQUIRE(BoltValue_type(connection->received) == BOLT_SUMMARY);
             REQUIRE(BoltSummary_code(connection->received) == 0x70);
-            while (BoltConnection_receive_record_b(connection))
+            while (BoltConnection_receive_value_b(connection))
             {
                 REQUIRE(BoltValue_type(connection->received) == BOLT_LIST);
                 REQUIRE(connection->received->size == 1);
@@ -288,7 +290,7 @@ SCENARIO("Test execution of multiple Cypher statements transmitted together", "[
                                                              BOLT_USER, BOLT_PASSWORD);
         WHEN("successfully executed Cypher")
         {
-            BoltConnection_set_statement(connection, "RETURN $x", 8);
+            BoltConnection_set_statement(connection, "RETURN $x", 9);
             BoltValue_to_Dictionary8(connection->cypher_parameters, 1);
             BoltDictionary8_set_key(connection->cypher_parameters, 0, "x", 1);
             BoltValue* x = BoltDictionary8_value(connection->cypher_parameters, 0);

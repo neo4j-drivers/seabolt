@@ -113,7 +113,7 @@ int Bolt_init(struct Bolt* bolt)
 {
     struct timespec t[2];
     timespec_get(&t[0], TIME_UTC);
-    BoltConnection_init_b(bolt->connection, bolt->user, bolt->password);
+    BoltConnection_init_b(bolt->connection, "seabolt/1.0.0a", bolt->user, bolt->password);
 //    Bolt_dump_received(bolt);
     timespec_get(&t[1], TIME_UTC);
     timespec_diff(&bolt->stats.init_time, &t[1], &t[0]);
@@ -150,7 +150,7 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
-    while (BoltConnection_receive_record_b(bolt->connection))
+    while (BoltConnection_receive_value_b(bolt->connection))
     {
 //        Bolt_dump_received(bolt);
         record_count += 1;

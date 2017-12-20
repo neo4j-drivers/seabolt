@@ -1,6 +1,6 @@
-======
-Values
-======
+==============
+Types & Values
+==============
 
 .. doxygenfunction:: BoltValue_create
 

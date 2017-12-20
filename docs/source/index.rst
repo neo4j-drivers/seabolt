@@ -11,6 +11,7 @@ Welcome to Seabolt's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   connect
    values
 
 

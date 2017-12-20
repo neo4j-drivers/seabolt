@@ -30,60 +30,123 @@
 #define try(code) { int status = (code); if (status == -1) { return status; } }
 
 
+/**
+ *
+ */
 enum BoltTransport
 {
     BOLT_SECURE_SOCKET,
     BOLT_INSECURE_SOCKET,
 };
 
+/**
+ *
+ */
 enum BoltConnectionStatus
 {
-    BOLT_DISCONNECTED,      // not connected
-    BOLT_CONNECTED,         // connected but not authenticated
-    BOLT_READY,             // connected and authenticated
-    BOLT_FAILED,            // recoverable failure
-    BOLT_DEFUNCT,           // unrecoverable failure
+    BOLT_DISCONNECTED,          // not connected
+    BOLT_CONNECTED,             // connected but not authenticated
+    BOLT_READY,                 // connected and authenticated
+    BOLT_FAILED,                // recoverable failure
+    BOLT_DEFUNCT,               // unrecoverable failure
 };
 
+/**
+ *
+ */
+enum BoltConnectionError
+{
+    BOLT_NO_ERROR,
+    BOLT_UNKNOWN_ERROR,
+    BOLT_UNSUPPORTED,
+    BOLT_INTERRUPTED,
+    BOLT_TIMED_OUT,
+    BOLT_PERMISSION_DENIED,
+    BOLT_OUT_OF_FILES,
+    BOLT_OUT_OF_MEMORY,
+    BOLT_OUT_OF_PORTS,
+    BOLT_CONNECTION_REFUSED,
+    BOLT_NETWORK_UNREACHABLE,
+    BOLT_TLS_ERROR,             // general catch-all for OpenSSL errors :/
+};
+
+/**
+ * A Bolt client-server connection instance.
+ *
+ * Each connection is defined in terms of a _transport type_ and a server _address_.
+ * The address is supplied in a
+ *
+ */
 struct BoltConnection
 {
+    /// Transport type for this connection.
     enum BoltTransport transport;
-    enum BoltConnectionStatus status;
-    char address_string[INET6_ADDRSTRLEN];
-    int error;
-    int error_s;
-    // TODO: better storage for various assorted error codes
+
+    ///
     int socket;
     struct ssl_ctx_st* ssl_context;
     struct ssl_st* ssl;
-    int32_t protocol_version;
-    const char* user_agent;
-    // TODO raw_tx_buffer with chunks ("stop" moves data across buffers)
-    struct BoltBuffer* tx_buffer_1;     // transmit buffer without chunks
-    struct BoltBuffer* tx_buffer_0;     // transmit buffer with chunks
-    struct BoltBuffer* rx_buffer_0;     // receive buffer with chunks
-    struct BoltBuffer* rx_buffer_1;     // receive buffer without chunks
-    unsigned long bolt_error;
-    unsigned long openssl_error;
 
+    int32_t protocol_version;
+    void* protocol_data;
     int requests_queued;
     int requests_running;
-
     struct BoltValue* run;
     struct BoltValue* cypher_statement;
     struct BoltValue* cypher_parameters;
     struct BoltValue* discard;
     struct BoltValue* pull;
-    struct BoltValue* received; // holder for received messages (one at a time so we can reuse this)
+    /// Holder for values from the result stream
+    struct BoltValue* received;                 // holder for received messages
+
+    struct BoltBuffer* tx_buffer_1;             // transmit buffer without chunks
+    struct BoltBuffer* tx_buffer_0;             // transmit buffer with chunks
+    struct BoltBuffer* rx_buffer_0;             // receive buffer with chunks
+    struct BoltBuffer* rx_buffer_1;             // receive buffer without chunks
+
+    /// Current status of the connection
+    enum BoltConnectionStatus status;
+    /// Current connection error code
+    enum BoltConnectionError error;
 };
 
 
 /**
  * Open a connection to a Bolt server.
  *
- * @param transport
- * @param address
- * @return
+ * This function allocates a new BoltConnection struct for the given _transport_
+ * and attempts to connect it to _address_. The BoltConnection is returned
+ * regardless of whether or not the connection attempt was successful.
+ *
+ * The address may point to any valid IPv4 or IPv6 address and will generally be
+ * obtained via _getaddrinfo_.
+ *
+ * This function blocks until the connection attempt succeeds or fails.
+ * On returning, the connection status will be set to either `BOLT_CONNECTED`
+ * (if successful) or `BOLT_DEFUNCT` (if not). If defunct, the error code for
+ * the connection will be set to one of the following:
+ *
+ * @verbatim embed:rst:leading-asterisk
+ * ========================  ====================================================================
+ * Error code                Description
+ * ========================  ====================================================================
+ * BOLT_CONNECTION_REFUSED   The remote server refused to accept the connection.
+ * BOLT_INTERRUPTED          The connection attempt was interrupted.
+ * BOLT_NETWORK_UNREACHABLE  The server address is on an unreachable network.
+ * BOLT_OUT_OF_FILES         The system limit on the total number of open files has been reached.
+ * BOLT_OUT_OF_MEMORY        Insufficient memory is available.
+ * BOLT_OUT_OF_PORTS         No more local ports are available.
+ * BOLT_PERMISSION_DENIED    The current process does not have permission to create a connection.
+ * BOLT_TIMED_OUT            The connection attempt timed out.
+ * BOLT_TLS_ERROR            An error occurred while attempting to secure the connection.
+ * BOLT_UNKNOWN_ERROR        An error occurred for which no further detail can be determined.
+ * BOLT_UNSUPPORTED          One or more connection parameters are unsupported.
+ * ========================  ====================================================================
+ * @endverbatim
+ *
+ * @param transport the type of transport over which to connect
+ * @param address the address of the remote Bolt server
+ * @return a pointer to a new BoltConnection struct
  */
 struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const struct addrinfo* address);
 
@@ -95,7 +158,20 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const
 void BoltConnection_close_b(struct BoltConnection* connection);
 
 /**
- * Transmit all queued outgoing messages.
+ * Initialise the connection and authenticate using the basic
+ * authentication scheme.
+ *
+ * @param connection the connection to initialise
+ * @param user_agent a string to identify this client software
+ * @param user the user to authenticate as
+ * @param password a valid password for the given user
+ * @return
+ */
+int BoltConnection_init_b(struct BoltConnection* connection, const char* user_agent,
+                          const char* user, const char* password);
+
+/**
+ * Transmit all queued requests.
  *
  * @param connection
  * @return
@@ -103,7 +179,7 @@ void BoltConnection_close_b(struct BoltConnection* connection);
 int BoltConnection_transmit_b(struct BoltConnection* connection);
 
 /**
- * Receive all outstanding responses.
+ * Receive result values for all outstanding requests.
  *
  * @param connection
  * @return
@@ -111,8 +187,8 @@ int BoltConnection_transmit_b(struct BoltConnection* connection);
 int BoltConnection_receive_b(struct BoltConnection* connection);
 
 /**
- * Receive the next response in its entirety, up to and including the
- * trailing summary.
+ * Receive values from the current result stream, up to and including the
+ * next summary.
  *
  * @param connection
  * @return
@@ -120,20 +196,17 @@ int BoltConnection_receive_b(struct BoltConnection* connection);
 int BoltConnection_receive_summary_b(struct BoltConnection* connection);
 
 /**
- * Receive the next message and load into the "current" slot.
+ * Receive the next value from the current result stream.
+ *
+ * Each value will be either record data (stored in a BOLT_LIST) or
+ * summary metadata (in a BOLT_SUMMARY). The value will be loaded into
+ * `connection->received`.
  *
  * @param connection
- * @return
- */
-int BoltConnection_receive_record_b(struct BoltConnection* connection);
-
-/**
- * Initialise the connection and authenticate using the basic
- * authentication scheme.
+ * @return 1 if record data is received, 0 if summary metadata is received
  *
- * @return
  */
-int BoltConnection_init_b(struct BoltConnection* connection, const char* user, const char* password);
+int BoltConnection_receive_value_b(struct BoltConnection* connection);
 
 int BoltConnection_set_statement(struct BoltConnection* connection, const char* statement, size_t size);
 

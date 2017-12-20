@@ -7,12 +7,20 @@ This project is a work in progress and will support both Bolt v1 and v2 through 
 
 ## Building
 
-To build the project, run the code below from the root project directory.
-```bash
-$ cmake . && make
+To build the project, run either the `make_debug.sh` or the `make_release.sh` script from the project root directory.
+This will compile and deposit project artifacts in the `bin` and `lib` directories.
+
+To build the docs, the `make_docs.sh` script is available.
+The docs build process uses [Sphinx](http://www.sphinx-doc.org/), [Breathe](https://breathe.readthedocs.io/) and [Doxygen](http://www.doxygen.org/).
+These can be installed as follows:
+
+```
+$ sudo apt install doxygen
 ```
 
-This will compile and deposit the project artifacts in the `bin` and `lib` directories.
+```
+$ pip install --user sphinx breathe
+```
 
 
 ## Running
