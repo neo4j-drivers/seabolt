@@ -40,7 +40,31 @@ enum BoltProtocolV1Type
     BOLT_V1_MAP,
     BOLT_V1_STRUCTURE,
     BOLT_V1_RESERVED,
-} ;
+};
+
+struct BoltProtocolV1State
+{
+    // These buffers exclude chunk headers.
+    struct BoltBuffer* tx_buffer;
+    struct BoltBuffer* rx_buffer;
+
+    int requests_queued;
+    int requests_running;
+
+    struct BoltValue* run;
+    struct BoltValue* cypher_statement;
+    struct BoltValue* cypher_parameters;
+    struct BoltValue* discard;
+    struct BoltValue* pull;
+    /// Holder for values from the result stream
+    struct BoltValue* last_received;                 // holder for received messages
+};
+
+struct BoltProtocolV1State* BoltProtocolV1_create_state();
+
+void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state);
+
+struct BoltProtocolV1State* BoltProtocolV1_state(struct BoltConnection* connection);
 
 enum BoltProtocolV1Type BoltProtocolV1_marker_type(uint8_t marker);
 
@@ -67,10 +91,9 @@ int BoltProtocolV1_compile_INIT(struct BoltValue* value, const char* user_agent,
  * or the first value of a record.
  *
  * @param connection
- * @param value
  * @return
  */
-int BoltProtocolV1_unload(struct BoltConnection* connection, struct BoltValue* value);
+int BoltProtocolV1_unload(struct BoltConnection* connection);
 
 const char* BoltProtocolV1_structure_name(int16_t code);
 

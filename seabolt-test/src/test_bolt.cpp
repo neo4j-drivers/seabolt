@@ -253,9 +253,9 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
         WHEN("successfully executed Cypher")
         {
             BoltConnection_set_statement(connection, "RETURN $x", 9);
-            BoltValue_to_Dictionary8(connection->cypher_parameters, 1);
-            BoltDictionary8_set_key(connection->cypher_parameters, 0, "x", 1);
-            BoltValue* x = BoltDictionary8_value(connection->cypher_parameters, 0);
+            BoltConnection_resize_parameters(connection, 1);
+            BoltConnection_set_parameter_key(connection, 0, "x", 1);
+            BoltValue* x = BoltConnection_parameter_value(connection, 0);
             BoltValue_to_Int64(x, 42);
             BoltConnection_load_run(connection);
             BoltConnection_load_pull(connection, -1);
@@ -263,19 +263,20 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
             REQUIRE(requests == 2);
             int records = BoltConnection_receive_summary_b(connection);
             REQUIRE(records == 0);
-            REQUIRE(BoltValue_type(connection->received) == BOLT_SUMMARY);
-            REQUIRE(BoltSummary_code(connection->received) == 0x70);
+            struct BoltValue* last_received = BoltConnection_last_received(connection);
+            REQUIRE(BoltValue_type(last_received) == BOLT_SUMMARY);
+            REQUIRE(BoltSummary_code(last_received) == 0x70);
             while (BoltConnection_receive_value_b(connection))
             {
-                REQUIRE(BoltValue_type(connection->received) == BOLT_LIST);
-                REQUIRE(connection->received->size == 1);
-                BoltValue* value = BoltList_value(connection->received, 0);
+                REQUIRE(BoltValue_type(last_received) == BOLT_LIST);
+                REQUIRE(last_received->size == 1);
+                BoltValue* value = BoltList_value(last_received, 0);
                 REQUIRE(BoltValue_type(value) == BOLT_INT64);
                 REQUIRE(BoltInt64_get(value) == 42);
                 records += 1;
             }
-            REQUIRE(BoltValue_type(connection->received) == BOLT_SUMMARY);
-            REQUIRE(BoltSummary_code(connection->received) == 0x70);
+            REQUIRE(BoltValue_type(last_received) == BOLT_SUMMARY);
+            REQUIRE(BoltSummary_code(last_received) == 0x70);
             REQUIRE(records == 1);
         }
         BoltConnection_close_b(connection);
@@ -291,9 +292,9 @@ SCENARIO("Test execution of multiple Cypher statements transmitted together", "[
         WHEN("successfully executed Cypher")
         {
             BoltConnection_set_statement(connection, "RETURN $x", 9);
-            BoltValue_to_Dictionary8(connection->cypher_parameters, 1);
-            BoltDictionary8_set_key(connection->cypher_parameters, 0, "x", 1);
-            BoltValue* x = BoltDictionary8_value(connection->cypher_parameters, 0);
+            BoltConnection_resize_parameters(connection, 1);
+            BoltConnection_set_parameter_key(connection, 0, "x", 1);
+            BoltValue* x = BoltConnection_parameter_value(connection, 0);
             BoltValue_to_Int8(x, 1);
             BoltConnection_load_run(connection);
             BoltConnection_load_discard(connection, -1);

@@ -102,9 +102,11 @@ int Bolt_connect(struct Bolt* bolt)
     return 0;
 }
 
-int Bolt_dump_received(struct Bolt* bolt)
+int Bolt_dump_last_received(struct Bolt* bolt)
 {
-    BoltValue_write(stdout, bolt->connection->received, bolt->connection->protocol_version);
+    struct BoltValue* last_received = BoltConnection_last_received(bolt->connection);
+    if (last_received == NULL) return -1;
+    BoltValue_write(stdout, last_received, bolt->connection->protocol_version);
     fprintf(stdout, "\n");
     return 0;
 }
@@ -114,7 +116,7 @@ int Bolt_init(struct Bolt* bolt)
     struct timespec t[2];
     timespec_get(&t[0], TIME_UTC);
     BoltConnection_init_b(bolt->connection, "seabolt/1.0.0a", bolt->user, bolt->password);
-//    Bolt_dump_received(bolt);
+//    Bolt_dump_last_received(bolt);
     timespec_get(&t[1], TIME_UTC);
     timespec_diff(&bolt->stats.init_time, &t[1], &t[0]);
     return 0;
@@ -135,7 +137,7 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
     timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after handshake and initialisation
 
     BoltConnection_set_statement(bolt->connection, statement, (int32_t)(strlen(statement)));
-    BoltValue_to_Dictionary8(bolt->connection->cypher_parameters, 0);
+    BoltConnection_resize_parameters(bolt->connection, 0);
     BoltConnection_load_run(bolt->connection);
     BoltConnection_load_pull(bolt->connection, -1);
 
@@ -146,16 +148,16 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
     long record_count = 0;
 
     BoltConnection_receive_summary_b(bolt->connection);
-//    Bolt_dump_received(bolt);
+//    Bolt_dump_last_received(bolt);
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
     while (BoltConnection_receive_value_b(bolt->connection))
     {
-//        Bolt_dump_received(bolt);
+//        Bolt_dump_last_received(bolt);
         record_count += 1;
     }
-//    Bolt_dump_received(bolt);
+//    Bolt_dump_last_received(bolt);
 
     timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
 
@@ -219,8 +221,8 @@ int main(int argc, char* argv[])
     Bolt_destroy(bolt);
 
     fprintf(stderr, "=====================================\n");
-    fprintf(stderr, "current allocation   : %ld\n", BoltMem_current_allocation());
-    fprintf(stderr, "peak allocation      : %ld\n", BoltMem_peak_allocation());
+    fprintf(stderr, "current allocation   : %ld bytes\n", BoltMem_current_allocation());
+    fprintf(stderr, "peak allocation      : %ld bytes\n", BoltMem_peak_allocation());
     fprintf(stderr, "allocation events    : %lld\n", BoltMem_allocation_events());
 
     return 0;

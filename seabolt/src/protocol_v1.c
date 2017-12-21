@@ -24,6 +24,59 @@
 #include "buffer.h"
 #include "protocol_v1.h"
 
+#define RUN 0x10
+#define DISCARD_ALL 0x2F
+#define PULL_ALL 0x3F
+
+#define INITIAL_TX_BUFFER_SIZE 8192
+#define INITIAL_RX_BUFFER_SIZE 8192
+
+
+struct BoltProtocolV1State* BoltProtocolV1_create_state()
+{
+    struct BoltProtocolV1State* state = BoltMem_allocate(sizeof(struct BoltProtocolV1State));
+
+    state->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
+    state->rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
+
+    state->requests_queued = 0;
+    state->requests_running = 0;
+
+    state->run = BoltValue_create();
+    BoltValue_to_Request(state->run, RUN, 2);
+    state->cypher_statement = BoltRequest_value(state->run, 0);
+    state->cypher_parameters = BoltRequest_value(state->run, 1);
+    BoltValue_to_Dictionary8(state->cypher_parameters, 0);
+
+    state->discard = BoltValue_create();
+    BoltValue_to_Request(state->discard, DISCARD_ALL, 0);
+
+    state->pull = BoltValue_create();
+    BoltValue_to_Request(state->pull, PULL_ALL, 0);
+
+    state->last_received = BoltValue_create();
+    return state;
+}
+
+void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state)
+{
+    if (state == NULL) return;
+
+    BoltBuffer_destroy(state->tx_buffer);
+    BoltBuffer_destroy(state->rx_buffer);
+
+    BoltValue_destroy(state->run);
+    BoltValue_destroy(state->discard);
+    BoltValue_destroy(state->pull);
+    BoltValue_destroy(state->last_received);
+
+    BoltMem_deallocate(state, sizeof(struct BoltProtocolV1State));
+}
+
+struct BoltProtocolV1State* BoltProtocolV1_state(struct BoltConnection* connection)
+{
+    return (struct BoltProtocolV1State*)(connection->protocol_state);
+}
 
 enum BoltProtocolV1Type BoltProtocolV1_marker_type(uint8_t marker)
 {
@@ -67,49 +120,53 @@ enum BoltProtocolV1Type BoltProtocolV1_marker_type(uint8_t marker)
 
 int BoltProtocolV1_load_null(struct BoltConnection* connection)
 {
-    BoltBuffer_load_uint8(connection->tx_buffer_1, 0xC0);
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+    BoltBuffer_load_uint8(state->tx_buffer, 0xC0);
     return 0;
 }
 
 int BoltProtocolV1_load_boolean(struct BoltConnection* connection, int value)
 {
-    BoltBuffer_load_uint8(connection->tx_buffer_1, (value == 0) ? (uint8_t)(0xC2) : (uint8_t)(0xC3));
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+    BoltBuffer_load_uint8(state->tx_buffer, (value == 0) ? (uint8_t)(0xC2) : (uint8_t)(0xC3));
     return 0;
 }
 
 int BoltProtocolV1_load_integer(struct BoltConnection* connection, int64_t value)
 {
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     if (value >= -0x10 && value < 0x80)
     {
-        BoltBuffer_load_int8(connection->tx_buffer_1, value);
+        BoltBuffer_load_int8(state->tx_buffer, value);
     }
     else if (value >= -0x80 && value < -0x10)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xC8);
-        BoltBuffer_load_int8(connection->tx_buffer_1, value);
+        BoltBuffer_load_uint8(state->tx_buffer, 0xC8);
+        BoltBuffer_load_int8(state->tx_buffer, value);
     }
     else if (value >= -0x8000 && value < 0x8000)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xC9);
-        BoltBuffer_load_int16_be(connection->tx_buffer_1, value);
+        BoltBuffer_load_uint8(state->tx_buffer, 0xC9);
+        BoltBuffer_load_int16_be(state->tx_buffer, value);
     }
     else if (value >= -0x80000000L && value < 0x80000000L)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xCA);
-        BoltBuffer_load_int32_be(connection->tx_buffer_1, value);
+        BoltBuffer_load_uint8(state->tx_buffer, 0xCA);
+        BoltBuffer_load_int32_be(state->tx_buffer, value);
     }
     else
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xCB);
-        BoltBuffer_load_int64_be(connection->tx_buffer_1, value);
+        BoltBuffer_load_uint8(state->tx_buffer, 0xCB);
+        BoltBuffer_load_int64_be(state->tx_buffer, value);
     }
     return 0;
 }
 
 int BoltProtocolV1_load_float(struct BoltConnection* connection, double value)
 {
-    BoltBuffer_load_uint8(connection->tx_buffer_1, 0xC1);
-    BoltBuffer_load_double_be(connection->tx_buffer_1, value);
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+    BoltBuffer_load_uint8(state->tx_buffer, 0xC1);
+    BoltBuffer_load_double_be(state->tx_buffer, value);
     return 0;
 }
 
@@ -119,23 +176,24 @@ int BoltProtocolV1_load_bytes(struct BoltConnection* connection, const char* str
     {
         return -1;
     }
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     if (size < 0x100)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xCC);
-        BoltBuffer_load_uint8(connection->tx_buffer_1, (uint8_t)(size));
-        BoltBuffer_load(connection->tx_buffer_1, string, size);
+        BoltBuffer_load_uint8(state->tx_buffer, 0xCC);
+        BoltBuffer_load_uint8(state->tx_buffer, (uint8_t)(size));
+        BoltBuffer_load(state->tx_buffer, string, size);
     }
     else if (size < 0x10000)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xCD);
-        BoltBuffer_load_uint16_be(connection->tx_buffer_1, (uint16_t)(size));
-        BoltBuffer_load(connection->tx_buffer_1, string, size);
+        BoltBuffer_load_uint8(state->tx_buffer, 0xCD);
+        BoltBuffer_load_uint16_be(state->tx_buffer, (uint16_t)(size));
+        BoltBuffer_load(state->tx_buffer, string, size);
     }
     else
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xCE);
-        BoltBuffer_load_int32_be(connection->tx_buffer_1, size);
-        BoltBuffer_load(connection->tx_buffer_1, string, size);
+        BoltBuffer_load_uint8(state->tx_buffer, 0xCE);
+        BoltBuffer_load_int32_be(state->tx_buffer, size);
+        BoltBuffer_load(state->tx_buffer, string, size);
     }
     return 0;
 }
@@ -146,28 +204,29 @@ int BoltProtocolV1_load_string(struct BoltConnection* connection, const char* st
     {
         return -1;
     }
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     if (size < 0x10)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, (uint8_t)(0x80 + size));
-        BoltBuffer_load(connection->tx_buffer_1, string, size);
+        BoltBuffer_load_uint8(state->tx_buffer, (uint8_t)(0x80 + size));
+        BoltBuffer_load(state->tx_buffer, string, size);
     }
     else if (size < 0x100)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xD0);
-        BoltBuffer_load_uint8(connection->tx_buffer_1, (uint8_t)(size));
-        BoltBuffer_load(connection->tx_buffer_1, string, size);
+        BoltBuffer_load_uint8(state->tx_buffer, 0xD0);
+        BoltBuffer_load_uint8(state->tx_buffer, (uint8_t)(size));
+        BoltBuffer_load(state->tx_buffer, string, size);
     }
     else if (size < 0x10000)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xD1);
-        BoltBuffer_load_uint16_be(connection->tx_buffer_1, (uint16_t)(size));
-        BoltBuffer_load(connection->tx_buffer_1, string, size);
+        BoltBuffer_load_uint8(state->tx_buffer, 0xD1);
+        BoltBuffer_load_uint16_be(state->tx_buffer, (uint16_t)(size));
+        BoltBuffer_load(state->tx_buffer, string, size);
     }
     else
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xD2);
-        BoltBuffer_load_int32_be(connection->tx_buffer_1, size);
-        BoltBuffer_load(connection->tx_buffer_1, string, size);
+        BoltBuffer_load_uint8(state->tx_buffer, 0xD2);
+        BoltBuffer_load_int32_be(state->tx_buffer, size);
+        BoltBuffer_load(state->tx_buffer, string, size);
     }
     return 0;
 }
@@ -178,24 +237,25 @@ int _load_list_header(struct BoltConnection* connection, int32_t size)
     {
         return -1;
     }
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     if (size < 0x10)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, (uint8_t)(0x90 + size));
+        BoltBuffer_load_uint8(state->tx_buffer, (uint8_t)(0x90 + size));
     }
     else if (size < 0x100)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xD4);
-        BoltBuffer_load_uint8(connection->tx_buffer_1, (uint8_t)(size));
+        BoltBuffer_load_uint8(state->tx_buffer, 0xD4);
+        BoltBuffer_load_uint8(state->tx_buffer, (uint8_t)(size));
     }
     else if (size < 0x10000)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xD5);
-        BoltBuffer_load_uint16_be(connection->tx_buffer_1, (uint16_t)(size));
+        BoltBuffer_load_uint8(state->tx_buffer, 0xD5);
+        BoltBuffer_load_uint16_be(state->tx_buffer, (uint16_t)(size));
     }
     else
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xD6);
-        BoltBuffer_load_int32_be(connection->tx_buffer_1, size);
+        BoltBuffer_load_uint8(state->tx_buffer, 0xD6);
+        BoltBuffer_load_int32_be(state->tx_buffer, size);
     }
     return 0;
 }
@@ -206,24 +266,25 @@ int _load_map_header(struct BoltConnection* connection, int32_t size)
     {
         return -1;
     }
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     if (size < 0x10)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, (uint8_t)(0xA0 + size));
+        BoltBuffer_load_uint8(state->tx_buffer, (uint8_t)(0xA0 + size));
     }
     else if (size < 0x100)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xD8);
-        BoltBuffer_load_uint8(connection->tx_buffer_1, (uint8_t)(size));
+        BoltBuffer_load_uint8(state->tx_buffer, 0xD8);
+        BoltBuffer_load_uint8(state->tx_buffer, (uint8_t)(size));
     }
     else if (size < 0x10000)
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xD9);
-        BoltBuffer_load_uint16_be(connection->tx_buffer_1, (uint16_t)(size));
+        BoltBuffer_load_uint8(state->tx_buffer, 0xD9);
+        BoltBuffer_load_uint16_be(state->tx_buffer, (uint16_t)(size));
     }
     else
     {
-        BoltBuffer_load_uint8(connection->tx_buffer_1, 0xDA);
-        BoltBuffer_load_int32_be(connection->tx_buffer_1, size);
+        BoltBuffer_load_uint8(state->tx_buffer, 0xDA);
+        BoltBuffer_load_int32_be(state->tx_buffer, size);
     }
     return 0;
 }
@@ -234,8 +295,9 @@ int _load_structure_header(struct BoltConnection* connection, int16_t code, int8
     {
         return -1;
     }
-    BoltBuffer_load_uint8(connection->tx_buffer_1, (uint8_t)(0xB0 + size));
-    BoltBuffer_load_int8(connection->tx_buffer_1, code);
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+    BoltBuffer_load_uint8(state->tx_buffer, (uint8_t)(0xB0 + size));
+    BoltBuffer_load_int8(state->tx_buffer, code);
     return 0;
 }
 
@@ -248,17 +310,18 @@ int _load_structure_header(struct BoltConnection* connection, int16_t code, int8
 int _enqueue(struct BoltConnection* connection)
 {
     // TODO: more chunks if size is too big
-    int size = BoltBuffer_unloadable(connection->tx_buffer_1);
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+    int size = BoltBuffer_unloadable(state->tx_buffer);
     char header[2];
     header[0] = (char)(size >> 8);
     header[1] = (char)(size);
-    BoltBuffer_load(connection->tx_buffer_0, &header[0], sizeof(header));
-    BoltBuffer_load(connection->tx_buffer_0, BoltBuffer_unload_target(connection->tx_buffer_1, size), size);
+    BoltBuffer_load(connection->tx_buffer, &header[0], sizeof(header));
+    BoltBuffer_load(connection->tx_buffer, BoltBuffer_unload_target(state->tx_buffer, size), size);
     header[0] = (char)(0);
     header[1] = (char)(0);
-    BoltBuffer_load(connection->tx_buffer_0, &header[0], sizeof(header));
-    BoltBuffer_compact(connection->tx_buffer_1);
-    connection->requests_queued += 1;
+    BoltBuffer_load(connection->tx_buffer, &header[0], sizeof(header));
+    BoltBuffer_compact(state->tx_buffer);
+    state->requests_queued += 1;
     return 0;
 }
 
@@ -458,8 +521,9 @@ int _unload(struct BoltConnection* connection, struct BoltValue* value);
 
 int _unload_null(struct BoltConnection* connection, struct BoltValue* value)
 {
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     uint8_t marker;
-    BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
+    BoltBuffer_unload_uint8(state->rx_buffer, &marker);
     if (marker == 0xC0)
     {
         BoltValue_to_Null(value);
@@ -473,8 +537,9 @@ int _unload_null(struct BoltConnection* connection, struct BoltValue* value)
 
 int _unload_boolean(struct BoltConnection* connection, struct BoltValue* value)
 {
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     uint8_t marker;
-    BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
+    BoltBuffer_unload_uint8(state->rx_buffer, &marker);
     if (marker == 0xC3)
     {
         BoltValue_to_Bit(value, 1);
@@ -492,8 +557,9 @@ int _unload_boolean(struct BoltConnection* connection, struct BoltValue* value)
 
 int _unload_integer(struct BoltConnection* connection, struct BoltValue* value)
 {
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     uint8_t marker;
-    BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
+    BoltBuffer_unload_uint8(state->rx_buffer, &marker);
     if (marker < 0x80)
     {
         BoltValue_to_Int64(value, marker);
@@ -505,25 +571,25 @@ int _unload_integer(struct BoltConnection* connection, struct BoltValue* value)
     else if (marker == 0xC8)
     {
         int8_t x;
-        BoltBuffer_unload_int8(connection->rx_buffer_1, &x);
+        BoltBuffer_unload_int8(state->rx_buffer, &x);
         BoltValue_to_Int64(value, x);
     }
     else if (marker == 0xC9)
     {
         int16_t x;
-        BoltBuffer_unload_int16_be(connection->rx_buffer_1, &x);
+        BoltBuffer_unload_int16_be(state->rx_buffer, &x);
         BoltValue_to_Int64(value, x);
     }
     else if (marker == 0xCA)
     {
         int32_t x;
-        BoltBuffer_unload_int32_be(connection->rx_buffer_1, &x);
+        BoltBuffer_unload_int32_be(state->rx_buffer, &x);
         BoltValue_to_Int64(value, x);
     }
     else if (marker == 0xCB)
     {
         int64_t x;
-        BoltBuffer_unload_int64_be(connection->rx_buffer_1, &x);
+        BoltBuffer_unload_int64_be(state->rx_buffer, &x);
         BoltValue_to_Int64(value, x);
     }
     else
@@ -535,12 +601,13 @@ int _unload_integer(struct BoltConnection* connection, struct BoltValue* value)
 
 int _unload_float(struct BoltConnection* connection, struct BoltValue* value)
 {
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     uint8_t marker;
-    BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
+    BoltBuffer_unload_uint8(state->rx_buffer, &marker);
     if (marker == 0xC1)
     {
         double x;
-        BoltBuffer_unload_double_be(connection->rx_buffer_1, &x);
+        BoltBuffer_unload_double_be(state->rx_buffer, &x);
         BoltValue_to_Float64(value, x);
     }
     else
@@ -552,38 +619,39 @@ int _unload_float(struct BoltConnection* connection, struct BoltValue* value)
 
 int _unload_string(struct BoltConnection* connection, struct BoltValue* value)
 {
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     uint8_t marker;
-    BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
+    BoltBuffer_unload_uint8(state->rx_buffer, &marker);
     if (marker >= 0x80 && marker <= 0x8F)
     {
         int32_t size;
         size = marker & 0x0F;
         BoltValue_to_String8(value, NULL, size);
-        BoltBuffer_unload(connection->rx_buffer_1, BoltString8_get(value), size);
+        BoltBuffer_unload(state->rx_buffer, BoltString8_get(value), size);
         return 0;
     }
     if (marker == 0xD0)
     {
         uint8_t size;
-        BoltBuffer_unload_uint8(connection->rx_buffer_1, &size);
+        BoltBuffer_unload_uint8(state->rx_buffer, &size);
         BoltValue_to_String8(value, NULL, size);
-        BoltBuffer_unload(connection->rx_buffer_1, BoltString8_get(value), size);
+        BoltBuffer_unload(state->rx_buffer, BoltString8_get(value), size);
         return 0;
     }
     if (marker == 0xD1)
     {
         uint16_t size;
-        BoltBuffer_unload_uint16_be(connection->rx_buffer_1, &size);
+        BoltBuffer_unload_uint16_be(state->rx_buffer, &size);
         BoltValue_to_String8(value, NULL, size);
-        BoltBuffer_unload(connection->rx_buffer_1, BoltString8_get(value), size);
+        BoltBuffer_unload(state->rx_buffer, BoltString8_get(value), size);
         return 0;
     }
     if (marker == 0xD2)
     {
         int32_t size;
-        BoltBuffer_unload_int32_be(connection->rx_buffer_1, &size);
+        BoltBuffer_unload_int32_be(state->rx_buffer, &size);
         BoltValue_to_String8(value, NULL, size);
-        BoltBuffer_unload(connection->rx_buffer_1, BoltString8_get(value), size);
+        BoltBuffer_unload(state->rx_buffer, BoltString8_get(value), size);
         return 0;
     }
     BoltLog_error("[NET] Wrong marker type: %d", marker);
@@ -592,9 +660,10 @@ int _unload_string(struct BoltConnection* connection, struct BoltValue* value)
 
 int _unload_list(struct BoltConnection* connection, struct BoltValue* value)
 {
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     uint8_t marker;
     int32_t size;
-    BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
+    BoltBuffer_unload_uint8(state->rx_buffer, &marker);
     if (marker >= 0x90 && marker <= 0x9F)
     {
         size = marker & 0x0F;
@@ -611,9 +680,10 @@ int _unload_list(struct BoltConnection* connection, struct BoltValue* value)
 
 int _unload_map(struct BoltConnection* connection, struct BoltValue* value)
 {
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     uint8_t marker;
     int32_t size;
-    BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
+    BoltBuffer_unload_uint8(state->rx_buffer, &marker);
     if (marker >= 0xA0 && marker <= 0xAF)
     {
         size = marker & 0x0F;
@@ -631,14 +701,15 @@ int _unload_map(struct BoltConnection* connection, struct BoltValue* value)
 
 int _unload_structure(struct BoltConnection* connection, struct BoltValue* value)
 {
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     uint8_t marker;
     int8_t code;
     int32_t size;
-    BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
+    BoltBuffer_unload_uint8(state->rx_buffer, &marker);
     if (marker >= 0xB0 && marker <= 0xBF)
     {
         size = marker & 0x0F;
-        BoltBuffer_unload_int8(connection->rx_buffer_1, &code);
+        BoltBuffer_unload_int8(state->rx_buffer, &code);
         BoltValue_to_Structure(value, code, size);
         for (int i = 0; i < size; i++)
         {
@@ -652,8 +723,9 @@ int _unload_structure(struct BoltConnection* connection, struct BoltValue* value
 
 int _unload(struct BoltConnection* connection, struct BoltValue* value)
 {
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     uint8_t marker;
-    BoltBuffer_peek_uint8(connection->rx_buffer_1, &marker);
+    BoltBuffer_peek_uint8(state->rx_buffer, &marker);
     switch(BoltProtocolV1_marker_type(marker))
     {
         case BOLT_V1_NULL:
@@ -678,52 +750,53 @@ int _unload(struct BoltConnection* connection, struct BoltValue* value)
     }
 }
 
-int BoltProtocolV1_unload(struct BoltConnection* connection, struct BoltValue* value)
+int BoltProtocolV1_unload(struct BoltConnection* connection)
 {
-    if (BoltBuffer_unloadable(connection->rx_buffer_1) == 0)
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+    if (BoltBuffer_unloadable(state->rx_buffer) == 0)
     {
         return 0;
     }
     uint8_t marker;
     uint8_t code;
     int32_t size;
-    BoltBuffer_unload_uint8(connection->rx_buffer_1, &marker);
-    if (BoltProtocolV1_marker_type(marker) == BOLT_V1_STRUCTURE)
+    BoltBuffer_unload_uint8(state->rx_buffer, &marker);
+    if (BoltProtocolV1_marker_type(marker) != BOLT_V1_STRUCTURE)
     {
-        size = marker & 0x0F;
-        BoltBuffer_unload_uint8(connection->rx_buffer_1, &code);
-        if (code == 0x71)  // RECORD
+        return -1;
+    }
+    size = marker & 0x0F;
+    struct BoltValue* received = ((struct BoltProtocolV1State*)(connection->protocol_state))->last_received;
+    BoltBuffer_unload_uint8(state->rx_buffer, &code);
+    if (code == 0x71)  // RECORD
+    {
+        if (size >= 1)
         {
-            if (size >= 1)
+            _unload(connection, received);
+            if (size > 1)
             {
-                _unload(connection, value);
-                if (size > 1)
+                struct BoltValue* black_hole = BoltValue_create();
+                for (int i = 1; i < size; i++)
                 {
-                    struct BoltValue* black_hole = BoltValue_create();
-                    for (int i = 1; i < size; i++)
-                    {
-                        _unload(connection, black_hole);
-                    }
-                    BoltValue_destroy(black_hole);
+                    _unload(connection, black_hole);
                 }
-            }
-            else
-            {
-                BoltValue_to_Null(value);
+                BoltValue_destroy(black_hole);
             }
         }
         else
         {
-            BoltValue_to_Summary(value, code, size);
-            for (int i = 0; i < size; i++)
-            {
-                _unload(connection, BoltSummary_value(value, i));
-            }
+            BoltValue_to_Null(received);
         }
-        return 1;
-
     }
-    return -1;  // BOLT_ERROR_WRONG_TYPE
+    else
+    {
+        BoltValue_to_Summary(received, code, size);
+        for (int i = 0; i < size; i++)
+        {
+            _unload(connection, BoltSummary_value(received, i));
+        }
+    }
+    return 1;
 }
 
 const char* BoltProtocolV1_structure_name(int16_t code)

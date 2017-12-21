@@ -68,6 +68,8 @@ enum BoltConnectionError
     BOLT_CONNECTION_REFUSED,
     BOLT_NETWORK_UNREACHABLE,
     BOLT_TLS_ERROR,             // general catch-all for OpenSSL errors :/
+    BOLT_PROTOCOL_VIOLATION,
+    BOLT_END_OF_TRANSMISSION,
 };
 
 /**
@@ -79,30 +81,29 @@ enum BoltConnectionError
  */
 struct BoltConnection
 {
-    /// Transport type for this connection.
+    /// Transport type for this connection
     enum BoltTransport transport;
 
-    ///
-    int socket;
+    /// The security context (secure connections only)
     struct ssl_ctx_st* ssl_context;
+    /// A secure socket wrapper (secure connections only)
     struct ssl_st* ssl;
+    /// The raw socket that backs this connection
+    int socket;
 
+    /// The protocol version used for this connection
     int32_t protocol_version;
-    void* protocol_data;
-    int requests_queued;
-    int requests_running;
-    struct BoltValue* run;
-    struct BoltValue* cypher_statement;
-    struct BoltValue* cypher_parameters;
-    struct BoltValue* discard;
-    struct BoltValue* pull;
-    /// Holder for values from the result stream
-    struct BoltValue* received;                 // holder for received messages
+    /// State required by the protocol
+    void* protocol_state;
 
-    struct BoltBuffer* tx_buffer_1;             // transmit buffer without chunks
-    struct BoltBuffer* tx_buffer_0;             // transmit buffer with chunks
-    struct BoltBuffer* rx_buffer_0;             // receive buffer with chunks
-    struct BoltBuffer* rx_buffer_1;             // receive buffer without chunks
+    // These buffers contain data exactly as it is transmitted or
+    // received. Therefore for Bolt v1, chunk headers are included
+    // in these buffers
+
+    /// Transmit buffer
+    struct BoltBuffer* tx_buffer;
+    /// Receive buffer
+    struct BoltBuffer* rx_buffer;
 
     /// Current status of the connection
     enum BoltConnectionStatus status;
@@ -158,6 +159,13 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const
 void BoltConnection_close_b(struct BoltConnection* connection);
 
 /**
+ *
+ * @param connection
+ * @return
+ */
+struct BoltValue* BoltConnection_last_received(struct BoltConnection* connection);
+
+/**
  * Initialise the connection and authenticate using the basic
  * authentication scheme.
  *
@@ -211,6 +219,10 @@ int BoltConnection_receive_value_b(struct BoltConnection* connection);
 int BoltConnection_set_statement(struct BoltConnection* connection, const char* statement, size_t size);
 
 int BoltConnection_resize_parameters(struct BoltConnection* connection, int32_t size);
+
+int BoltConnection_set_parameter_key(struct BoltConnection* connection, int32_t index, const char* key, size_t key_size);
+
+struct BoltValue* BoltConnection_parameter_value(struct BoltConnection* connection, int32_t index);
 
 int BoltConnection_load_run(struct BoltConnection* connection);
 
