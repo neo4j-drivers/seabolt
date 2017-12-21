@@ -309,3 +309,42 @@ SCENARIO("Test execution of multiple Cypher statements transmitted together", "[
         BoltConnection_close_b(connection);
     }
 }
+
+SCENARIO("Test transactions", "[integration][ipv6][secure]")
+{
+    GIVEN("an open and initialised connection")
+    {
+        struct BoltConnection* connection = _open_and_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
+                                                             BOLT_USER, BOLT_PASSWORD);
+        WHEN("successfully executed Cypher")
+        {
+            BoltConnection_set_statement(connection, "RETURN $x", 9);
+            BoltConnection_resize_parameters(connection, 1);
+            BoltConnection_set_parameter_key(connection, 0, "x", 1);
+            BoltValue* x = BoltConnection_parameter_value(connection, 0);
+            BoltValue_to_Int64(x, 42);
+            BoltConnection_load_run(connection);
+            BoltConnection_load_pull(connection, -1);
+            int requests = BoltConnection_transmit_b(connection);
+            REQUIRE(requests == 2);
+            int records = BoltConnection_receive_summary_b(connection);
+            REQUIRE(records == 0);
+            struct BoltValue* last_received = BoltConnection_last_received(connection);
+            REQUIRE(BoltValue_type(last_received) == BOLT_SUMMARY);
+            REQUIRE(BoltSummary_code(last_received) == 0x70);
+            while (BoltConnection_receive_value_b(connection))
+            {
+                REQUIRE(BoltValue_type(last_received) == BOLT_LIST);
+                REQUIRE(last_received->size == 1);
+                BoltValue* value = BoltList_value(last_received, 0);
+                REQUIRE(BoltValue_type(value) == BOLT_INT64);
+                REQUIRE(BoltInt64_get(value) == 42);
+                records += 1;
+            }
+            REQUIRE(BoltValue_type(last_received) == BOLT_SUMMARY);
+            REQUIRE(BoltSummary_code(last_received) == 0x70);
+            REQUIRE(records == 1);
+        }
+        BoltConnection_close_b(connection);
+    }
+}
