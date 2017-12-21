@@ -32,6 +32,15 @@
 #define INITIAL_RX_BUFFER_SIZE 8192
 
 
+void _create_run_request(struct _run_request* run, int32_t n_parameters)
+{
+    run->request = BoltValue_create();
+    BoltValue_to_Request(run->request, RUN, 2);
+    run->statement = BoltRequest_value(run->request, 0);
+    run->parameters = BoltRequest_value(run->request, 1);
+    BoltValue_to_Dictionary8(run->parameters, n_parameters);
+}
+
 struct BoltProtocolV1State* BoltProtocolV1_create_state()
 {
     struct BoltProtocolV1State* state = BoltMem_allocate(sizeof(struct BoltProtocolV1State));
@@ -42,17 +51,19 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
     state->requests_queued = 0;
     state->requests_running = 0;
 
-    state->run = BoltValue_create();
-    BoltValue_to_Request(state->run, RUN, 2);
-    state->cypher_statement = BoltRequest_value(state->run, 0);
-    state->cypher_parameters = BoltRequest_value(state->run, 1);
-    BoltValue_to_Dictionary8(state->cypher_parameters, 0);
+    _create_run_request(&state->run, 0);
+    _create_run_request(&state->begin, 1);
+    BoltValue_to_String8(state->begin.statement, "BEGIN", 5);
+    _create_run_request(&state->commit, 0);
+    BoltValue_to_String8(state->commit.statement, "COMMIT", 6);
+    _create_run_request(&state->rollback, 0);
+    BoltValue_to_String8(state->rollback.statement, "ROLLBACK", 8);
 
-    state->discard = BoltValue_create();
-    BoltValue_to_Request(state->discard, DISCARD_ALL, 0);
+    state->discard_request = BoltValue_create();
+    BoltValue_to_Request(state->discard_request, DISCARD_ALL, 0);
 
-    state->pull = BoltValue_create();
-    BoltValue_to_Request(state->pull, PULL_ALL, 0);
+    state->pull_request = BoltValue_create();
+    BoltValue_to_Request(state->pull_request, PULL_ALL, 0);
 
     state->last_received = BoltValue_create();
     return state;
@@ -65,9 +76,14 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state)
     BoltBuffer_destroy(state->tx_buffer);
     BoltBuffer_destroy(state->rx_buffer);
 
-    BoltValue_destroy(state->run);
-    BoltValue_destroy(state->discard);
-    BoltValue_destroy(state->pull);
+    BoltValue_destroy(state->run.request);
+    BoltValue_destroy(state->begin.request);
+    BoltValue_destroy(state->commit.request);
+    BoltValue_destroy(state->rollback.request);
+
+    BoltValue_destroy(state->discard_request);
+    BoltValue_destroy(state->pull_request);
+
     BoltValue_destroy(state->last_received);
 
     BoltMem_deallocate(state, sizeof(struct BoltProtocolV1State));

@@ -42,6 +42,13 @@ enum BoltProtocolV1Type
     BOLT_V1_RESERVED,
 };
 
+struct _run_request
+{
+    struct BoltValue* request;
+    struct BoltValue* statement;
+    struct BoltValue* parameters;
+};
+
 struct BoltProtocolV1State
 {
     // These buffers exclude chunk headers.
@@ -51,11 +58,12 @@ struct BoltProtocolV1State
     int requests_queued;
     int requests_running;
 
-    struct BoltValue* run;
-    struct BoltValue* cypher_statement;
-    struct BoltValue* cypher_parameters;
-    struct BoltValue* discard;
-    struct BoltValue* pull;
+    struct _run_request run;
+    struct _run_request begin;
+    struct _run_request commit;
+    struct _run_request rollback;
+    struct BoltValue* discard_request;
+    struct BoltValue* pull_request;
     /// Holder for values from the result stream
     struct BoltValue* last_received;                 // holder for received messages
 };

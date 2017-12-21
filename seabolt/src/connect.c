@@ -612,7 +612,7 @@ int BoltConnection_set_statement(struct BoltConnection* connection, const char* 
     if (size <= INT32_MAX)
     {
         struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-        BoltValue_to_String8(state->cypher_statement, statement, (int32_t)(size));
+        BoltValue_to_String8(state->run.statement, statement, (int32_t)(size));
         return 0;
     }
     return -1;
@@ -621,20 +621,20 @@ int BoltConnection_set_statement(struct BoltConnection* connection, const char* 
 int BoltConnection_resize_parameters(struct BoltConnection* connection, int32_t size)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    BoltValue_to_Dictionary8(state->cypher_parameters, size);
+    BoltValue_to_Dictionary8(state->run.parameters, size);
     return 0;
 }
 
 int BoltConnection_set_parameter_key(struct BoltConnection* connection, int32_t index, const char* key, size_t key_size)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    return BoltDictionary8_set_key(state->cypher_parameters, index, key, key_size);
+    return BoltDictionary8_set_key(state->run.parameters, index, key, key_size);
 }
 
 struct BoltValue* BoltConnection_parameter_value(struct BoltConnection* connection, int32_t index)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    return BoltDictionary8_value(state->cypher_parameters, index);
+    return BoltDictionary8_value(state->run.parameters, index);
 }
 
 int BoltConnection_load_run(struct BoltConnection* connection)
@@ -644,7 +644,7 @@ int BoltConnection_load_run(struct BoltConnection* connection)
         case 1:
         {
             struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-            BoltProtocolV1_load(connection, state->run);
+            BoltProtocolV1_load(connection, state->run.request);
             return 0;
         }
         default:
@@ -664,7 +664,7 @@ int BoltConnection_load_discard(struct BoltConnection* connection, int32_t n)
             else
             {
                 struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-                BoltProtocolV1_load(connection, state->discard);
+                BoltProtocolV1_load(connection, state->discard_request);
             }
             return 0;
         default:
@@ -684,7 +684,7 @@ int BoltConnection_load_pull(struct BoltConnection* connection, int32_t n)
             else
             {
                 struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-                BoltProtocolV1_load(connection, state->pull);
+                BoltProtocolV1_load(connection, state->pull_request);
             }
             return 0;
         default:
