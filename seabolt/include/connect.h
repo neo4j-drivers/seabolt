@@ -75,9 +75,6 @@ enum BoltConnectionError
 /**
  * A Bolt client-server connection instance.
  *
- * Each connection is defined in terms of a _transport type_ and a server _address_.
- * The address is supplied in a
- *
  */
 struct BoltConnection
 {
