@@ -72,6 +72,33 @@ enum BoltConnectionError
     BOLT_END_OF_TRANSMISSION,
 };
 
+
+/**
+ * Locator for a Bolt service.
+ */
+struct BoltService
+{
+    const char* host;
+    unsigned short port;
+    unsigned short n_resolved;
+    struct
+    {
+        char host[16];
+    } * resolved_data;
+    int gai_status;
+};
+
+
+
+struct BoltService* BoltService_create(const char* host, unsigned short port);
+
+void BoltService_resolve_b(struct BoltService * service);
+
+void BoltService_destroy(struct BoltService * service);
+
+void BoltService_write(struct BoltService * service, FILE * file);
+
+
 /**
  * A Bolt client-server connection instance.
  *

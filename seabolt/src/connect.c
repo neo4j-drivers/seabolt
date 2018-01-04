@@ -44,6 +44,17 @@
 #define RECEIVE_S(socket, buffer, size, flags) SSL_read(socket, buffer, size)
 
 
+void _copy_ipv6_socket_address(char* target, struct sockaddr_in6* source)
+{
+    memcpy(&target[0], &source->sin6_addr.__in6_u.__u6_addr8, 16);
+}
+
+void _copy_ipv4_socket_address(char* target, struct sockaddr_in* source)
+{
+    memcpy(&target[0], "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 12);
+    memcpy(&target[12], &source->sin_addr.s_addr, 4);
+}
+
 struct BoltConnection* _create(enum BoltTransport transport)
 {
     struct BoltConnection* connection = BoltMem_allocate(sizeof(struct BoltConnection));
@@ -108,7 +119,7 @@ int _open_b(struct BoltConnection* connection, const struct addrinfo* address)
             _set_status(connection, BOLT_DEFUNCT, BOLT_UNSUPPORTED);
             return -1;
     }
-    connection->socket = SOCKET(address->ai_family, address->ai_socktype, 0);
+    connection->socket = SOCKET(address->ai_family, address->ai_socktype, IPPROTO_TCP);
     if (connection->socket == -1)
     {
         // TODO: Windows
@@ -411,6 +422,91 @@ int _handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int3
             _set_status(connection, BOLT_DEFUNCT, BOLT_UNSUPPORTED);
             return -1;
     }
+}
+
+struct BoltService* BoltService_create(const char* host, unsigned short port)
+{
+    struct BoltService* service = BoltMem_allocate(sizeof(struct BoltService));
+    service->host = host;
+    service->port = port;
+    service->n_resolved = 0;
+    service->resolved_data = BoltMem_allocate(0);
+    return service;
+}
+
+void BoltService_resolve_b(struct BoltService * service)
+{
+    static struct addrinfo hints;
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = (AI_V4MAPPED | AI_ADDRCONFIG);
+    struct addrinfo* ai;
+    service->gai_status = getaddrinfo(service->host, NULL, &hints, &ai);
+    printf("status = %d\n", service->gai_status);
+    if (service->gai_status == 0)
+    {
+        unsigned short n_resolved = 0;
+        for (struct addrinfo* ai_node = ai; ai_node != NULL; ai_node = ai_node->ai_next)
+        {
+            switch (ai_node->ai_family)
+            {
+                case AF_INET:
+                case AF_INET6:
+                {
+                    n_resolved += 1;
+                    break;
+                }
+                default:
+                    // We only care about IPv4 and IPv6
+                    continue;
+            }
+        }
+        service->resolved_data = BoltMem_reallocate(service->resolved_data,
+                                                    service->n_resolved * 16U, n_resolved * 16U);
+        service->n_resolved = n_resolved;
+        int p = 0;
+        for (struct addrinfo* ai_node = ai; ai_node != NULL; ai_node = ai_node->ai_next)
+        {
+            switch (ai_node->ai_family)
+            {
+                case AF_INET:
+                {
+                    _copy_ipv4_socket_address(&service->resolved_data[p].host[0], (struct sockaddr_in*)(ai_node->ai_addr));
+                    break;
+                }
+                case AF_INET6:
+                {
+                    _copy_ipv6_socket_address(&service->resolved_data[p].host[0], (struct sockaddr_in6*)(ai_node->ai_addr));
+                    break;
+                }
+                default:
+                    // We only care about IPv4 and IPv6
+                    continue;
+            }
+            p += 1;
+        }
+        freeaddrinfo(ai);
+    }
+}
+
+void BoltService_destroy(struct BoltService* service)
+{
+    BoltMem_deallocate(service->resolved_data, service->n_resolved * 16U);
+    BoltMem_deallocate(service, sizeof(struct BoltService));
+}
+
+void BoltService_write(struct BoltService* service, FILE* file)
+{
+    fprintf(file, "Service(host=\"%s\" resolved=IPv6[", service->host);
+    for(int i = 0; i < service->n_resolved; i++)
+    {
+        if (i > 0) fprintf(file, ", ");
+        char out[INET6_ADDRSTRLEN];
+        inet_ntop(AF_INET6, &service->resolved_data[i].host, &out[0], INET6_ADDRSTRLEN);
+        fprintf(file, "\"%s\"", out);
+    }
+    fprintf(file, "] port=%d)", service->port);
 }
 
 struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const struct addrinfo* address)
