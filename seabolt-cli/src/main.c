@@ -22,6 +22,7 @@
 #include <time.h>
 #include <memory.h>
 #include <assert.h>
+#include <inttypes.h>
 
 #include "bolt.h"
 
@@ -30,7 +31,7 @@ struct Bolt
 {
     struct BoltConnection* connection;
     enum BoltTransport transport;
-    struct addrinfo* address;
+    struct BoltAddress* address;
     const char* user;
     const char* password;
     struct
@@ -56,14 +57,8 @@ struct Bolt* Bolt_create(int argc, char* argv[])
 
     struct Bolt* bolt = BoltMem_allocate(sizeof(struct Bolt));
     bolt->transport = (strcmp(BOLT_SECURE, "1") == 0) ? BOLT_SECURE_SOCKET : BOLT_INSECURE_SOCKET;
-
-    int res = getaddrinfo(BOLT_HOST, BOLT_PORT, NULL, &bolt->address);
-    if (res != 0)
-    {
-        BoltLog_error("[NET] Could not resolve address '%s' for port '%s' (error %d)", BOLT_HOST, BOLT_PORT, res);
-        return NULL;
-    }
-
+    bolt->address = BoltAddress_create(BOLT_HOST, BOLT_PORT);
+    BoltAddress_resolve_b(bolt->address);
     bolt->user = BOLT_USER;
     bolt->password = BOLT_PASSWORD;
 
@@ -72,7 +67,7 @@ struct Bolt* Bolt_create(int argc, char* argv[])
 
 void Bolt_destroy(struct Bolt* bolt)
 {
-    freeaddrinfo(bolt->address);
+    BoltAddress_destroy(bolt->address);
     BoltMem_deallocate(bolt, sizeof(struct Bolt));
 }
 

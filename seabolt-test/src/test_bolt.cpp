@@ -40,23 +40,100 @@ const char* BOLT_USER = getenv_or_default("BOLT_USER", "neo4j");
 const char* BOLT_PASSWORD = getenv_or_default("BOLT_PASSWORD", "password");
 
 
+SCENARIO("Test address resolution (IPv4)", "[dns]")
+{
+    const char * host = "ipv4-only.bolt-test.net";
+    const char * port = "7687";
+    struct BoltAddress* address = BoltAddress_create(host, port);
+    REQUIRE(strcmp(address->host, host) == 0);
+    REQUIRE(strcmp(address->port, port) == 0);
+    REQUIRE(address->n_resolved_hosts == 0);
+    REQUIRE(address->resolved_port == 0);
+    for (int i = 0; i < 2; i++)
+    {
+        BoltAddress_resolve_b(address);
+//        BoltAddress_write(address, stdout);
+        REQUIRE(address->n_resolved_hosts == 1);
+        REQUIRE(strncmp(address->resolved_hosts[0].data, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x34\xD7\x41\x50", 16) == 0);
+        REQUIRE(address->resolved_port == 7687);
+    }
+    BoltAddress_destroy(address);
+}
+
+SCENARIO("Test address resolution (IPv6)", "[dns]")
+{
+    const char * host = "ipv6-only.bolt-test.net";
+    const char * port = "7687";
+    struct BoltAddress* address = BoltAddress_create(host, port);
+    REQUIRE(strcmp(address->host, host) == 0);
+    REQUIRE(strcmp(address->port, port) == 0);
+    REQUIRE(address->n_resolved_hosts == 0);
+    REQUIRE(address->resolved_port == 0);
+    for (int i = 0; i < 2; i++)
+    {
+        BoltAddress_resolve_b(address);
+//        BoltAddress_write(address, stdout);
+        REQUIRE(address->n_resolved_hosts == 1);
+        REQUIRE(strncmp(address->resolved_hosts[0].data, "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7", 16) == 0);
+        REQUIRE(address->resolved_port == 7687);
+    }
+    BoltAddress_destroy(address);
+}
+
+SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
+{
+    const char * host = "ipv4-and-ipv6.bolt-test.net";
+    const char * port = "7687";
+    struct BoltAddress * address = BoltAddress_create(host, port);
+    REQUIRE(strcmp(address->host, host) == 0);
+    REQUIRE(strcmp(address->port, port) == 0);
+    REQUIRE(address->n_resolved_hosts == 0);
+    REQUIRE(address->resolved_port == 0);
+    for (int i = 0; i < 2; i++)
+    {
+        BoltAddress_resolve_b(address);
+//        BoltAddress_write(address, stdout);
+        for (size_t j = 0; j < address->n_resolved_hosts; j++)
+        {
+            if (BoltAddress_resolved_is_ipv4(address, j))
+            {
+                REQUIRE(strncmp(address->resolved_hosts[j].data,
+                                "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x34\xD7\x41\x50", 16) == 0);
+            }
+            else
+            {
+                REQUIRE(strncmp(address->resolved_hosts[j].data,
+                                "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7", 16) == 0);
+            }
+        }
+        REQUIRE(address->resolved_port == 7687);
+    }
+    BoltAddress_destroy(address);
+}
+
+struct BoltAddress * _get_address(const char * host, const char * port)
+{
+    struct BoltAddress * service = BoltAddress_create(host, port);
+    BoltAddress_resolve_b(service);
+    REQUIRE(service->gai_status == 0);
+    return service;
+}
+
 SCENARIO("Test basic secure connection (IPv4)", "[integration][ipv4][secure]")
 {
     GIVEN("a local server address")
     {
-        struct addrinfo* address;
-        int gai_status = getaddrinfo(BOLT_IPV4_HOST, BOLT_PORT, nullptr, &address);
-        REQUIRE(gai_status == 0);
+        struct BoltAddress * address = _get_address(BOLT_IPV4_HOST, BOLT_PORT);
         WHEN("a secure connection is opened")
         {
-            struct BoltConnection* connection = BoltConnection_open_b(BOLT_SECURE_SOCKET, address);
+            struct BoltConnection * connection = BoltConnection_open_b(BOLT_SECURE_SOCKET, address);
             THEN("the connection should be connected")
             {
                 REQUIRE(connection->status == BOLT_CONNECTED);
             }
             BoltConnection_close_b(connection);
         }
-        freeaddrinfo(address);
+        BoltAddress_destroy(address);
     }
 }
 
@@ -64,9 +141,7 @@ SCENARIO("Test basic secure connection (IPv6)", "[integration][ipv6][secure]")
 {
     GIVEN("a local server address")
     {
-        struct addrinfo* address;
-        int gai_status = getaddrinfo(BOLT_IPV6_HOST, BOLT_PORT, nullptr, &address);
-        REQUIRE(gai_status == 0);
+        struct BoltAddress * address = _get_address(BOLT_IPV6_HOST, BOLT_PORT);
         WHEN("a secure connection is opened")
         {
             struct BoltConnection* connection = BoltConnection_open_b(BOLT_SECURE_SOCKET, address);
@@ -76,7 +151,7 @@ SCENARIO("Test basic secure connection (IPv6)", "[integration][ipv6][secure]")
             }
             BoltConnection_close_b(connection);
         }
-        freeaddrinfo(address);
+        BoltAddress_destroy(address);
     }
 }
 
@@ -84,9 +159,7 @@ SCENARIO("Test basic insecure connection (IPv4)", "[integration][ipv4][insecure]
 {
     GIVEN("a local server address")
     {
-        struct addrinfo* address;
-        int gai_status = getaddrinfo(BOLT_IPV4_HOST, BOLT_PORT, nullptr, &address);
-        REQUIRE(gai_status == 0);
+        struct BoltAddress * address = _get_address(BOLT_IPV4_HOST, BOLT_PORT);
         WHEN("an insecure connection is opened")
         {
             struct BoltConnection* connection = BoltConnection_open_b(BOLT_INSECURE_SOCKET, address);
@@ -96,7 +169,7 @@ SCENARIO("Test basic insecure connection (IPv4)", "[integration][ipv4][insecure]
             }
             BoltConnection_close_b(connection);
         }
-        freeaddrinfo(address);
+        BoltAddress_destroy(address);
     }
 }
 
@@ -104,9 +177,7 @@ SCENARIO("Test basic insecure connection (IPv6)", "[integration][ipv6][insecure]
 {
     GIVEN("a local server address")
     {
-        struct addrinfo* address;
-        int gai_status = getaddrinfo(BOLT_IPV6_HOST, BOLT_PORT, nullptr, &address);
-        REQUIRE(gai_status == 0);
+        struct BoltAddress * address = _get_address(BOLT_IPV6_HOST, BOLT_PORT);
         WHEN("an insecure connection is opened")
         {
             struct BoltConnection* connection = BoltConnection_open_b(BOLT_INSECURE_SOCKET, address);
@@ -116,7 +187,7 @@ SCENARIO("Test basic insecure connection (IPv6)", "[integration][ipv6][insecure]
             }
             BoltConnection_close_b(connection);
         }
-        freeaddrinfo(address);
+        BoltAddress_destroy(address);
     }
 }
 
@@ -124,9 +195,7 @@ SCENARIO("Test secure connection to dead port", "[integration][ipv6][secure]")
 {
     GIVEN("a local server address")
     {
-        struct addrinfo* address;
-        int gai_status = getaddrinfo(BOLT_IPV6_HOST, "9999", nullptr, &address);
-        REQUIRE(gai_status == 0);
+        struct BoltAddress * address = _get_address(BOLT_IPV6_HOST, "9999");
         WHEN("a secure connection attempt is made")
         {
             struct BoltConnection* connection = BoltConnection_open_b(BOLT_SECURE_SOCKET, address);
@@ -136,7 +205,7 @@ SCENARIO("Test secure connection to dead port", "[integration][ipv6][secure]")
             }
             BoltConnection_close_b(connection);
         }
-        freeaddrinfo(address);
+        BoltAddress_destroy(address);
     }
 }
 
@@ -144,9 +213,7 @@ SCENARIO("Test insecure connection to dead port", "[integration][ipv6][insecure]
 {
     GIVEN("a local server address")
     {
-        struct addrinfo* address;
-        int gai_status = getaddrinfo(BOLT_IPV6_HOST, "9999", nullptr, &address);
-        REQUIRE(gai_status == 0);
+        struct BoltAddress * address = _get_address(BOLT_IPV6_HOST, "9999");
         WHEN("an insecure connection attempt is made")
         {
             struct BoltConnection* connection = BoltConnection_open_b(BOLT_INSECURE_SOCKET, address);
@@ -156,17 +223,15 @@ SCENARIO("Test insecure connection to dead port", "[integration][ipv6][insecure]
             }
             BoltConnection_close_b(connection);
         }
-        freeaddrinfo(address);
+        BoltAddress_destroy(address);
     }
 }
 
 struct BoltConnection* _open_b(enum BoltTransport transport, const char* host, const char* port)
 {
-    struct addrinfo* address;
-    int gai_status = getaddrinfo(host, port, nullptr, &address);
-    REQUIRE(gai_status == 0);
+    struct BoltAddress * address = _get_address(BOLT_IPV6_HOST, BOLT_PORT);
     struct BoltConnection* connection = BoltConnection_open_b(transport, address);
-    freeaddrinfo(address);
+    BoltAddress_destroy(address);
     REQUIRE(connection->status == BOLT_CONNECTED);
     return connection;
 }

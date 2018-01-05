@@ -74,29 +74,31 @@ enum BoltConnectionError
 
 
 /**
- * Locator for a Bolt service.
+ * Bolt server address.
  */
-struct BoltService
+struct BoltAddress
 {
-    const char* host;
-    unsigned short port;
-    unsigned short n_resolved;
-    struct
-    {
-        char host[16];
-    } * resolved_data;
+    const char * host;
+    const char * port;
+
+    int n_resolved_hosts;
+    struct { char data[16]; } * resolved_hosts;
+    in_port_t resolved_port;
+
     int gai_status;
 };
 
 
 
-struct BoltService* BoltService_create(const char* host, unsigned short port);
+struct BoltAddress * BoltAddress_create(const char * host, const char * port);
 
-void BoltService_resolve_b(struct BoltService * service);
+void BoltAddress_resolve_b(struct BoltAddress * address);
 
-void BoltService_destroy(struct BoltService * service);
+int BoltAddress_resolved_is_ipv4(struct BoltAddress * address, size_t resolved_index);
 
-void BoltService_write(struct BoltService * service, FILE * file);
+void BoltAddress_destroy(struct BoltAddress * address);
+
+void BoltAddress_write(struct BoltAddress * address, FILE * file);
 
 
 /**
@@ -170,10 +172,10 @@ struct BoltConnection
  * @endverbatim
  *
  * @param transport the type of transport over which to connect
- * @param address the address of the remote Bolt server
+ * @param address descriptor of the remote Bolt server address
  * @return a pointer to a new BoltConnection struct
  */
-struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, const struct addrinfo* address);
+struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, struct BoltAddress* address);
 
 /**
  * Close a connection.
