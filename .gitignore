@@ -67,6 +67,7 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 *.cbp
+build
 
 # Python
 *.py[co]
@@ -75,3 +76,7 @@ __pycache__
 # Docs
 docs/build/
 docs/doxygen/
+
+# Conan
+conanbuildinfo.*
+conaninfo.txt

@@ -4,5 +4,5 @@ BASE=$(dirname $0)
 
 pushd ${BASE} 1> /dev/null
 source make_debug.sh
-bin/seabolt-test $@
+build/bin/seabolt-test $@
 popd 1> /dev/null

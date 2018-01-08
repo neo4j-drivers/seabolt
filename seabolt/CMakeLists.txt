@@ -3,8 +3,8 @@ set(CMAKE_C_STANDARD 99)
 project(seabolt C)
 include_directories(include)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/lib")
 
 if ( WIN32 )
     # assume OpenSSL is installed in %PROGRAMFILES(X86)%\OpenSSL
@@ -31,7 +31,7 @@ file(GLOB C_FILES src/*.c)
 add_library(${PROJECT_NAME} SHARED ${H_FILES} ${C_FILES})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 
-target_link_libraries(${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
 
 set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include
         CACHE INTERNAL "${PROJECT_NAME}: Include Directories" FORCE)
