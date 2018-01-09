@@ -24,6 +24,7 @@
 #ifndef SEABOLT_CONNECT
 #define SEABOLT_CONNECT
 
+#include <stdio.h>
 #include <netdb.h>
 
 

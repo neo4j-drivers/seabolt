@@ -22,10 +22,7 @@
 #include <stddef.h>
 #include <malloc.h>
 
-#include "warden.h"
-
-
-static FILE* __bolt_log_file;
+#include "mem.h"
 
 
 void* memcpy_r(void* dest, const void* src, size_t n)
@@ -37,32 +34,6 @@ void* memcpy_r(void* dest, const void* src, size_t n)
         dest_c[i] = src_c[n - i - 1];
     }
     return dest;
-}
-
-
-void BoltLog_set_file(FILE* log_file)
-{
-    __bolt_log_file = log_file;
-}
-
-void BoltLog_info(const char* message, ...)
-{
-    if (__bolt_log_file == NULL) return;
-    va_list args;
-    va_start(args, message);
-    vfprintf(__bolt_log_file, message, args);
-    va_end(args);
-    fprintf(__bolt_log_file, "\n");
-}
-
-void BoltLog_error(const char* message, ...)
-{
-    if (__bolt_log_file == NULL) return;
-    va_list args;
-    va_start(args, message);
-    vfprintf(__bolt_log_file, message, args);
-    va_end(args);
-    fprintf(__bolt_log_file, "\n");
 }
 
 

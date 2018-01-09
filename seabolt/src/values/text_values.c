@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <values.h>
+#include "mem.h"
 
 
 void BoltValue_to_Char16(struct BoltValue* value, uint16_t x)

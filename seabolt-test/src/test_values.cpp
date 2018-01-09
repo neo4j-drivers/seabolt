@@ -23,7 +23,8 @@
 #include "test_values.hpp"
 
 extern "C" {
-    #include "bolt.h"
+    #include "mem.h"
+    #include "values.h"
 }
 
 #include <catch.hpp>

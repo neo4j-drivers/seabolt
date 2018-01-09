@@ -22,6 +22,7 @@
 #include <memory.h>
 #include <stdint.h>
 #include <values.h>
+#include "mem.h"
 
 
 /**

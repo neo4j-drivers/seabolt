@@ -21,6 +21,7 @@
 #include <string.h>
 #include <values.h>
 #include <assert.h>
+#include "mem.h"
 
 
 

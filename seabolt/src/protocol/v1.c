@@ -19,10 +19,11 @@
 
 
 #include <stdlib.h>
-#include <bolt.h>
+#include <values.h>
 #include <memory.h>
-#include "buffer.h"
-#include "protocol_v1.h"
+#include "../buffer.h"
+#include "v1.h"
+#include "mem.h"
 
 #define RUN 0x10
 #define DISCARD_ALL 0x2F

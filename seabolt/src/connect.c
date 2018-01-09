@@ -21,13 +21,15 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <connect.h>
-#include <protocol_v1.h>
-#include <buffer.h>
+#include "protocol/v1.h"
+#include "buffer.h"
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-#include <bolt.h>
+#include <connect.h>
+#include <values.h>
 #include <stdbool.h>
+#include "mem.h"
 
 
 #define INITIAL_TX_BUFFER_SIZE 8192

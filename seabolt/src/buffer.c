@@ -18,10 +18,10 @@
  */
 
 
-#include <buffer.h>
+#include "buffer.h"
 #include <limits.h>
 #include <memory.h>
-#include <warden.h>
+#include <mem.h>
 
 
 struct BoltBuffer* BoltBuffer_create(size_t size)

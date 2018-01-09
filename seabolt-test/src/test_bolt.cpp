@@ -23,7 +23,8 @@
 #include "catch.hpp"
 
 extern "C" {
-    #include "bolt.h"
+    #include "connect.h"
+    #include "values.h"
 }
 
 
@@ -72,10 +73,14 @@ SCENARIO("Test address resolution (IPv6)", "[dns]")
     for (int i = 0; i < 2; i++)
     {
         BoltAddress_resolve_b(address);
+        if (address->gai_status == 0)
+        {
 //        BoltAddress_write(address, stdout);
-        REQUIRE(address->n_resolved_hosts == 1);
-        REQUIRE(strncmp(BoltAddress_resolved_host(address, 0), "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7", 16) == 0);
-        REQUIRE(address->resolved_port == 7687);
+            REQUIRE(address->n_resolved_hosts == 1);
+            REQUIRE(strncmp(BoltAddress_resolved_host(address, 0),
+                            "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7", 16) == 0);
+            REQUIRE(address->resolved_port == 7687);
+        }
     }
     BoltAddress_destroy(address);
 }
@@ -92,20 +97,25 @@ SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
     for (int i = 0; i < 2; i++)
     {
         BoltAddress_resolve_b(address);
-//        BoltAddress_write(address, stdout);
-        for (size_t j = 0; j < address->n_resolved_hosts; j++)
+        if (address->gai_status == 0)
         {
-            char * resolved_host = BoltAddress_resolved_host(address, j);
-            if (BoltAddress_resolved_host_is_ipv4(address, j))
+//        BoltAddress_write(address, stdout);
+            for (size_t j = 0; j < address->n_resolved_hosts; j++)
             {
-                REQUIRE(strncmp(resolved_host, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x34\xD7\x41\x50", 16) == 0);
+                char * resolved_host = BoltAddress_resolved_host(address, j);
+                if (BoltAddress_resolved_host_is_ipv4(address, j))
+                {
+                    REQUIRE(strncmp(resolved_host, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x34\xD7\x41\x50",
+                                    16) == 0);
+                }
+                else
+                {
+                    REQUIRE(strncmp(resolved_host, "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7",
+                                    16) == 0);
+                }
             }
-            else
-            {
-                REQUIRE(strncmp(resolved_host, "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7", 16) == 0);
-            }
+            REQUIRE(address->resolved_port == 7687);
         }
-        REQUIRE(address->resolved_port == 7687);
     }
     BoltAddress_destroy(address);
 }

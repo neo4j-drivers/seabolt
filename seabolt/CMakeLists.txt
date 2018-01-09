@@ -27,7 +27,7 @@ else()
 endif()
 
 file(GLOB H_FILES include/*.h)
-file(GLOB C_FILES src/*.c)
+file(GLOB C_FILES src/*.c src/**/*.c)
 add_library(${PROJECT_NAME} SHARED ${H_FILES} ${C_FILES})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 

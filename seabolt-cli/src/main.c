@@ -22,9 +22,10 @@
 #include <time.h>
 #include <memory.h>
 #include <assert.h>
-#include <inttypes.h>
 
-#include "bolt.h"
+#include "connect.h"
+#include "mem.h"
+#include "values.h"
 
 
 struct Bolt

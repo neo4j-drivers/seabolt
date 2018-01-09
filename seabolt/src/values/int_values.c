@@ -21,6 +21,7 @@
 #include <string.h>
 #include <values.h>
 #include <assert.h>
+#include "mem.h"
 
 
 void BoltValue_to_Int8(struct BoltValue* value, int8_t x)

@@ -21,7 +21,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <values.h>
-#include <protocol_v1.h>
+#include "../protocol/v1.h"
+#include "mem.h"
 
 
 static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',

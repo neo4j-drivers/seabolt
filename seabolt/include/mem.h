@@ -21,32 +21,24 @@
 /// Logging, resource management, "try" and exception macros
 /// General flow management
 
-#ifndef SEABOLT_WARDEN
-#define SEABOLT_WARDEN
+#ifndef SEABOLT_MEM
+#define SEABOLT_MEM
 
 #include "stdio.h"
 
 void* memcpy_r(void* dest, const void* src, size_t n);
 
 #ifdef _WIN32
-    // Windows endianness is always LE (I think)
+// Windows endianness is always LE (I think)
     #define memcpy_be(target, src, n) memcpyr(target, src, n)
 #else
-    #include "endian.h"
-    #if __BYTE_ORDER == __BIG_ENDIAN
-        #define memcpy_be(target, src, n) memcpy(target, src, n)
-    #else
-        #define memcpy_be(target, src, n) memcpy_r(target, src, n)
-    #endif
+#include "endian.h"
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define memcpy_be(target, src, n) memcpy(target, src, n)
+#else
+#define memcpy_be(target, src, n) memcpy_r(target, src, n)
 #endif
-
-
-void BoltLog_set_file(FILE* log_file);
-
-void BoltLog_info(const char* message, ...);
-
-void BoltLog_error(const char* message, ...);
-
+#endif
 
 
 /**
@@ -109,4 +101,4 @@ size_t BoltMem_peak_allocation();
 long long BoltMem_allocation_events();
 
 
-#endif // SEABOLT_WARDEN
+#endif // SEABOLT_MEM

@@ -17,11 +17,19 @@
  * limitations under the License.
  */
 
-#ifndef SEABOLT_BOLT
-#define SEABOLT_BOLT
+/// This module....
+/// Logging, resource management, "try" and exception macros
+/// General flow management
 
-#include "warden.h"
-#include "connect.h"
-#include "values.h"
+#ifndef SEABOLT_LOGGING
+#define SEABOLT_LOGGING
 
-#endif //SEABOLT_BOLT
+
+void BoltLog_set_file(FILE* log_file);
+
+void BoltLog_info(const char* message, ...);
+
+void BoltLog_error(const char* message, ...);
+
+
+#endif // SEABOLT_LOGGING
