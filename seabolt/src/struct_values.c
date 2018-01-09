@@ -122,7 +122,7 @@ struct BoltValue* BoltStructureArray_at(const struct BoltValue* value, int32_t a
     return BoltList_value(&value->data.extended.as_value[array_index], structure_index);
 }
 
-int BoltStructure_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
+int BoltStructure_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
 {
     assert(BoltValue_type(value) == BOLT_STRUCTURE);
     int16_t code = BoltStructure_code(value);
@@ -141,13 +141,13 @@ int BoltStructure_write(FILE* file, struct BoltValue* value, int32_t protocol_ve
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) fprintf(file, " ");
-        BoltValue_write(file, BoltStructure_value(value, i), protocol_version);
+        BoltValue_write(BoltStructure_value(value, i), file, protocol_version);
     }
     fprintf(file, ")");
     return 0;
 }
 
-int BoltStructureArray_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
+int BoltStructureArray_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
 {
     assert(BoltValue_type(value) == BOLT_STRUCTURE_ARRAY);
     int16_t code = BoltStructure_code(value);
@@ -176,14 +176,14 @@ int BoltStructureArray_write(FILE* file, struct BoltValue* value, int32_t protoc
         for (int j = 0; j < BoltStructureArray_get_size(value, i); j++)
         {
             if (j > 0) fprintf(file, " ");
-            BoltValue_write(file, BoltStructureArray_at(value, i, j), protocol_version);
+            BoltValue_write(BoltStructureArray_at(value, i, j), file, protocol_version);
         }
     }
     fprintf(file, "]");
     return 0;
 }
 
-int BoltRequest_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
+int BoltRequest_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
 {
     assert(BoltValue_type(value) == BOLT_REQUEST);
     int16_t code = BoltRequest_code(value);
@@ -209,13 +209,13 @@ int BoltRequest_write(FILE* file, struct BoltValue* value, int32_t protocol_vers
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) fprintf(file, " ");
-        BoltValue_write(file, BoltRequest_value(value, i), protocol_version);
+        BoltValue_write(BoltRequest_value(value, i), file, protocol_version);
     }
     fprintf(file, ")");
     return 0;
 }
 
-int BoltSummary_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
+int BoltSummary_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
 {
     assert(BoltValue_type(value) == BOLT_SUMMARY);
     int16_t code = BoltSummary_code(value);
@@ -241,7 +241,7 @@ int BoltSummary_write(FILE* file, struct BoltValue* value, int32_t protocol_vers
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) fprintf(file, " ");
-        BoltValue_write(file, BoltSummary_value(value, i), protocol_version);
+        BoltValue_write(BoltSummary_value(value, i), file, protocol_version);
     }
     fprintf(file, ")");
     return 0;

@@ -95,15 +95,14 @@ SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
 //        BoltAddress_write(address, stdout);
         for (size_t j = 0; j < address->n_resolved_hosts; j++)
         {
+            char * resolved_host = BoltAddress_resolved_host(address, j);
             if (BoltAddress_resolved_host_is_ipv4(address, j))
             {
-                REQUIRE(strncmp(BoltAddress_resolved_host(address, j),
-                                "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x34\xD7\x41\x50", 16) == 0);
+                REQUIRE(strncmp(resolved_host, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x34\xD7\x41\x50", 16) == 0);
             }
             else
             {
-                REQUIRE(strncmp(BoltAddress_resolved_host(address, j),
-                                "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7", 16) == 0);
+                REQUIRE(strncmp(resolved_host, "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7", 16) == 0);
             }
         }
         REQUIRE(address->resolved_port == 7687);

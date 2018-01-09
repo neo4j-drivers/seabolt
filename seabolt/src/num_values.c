@@ -147,35 +147,35 @@ uint64_t BoltNum64Array_get(const struct BoltValue* value, int32_t index)
     return data[index];
 }
 
-int BoltNum8_write(FILE* file, struct BoltValue* value)
+int BoltNum8_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_NUM8);
     fprintf(file, "n8(%u)", BoltNum8_get(value));
     return 0;
 }
 
-int BoltNum16_write(FILE* file, struct BoltValue* value)
+int BoltNum16_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_NUM16);
     fprintf(file, "n16(%u)", BoltNum16_get(value));
     return 0;
 }
 
-int BoltNum32_write(FILE* file, struct BoltValue* value)
+int BoltNum32_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_NUM32);
     fprintf(file, "n32(%u)", BoltNum32_get(value));
     return 0;
 }
 
-int BoltNum64_write(FILE* file, struct BoltValue* value)
+int BoltNum64_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_NUM64);
     fprintf(file, "n64(%lu)", BoltNum64_get(value));
     return 0;
 }
 
-int BoltNum8Array_write(FILE* file, struct BoltValue* value)
+int BoltNum8Array_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_NUM8_ARRAY);
     fprintf(file, "n8[");
@@ -187,7 +187,7 @@ int BoltNum8Array_write(FILE* file, struct BoltValue* value)
     return 0;
 }
 
-int BoltNum16Array_write(FILE* file, struct BoltValue* value)
+int BoltNum16Array_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_NUM16_ARRAY);
     fprintf(file, "n16[");
@@ -199,7 +199,7 @@ int BoltNum16Array_write(FILE* file, struct BoltValue* value)
     return 0;
 }
 
-int BoltNum32Array_write(FILE* file, struct BoltValue* value)
+int BoltNum32Array_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_NUM32_ARRAY);
     fprintf(file, "n32[");
@@ -211,7 +211,7 @@ int BoltNum32Array_write(FILE* file, struct BoltValue* value)
     return 0;
 }
 
-int BoltNum64Array_write(FILE* file, struct BoltValue* value)
+int BoltNum64Array_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_NUM64_ARRAY);
     fprintf(file, "n64[");

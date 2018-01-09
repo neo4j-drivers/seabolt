@@ -184,102 +184,102 @@ struct BoltValue* BoltList_value(const struct BoltValue* value, int32_t index)
     return &value->data.extended.as_value[index];
 }
 
-int BoltNull_write(FILE* file, const struct BoltValue* value)
+int BoltNull_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_NULL);
     fprintf(file, "~");
     return 0;
 }
 
-int BoltList_write(FILE* file, const struct BoltValue* value, int32_t protocol_version)
+int BoltList_write(const struct BoltValue * value, FILE * file, int32_t protocol_version)
 {
     assert(BoltValue_type(value) == BOLT_LIST);
     fprintf(file, "[");
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) fprintf(file, ", ");
-        BoltValue_write(file, BoltList_value(value, i), protocol_version);
+        BoltValue_write(BoltList_value(value, i), file, protocol_version);
     }
     fprintf(file, "]");
     return 0;
 }
 
-int BoltValue_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
+int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
 {
     switch (BoltValue_type(value))
     {
         case BOLT_NULL:
-            return BoltNull_write(file, value);
+            return BoltNull_write(value, file);
         case BOLT_LIST:
-            return BoltList_write(file, value, protocol_version);
+            return BoltList_write(value, file, protocol_version);
         case BOLT_BIT:
-            return BoltBit_write(file, value);
+            return BoltBit_write(value, file);
         case BOLT_BYTE:
-            return BoltByte_write(file, value);
+            return BoltByte_write(value, file);
         case BOLT_BIT_ARRAY:
-            return BoltBitArray_write(file, value);
+            return BoltBitArray_write(value, file);
         case BOLT_BYTE_ARRAY:
-            return BoltByteArray_write(file, value);
+            return BoltByteArray_write(value, file);
         case BOLT_STRING8:
-            return BoltString8_write(file, value);
+            return BoltString8_write(value, file);
         case BOLT_STRING16:
             return -1;
         case BOLT_STRING8_ARRAY:
-            return BoltString8Array_write(file, value);
+            return BoltString8Array_write(value, file);
         case BOLT_STRING16_ARRAY:
             return -1;
         case BOLT_DICTIONARY8:
-            return BoltDictionary8_write(file, value, protocol_version);
+            return BoltDictionary8_write(value, file, protocol_version);
         case BOLT_DICTIONARY16:
             return -1;
         case BOLT_NUM8:
-            return BoltNum8_write(file, value);
+            return BoltNum8_write(value, file);
         case BOLT_NUM16:
-            return BoltNum16_write(file, value);
+            return BoltNum16_write(value, file);
         case BOLT_NUM32:
-            return BoltNum32_write(file, value);
+            return BoltNum32_write(value, file);
         case BOLT_NUM64:
-            return BoltNum64_write(file, value);
+            return BoltNum64_write(value, file);
         case BOLT_NUM8_ARRAY:
-            return BoltNum8Array_write(file, value);
+            return BoltNum8Array_write(value, file);
         case BOLT_NUM16_ARRAY:
-            return BoltNum16Array_write(file, value);
+            return BoltNum16Array_write(value, file);
         case BOLT_NUM32_ARRAY:
-            return BoltNum32Array_write(file, value);
+            return BoltNum32Array_write(value, file);
         case BOLT_NUM64_ARRAY:
-            return BoltNum64Array_write(file, value);
+            return BoltNum64Array_write(value, file);
         case BOLT_INT8:
-            return BoltInt8_write(file, value);
+            return BoltInt8_write(value, file);
         case BOLT_INT16:
-            return BoltInt16_write(file, value);
+            return BoltInt16_write(value, file);
         case BOLT_INT32:
-            return BoltInt32_write(file, value);
+            return BoltInt32_write(value, file);
         case BOLT_INT64:
-            return BoltInt64_write(file, value);
+            return BoltInt64_write(value, file);
         case BOLT_INT8_ARRAY:
-            return BoltInt8Array_write(file, value);
+            return BoltInt8Array_write(value, file);
         case BOLT_INT16_ARRAY:
-            return BoltInt16Array_write(file, value);
+            return BoltInt16Array_write(value, file);
         case BOLT_INT32_ARRAY:
-            return BoltInt32Array_write(file, value);
+            return BoltInt32Array_write(value, file);
         case BOLT_INT64_ARRAY:
-            return BoltInt64Array_write(file, value);
+            return BoltInt64Array_write(value, file);
         case BOLT_FLOAT32:
-            return BoltFloat32_write(file, value);
+            return BoltFloat32_write(value, file);
         case BOLT_FLOAT32_ARRAY:
-            return BoltFloat32Array_write(file, value);
+            return BoltFloat32Array_write(value, file);
         case BOLT_FLOAT64:
-            return BoltFloat64_write(file, value);
+            return BoltFloat64_write(value, file);
         case BOLT_FLOAT64_ARRAY:
-            return BoltFloat64Array_write(file, value);
+            return BoltFloat64Array_write(value, file);
         case BOLT_STRUCTURE:
-            return BoltStructure_write(file, value, protocol_version);
+            return BoltStructure_write(value, file, protocol_version);
         case BOLT_STRUCTURE_ARRAY:
-            return BoltStructureArray_write(file, value, protocol_version);
+            return BoltStructureArray_write(value, file, protocol_version);
         case BOLT_REQUEST:
-            return BoltRequest_write(file, value, protocol_version);
+            return BoltRequest_write(value, file, protocol_version);
         case BOLT_SUMMARY:
-            return BoltSummary_write(file, value, protocol_version);
+            return BoltSummary_write(value, file, protocol_version);
         default:
             fprintf(file, "?");
             return -1;

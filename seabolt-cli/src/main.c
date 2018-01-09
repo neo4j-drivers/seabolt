@@ -101,7 +101,7 @@ int Bolt_dump_last_received(struct Bolt* bolt)
 {
     struct BoltValue* last_received = BoltConnection_last_received(bolt->connection);
     if (last_received == NULL) return -1;
-    BoltValue_write(stdout, last_received, bolt->connection->protocol_version);
+    BoltValue_write(last_received, stdout, bolt->connection->protocol_version);
     fprintf(stdout, "\n");
     return 0;
 }

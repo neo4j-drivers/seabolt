@@ -101,14 +101,14 @@ char* BoltByteArray_get_all(struct BoltValue* value)
            value->data.as_char : value->data.extended.as_char;
 }
 
-int BoltBit_write(FILE* file, const struct BoltValue* value)
+int BoltBit_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_BIT);
     fprintf(file, "b(%d)", BoltBit_get(value));
     return 0;
 }
 
-int BoltBitArray_write(FILE* file, const struct BoltValue* value)
+int BoltBitArray_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_BIT_ARRAY);
     fprintf(file, "b[");
@@ -120,7 +120,7 @@ int BoltBitArray_write(FILE* file, const struct BoltValue* value)
     return 0;
 }
 
-int BoltByte_write(FILE* file, const struct BoltValue* value)
+int BoltByte_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_BYTE);
     char byte = BoltByte_get(value);
@@ -128,7 +128,7 @@ int BoltByte_write(FILE* file, const struct BoltValue* value)
     return 0;
 }
 
-int BoltByteArray_write(FILE* file, const struct BoltValue* value)
+int BoltByteArray_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_BYTE_ARRAY);
     fprintf(file, "b8[#");

@@ -181,7 +181,7 @@ void _write_string(FILE* file, const char* data, size_t size)
     fprintf(file, "\"");
 }
 
-int BoltString8_write(FILE* file, struct BoltValue* value)
+int BoltString8_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_STRING8);
     char* data = BoltString8_get(value);
@@ -194,7 +194,7 @@ int BoltString8_write(FILE* file, struct BoltValue* value)
     return 0;
 }
 
-int BoltString8Array_write(FILE* file, struct BoltValue* value)
+int BoltString8Array_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_STRING8_ARRAY);
     fprintf(file, "s8[");
@@ -215,7 +215,7 @@ int BoltString8Array_write(FILE* file, struct BoltValue* value)
     return 0;
 }
 
-int BoltDictionary8_write(FILE* file, struct BoltValue* value, int32_t protocol_version)
+int BoltDictionary8_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
 {
     assert(BoltValue_type(value) == BOLT_DICTIONARY8);
     fprintf(file, "d8[");
@@ -228,7 +228,7 @@ int BoltDictionary8_write(FILE* file, struct BoltValue* value, int32_t protocol_
             if (comma) fprintf(file, ", ");
             _write_string(file, BoltString8_get(key), (size_t)(key->size));
             fprintf(file, " ");
-            BoltValue_write(file, BoltDictionary8_value(value, i), protocol_version);
+            BoltValue_write(BoltDictionary8_value(value, i), file, protocol_version);
             comma = 1;
         }
     }

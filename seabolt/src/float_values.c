@@ -85,14 +85,14 @@ double BoltFloat64Array_get(const struct BoltValue* value, int32_t index)
     return data[index];
 }
 
-int BoltFloat32_write(FILE* file, struct BoltValue* value)
+int BoltFloat32_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT32);
     fprintf(file, "f32(%f)", BoltFloat32_get(value));
     return 0;
 }
 
-int BoltFloat32Array_write(FILE* file, struct BoltValue* value)
+int BoltFloat32Array_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT32_ARRAY);
     fprintf(file, "f32[");
@@ -104,14 +104,14 @@ int BoltFloat32Array_write(FILE* file, struct BoltValue* value)
     return 0;
 }
 
-int BoltFloat64_write(FILE* file, struct BoltValue* value)
+int BoltFloat64_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT64);
     fprintf(file, "f64(%f)", BoltFloat64_get(value));
     return 0;
 }
 
-int BoltFloat64Array_write(FILE* file, struct BoltValue* value)
+int BoltFloat64Array_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT64_ARRAY);
     fprintf(file, "f64[");

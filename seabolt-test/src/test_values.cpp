@@ -303,7 +303,7 @@ SCENARIO("Test String8Array values")
 
 void _dump(struct BoltValue* value)
 {
-    BoltValue_write(stdout, value, 0);
+    BoltValue_write(value, stdout, 0);
     fprintf(stdout, "\n");
 }
 
