@@ -472,21 +472,21 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
             }
         }
         address->resolved_hosts = BoltMem_reallocate(address->resolved_hosts,
-                                                    address->n_resolved_hosts * 16U, n_resolved * 16U);
+                                                     address->n_resolved_hosts * 16U, n_resolved * 16U);
         address->n_resolved_hosts = n_resolved;
-        int p = 0;
+        size_t p = 0;
         for (struct addrinfo* ai_node = ai; ai_node != NULL; ai_node = ai_node->ai_next)
         {
             switch (ai_node->ai_family)
             {
                 case AF_INET:
                 {
-                    _copy_ipv4_socket_address(&address->resolved_hosts[p].data[0], (struct sockaddr_in*)(ai_node->ai_addr));
+                    _copy_ipv4_socket_address(BoltAddress_resolved_host(address, p), (struct sockaddr_in*)(ai_node->ai_addr));
                     break;
                 }
                 case AF_INET6:
                 {
-                    _copy_ipv6_socket_address(&address->resolved_hosts[p].data[0], (struct sockaddr_in6*)(ai_node->ai_addr));
+                    _copy_ipv6_socket_address(BoltAddress_resolved_host(address, p), (struct sockaddr_in6*)(ai_node->ai_addr));
                     break;
                 }
                 default:
@@ -507,15 +507,21 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
     }
 }
 
-int BoltAddress_resolved_is_ipv4(struct BoltAddress * address, size_t resolved_index)
+char * BoltAddress_resolved_host(struct BoltAddress * address, size_t index)
 {
+    return &address->resolved_hosts[16U * index];
+}
+
+int BoltAddress_resolved_host_is_ipv4(struct BoltAddress * address, size_t index)
+{
+    const char * resolved_host = BoltAddress_resolved_host(address, index);
     for (int i = 0; i < 10; i++)
     {
-        if (address->resolved_hosts[resolved_index].data[i] != 0) return 0;
+        if (resolved_host[i] != 0) return 0;
     }
     for (int i = 10; i < 12; i++)
     {
-        if (address->resolved_hosts[resolved_index].data[i] != -1) return 0;
+        if (resolved_host[i] != -1) return 0;
     }
     return 1;
 }
@@ -529,11 +535,11 @@ void BoltAddress_destroy(struct BoltAddress * address)
 void BoltAddress_write(struct BoltAddress * address, FILE * file)
 {
     fprintf(file, "BoltAddress(host=\"%s\" port=\"%s\" resolved_hosts=IPv6[", address->host, address->port);
-    for(int i = 0; i < address->n_resolved_hosts; i++)
+    for(size_t i = 0; i < address->n_resolved_hosts; i++)
     {
         if (i > 0) fprintf(file, ", ");
         char out[INET6_ADDRSTRLEN];
-        inet_ntop(AF_INET6, &address->resolved_hosts[i].data, &out[0], INET6_ADDRSTRLEN);
+        inet_ntop(AF_INET6, BoltAddress_resolved_host(address, i), &out[0], INET6_ADDRSTRLEN);
         fprintf(file, "\"%s\"", out);
     }
     fprintf(file, "] resolved_port=%d)", address->resolved_port);
@@ -545,12 +551,12 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, struc
     for (size_t i = 0; i < address->n_resolved_hosts; i++)
     {
         int opened;
-        if (BoltAddress_resolved_is_ipv4(address, i))
+        if (BoltAddress_resolved_host_is_ipv4(address, i))
         {
             struct sockaddr_in sa;
             sa.sin_family = AF_INET;
             sa.sin_port = htons(address->resolved_port);
-            memcpy(&sa.sin_addr.s_addr, &address->resolved_hosts[i].data[12], 4);
+            memcpy(&sa.sin_addr.s_addr, BoltAddress_resolved_host(address, i) + 12, 4);
             opened = _open_b(connection, (struct sockaddr *)(&sa), sizeof(sa));
         }
         else
@@ -558,7 +564,7 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, struc
             struct sockaddr_in6 sa;
             sa.sin6_family = AF_INET6;
             sa.sin6_port = htons(address->resolved_port);
-            memcpy(&sa.sin6_addr.__in6_u.__u6_addr8, &address->resolved_hosts[i].data[0], 16);
+            memcpy(&sa.sin6_addr.__in6_u.__u6_addr8, BoltAddress_resolved_host(address, i), 16);
             opened = _open_b(connection, (struct sockaddr *)(&sa), sizeof(sa));
         }
         if (opened == 0)

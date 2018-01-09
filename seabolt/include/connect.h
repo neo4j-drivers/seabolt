@@ -78,13 +78,19 @@ enum BoltConnectionError
  */
 struct BoltAddress
 {
+    /// Original host name or IP address string
     const char * host;
+    /// Original service name or port number string
     const char * port;
 
+    /// Number of resolved IP addresses
     int n_resolved_hosts;
-    struct { char data[16]; } * resolved_hosts;
+    /// Resolved IP address data
+    char * resolved_hosts;
+    /// Resolved port number
     in_port_t resolved_port;
 
+    /// Status of the internal `getaddrinfo` call
     int gai_status;
 };
 
@@ -94,7 +100,9 @@ struct BoltAddress * BoltAddress_create(const char * host, const char * port);
 
 void BoltAddress_resolve_b(struct BoltAddress * address);
 
-int BoltAddress_resolved_is_ipv4(struct BoltAddress * address, size_t resolved_index);
+char * BoltAddress_resolved_host(struct BoltAddress * address, size_t index);
+
+int BoltAddress_resolved_host_is_ipv4(struct BoltAddress * address, size_t index);
 
 void BoltAddress_destroy(struct BoltAddress * address);
 
