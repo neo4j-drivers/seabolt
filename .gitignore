@@ -68,6 +68,7 @@ compile_commands.json
 CTestTestfile.cmake
 *.cbp
 build
+CPack*.cmake
 
 # Python
 *.py[co]
