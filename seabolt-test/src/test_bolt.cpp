@@ -47,81 +47,93 @@ const char* BOLT_PASSWORD = getenv_or_default("BOLT_PASSWORD", "password");
 
 SCENARIO("Test address resolution (IPv4)", "[dns]")
 {
-    const char * host = "ipv4-only.bolt-test.net";
-    const char * port = "7687";
-    struct BoltAddress* address = BoltAddress_create(host, port);
-    REQUIRE(strcmp(address->host, host) == 0);
-    REQUIRE(strcmp(address->port, port) == 0);
-    REQUIRE(address->n_resolved_hosts == 0);
-    REQUIRE(address->resolved_port == 0);
-    for (int i = 0; i < 2; i++)
+    if (IS_ONLINE)
     {
-        BoltAddress_resolve_b(address);
+        const char * host = "ipv4-only.bolt-test.net";
+        const char * port = "7687";
+        struct BoltAddress * address = BoltAddress_create(host, port);
+        REQUIRE(strcmp(address->host, host) == 0);
+        REQUIRE(strcmp(address->port, port) == 0);
+        REQUIRE(address->n_resolved_hosts == 0);
+        REQUIRE(address->resolved_port == 0);
+        for (int i = 0; i < 2; i++)
+        {
+            BoltAddress_resolve_b(address);
 //        BoltAddress_write(address, stdout);
-        REQUIRE(address->n_resolved_hosts == 1);
-        REQUIRE(strncmp(BoltAddress_resolved_host(address, 0), "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x34\xD7\x41\x50", 16) == 0);
-        REQUIRE(address->resolved_port == 7687);
+            REQUIRE(address->n_resolved_hosts == 1);
+            REQUIRE(strncmp(BoltAddress_resolved_host(address, 0),
+                            "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x34\xD7\x41\x50", 16) == 0);
+            REQUIRE(address->resolved_port == 7687);
+        }
+        BoltAddress_destroy(address);
     }
-    BoltAddress_destroy(address);
 }
 
 SCENARIO("Test address resolution (IPv6)", "[dns]")
 {
-    const char * host = "ipv6-only.bolt-test.net";
-    const char * port = "7687";
-    struct BoltAddress* address = BoltAddress_create(host, port);
-    REQUIRE(strcmp(address->host, host) == 0);
-    REQUIRE(strcmp(address->port, port) == 0);
-    REQUIRE(address->n_resolved_hosts == 0);
-    REQUIRE(address->resolved_port == 0);
-    for (int i = 0; i < 2; i++)
+    if (IS_ONLINE)
     {
-        BoltAddress_resolve_b(address);
-        if (address->gai_status == 0)
+        const char * host = "ipv6-only.bolt-test.net";
+        const char * port = "7687";
+        struct BoltAddress * address = BoltAddress_create(host, port);
+        REQUIRE(strcmp(address->host, host) == 0);
+        REQUIRE(strcmp(address->port, port) == 0);
+        REQUIRE(address->n_resolved_hosts == 0);
+        REQUIRE(address->resolved_port == 0);
+        for (int i = 0; i < 2; i++)
         {
+            BoltAddress_resolve_b(address);
+            if (address->gai_status == 0)
+            {
 //        BoltAddress_write(address, stdout);
-            REQUIRE(address->n_resolved_hosts == 1);
-            REQUIRE(strncmp(BoltAddress_resolved_host(address, 0),
-                            "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7", 16) == 0);
-            REQUIRE(address->resolved_port == 7687);
+                REQUIRE(address->n_resolved_hosts == 1);
+                REQUIRE(strncmp(BoltAddress_resolved_host(address, 0),
+                                "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7", 16) == 0);
+                REQUIRE(address->resolved_port == 7687);
+            }
         }
+        BoltAddress_destroy(address);
     }
-    BoltAddress_destroy(address);
 }
 
 SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
 {
-    const char * host = "ipv4-and-ipv6.bolt-test.net";
-    const char * port = "7687";
-    struct BoltAddress * address = BoltAddress_create(host, port);
-    REQUIRE(strcmp(address->host, host) == 0);
-    REQUIRE(strcmp(address->port, port) == 0);
-    REQUIRE(address->n_resolved_hosts == 0);
-    REQUIRE(address->resolved_port == 0);
-    for (int i = 0; i < 2; i++)
+    if (IS_ONLINE)
     {
-        BoltAddress_resolve_b(address);
-        if (address->gai_status == 0)
+        const char * host = "ipv4-and-ipv6.bolt-test.net";
+        const char * port = "7687";
+        struct BoltAddress * address = BoltAddress_create(host, port);
+        REQUIRE(strcmp(address->host, host) == 0);
+        REQUIRE(strcmp(address->port, port) == 0);
+        REQUIRE(address->n_resolved_hosts == 0);
+        REQUIRE(address->resolved_port == 0);
+        for (int i = 0; i < 2; i++)
         {
-//        BoltAddress_write(address, stdout);
-            for (size_t j = 0; j < address->n_resolved_hosts; j++)
+            BoltAddress_resolve_b(address);
+            if (address->gai_status == 0)
             {
-                char * resolved_host = BoltAddress_resolved_host(address, j);
-                if (BoltAddress_resolved_host_is_ipv4(address, j))
+//        BoltAddress_write(address, stdout);
+                for (size_t j = 0; j < address->n_resolved_hosts; j++)
                 {
-                    REQUIRE(strncmp(resolved_host, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x34\xD7\x41\x50",
-                                    16) == 0);
+                    char * resolved_host = BoltAddress_resolved_host(address, j);
+                    if (BoltAddress_resolved_host_is_ipv4(address, j))
+                    {
+                        REQUIRE(strncmp(resolved_host,
+                                        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x34\xD7\x41\x50",
+                                        16) == 0);
+                    }
+                    else
+                    {
+                        REQUIRE(strncmp(resolved_host,
+                                        "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7",
+                                        16) == 0);
+                    }
                 }
-                else
-                {
-                    REQUIRE(strncmp(resolved_host, "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7",
-                                    16) == 0);
-                }
+                REQUIRE(address->resolved_port == 7687);
             }
-            REQUIRE(address->resolved_port == 7687);
         }
+        BoltAddress_destroy(address);
     }
-    BoltAddress_destroy(address);
 }
 
 struct BoltAddress * _get_address(const char * host, const char * port)
@@ -335,14 +347,15 @@ SCENARIO("Test execution of simple Cypher statement", "[integration][ipv6][secur
                                                                   BOLT_USER, BOLT_PASSWORD);
             WHEN("successfully executed Cypher")
             {
-                BoltConnection_set_statement(connection, "RETURN 1", 8);
-                BoltConnection_resize_parameters(connection, 0);
-                BoltConnection_load_run(connection);
-                BoltConnection_load_pull(connection, -1);
-                int requests = BoltConnection_transmit_b(connection);
-                int responses = BoltConnection_receive_b(connection);
-                REQUIRE(requests == 2);
-                REQUIRE(responses == 2);
+                BoltConnection_set_cypher_template(connection, "RETURN 1", 8);
+                BoltConnection_set_n_cypher_parameters(connection, 0);
+                int run = BoltConnection_load_run_request(connection);
+                int pull = BoltConnection_load_pull_request(connection, -1);
+                BoltConnection_send_b(connection);
+                int records = BoltConnection_fetch_summary_b(connection, run);
+                REQUIRE(records == 0);
+                records = BoltConnection_fetch_summary_b(connection, pull);
+                REQUIRE(records == 1);
             }
             BoltConnection_close_b(connection);
         }
@@ -359,21 +372,20 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
                                                                   BOLT_USER, BOLT_PASSWORD);
             WHEN("successfully executed Cypher")
             {
-                BoltConnection_set_statement(connection, "RETURN $x", 9);
-                BoltConnection_resize_parameters(connection, 1);
-                BoltConnection_set_parameter_key(connection, 0, "x", 1);
-                BoltValue * x = BoltConnection_parameter_value(connection, 0);
+                BoltConnection_set_cypher_template(connection, "RETURN $x", 9);
+                BoltConnection_set_n_cypher_parameters(connection, 1);
+                BoltConnection_set_cypher_parameter_key(connection, 0, "x", 1);
+                BoltValue * x = BoltConnection_cypher_parameter_value(connection, 0);
                 BoltValue_to_Int64(x, 42);
-                BoltConnection_load_run(connection);
-                BoltConnection_load_pull(connection, -1);
-                int requests = BoltConnection_transmit_b(connection);
-                REQUIRE(requests == 2);
-                int records = BoltConnection_receive_summary_b(connection);
+                int run = BoltConnection_load_run_request(connection);
+                int pull = BoltConnection_load_pull_request(connection, -1);
+                BoltConnection_send_b(connection);
+                int records = BoltConnection_fetch_summary_b(connection, run);
                 REQUIRE(records == 0);
-                struct BoltValue * last_received = BoltConnection_last_received(connection);
+                struct BoltValue * last_received = BoltConnection_fetched(connection);
                 REQUIRE(BoltValue_type(last_received) == BOLT_SUMMARY);
                 REQUIRE(BoltSummary_code(last_received) == 0x70);
-                while (BoltConnection_receive_value_b(connection))
+                while (BoltConnection_fetch_b(connection, pull))
                 {
                     REQUIRE(BoltValue_type(last_received) == BOLT_LIST);
                     REQUIRE(last_received->size == 1);
@@ -401,20 +413,19 @@ SCENARIO("Test execution of multiple Cypher statements transmitted together", "[
                                                                   BOLT_USER, BOLT_PASSWORD);
             WHEN("successfully executed Cypher")
             {
-                BoltConnection_set_statement(connection, "RETURN $x", 9);
-                BoltConnection_resize_parameters(connection, 1);
-                BoltConnection_set_parameter_key(connection, 0, "x", 1);
-                BoltValue * x = BoltConnection_parameter_value(connection, 0);
+                BoltConnection_set_cypher_template(connection, "RETURN $x", 9);
+                BoltConnection_set_n_cypher_parameters(connection, 1);
+                BoltConnection_set_cypher_parameter_key(connection, 0, "x", 1);
+                BoltValue * x = BoltConnection_cypher_parameter_value(connection, 0);
                 BoltValue_to_Int8(x, 1);
-                BoltConnection_load_run(connection);
-                BoltConnection_load_discard(connection, -1);
+                BoltConnection_load_run_request(connection);
+                BoltConnection_load_discard_request(connection, -1);
                 BoltValue_to_Int8(x, 2);
-                BoltConnection_load_run(connection);
-                BoltConnection_load_pull(connection, -1);
-                int requests = BoltConnection_transmit_b(connection);
-                int responses = BoltConnection_receive_b(connection);
-                REQUIRE(requests == 4);
-                REQUIRE(responses == 4);
+                BoltConnection_load_run_request(connection);
+                BoltConnection_load_pull_request(connection, -1);
+                int last = BoltConnection_send_b(connection);
+                int records = BoltConnection_fetch_summary_b(connection, last);
+                REQUIRE(records == 1);
             }
             BoltConnection_close_b(connection);
         }
@@ -431,32 +442,49 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
                                                                   BOLT_USER, BOLT_PASSWORD);
             WHEN("successfully executed Cypher")
             {
-                BoltConnection_set_statement(connection, "RETURN $x", 9);
-                BoltConnection_resize_parameters(connection, 1);
-                BoltConnection_set_parameter_key(connection, 0, "x", 1);
-                BoltValue * x = BoltConnection_parameter_value(connection, 0);
-                BoltValue_to_Int64(x, 42);
-                BoltConnection_load_run(connection);
-                BoltConnection_load_pull(connection, -1);
-                int requests = BoltConnection_transmit_b(connection);
-                REQUIRE(requests == 2);
-                int records = BoltConnection_receive_summary_b(connection);
+                int begin = BoltConnection_load_begin_request(connection);
+
+                BoltConnection_set_cypher_template(connection, "RETURN 1", 8);
+                BoltConnection_set_n_cypher_parameters(connection, 0);
+                int run = BoltConnection_load_run_request(connection);
+                int pull = BoltConnection_load_pull_request(connection, -1);
+
+                int commit = BoltConnection_load_commit_request(connection);
+
+                int last = BoltConnection_send_b(connection);
+                REQUIRE(last == commit);
+
+                int records = BoltConnection_fetch_summary_b(connection, begin);
                 REQUIRE(records == 0);
-                struct BoltValue * last_received = BoltConnection_last_received(connection);
-                REQUIRE(BoltValue_type(last_received) == BOLT_SUMMARY);
-                REQUIRE(BoltSummary_code(last_received) == 0x70);
-                while (BoltConnection_receive_value_b(connection))
+                struct BoltValue * fetched = BoltConnection_fetched(connection);
+                REQUIRE(BoltValue_type(fetched) == BOLT_SUMMARY);
+                REQUIRE(BoltSummary_code(fetched) == 0x70);
+
+                records = BoltConnection_fetch_summary_b(connection, run);
+                REQUIRE(records == 0);
+                fetched = BoltConnection_fetched(connection);
+                REQUIRE(BoltValue_type(fetched) == BOLT_SUMMARY);
+                REQUIRE(BoltSummary_code(fetched) == 0x70);
+
+                while (BoltConnection_fetch_b(connection, pull))
                 {
-                    REQUIRE(BoltValue_type(last_received) == BOLT_LIST);
-                    REQUIRE(last_received->size == 1);
-                    BoltValue * value = BoltList_value(last_received, 0);
+                    REQUIRE(BoltValue_type(fetched) == BOLT_LIST);
+                    REQUIRE(fetched->size == 1);
+                    BoltValue * value = BoltList_value(fetched, 0);
                     REQUIRE(BoltValue_type(value) == BOLT_INT64);
-                    REQUIRE(BoltInt64_get(value) == 42);
+                    REQUIRE(BoltInt64_get(value) == 1);
                     records += 1;
                 }
-                REQUIRE(BoltValue_type(last_received) == BOLT_SUMMARY);
-                REQUIRE(BoltSummary_code(last_received) == 0x70);
+                REQUIRE(BoltValue_type(fetched) == BOLT_SUMMARY);
+                REQUIRE(BoltSummary_code(fetched) == 0x70);
                 REQUIRE(records == 1);
+
+                records = BoltConnection_fetch_summary_b(connection, commit);
+                REQUIRE(records == 0);
+                fetched = BoltConnection_fetched(connection);
+                REQUIRE(BoltValue_type(fetched) == BOLT_SUMMARY);
+                REQUIRE(BoltSummary_code(fetched) == 0x70);
+
             }
             BoltConnection_close_b(connection);
         }

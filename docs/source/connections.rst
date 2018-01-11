@@ -50,10 +50,10 @@ Connections provide the core means of communication to a Bolt server.
 
 .. doxygenfunction:: BoltConnection_init_b
 
-.. doxygenfunction:: BoltConnection_transmit_b
+.. doxygenfunction:: BoltConnection_send_b
 
 .. doxygenfunction:: BoltConnection_receive_b
 
-.. doxygenfunction:: BoltConnection_receive_summary_b
+.. doxygenfunction:: BoltConnection_fetch_summary_b
 
-.. doxygenfunction:: BoltConnection_receive_value_b
+.. doxygenfunction:: BoltConnection_fetch_b

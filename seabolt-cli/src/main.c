@@ -100,7 +100,7 @@ int Bolt_connect(struct Bolt* bolt)
 
 int Bolt_dump_last_received(struct Bolt* bolt)
 {
-    struct BoltValue* last_received = BoltConnection_last_received(bolt->connection);
+    struct BoltValue* last_received = BoltConnection_fetched(bolt->connection);
     if (last_received == NULL) return -1;
     BoltValue_write(last_received, stdout, bolt->connection->protocol_version);
     fprintf(stdout, "\n");
@@ -132,23 +132,23 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
 
     timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after handshake and initialisation
 
-    BoltConnection_set_statement(bolt->connection, statement, (int32_t)(strlen(statement)));
-    BoltConnection_resize_parameters(bolt->connection, 0);
-    BoltConnection_load_run(bolt->connection);
-    BoltConnection_load_pull(bolt->connection, -1);
+    BoltConnection_set_cypher_template(bolt->connection, statement, (int32_t)(strlen(statement)));
+    BoltConnection_set_n_cypher_parameters(bolt->connection, 0);
+    int run = BoltConnection_load_run_request(bolt->connection);
+    int pull = BoltConnection_load_pull_request(bolt->connection, -1);
 
-    BoltConnection_transmit_b(bolt->connection);
+    BoltConnection_send_b(bolt->connection);
 
     timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission
 
     long record_count = 0;
 
-    BoltConnection_receive_summary_b(bolt->connection);
+    BoltConnection_fetch_summary_b(bolt->connection, run);
 //    Bolt_dump_last_received(bolt);
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
-    while (BoltConnection_receive_value_b(bolt->connection))
+    while (BoltConnection_fetch_b(bolt->connection, pull))
     {
 //        Bolt_dump_last_received(bolt);
         record_count += 1;

@@ -55,8 +55,8 @@ struct BoltProtocolV1State
     struct BoltBuffer* tx_buffer;
     struct BoltBuffer* rx_buffer;
 
-    int requests_queued;
-    int requests_running;
+    int next_request_id;
+    int response_counter;
 
     struct _run_request run;
     struct _run_request begin;
@@ -64,8 +64,9 @@ struct BoltProtocolV1State
     struct _run_request rollback;
     struct BoltValue* discard_request;
     struct BoltValue* pull_request;
-    /// Holder for values from the result stream
-    struct BoltValue* last_received;                 // holder for received messages
+
+    /// Holder for fetched data and metadata
+    struct BoltValue* fetched;
 };
 
 struct BoltProtocolV1State* BoltProtocolV1_create_state();

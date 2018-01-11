@@ -61,6 +61,7 @@ enum BoltConnectionError
     BOLT_UNKNOWN_ERROR,
     BOLT_UNSUPPORTED,
     BOLT_INTERRUPTED,
+    BOLT_UNRESOLVED_ADDRESS,
     BOLT_TIMED_OUT,
     BOLT_PERMISSION_DENIED,
     BOLT_OUT_OF_FILES,
@@ -152,10 +153,9 @@ struct BoltConnection
  *
  * This function allocates a new BoltConnection struct for the given _transport_
  * and attempts to connect it to _address_. The BoltConnection is returned
- * regardless of whether or not the connection attempt was successful.
- *
- * The address may point to any valid IPv4 or IPv6 address and will generally be
- * obtained via _getaddrinfo_.
+ * regardless of whether or not the connection attempt is successful. The
+ * `address` should be a pointer to a `BoltAddress` struct that has bee
+ * successfully resolved.
  *
  * This function blocks until the connection attempt succeeds or fails.
  * On returning, the connection status will be set to either `BOLT_CONNECTED`
@@ -166,6 +166,7 @@ struct BoltConnection
  * ========================  ====================================================================
  * Error code                Description
  * ========================  ====================================================================
+ * BOLT_UNRESOLVED_ADDRESS   The supplied address has not been resolved.
  * BOLT_CONNECTION_REFUSED   The remote server refused to accept the connection.
  * BOLT_INTERRUPTED          The connection attempt was interrupted.
  * BOLT_NETWORK_UNREACHABLE  The server address is on an unreachable network.
@@ -194,13 +195,6 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, struc
 void BoltConnection_close_b(struct BoltConnection* connection);
 
 /**
- *
- * @param connection
- * @return
- */
-struct BoltValue* BoltConnection_last_received(struct BoltConnection* connection);
-
-/**
  * Initialise the connection and authenticate using the basic
  * authentication scheme.
  *
@@ -214,55 +208,90 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user_ag
                           const char* user, const char* password);
 
 /**
- * Transmit all queued requests.
+ * Send all queued requests.
  *
  * @param connection
- * @return
+ * @return the latest request ID
  */
-int BoltConnection_transmit_b(struct BoltConnection* connection);
+int BoltConnection_send_b(struct BoltConnection * connection);
 
 /**
- * Receive result values for all outstanding requests.
+ * Fetch the next value from the current result stream.
  *
- * @param connection
- * @return
- */
-int BoltConnection_receive_b(struct BoltConnection* connection);
-
-/**
- * Receive values from the current result stream, up to and including the
- * next summary.
- *
- * @param connection
- * @return
- */
-int BoltConnection_receive_summary_b(struct BoltConnection* connection);
-
-/**
- * Receive the next value from the current result stream.
- *
- * Each value will be either record data (stored in a BOLT_LIST) or
- * summary metadata (in a BOLT_SUMMARY). The value will be loaded into
- * `connection->received`.
+ * After calling this function, the value returned by
+ * `BoltConnection_fetched` should contain either record data
+ * (stored in a `BOLT_LIST`) or summary metadata (in a `BOLT_SUMMARY`).
  *
  * @param connection
  * @return 1 if record data is received, 0 if summary metadata is received
  *
  */
-int BoltConnection_receive_value_b(struct BoltConnection* connection);
+int BoltConnection_fetch_b(struct BoltConnection * connection, int request_id);
 
-int BoltConnection_set_statement(struct BoltConnection* connection, const char* statement, size_t size);
+/**
+ * Fetch values from the current result stream, up to and
+ * including the next summary.
+ *
+ * After calling this function, the value returned by
+ * `BoltConnection_fetched` should contain the summary
+ * metadata of the received result.
+ *
+ * @param connection
+ * @return
+ */
+int BoltConnection_fetch_summary_b(struct BoltConnection * connection, int request_id);
 
-int BoltConnection_resize_parameters(struct BoltConnection* connection, int32_t size);
+/**
+ * Obtain a pointer to the last fetched data values or summary metadata.
+ *
+ * Every call to a receive function, such as `BoltConnection_fetch_b`,
+ * will fetch one or more values from the remote data stream. Each value
+ * is written into a fixed slot within the `BoltConnection` struct and it
+ * is the pointer to this that is returned. Values will either be of type
+ * `BOLT_SUMMARY` (for summary metadata) or `BOLT_LIST` (for a sequence
+ * of record values).
+ *
+ * Since the storage slot is recycled for each value received, pointers
+ * will become invalid after subsequent receive function calls.
+ *
+ * @param connection
+ * @return
+ */
+struct BoltValue* BoltConnection_fetched(struct BoltConnection * connection);
 
-int BoltConnection_set_parameter_key(struct BoltConnection* connection, int32_t index, const char* key, size_t key_size);
+/**
+ * Set a Cypher statement for subsequent execution.
+ *
+ * @param connection
+ * @param statement
+ * @param size
+ * @return
+ */
+int BoltConnection_set_cypher_template(struct BoltConnection * connection, const char * statement, size_t size);
 
-struct BoltValue* BoltConnection_parameter_value(struct BoltConnection* connection, int32_t index);
+/**
+ * Set the number of parameters to use in subsequent Cypher execution.
+ *
+ * @param connection
+ * @param size
+ * @return
+ */
+int BoltConnection_set_n_cypher_parameters(struct BoltConnection * connection, int32_t size);
 
-int BoltConnection_load_run(struct BoltConnection* connection);
+int BoltConnection_set_cypher_parameter_key(struct BoltConnection * connection, int32_t index, const char * key, size_t key_size);
 
-int BoltConnection_load_discard(struct BoltConnection* connection, int32_t n);
+struct BoltValue* BoltConnection_cypher_parameter_value(struct BoltConnection * connection, int32_t index);
 
-int BoltConnection_load_pull(struct BoltConnection* connection, int32_t n);
+int BoltConnection_load_begin_request(struct BoltConnection * connection);
+
+int BoltConnection_load_commit_request(struct BoltConnection * connection);
+
+int BoltConnection_load_rollback_request(struct BoltConnection * connection);
+
+int BoltConnection_load_run_request(struct BoltConnection * connection);
+
+int BoltConnection_load_discard_request(struct BoltConnection * connection, int32_t n);
+
+int BoltConnection_load_pull_request(struct BoltConnection * connection, int32_t n);
 
 #endif // SEABOLT_CONNECT

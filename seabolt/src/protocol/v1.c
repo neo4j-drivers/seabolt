@@ -49,8 +49,8 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
     state->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
     state->rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
 
-    state->requests_queued = 0;
-    state->requests_running = 0;
+    state->next_request_id = 0;
+    state->response_counter = 0;
 
     _create_run_request(&state->run, 0);
     _create_run_request(&state->begin, 1);
@@ -66,7 +66,7 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
     state->pull_request = BoltValue_create();
     BoltValue_to_Request(state->pull_request, PULL_ALL, 0);
 
-    state->last_received = BoltValue_create();
+    state->fetched = BoltValue_create();
     return state;
 }
 
@@ -85,7 +85,7 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state)
     BoltValue_destroy(state->discard_request);
     BoltValue_destroy(state->pull_request);
 
-    BoltValue_destroy(state->last_received);
+    BoltValue_destroy(state->fetched);
 
     BoltMem_deallocate(state, sizeof(struct BoltProtocolV1State));
 }
@@ -322,7 +322,7 @@ int _load_structure_header(struct BoltConnection* connection, int16_t code, int8
  * Copy request data from buffer 1 to buffer 0, also adding chunks.
  *
  * @param connection
- * @return
+ * @return request ID
  */
 int _enqueue(struct BoltConnection* connection)
 {
@@ -338,8 +338,13 @@ int _enqueue(struct BoltConnection* connection)
     header[1] = (char)(0);
     BoltBuffer_load(connection->tx_buffer, &header[0], sizeof(header));
     BoltBuffer_compact(state->tx_buffer);
-    state->requests_queued += 1;
-    return 0;
+    int request_id = state->next_request_id;
+    state->next_request_id += 1;
+    if (state->next_request_id < 0)
+    {
+        state->next_request_id = 0;
+    }
+    return request_id;
 }
 
 int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* value)
@@ -492,8 +497,7 @@ int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* val
             {
                 try(BoltProtocolV1_load(connection, BoltRequest_value(value, i)));
             }
-            _enqueue(connection);
-            return 0;
+            return _enqueue(connection);
         }
         case BOLT_SUMMARY:
             return -1;
@@ -508,7 +512,7 @@ int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* val
         }
         default:
             // TODO:  TYPE_NOT_SUPPORTED (vs TYPE_NOT_IMPLEMENTED)
-            return EXIT_FAILURE;
+            return -1;
     }
 }
 
@@ -783,7 +787,7 @@ int BoltProtocolV1_unload(struct BoltConnection* connection)
         return -1;
     }
     size = marker & 0x0F;
-    struct BoltValue* received = ((struct BoltProtocolV1State*)(connection->protocol_state))->last_received;
+    struct BoltValue* received = ((struct BoltProtocolV1State*)(connection->protocol_state))->fetched;
     BoltBuffer_unload_uint8(state->rx_buffer, &code);
     if (code == 0x71)  // RECORD
     {
