@@ -108,19 +108,13 @@ int _open_b(struct BoltConnection* connection, const struct sockaddr_storage* ad
     switch (address->ss_family)
     {
         case AF_INET:
-        {
-            char address_string[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &((struct sockaddr_in *)(address))->sin_addr,
-                      &address_string[0], sizeof(address_string));
-            BoltLog_info("bolt: Opening IPv4 connection to %s", &address_string);
-            break;
-        }
         case AF_INET6:
         {
             char address_string[INET6_ADDRSTRLEN];
-            inet_ntop(AF_INET6, &((struct sockaddr_in6 *)(address))->sin6_addr,
-                      &address_string[0], sizeof(address_string));
-            BoltLog_info("bolt: Opening IPv6 connection to %s", &address_string);
+			getnameinfo((const struct sockaddr *)address, SOCKADDR_STORAGE_SIZE, 
+				address_string, INET6_ADDRSTRLEN, NULL, 0, NI_NUMERICHOST | NI_NUMERICSERV);
+			BoltLog_info("bolt: Opening %s connection to %s", 
+				address->ss_family == AF_INET ? "IPv4" : "IPv6", &address_string);
             break;
         }
         default:
