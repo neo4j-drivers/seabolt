@@ -17,12 +17,12 @@
  * limitations under the License.
  */
 
-/// This module....
-/// Logging, resource management, "try" and exception macros
-/// General flow management
 
 #ifndef SEABOLT_LOGGING
 #define SEABOLT_LOGGING
+
+
+#include "values.h"
 
 
 void BoltLog_set_file(FILE* log_file);
@@ -30,6 +30,10 @@ void BoltLog_set_file(FILE* log_file);
 void BoltLog_info(const char* message, ...);
 
 void BoltLog_error(const char* message, ...);
+
+void BoltLog_request(int request_id, struct BoltValue * value, int32_t protocol_version);
+
+void BoltLog_summary(int request_id, struct BoltValue * value, int32_t protocol_version);
 
 
 #endif // SEABOLT_LOGGING

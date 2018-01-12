@@ -28,6 +28,7 @@
 #include <arpa/inet.h>
 #include <connect.h>
 #include <values.h>
+#include "logging.h"
 #include <stdbool.h>
 #include "mem.h"
 
@@ -741,8 +742,11 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user_ag
         case 1:
         {
             struct BoltValue* init = BoltValue_create();
+            BoltProtocolV1_compile_INIT(init, user_agent, user, "*******");
+            struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+            BoltLog_request(state->next_request_id, init, connection->protocol_version);
             BoltProtocolV1_compile_INIT(init, user_agent, user, password);
-            int init_id = BoltProtocolV1_load(connection, init);
+            int init_id = BoltProtocolV1_load_request_quietly(connection, init);
             BoltValue_destroy(init);
             try(BoltConnection_send_b(connection));
             BoltConnection_fetch_summary_b(connection, init_id);
@@ -800,6 +804,39 @@ struct BoltValue* BoltConnection_cypher_parameter_value(struct BoltConnection * 
     return BoltDictionary8_value(state->run.parameters, index);
 }
 
+int BoltConnection_load_bookmark(struct BoltConnection * connection, const char * bookmark)
+{
+    if (bookmark == NULL)
+    {
+        return 0;
+    }
+    switch (connection->protocol_version)
+    {
+        case 1:
+        {
+            struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+            struct BoltValue * bookmarks;
+            if (state->begin.parameters->size == 0)
+            {
+                BoltValue_to_Dictionary8(state->begin.parameters, 1);
+                BoltDictionary8_set_key(state->begin.parameters, 0, "bookmarks", 9);
+                bookmarks = BoltDictionary8_value(state->begin.parameters, 0);
+                BoltValue_to_List(bookmarks, 0);
+            }
+            else
+            {
+                bookmarks = BoltDictionary8_value(state->begin.parameters, 0);
+            }
+            int32_t n_bookmarks = bookmarks->size;
+            BoltList_resize(bookmarks, n_bookmarks + 1);
+            BoltValue_to_String8(BoltList_value(bookmarks, n_bookmarks), bookmark, strlen(bookmark));
+            return 1;
+        }
+        default:
+            return -1;
+    }
+}
+
 int BoltConnection_load_begin_request(struct BoltConnection * connection)
 {
     switch (connection->protocol_version)
@@ -807,8 +844,9 @@ int BoltConnection_load_begin_request(struct BoltConnection * connection)
         case 1:
         {
             struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-            BoltProtocolV1_load(connection, state->begin.request);
-            return BoltProtocolV1_load(connection, state->discard_request);
+            BoltProtocolV1_load_request(connection, state->begin.request);
+            BoltValue_to_Dictionary8(state->begin.parameters, 0);
+            return BoltProtocolV1_load_request(connection, state->discard_request);
         }
         default:
             return -1;
@@ -822,8 +860,8 @@ int BoltConnection_load_commit_request(struct BoltConnection * connection)
         case 1:
         {
             struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-            BoltProtocolV1_load(connection, state->commit.request);
-            return BoltProtocolV1_load(connection, state->discard_request);
+            BoltProtocolV1_load_request(connection, state->commit.request);
+            return BoltProtocolV1_load_request(connection, state->discard_request);
         }
         default:
             return -1;
@@ -837,8 +875,8 @@ int BoltConnection_load_rollback_request(struct BoltConnection * connection)
         case 1:
         {
             struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-            BoltProtocolV1_load(connection, state->rollback.request);
-            return BoltProtocolV1_load(connection, state->discard_request);
+            BoltProtocolV1_load_request(connection, state->rollback.request);
+            return BoltProtocolV1_load_request(connection, state->discard_request);
         }
         default:
             return -1;
@@ -852,7 +890,7 @@ int BoltConnection_load_run_request(struct BoltConnection * connection)
         case 1:
         {
             struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-            return BoltProtocolV1_load(connection, state->run.request);
+            return BoltProtocolV1_load_request(connection, state->run.request);
         }
         default:
             return -1;
@@ -871,7 +909,7 @@ int BoltConnection_load_discard_request(struct BoltConnection * connection, int3
             else
             {
                 struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-                return BoltProtocolV1_load(connection, state->discard_request);
+                return BoltProtocolV1_load_request(connection, state->discard_request);
             }
         default:
             return -1;
@@ -890,7 +928,7 @@ int BoltConnection_load_pull_request(struct BoltConnection * connection, int32_t
             else
             {
                 struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-                return BoltProtocolV1_load(connection, state->pull_request);
+                return BoltProtocolV1_load_request(connection, state->pull_request);
             }
         default:
             return -1;
