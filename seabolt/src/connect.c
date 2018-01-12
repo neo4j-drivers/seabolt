@@ -573,8 +573,9 @@ void BoltAddress_write(struct BoltAddress * address, FILE * file)
     for(size_t i = 0; i < address->n_resolved_hosts; i++)
     {
         if (i > 0) fprintf(file, ", ");
-        char out[INET6_ADDRSTRLEN];
-        inet_ntop(AF_INET6, BoltAddress_resolved_host(address, i), &out[0], INET6_ADDRSTRLEN);
+		char out[NI_MAXHOST];
+		getnameinfo((const struct sockaddr *)address, SOCKADDR_STORAGE_SIZE,
+			out, NI_MAXHOST, NULL, 0, NI_NUMERICHOST | NI_NUMERICSERV);
         fprintf(file, "\"%s\"", out);
     }
     fprintf(file, "] resolved_port=%d)", address->resolved_port);
