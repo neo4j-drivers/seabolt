@@ -17,17 +17,20 @@
  * limitations under the License.
  */
 
-#include <netdb.h>
 #include <stdlib.h>
 #include <time.h>
 #include <memory.h>
 #include <assert.h>
+#include <stdint.h>
 
 #include "connect.h"
 #include "mem.h"
 #include "values.h"
 #include "logging.h"
 
+#ifdef WIN32
+#include <winsock2.h>
+#endif // WIN32
 
 struct Bolt
 {
@@ -174,29 +177,34 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
     fprintf(stderr, "=====================================\n");
 
     timespec_diff(&t[0], &t[2], &t[1]);
-    fprintf(stderr, "initialisation       : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    fprintf(stderr, "initialisation       : %lds %09ldns\n", (long)t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[3], &t[2]);
-    fprintf(stderr, "query transmission   : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    fprintf(stderr, "query transmission   : %lds %09ldns\n", (long)t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[4], &t[3]);
-    fprintf(stderr, "query processing     : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    fprintf(stderr, "query processing     : %lds %09ldns\n", (long)t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[5], &t[4]);
-    fprintf(stderr, "result processing    : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    fprintf(stderr, "result processing    : %lds %09ldns\n", (long)t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[6], &t[5]);
-    fprintf(stderr, "shutdown             : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    fprintf(stderr, "shutdown             : %lds %09ldns\n", (long)t[0].tv_sec, t[0].tv_nsec);
 
     timespec_diff(&t[0], &t[6], &t[1]);
     fprintf(stderr, "=====================================\n");
-    fprintf(stderr, "TOTAL                : %lds %09ldns\n", t[0].tv_sec, t[0].tv_nsec);
+    fprintf(stderr, "TOTAL                : %lds %09ldns\n", (long)t[0].tv_sec, t[0].tv_nsec);
 
     return 0;
 }
 
 int main(int argc, char* argv[])
 {
+#ifdef WIN32
+	WSADATA data;
+	WSAStartup(MAKEWORD(2, 2), &data);
+#endif
+
     const char* BOLT_LOG = getenv_or_default("BOLT_LOG", "0");
     if (strcmp(BOLT_LOG, "1") == 0)
     {
