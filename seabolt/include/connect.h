@@ -86,7 +86,7 @@ struct BoltAddress
     /// Number of resolved IP addresses
     int n_resolved_hosts;
     /// Resolved IP address data
-    char * resolved_hosts;
+    struct sockaddr_storage * resolved_hosts;
     /// Resolved port number
     in_port_t resolved_port;
 

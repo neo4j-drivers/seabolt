@@ -46,7 +46,7 @@
 #define RECEIVE_S(socket, buffer, size, flags) SSL_read(socket, buffer, size)
 
 
-void _copy_socket_address(char* target, struct sockaddr_storage* source)
+void _copy_socket_address(struct sockaddr_storage* target, struct sockaddr_storage* source)
 {
     memcpy(&target[0], source, SOCKADDR_STORAGE_SIZE);
 }
@@ -103,7 +103,7 @@ void _set_status(struct BoltConnection* connection, enum BoltConnectionStatus st
     }
 }
 
-int _open_b(struct BoltConnection* connection, struct sockaddr_storage* address)
+int _open_b(struct BoltConnection* connection, const struct sockaddr_storage* address)
 {
     switch (address->ss_family)
     {
@@ -155,7 +155,7 @@ int _open_b(struct BoltConnection* connection, struct sockaddr_storage* address)
                 return -1;
         }
     }
-    int connected = CONNECT(connection->socket, address, SOCKADDR_STORAGE_SIZE);
+    int connected = CONNECT(connection->socket, (struct sockaddr *)address, SOCKADDR_STORAGE_SIZE);
     if(connected == -1)
     {
         // TODO: Windows
@@ -598,7 +598,7 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, struc
     if (address->n_resolved_hosts > 0)
     {
         for (size_t i = 0; i < address->n_resolved_hosts; i++) {
-            struct sockaddr_storage *resolved_addr = BoltAddress_resolved_host(address, i);
+			const struct sockaddr_storage *resolved_addr = BoltAddress_resolved_host(address, i);
             int opened = _open_b(connection, resolved_addr);
             if (opened == 0)
             {

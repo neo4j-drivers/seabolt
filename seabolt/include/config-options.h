@@ -1,4 +1,0 @@
-#define	USE_OPENSSL	1
-#define	USE_WINSOCK	0
-#define	USE_WINSSPI	0
-#define USE_POSIXSOCK 1

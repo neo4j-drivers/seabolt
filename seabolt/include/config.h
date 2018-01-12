@@ -4,6 +4,10 @@
 
 #define BOLT_PUBLIC_API
 
+#if USE_POSIXSOCK
+#include <netdb.h>
+#endif
+
 #ifdef WIN32
 typedef unsigned short in_port_t;
 #define BOLT_PUBLIC_API __declspec(dllexport)
