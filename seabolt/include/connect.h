@@ -257,7 +257,7 @@ BOLT_PUBLIC_API int BoltConnection_fetch_summary_b(struct BoltConnection * conne
  * @param connection
  * @return
  */
-struct BoltValue* BoltConnection_fetched(struct BoltConnection * connection);
+BOLT_PUBLIC_API struct BoltValue* BoltConnection_fetched(struct BoltConnection * connection);
 
 /**
  * Set a Cypher statement for subsequent execution.
@@ -267,7 +267,7 @@ struct BoltValue* BoltConnection_fetched(struct BoltConnection * connection);
  * @param size
  * @return
  */
-int BoltConnection_set_cypher_template(struct BoltConnection * connection, const char * statement, size_t size);
+BOLT_PUBLIC_API int BoltConnection_set_cypher_template(struct BoltConnection * connection, const char * statement, size_t size);
 
 /**
  * Set the number of parameters to use in subsequent Cypher execution.
