@@ -308,7 +308,7 @@ enum BoltType BoltValue_type(const struct BoltValue* value);
  */
 void BoltValue_destroy(struct BoltValue* value);
 
-int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
+BOLT_PUBLIC_API int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
 
 
 

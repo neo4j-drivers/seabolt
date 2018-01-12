@@ -23,10 +23,8 @@
 
 #ifndef SEABOLT_CONNECT
 #define SEABOLT_CONNECT
-
+#include "config.h"
 #include <stdio.h>
-#include <netdb.h>
-
 
 #define try(code) { int status = (code); if (status == -1) { return status; } }
 
@@ -98,17 +96,17 @@ struct BoltAddress
 
 
 
-struct BoltAddress * BoltAddress_create(const char * host, const char * port);
+BOLT_PUBLIC_API struct BoltAddress * BoltAddress_create(const char * host, const char * port);
 
-void BoltAddress_resolve_b(struct BoltAddress * address);
+BOLT_PUBLIC_API void BoltAddress_resolve_b(struct BoltAddress * address);
 
-char * BoltAddress_resolved_host(struct BoltAddress * address, size_t index);
+BOLT_PUBLIC_API struct sockaddr_storage * BoltAddress_resolved_host(struct BoltAddress * address, size_t index);
 
 int BoltAddress_resolved_host_is_ipv4(struct BoltAddress * address, size_t index);
 
-void BoltAddress_destroy(struct BoltAddress * address);
+BOLT_PUBLIC_API void BoltAddress_destroy(struct BoltAddress * address);
 
-void BoltAddress_write(struct BoltAddress * address, FILE * file);
+BOLT_PUBLIC_API void BoltAddress_write(struct BoltAddress * address, FILE * file);
 
 
 /**
@@ -187,14 +185,14 @@ struct BoltConnection
  * @param address descriptor of the remote Bolt server address
  * @return a pointer to a new BoltConnection struct
  */
-struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, struct BoltAddress* address);
+BOLT_PUBLIC_API struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, struct BoltAddress* address);
 
 /**
  * Close a connection.
  *
  * @param connection
  */
-void BoltConnection_close_b(struct BoltConnection* connection);
+BOLT_PUBLIC_API void BoltConnection_close_b(struct BoltConnection* connection);
 
 /**
  * Initialise the connection and authenticate using the basic
@@ -206,7 +204,7 @@ void BoltConnection_close_b(struct BoltConnection* connection);
  * @param password a valid password for the given user
  * @return
  */
-int BoltConnection_init_b(struct BoltConnection* connection, const char* user_agent,
+BOLT_PUBLIC_API int BoltConnection_init_b(struct BoltConnection* connection, const char* user_agent,
                           const char* user, const char* password);
 
 /**
@@ -215,7 +213,7 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user_ag
  * @param connection
  * @return the latest request ID
  */
-int BoltConnection_send_b(struct BoltConnection * connection);
+BOLT_PUBLIC_API int BoltConnection_send_b(struct BoltConnection * connection);
 
 /**
  * Fetch the next value from the current result stream.
@@ -228,7 +226,7 @@ int BoltConnection_send_b(struct BoltConnection * connection);
  * @return 1 if record data is received, 0 if summary metadata is received
  *
  */
-int BoltConnection_fetch_b(struct BoltConnection * connection, int request_id);
+BOLT_PUBLIC_API int BoltConnection_fetch_b(struct BoltConnection * connection, int request_id);
 
 /**
  * Fetch values from the current result stream, up to and
@@ -241,7 +239,7 @@ int BoltConnection_fetch_b(struct BoltConnection * connection, int request_id);
  * @param connection
  * @return
  */
-int BoltConnection_fetch_summary_b(struct BoltConnection * connection, int request_id);
+BOLT_PUBLIC_API int BoltConnection_fetch_summary_b(struct BoltConnection * connection, int request_id);
 
 /**
  * Obtain a pointer to the last fetched data values or summary metadata.
@@ -278,26 +276,26 @@ int BoltConnection_set_cypher_template(struct BoltConnection * connection, const
  * @param size
  * @return
  */
-int BoltConnection_set_n_cypher_parameters(struct BoltConnection * connection, int32_t size);
+BOLT_PUBLIC_API int BoltConnection_set_n_cypher_parameters(struct BoltConnection * connection, int32_t size);
 
-int BoltConnection_set_cypher_parameter_key(struct BoltConnection * connection, int32_t index, const char * key, size_t key_size);
+BOLT_PUBLIC_API int BoltConnection_set_cypher_parameter_key(struct BoltConnection * connection, int32_t index, const char * key, size_t key_size);
 
-struct BoltValue* BoltConnection_cypher_parameter_value(struct BoltConnection * connection, int32_t index);
+BOLT_PUBLIC_API struct BoltValue* BoltConnection_cypher_parameter_value(struct BoltConnection * connection, int32_t index);
 
-int BoltConnection_load_bookmark(struct BoltConnection * connection, const char * bookmark);
+BOLT_PUBLIC_API int BoltConnection_load_bookmark(struct BoltConnection * connection, const char * bookmark);
 
-int BoltConnection_load_begin_request(struct BoltConnection * connection);
+BOLT_PUBLIC_API int BoltConnection_load_begin_request(struct BoltConnection * connection);
 
-int BoltConnection_load_commit_request(struct BoltConnection * connection);
+BOLT_PUBLIC_API int BoltConnection_load_commit_request(struct BoltConnection * connection);
 
-int BoltConnection_load_rollback_request(struct BoltConnection * connection);
+BOLT_PUBLIC_API int BoltConnection_load_rollback_request(struct BoltConnection * connection);
 
-const char * BoltConnection_last_bookmark(struct BoltConnection * connection);
+BOLT_PUBLIC_API const char * BoltConnection_last_bookmark(struct BoltConnection * connection);
 
-int BoltConnection_load_run_request(struct BoltConnection * connection);
+BOLT_PUBLIC_API int BoltConnection_load_run_request(struct BoltConnection * connection);
 
-int BoltConnection_load_discard_request(struct BoltConnection * connection, int32_t n);
+BOLT_PUBLIC_API int BoltConnection_load_discard_request(struct BoltConnection * connection, int32_t n);
 
-int BoltConnection_load_pull_request(struct BoltConnection * connection, int32_t n);
+BOLT_PUBLIC_API int BoltConnection_load_pull_request(struct BoltConnection * connection, int32_t n);
 
 #endif // SEABOLT_CONNECT

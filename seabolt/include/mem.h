@@ -23,7 +23,7 @@
 
 #ifndef SEABOLT_MEM
 #define SEABOLT_MEM
-
+#include "config.h"
 #include "stdio.h"
 
 void* memcpy_r(void* dest, const void* src, size_t n);
@@ -47,7 +47,7 @@ void* memcpy_r(void* dest, const void* src, size_t n);
  * @param new_size
  * @return
  */
-void* BoltMem_allocate(size_t new_size);
+BOLT_PUBLIC_API void* BoltMem_allocate(size_t new_size);
 
 /**
  * Reallocate memory.
@@ -57,7 +57,7 @@ void* BoltMem_allocate(size_t new_size);
  * @param new_size
  * @return
  */
-void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size);
+BOLT_PUBLIC_API void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size);
 
 /**
  * Deallocate memory.
@@ -66,7 +66,7 @@ void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size);
  * @param old_size
  * @return
  */
-void* BoltMem_deallocate(void* ptr, size_t old_size);
+BOLT_PUBLIC_API void* BoltMem_deallocate(void* ptr, size_t old_size);
 
 /**
  * Allocate, reallocate or free memory for data storage.
@@ -85,20 +85,20 @@ void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
  *
  * @return
  */
-size_t BoltMem_current_allocation();
+BOLT_PUBLIC_API size_t BoltMem_current_allocation();
 
 /**
  *
  * @return
  */
-size_t BoltMem_peak_allocation();
+BOLT_PUBLIC_API size_t BoltMem_peak_allocation();
 
 /**
  * Get an activity count for memory (de/re/-)allocation.
  *
  * @return
  */
-long long BoltMem_allocation_events();
+BOLT_PUBLIC_API long long BoltMem_allocation_events();
 
 
 #endif // SEABOLT_MEM

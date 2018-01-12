@@ -17,15 +17,11 @@
  * limitations under the License.
  */
 
-#include <openssl/bio.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
+#include "config-impl.h"
+#include <stdint.h>
 #include <connect.h>
 #include "protocol/v1.h"
 #include "buffer.h"
-#include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
 #include <connect.h>
 #include <values.h>
 #include "logging.h"
@@ -39,6 +35,7 @@
 #define MAX_BOOKMARK_SIZE 40
 
 #define char_to_uint16be(array) ((uint8_t)(header[0]) << 8) | (uint8_t)(header[1]);
+#define SOCKADDR_STORAGE_SIZE sizeof(struct sockaddr_storage)
 
 #define SOCKET(domain, type, protocol) socket(domain, type, protocol)
 #define CONNECT(socket, address, address_size) connect(socket, address, address_size)
@@ -49,15 +46,9 @@
 #define RECEIVE_S(socket, buffer, size, flags) SSL_read(socket, buffer, size)
 
 
-void _copy_ipv6_socket_address(char* target, struct sockaddr_in6* source)
+void _copy_socket_address(char* target, struct sockaddr_storage* source)
 {
-    memcpy(&target[0], &source->sin6_addr.__in6_u.__u6_addr8, 16);
-}
-
-void _copy_ipv4_socket_address(char* target, struct sockaddr_in* source)
-{
-    memcpy(&target[0], "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 12);
-    memcpy(&target[12], &source->sin_addr.s_addr, 4);
+    memcpy(&target[0], source, SOCKADDR_STORAGE_SIZE);
 }
 
 struct BoltConnection* _create(enum BoltTransport transport)
@@ -112,9 +103,9 @@ void _set_status(struct BoltConnection* connection, enum BoltConnectionStatus st
     }
 }
 
-int _open_b(struct BoltConnection* connection, struct sockaddr* address, socklen_t address_size)
+int _open_b(struct BoltConnection* connection, struct sockaddr_storage* address)
 {
-    switch (address->sa_family)
+    switch (address->ss_family)
     {
         case AF_INET:
         {
@@ -133,11 +124,11 @@ int _open_b(struct BoltConnection* connection, struct sockaddr* address, socklen
             break;
         }
         default:
-            BoltLog_error("bolt: Unsupported address family %d", address->sa_family);
+            BoltLog_error("bolt: Unsupported address family %d", address->ss_family);
             _set_status(connection, BOLT_DEFUNCT, BOLT_UNSUPPORTED);
             return -1;
     }
-    connection->socket = SOCKET(address->sa_family, SOCK_STREAM, IPPROTO_TCP);
+    connection->socket = SOCKET(address->ss_family, SOCK_STREAM, IPPROTO_TCP);
     if (connection->socket == -1)
     {
         // TODO: Windows
@@ -164,7 +155,7 @@ int _open_b(struct BoltConnection* connection, struct sockaddr* address, socklen
                 return -1;
         }
     }
-    int connected = CONNECT(connection->socket, address, address_size);
+    int connected = CONNECT(connection->socket, address, SOCKADDR_STORAGE_SIZE);
     if(connected == -1)
     {
         // TODO: Windows
@@ -507,7 +498,8 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = (AI_V4MAPPED | AI_ADDRCONFIG);
     struct addrinfo* ai;
-    address->gai_status = getaddrinfo(address->host, NULL, &hints, &ai);
+    address->gai_status = getaddrinfo(address->host, address->port, &hints, &ai);
+    BoltLog_info("gai status = %d", address->gai_status);
     if (address->gai_status == 0)
     {
         unsigned short n_resolved = 0;
@@ -527,7 +519,7 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
             }
         }
         address->resolved_hosts = BoltMem_reallocate(address->resolved_hosts,
-                                                     address->n_resolved_hosts * 16U, n_resolved * 16U);
+                                                     address->n_resolved_hosts * SOCKADDR_STORAGE_SIZE, n_resolved * SOCKADDR_STORAGE_SIZE);
         address->n_resolved_hosts = n_resolved;
         size_t p = 0;
         for (struct addrinfo* ai_node = ai; ai_node != NULL; ai_node = ai_node->ai_next)
@@ -535,13 +527,9 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
             switch (ai_node->ai_family)
             {
                 case AF_INET:
-                {
-                    _copy_ipv4_socket_address(BoltAddress_resolved_host(address, p), (struct sockaddr_in*)(ai_node->ai_addr));
-                    break;
-                }
                 case AF_INET6:
                 {
-                    _copy_ipv6_socket_address(BoltAddress_resolved_host(address, p), (struct sockaddr_in6*)(ai_node->ai_addr));
+                    _copy_socket_address(BoltAddress_resolved_host(address, p), (struct sockaddr_storage*)(ai_node->ai_addr));
                     break;
                 }
                 default:
@@ -558,38 +546,36 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
         BoltLog_info("bolt: Host resolution failed (status %d)", address->gai_status);
     }
 
-    char *c;
-    address->resolved_port = (in_port_t)(strtoul(address->port, &c, 10));
-    if (*c != '\0')
-    {
-        struct servent * entry = getservbyname(address->port, "TCP");
-        address->resolved_port = (in_port_t)(entry->s_port);
-    }
-    BoltLog_info("bolt: Port resolved to %d", address->resolved_port);
+	if (address->n_resolved_hosts > 0)
+	{
+		struct sockaddr_storage *resolved = BoltAddress_resolved_host(address, 0);
+
+		switch (resolved->ss_family)
+		{
+			case AF_INET:
+				address->resolved_port = ((struct sockaddr_in *)resolved)->sin_port;
+				break;
+			case AF_INET6:
+				address->resolved_port = ((struct sockaddr_in6 *)resolved)->sin6_port;
+				break;
+		}
+	}
 }
 
-char * BoltAddress_resolved_host(struct BoltAddress * address, size_t index)
+struct sockaddr_storage * BoltAddress_resolved_host(struct BoltAddress * address, size_t index)
 {
-    return &address->resolved_hosts[16U * index];
+    return &address->resolved_hosts[SOCKADDR_STORAGE_SIZE * index];
 }
 
 int BoltAddress_resolved_host_is_ipv4(struct BoltAddress * address, size_t index)
 {
-    const char * resolved_host = BoltAddress_resolved_host(address, index);
-    for (int i = 0; i < 10; i++)
-    {
-        if (resolved_host[i] != 0) return 0;
-    }
-    for (int i = 10; i < 12; i++)
-    {
-        if (resolved_host[i] != -1) return 0;
-    }
-    return 1;
+    struct sockaddr_storage * resolved_host = BoltAddress_resolved_host(address, index);
+	return resolved_host->ss_family == AF_INET;
 }
 
 void BoltAddress_destroy(struct BoltAddress * address)
 {
-    BoltMem_deallocate(address->resolved_hosts, address->n_resolved_hosts * 16U);
+    BoltMem_deallocate(address->resolved_hosts, address->n_resolved_hosts * SOCKADDR_STORAGE_SIZE);
     BoltMem_deallocate(address, sizeof(struct BoltAddress));
 }
 
@@ -611,40 +597,27 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, struc
     struct BoltConnection* connection = _create(transport);
     if (address->n_resolved_hosts > 0)
     {
-        for (size_t i = 0; i < address->n_resolved_hosts; i++)
-        {
-            int opened;
-            if (BoltAddress_resolved_host_is_ipv4(address, i))
-            {
-                struct sockaddr_in sa;
-                sa.sin_family = AF_INET;
-                sa.sin_port = htons(address->resolved_port);
-                memcpy(&sa.sin_addr.s_addr, BoltAddress_resolved_host(address, i) + 12, 4);
-                opened = _open_b(connection, (struct sockaddr *)(&sa), sizeof(sa));
-            }
-            else
-            {
-                struct sockaddr_in6 sa;
-                sa.sin6_family = AF_INET6;
-                sa.sin6_port = htons(address->resolved_port);
-                memcpy(&sa.sin6_addr.__in6_u.__u6_addr8, BoltAddress_resolved_host(address, i), 16);
-                opened = _open_b(connection, (struct sockaddr *)(&sa), sizeof(sa));
-            }
+        for (size_t i = 0; i < address->n_resolved_hosts; i++) {
+            struct sockaddr_storage *resolved_addr = BoltAddress_resolved_host(address, i);
+            int opened = _open_b(connection, resolved_addr);
             if (opened == 0)
             {
                 if (transport == BOLT_SECURE_SOCKET)
                 {
-                    int secured = _secure_b(connection);
-                    if (secured == 0)
+                    if (transport == BOLT_SECURE_SOCKET)
+                    {
+                        int secured = _secure_b(connection);
+                        if (secured == 0)
+                        {
+                            _handshake_b(connection, 1, 0, 0, 0);
+                        }
+                    }
+                    else
                     {
                         _handshake_b(connection, 1, 0, 0, 0);
                     }
+                    break;
                 }
-                else
-                {
-                    _handshake_b(connection, 1, 0, 0, 0);
-                }
-                break;
             }
         }
     }
