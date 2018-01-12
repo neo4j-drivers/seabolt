@@ -110,11 +110,12 @@ int _open_b(struct BoltConnection* connection, const struct sockaddr_storage* ad
         case AF_INET:
         case AF_INET6:
         {
-            char address_string[INET6_ADDRSTRLEN];
+            char host_string[NI_MAXHOST];
+			char port_string[NI_MAXSERV];
 			getnameinfo((const struct sockaddr *)address, SOCKADDR_STORAGE_SIZE, 
-				address_string, INET6_ADDRSTRLEN, NULL, 0, NI_NUMERICHOST | NI_NUMERICSERV);
-			BoltLog_info("bolt: Opening %s connection to %s", 
-				address->ss_family == AF_INET ? "IPv4" : "IPv6", &address_string);
+				host_string, NI_MAXHOST, port_string, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
+			BoltLog_info("bolt: Opening %s connection to %s at port %s", 
+				address->ss_family == AF_INET ? "IPv4" : "IPv6", &host_string, &port_string);
             break;
         }
         default:
@@ -543,16 +544,9 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
 	if (address->n_resolved_hosts > 0)
 	{
 		struct sockaddr_storage *resolved = BoltAddress_resolved_host(address, 0);
-
-		switch (resolved->ss_family)
-		{
-			case AF_INET:
-				address->resolved_port = ((struct sockaddr_in *)resolved)->sin_port;
-				break;
-			case AF_INET6:
-				address->resolved_port = ((struct sockaddr_in6 *)resolved)->sin6_port;
-				break;
-		}
+		in_port_t resolved_port = resolved->ss_family == AF_INET ? 
+			((struct sockaddr_in *)resolved)->sin_port : ((struct sockaddr_in6 *)resolved)->sin6_port;
+		address->resolved_port = ntohs(resolved_port);
 	}
 }
 
