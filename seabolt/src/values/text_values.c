@@ -152,6 +152,22 @@ struct BoltValue* BoltDictionary8_key(struct BoltValue* value, int32_t index)
     return &value->data.extended.as_value[2 * index];
 }
 
+const char * BoltDictionary8_get_key(struct BoltValue* value, int32_t index)
+{
+    assert(BoltValue_type(value) == BOLT_DICTIONARY8);
+    struct BoltValue * key_value = &value->data.extended.as_value[2 * index];
+    assert(BoltValue_type(key_value) == BOLT_STRING8);
+    return BoltString8_get(key_value);
+}
+
+int32_t BoltDictionary8_get_key_size(struct BoltValue* value, int32_t index)
+{
+    assert(BoltValue_type(value) == BOLT_DICTIONARY8);
+    struct BoltValue * key_value = &value->data.extended.as_value[2 * index];
+    assert(BoltValue_type(key_value) == BOLT_STRING8);
+    return key_value->size;
+}
+
 int BoltDictionary8_set_key(struct BoltValue* value, int32_t index, const char* key, size_t key_size)
 {
     if (key_size <= INT32_MAX)
@@ -223,11 +239,11 @@ int BoltDictionary8_write(struct BoltValue * value, FILE * file, int32_t protoco
     int comma = 0;
     for (int i = 0; i < value->size; i++)
     {
-        struct BoltValue* key = BoltDictionary8_key(value, i);
+        const char * key = BoltDictionary8_get_key(value, i);
         if (key != NULL)
         {
             if (comma) fprintf(file, ", ");
-            _write_string(file, BoltString8_get(key), (size_t)(key->size));
+            _write_string(file, key, (size_t)(BoltDictionary8_get_key_size(value, i)));
             fprintf(file, " ");
             BoltValue_write(BoltDictionary8_value(value, i), file, protocol_version);
             comma = 1;

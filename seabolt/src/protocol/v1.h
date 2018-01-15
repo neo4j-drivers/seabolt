@@ -89,6 +89,10 @@ int BoltProtocolV1_load_bytes(struct BoltConnection* connection, const char* str
 
 int BoltProtocolV1_load_string(struct BoltConnection* connection, const char* string, int32_t size);
 
+int BoltProtocolV1_load_request(struct BoltConnection* connection, struct BoltValue* value);
+
+int BoltProtocolV1_load_request_quietly(struct BoltConnection* connection, struct BoltValue* value);
+
 int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* value);
 
 int BoltProtocolV1_compile_INIT(struct BoltValue* value, const char* user_agent, const char* user, const char* password);

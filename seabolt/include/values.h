@@ -27,7 +27,6 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "logging.h"
 
 #if CHAR_BIT != 8
 #error "Cannot compile if `char` is not 8-bit"
@@ -376,6 +375,10 @@ int BoltString8Array_write(struct BoltValue * value, FILE * file);
 
 
 struct BoltValue* BoltDictionary8_key(struct BoltValue* value, int32_t index);
+
+const char * BoltDictionary8_get_key(struct BoltValue* value, int32_t index);
+
+int32_t BoltDictionary8_get_key_size(struct BoltValue* value, int32_t index);
 
 struct BoltValue* BoltDictionary16_key(struct BoltValue* value, int32_t index);
 

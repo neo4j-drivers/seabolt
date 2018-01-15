@@ -131,6 +131,8 @@ struct BoltConnection
     int32_t protocol_version;
     /// State required by the protocol
     void* protocol_state;
+    /// The last bookmark received from the server
+    char * last_bookmark;
 
     // These buffers contain data exactly as it is transmitted or
     // received. Therefore for Bolt v1, chunk headers are included
@@ -282,11 +284,15 @@ int BoltConnection_set_cypher_parameter_key(struct BoltConnection * connection, 
 
 struct BoltValue* BoltConnection_cypher_parameter_value(struct BoltConnection * connection, int32_t index);
 
+int BoltConnection_load_bookmark(struct BoltConnection * connection, const char * bookmark);
+
 int BoltConnection_load_begin_request(struct BoltConnection * connection);
 
 int BoltConnection_load_commit_request(struct BoltConnection * connection);
 
 int BoltConnection_load_rollback_request(struct BoltConnection * connection);
+
+const char * BoltConnection_last_bookmark(struct BoltConnection * connection);
 
 int BoltConnection_load_run_request(struct BoltConnection * connection);
 

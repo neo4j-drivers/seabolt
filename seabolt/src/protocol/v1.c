@@ -21,9 +21,11 @@
 #include <stdlib.h>
 #include <values.h>
 #include <memory.h>
+#include <assert.h>
 #include "../buffer.h"
 #include "v1.h"
 #include "mem.h"
+#include "logging.h"
 
 #define RUN 0x10
 #define DISCARD_ALL 0x2F
@@ -53,7 +55,7 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
     state->response_counter = 0;
 
     _create_run_request(&state->run, 0);
-    _create_run_request(&state->begin, 1);
+    _create_run_request(&state->begin, 0);
     BoltValue_to_String8(state->begin.statement, "BEGIN", 5);
     _create_run_request(&state->commit, 0);
     BoltValue_to_String8(state->commit.statement, "COMMIT", 6);
@@ -347,6 +349,29 @@ int _enqueue(struct BoltConnection* connection)
     return request_id;
 }
 
+int _load_request(struct BoltConnection* connection, struct BoltValue* value)
+{
+    assert(BoltValue_type(value) == BOLT_REQUEST);
+    try(_load_structure_header(connection, BoltRequest_code(value), value->size));
+    for (int32_t i = 0; i < value->size; i++)
+    {
+        try(BoltProtocolV1_load(connection, BoltRequest_value(value, i)));
+    }
+    return _enqueue(connection);
+}
+
+int BoltProtocolV1_load_request(struct BoltConnection* connection, struct BoltValue* value)
+{
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+    BoltLog_request(state->next_request_id, value, connection->protocol_version);
+    return _load_request(connection, value);
+}
+
+int BoltProtocolV1_load_request_quietly(struct BoltConnection* connection, struct BoltValue* value)
+{
+    return _load_request(connection, value);
+}
+
 int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* value)
 {
     switch (BoltValue_type(value))
@@ -390,11 +415,10 @@ int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* val
             try(_load_map_header(connection, value->size));
             for (int32_t i = 0; i < value->size; i++)
             {
-                struct BoltValue* key = BoltDictionary8_key(value, i);
+                const char * key = BoltDictionary8_get_key(value, i);
                 if (key != NULL)
                 {
-                    const char* key_string = BoltString8_get(key);
-                    try(BoltProtocolV1_load_string(connection, key_string, key->size));
+                    try(BoltProtocolV1_load_string(connection, key, BoltDictionary8_get_key_size(value, i)));
                     try(BoltProtocolV1_load(connection, BoltDictionary8_value(value, i)));
                 }
             }
@@ -491,14 +515,7 @@ int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* val
         case BOLT_STRUCTURE_ARRAY:
             return -1;
         case BOLT_REQUEST:
-        {
-            try(_load_structure_header(connection, BoltRequest_code(value), value->size));
-            for (int32_t i = 0; i < value->size; i++)
-            {
-                try(BoltProtocolV1_load(connection, BoltRequest_value(value, i)));
-            }
-            return _enqueue(connection);
-        }
+            return BoltProtocolV1_load_request(connection, value);
         case BOLT_SUMMARY:
             return -1;
         case BOLT_LIST:
@@ -789,8 +806,9 @@ int BoltProtocolV1_unload(struct BoltConnection* connection)
     size = marker & 0x0F;
     struct BoltValue* received = ((struct BoltProtocolV1State*)(connection->protocol_state))->fetched;
     BoltBuffer_unload_uint8(state->rx_buffer, &code);
-    if (code == 0x71)  // RECORD
+    if (code == 0x71)
     {
+        // Record
         if (size >= 1)
         {
             _unload(connection, received);
@@ -811,11 +829,13 @@ int BoltProtocolV1_unload(struct BoltConnection* connection)
     }
     else
     {
+        // Summary
         BoltValue_to_Summary(received, code, size);
         for (int i = 0; i < size; i++)
         {
             _unload(connection, BoltSummary_value(received, i));
         }
+        BoltLog_summary(state->response_counter, received, connection->protocol_version);
     }
     return 1;
 }

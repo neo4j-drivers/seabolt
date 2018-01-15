@@ -51,3 +51,19 @@ void BoltLog_error(const char* message, ...)
     va_end(args);
     fprintf(__bolt_log_file, "\n");
 }
+
+void BoltLog_request(int request_id, struct BoltValue * value, int32_t protocol_version)
+{
+    if (__bolt_log_file == NULL) return;
+    fprintf(__bolt_log_file, "bolt: C[%d]: ", request_id);
+    BoltValue_write(value, __bolt_log_file, protocol_version);
+    fprintf(__bolt_log_file, "\n");
+}
+
+void BoltLog_summary(int request_id, struct BoltValue * value, int32_t protocol_version)
+{
+    if (__bolt_log_file == NULL) return;
+    fprintf(__bolt_log_file, "bolt: S[%d]: ", request_id);
+    BoltValue_write(value, __bolt_log_file, protocol_version);
+    fprintf(__bolt_log_file, "\n");
+}
