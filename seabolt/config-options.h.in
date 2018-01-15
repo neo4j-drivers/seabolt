@@ -17,21 +17,7 @@
  * limitations under the License.
  */
 
-
-#ifndef SEABOLT_LOGGING
-#define SEABOLT_LOGGING
-#include "config.h"
-#include <stdio.h>
-#include "values.h"
-
-PUBLIC void BoltLog_set_file(FILE* log_file);
-
-void BoltLog_info(const char* message, ...);
-
-void BoltLog_error(const char* message, ...);
-
-void BoltLog_request(int request_id, struct BoltValue * value, int32_t protocol_version);
-
-void BoltLog_summary(int request_id, struct BoltValue * value, int32_t protocol_version);
-
-#endif // SEABOLT_LOGGING
+#define	USE_OPENSSL	@OPENSSL@
+#define	USE_WINSOCK	@WINSOCK@
+#define	USE_WINSSPI	@WINSSPI@
+#define USE_POSIXSOCK @POSIXSOCK@

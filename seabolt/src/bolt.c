@@ -17,21 +17,27 @@
  * limitations under the License.
  */
 
+#include "bolt.h"
+#include "config-impl.h"
 
-#ifndef SEABOLT_LOGGING
-#define SEABOLT_LOGGING
-#include "config.h"
-#include <stdio.h>
-#include "values.h"
 
-PUBLIC void BoltLog_set_file(FILE* log_file);
+void Bolt_startup()
+{
+#if USE_WINSOCK
+	WSADATA data;
+	WSAStartup(MAKEWORD(2, 2), &data);
+#endif
 
-void BoltLog_info(const char* message, ...);
+#if USE_OPENSSL
 
-void BoltLog_error(const char* message, ...);
+#endif
+}
 
-void BoltLog_request(int request_id, struct BoltValue * value, int32_t protocol_version);
+void Bolt_shutdown()
+{
+#if USE_WINSOCK
+	// TODO: Do we need an argument whether to clean-up winsocks? It will probably terminate all winsock related in the process, not only seabolt related
+	//WSACleanup();
+#endif
 
-void BoltLog_summary(int request_id, struct BoltValue * value, int32_t protocol_version);
-
-#endif // SEABOLT_LOGGING
+}

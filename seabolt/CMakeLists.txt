@@ -8,28 +8,29 @@ set(PROJECT_VERSION_PATCH 0)
 
 include_directories(include)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/lib")
 
+# Configure socket & TLS library
+set(OPENSSL 1)
+set(WINSOCK 0)
+set(POSIXSOCK 1)
+set(WINSSPI 0)
 if ( WIN32 )
-    # assume OpenSSL is installed in %PROGRAMFILES(X86)%\OpenSSL
-    include_directories("$ENV{PROGRAMFILES\(X86\)}\\OpenSSL\\include")
-    link_libraries("libssl.lib" "libcrypto.lib")
-    link_directories("$ENV{PROGRAMFILES\(X86\)}\\OpenSSL\\lib")
-elseif ( APPLE )
-    # assume OpenSSL is installed in /usr/local/opt/openssl/
-    include_directories("/usr/local/opt/openssl/include")
-    link_libraries("libssl.dylib" "libcrypto.dylib")
-    link_directories("/usr/local/opt/openssl/lib")
-else()
-    find_package(OpenSSL REQUIRED)
-    if( OpenSSL_FOUND )
-        include_directories(${OPENSSL_INCLUDE_DIRS})
-        link_directories(${OPENSSL_LIBRARIES})
-        link_libraries(${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
-        message(STATUS "Using OpenSSL ${OPENSSL_VERSION}")
-    endif()
-endif()
+	set(OPENSSL 1)
+	set(POSIXSOCK 0)
+	set(WINSOCK 1)
+	set(WINSSPI 0)
+endif ()
+
+# configure a header file to pass some of the CMake settings
+# to the source code
+configure_file (
+  "${PROJECT_SOURCE_DIR}/config-options.h.in"
+  "${PROJECT_SOURCE_DIR}/include/config-options.h"
+  )
+
 
 file(GLOB H_FILES include/*.h)
 file(GLOB C_FILES src/*.c src/**/*.c)
@@ -40,6 +41,31 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
         VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}"
         )
+
+if ( ${WINSOCK} )
+	target_link_libraries(${PROJECT_NAME} "ws2_32.lib")
+endif ()
+
+if ( ${WINSSPI} )
+	target_link_libraries(${PROJECT_NAME} "fwpuclnt.lib")
+endif ()
+
+if ( ${OPENSSL} )
+	if ( WIN32 OR APPLE )
+		if ( NOT DEFINED ENV{OPENSSL_LIB_ROOT} )
+			MESSAGE(FATAL_ERROR "You did not define the environment variable OPENSSL_LIB_ROOT which is needed to locate OpenSSL dependency. Please set this variable and execute cmake again.")
+		endif ()
+
+		set(OPENSSL_INCLUDE_DIRS "$ENV{OPENSSL_LIB_ROOT}/include")
+		find_library(OPENSSL_SSL_LIBRARY libssl PATHS "$ENV{OPENSSL_LIB_ROOT}" PATH_SUFFIXES lib)
+		find_library(OPENSSL_CRYPTO_LIBRARY libcrypto PATHS "$ENV{OPENSSL_LIB_ROOT}" PATH_SUFFIXES lib)
+	else ()
+		find_package(OpenSSL REQUIRED)
+	endif ()
+
+	target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIRS})
+	target_link_libraries(${PROJECT_NAME} ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
+endif ()
 
 set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include
         CACHE INTERNAL "${PROJECT_NAME}: Include Directories" FORCE)

@@ -1,5 +1,19 @@
-# IDE
+# IDE - CLion
 .idea
+
+# IDE - Visual Studio
+
+.vs
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.dir
+Win32
+
+# Vi - Backups
+*.*~
+*.swp
 
 # Prerequisites
 *.d
