@@ -26,7 +26,7 @@
 #include "config.h"
 #include "stdio.h"
 
-void* memcpy_r(void* dest, const void* src, size_t n);
+BOLT_PUBLIC_API void* memcpy_r(void* dest, const void* src, size_t n);
 
 #ifdef _WIN32
     // Windows endianness is always LE (I think)
