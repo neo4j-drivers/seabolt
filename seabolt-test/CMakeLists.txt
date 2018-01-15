@@ -13,7 +13,7 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
     file(GLOB CPP_FILES src/*.cpp)
     include_directories(${seabolt_INCLUDE_DIRS})
     add_executable(${PROJECT_NAME} ${HPP_FILES} ${CPP_FILES})
-    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "seabolt-test" SUFFIX "")
+    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "seabolt-test")
     target_link_libraries(${PROJECT_NAME} seabolt)
 
 endif()
