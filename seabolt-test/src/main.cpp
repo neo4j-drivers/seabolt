@@ -26,11 +26,11 @@ extern "C" {
 }
 
 int main(int argc, char* argv[]) {
-	Seabolt_init();
+	Bolt_startup();
 
 	int result = Catch::Session().run(argc, argv);
 
-	Seabolt_destroy();
+	Bolt_shutdown();
 
 	return result;
 }

@@ -21,7 +21,7 @@
 #include "config-impl.h"
 
 
-void Seabolt_init()
+void Bolt_startup()
 {
 #if USE_WINSOCK
 	WSADATA data;
@@ -33,7 +33,7 @@ void Seabolt_init()
 #endif
 }
 
-void Seabolt_destroy()
+void Bolt_shutdown()
 {
 #if USE_WINSOCK
 	// TODO: Do we need an argument whether to clean-up winsocks? It will probably terminate all winsock related in the process, not only seabolt related

@@ -20,7 +20,7 @@
 #define SEABOLT_CONFIG
 #include "config-options.h"
 
-#define BOLT_PUBLIC_API
+#define PUBLIC
 
 #if USE_POSIXSOCK
 #include <netdb.h>
@@ -28,7 +28,7 @@
 
 #ifdef WIN32
 typedef unsigned short in_port_t;
-#define BOLT_PUBLIC_API __declspec(dllexport)
+#define PUBLIC __declspec(dllexport)
 #endif // USE_WINSOCK
 
 #endif // SEABOLT_CONFIG

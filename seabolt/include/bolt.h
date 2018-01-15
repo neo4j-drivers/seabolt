@@ -21,7 +21,7 @@
 #define SEABOLT_BOLT
 #include "config.h"
 
-BOLT_PUBLIC_API void Seabolt_init();
-BOLT_PUBLIC_API void Seabolt_destroy();
+PUBLIC void Bolt_startup();
+PUBLIC void Bolt_shutdown();
 
 #endif // SEABOLT_BOLT

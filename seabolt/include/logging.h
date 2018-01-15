@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include "values.h"
 
-BOLT_PUBLIC_API void BoltLog_set_file(FILE* log_file);
+PUBLIC void BoltLog_set_file(FILE* log_file);
 
 void BoltLog_info(const char* message, ...);
 

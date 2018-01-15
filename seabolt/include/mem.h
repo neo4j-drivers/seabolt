@@ -26,7 +26,7 @@
 #include "config.h"
 #include "stdio.h"
 
-BOLT_PUBLIC_API void* memcpy_r(void* dest, const void* src, size_t n);
+PUBLIC void* memcpy_r(void* dest, const void* src, size_t n);
 
 #ifdef _WIN32
     // Windows endianness is always LE (I think)
@@ -47,7 +47,7 @@ BOLT_PUBLIC_API void* memcpy_r(void* dest, const void* src, size_t n);
  * @param new_size
  * @return
  */
-BOLT_PUBLIC_API void* BoltMem_allocate(size_t new_size);
+PUBLIC void* BoltMem_allocate(size_t new_size);
 
 /**
  * Reallocate memory.
@@ -57,7 +57,7 @@ BOLT_PUBLIC_API void* BoltMem_allocate(size_t new_size);
  * @param new_size
  * @return
  */
-BOLT_PUBLIC_API void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size);
+PUBLIC void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size);
 
 /**
  * Deallocate memory.
@@ -66,7 +66,7 @@ BOLT_PUBLIC_API void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_
  * @param old_size
  * @return
  */
-BOLT_PUBLIC_API void* BoltMem_deallocate(void* ptr, size_t old_size);
+PUBLIC void* BoltMem_deallocate(void* ptr, size_t old_size);
 
 /**
  * Allocate, reallocate or free memory for data storage.
@@ -85,20 +85,20 @@ void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
  *
  * @return
  */
-BOLT_PUBLIC_API size_t BoltMem_current_allocation();
+PUBLIC size_t BoltMem_current_allocation();
 
 /**
  *
  * @return
  */
-BOLT_PUBLIC_API size_t BoltMem_peak_allocation();
+PUBLIC size_t BoltMem_peak_allocation();
 
 /**
  * Get an activity count for memory (de/re/-)allocation.
  *
  * @return
  */
-BOLT_PUBLIC_API long long BoltMem_allocation_events();
+PUBLIC long long BoltMem_allocation_events();
 
 
 #endif // SEABOLT_MEM

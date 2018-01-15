@@ -201,7 +201,7 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
 
 int main(int argc, char* argv[])
 {
-	Seabolt_init();
+	Bolt_startup();
 
     const char* BOLT_LOG = getenv_or_default("BOLT_LOG", "0");
     if (strcmp(BOLT_LOG, "1") == 0)
@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
     fprintf(stderr, "peak allocation      : %ld bytes\n", BoltMem_peak_allocation());
     fprintf(stderr, "allocation events    : %lld\n", BoltMem_allocation_events());
 
-	Seabolt_destroy();
-
+	Bolt_shutdown();
+	
     return 0;
 }
