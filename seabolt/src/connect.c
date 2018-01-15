@@ -494,7 +494,7 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
     hints.ai_flags = (AI_V4MAPPED | AI_ADDRCONFIG);
     struct addrinfo* ai;
     address->gai_status = getaddrinfo(address->host, address->port, &hints, &ai);
-    BoltLog_info("gai status = %d", address->gai_status);
+    BoltLog_info("bolt: gai status = %d", address->gai_status);
     if (address->gai_status == 0)
     {
         unsigned short n_resolved = 0;
@@ -607,20 +607,17 @@ struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, struc
             {
                 if (transport == BOLT_SECURE_SOCKET)
                 {
-                    if (transport == BOLT_SECURE_SOCKET)
-                    {
-                        int secured = _secure_b(connection);
-                        if (secured == 0)
-                        {
-                            _handshake_b(connection, 1, 0, 0, 0);
-                        }
-                    }
-                    else
+                    int secured = _secure_b(connection);
+                    if (secured == 0)
                     {
                         _handshake_b(connection, 1, 0, 0, 0);
                     }
-                    break;
                 }
+                else
+                {
+                    _handshake_b(connection, 1, 0, 0, 0);
+                }
+                break;
             }
         }
     }
