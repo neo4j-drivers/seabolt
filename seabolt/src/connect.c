@@ -82,25 +82,29 @@ struct BoltConnection* _create(enum BoltTransport transport)
 
 void _set_status(struct BoltConnection* connection, enum BoltConnectionStatus status, enum BoltConnectionError error)
 {
+    enum BoltConnectionStatus old_status = connection->status;
     connection->status = status;
     connection->error = error;
-    switch (connection->status)
+    if (status != old_status)
     {
-        case BOLT_DISCONNECTED:
-            BoltLog_info("bolt: Disconnected");
-            break;
-        case BOLT_CONNECTED:
-            BoltLog_info("bolt: Connected");
-            break;
-        case BOLT_READY:
-            BoltLog_info("bolt: Ready");
-            break;
-        case BOLT_FAILED:
-            BoltLog_info("bolt: FAILED");
-            break;
-        case BOLT_DEFUNCT:
-            BoltLog_info("bolt: DEFUNCT");
-            break;
+        switch (connection->status)
+        {
+            case BOLT_DISCONNECTED:
+                BoltLog_info("bolt: Disconnected");
+                break;
+            case BOLT_CONNECTED:
+                BoltLog_info("bolt: Connected");
+                break;
+            case BOLT_READY:
+                BoltLog_info("bolt: Ready");
+                break;
+            case BOLT_FAILED:
+                BoltLog_info("bolt: FAILED");
+                break;
+            case BOLT_DEFUNCT:
+                BoltLog_info("bolt: DEFUNCT");
+                break;
+        }
     }
 }
 
@@ -315,7 +319,7 @@ int _transmit_b(struct BoltConnection* connection, const char* data, int size)
             return -1;
         }
     }
-    BoltLog_info("bolt: Sent %d of %d bytes", total_sent, size);
+    BoltLog_info("bolt: Sending %d of %d bytes", total_sent, size);
     return total_sent;
 }
 
@@ -375,7 +379,14 @@ int _receive_b(struct BoltConnection* connection, char* buffer, int min_size, in
             return -1;
         }
     }
-    BoltLog_info("bolt: Received %d of %d..%d bytes", total_received, min_size, max_size);
+    if (min_size == max_size)
+    {
+        BoltLog_info("bolt: Received %d of %d bytes", total_received, max_size);
+    }
+    else
+    {
+        BoltLog_info("bolt: Received %d of %d..%d bytes", total_received, min_size, max_size);
+    }
     return total_received;
 }
 
@@ -448,6 +459,7 @@ struct BoltAddress* BoltAddress_create(const char * host, const char * port)
 
 void BoltAddress_resolve_b(struct BoltAddress * address)
 {
+    BoltLog_info("bolt: Resolving address %s:%s", address->host, address->port);
     static struct addrinfo hints;
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -455,7 +467,6 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
     hints.ai_flags = (AI_V4MAPPED | AI_ADDRCONFIG);
     struct addrinfo* ai;
     address->gai_status = getaddrinfo(address->host, NULL, &hints, &ai);
-    BoltLog_info("bolt: gai status = %d", address->gai_status);
     if (address->gai_status == 0)
     {
         unsigned short n_resolved = 0;
@@ -499,6 +510,11 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
             p += 1;
         }
         freeaddrinfo(ai);
+        BoltLog_info("bolt: Host resolved to %d IP addresses", address->n_resolved_hosts);
+    }
+    else
+    {
+        BoltLog_info("bolt: Host resolution failed (status %d)", address->gai_status);
     }
 
     char *c;
@@ -508,6 +524,7 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
         struct servent * entry = getservbyname(address->port, "TCP");
         address->resolved_port = (in_port_t)(entry->s_port);
     }
+    BoltLog_info("bolt: Port resolved to %d", address->resolved_port);
 }
 
 char * BoltAddress_resolved_host(struct BoltAddress * address, size_t index)
@@ -620,7 +637,6 @@ int BoltConnection_send_b(struct BoltConnection * connection)
     {
         return 0;
     }
-    BoltLog_info("bolt: Sent up to request #%d", state->next_request_id - 1);
     return state->next_request_id - 1;
 }
 
@@ -677,14 +693,11 @@ int BoltConnection_fetch_b(struct BoltConnection * connection, int request_id)
                 switch (code)
                 {
                     case 0x70:  // SUCCESS
-                        BoltLog_info("bolt: Request #%d succeeded", response_id);
                         _set_status(connection, BOLT_READY, BOLT_NO_ERROR);
                         return records;
                     case 0x7E:  // IGNORED
-                        BoltLog_info("bolt: Request #%d ignored", response_id);
                         return records;
                     case 0x7F:  // FAILURE
-                        BoltLog_error("bolt: Request %d failed", response_id);
                         _set_status(connection, BOLT_FAILED, BOLT_UNKNOWN_ERROR);   // TODO more specific error
                         return -1;
                     default:
@@ -755,11 +768,9 @@ int BoltConnection_init_b(struct BoltConnection* connection, const char* user_ag
             switch (code)
             {
                 case 0x70:  // SUCCESS
-                    BoltLog_info("bolt: Initialisation SUCCESS");
                     _set_status(connection, BOLT_READY, BOLT_NO_ERROR);
                     return 0;
                 case 0x7F:  // FAILURE
-                    BoltLog_error("bolt: Initialisation FAILURE");
                     _set_status(connection, BOLT_DEFUNCT, BOLT_PERMISSION_DENIED);
                     return -1;
                 default:
