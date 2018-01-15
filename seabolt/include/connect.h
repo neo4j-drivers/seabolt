@@ -102,7 +102,9 @@ BOLT_PUBLIC_API void BoltAddress_resolve_b(struct BoltAddress * address);
 
 BOLT_PUBLIC_API struct sockaddr_storage * BoltAddress_resolved_host(struct BoltAddress * address, size_t index);
 
-int BoltAddress_resolved_host_is_ipv4(struct BoltAddress * address, size_t index);
+BOLT_PUBLIC_API char * BoltAddress_resolved_host_address(struct BoltAddress * address, size_t index);
+
+BOLT_PUBLIC_API int BoltAddress_resolved_host_is_ipv4(struct BoltAddress * address, size_t index);
 
 BOLT_PUBLIC_API void BoltAddress_destroy(struct BoltAddress * address);
 

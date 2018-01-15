@@ -555,6 +555,20 @@ struct sockaddr_storage * BoltAddress_resolved_host(struct BoltAddress * address
     return &address->resolved_hosts[SOCKADDR_STORAGE_SIZE * index];
 }
 
+char * BoltAddress_resolved_host_address(struct BoltAddress * address, size_t index)
+{
+	char *host_address = (char *)malloc(NI_MAXHOST * sizeof(char));
+	struct sockaddr_storage *resolved = BoltAddress_resolved_host(address, index);
+	socklen_t resolved_size = sizeof(struct sockaddr_storage);
+	int res = getnameinfo((const struct sockaddr *)resolved, resolved_size, host_address, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+	if (res)
+	{
+		free(host_address);
+		return NULL;
+	}
+	return host_address;
+}
+
 int BoltAddress_resolved_host_is_ipv4(struct BoltAddress * address, size_t index)
 {
     struct sockaddr_storage * resolved_host = BoltAddress_resolved_host(address, index);

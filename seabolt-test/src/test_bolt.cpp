@@ -23,7 +23,7 @@
 #include "catch.hpp"
 
 extern "C" {
-    #include "connect.h"
+	#include "connect.h"
     #include "values.h"
 }
 
@@ -61,9 +61,10 @@ SCENARIO("Test address resolution (IPv4)", "[dns]")
             BoltAddress_resolve_b(address);
 //        BoltAddress_write(address, stdout);
             REQUIRE(address->n_resolved_hosts == 1);
-            REQUIRE(strncmp(BoltAddress_resolved_host(address, 0),
-                            "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x34\xD7\x41\x50", 16) == 0);
-            REQUIRE(address->resolved_port == 7687);
+			char * host_string = BoltAddress_resolved_host_address(address, 0);
+			REQUIRE(strncmp(host_string, "52.215.65.80", 16) == 0);
+        	REQUIRE(address->resolved_port == 7687);
+			free(host_string);
         }
         BoltAddress_destroy(address);
     }
@@ -87,9 +88,10 @@ SCENARIO("Test address resolution (IPv6)", "[dns]")
             {
 //        BoltAddress_write(address, stdout);
                 REQUIRE(address->n_resolved_hosts == 1);
-                REQUIRE(strncmp(BoltAddress_resolved_host(address, 0),
-                                "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7", 16) == 0);
+				char * host_string = BoltAddress_resolved_host_address(address, 0);
+				REQUIRE(strncmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7", 64) == 0);
                 REQUIRE(address->resolved_port == 7687);
+				free(host_string);
             }
         }
         BoltAddress_destroy(address);
@@ -115,19 +117,16 @@ SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
 //        BoltAddress_write(address, stdout);
                 for (size_t j = 0; j < address->n_resolved_hosts; j++)
                 {
-                    char * resolved_host = BoltAddress_resolved_host(address, j);
+					char * host_string = BoltAddress_resolved_host_address(address, 0);
                     if (BoltAddress_resolved_host_is_ipv4(address, j))
                     {
-                        REQUIRE(strncmp(resolved_host,
-                                        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x34\xD7\x41\x50",
-                                        16) == 0);
+						REQUIRE(strncmp(host_string, "52.215.65.80", 16) == 0);
                     }
                     else
                     {
-                        REQUIRE(strncmp(resolved_host,
-                                        "\x2a\x05\xd0\x18\x01\xca\x61\x13\xc9\xd8\x46\x89\x33\xf2\x15\xf7",
-                                        16) == 0);
+						REQUIRE(strncmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7", 64) == 0);
                     }
+					free(host_string);
                 }
                 REQUIRE(address->resolved_port == 7687);
             }
