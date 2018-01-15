@@ -28,6 +28,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include "config.h"
+
 #if CHAR_BIT != 8
 #error "Cannot compile if `char` is not 8-bit"
 #endif

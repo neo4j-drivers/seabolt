@@ -790,7 +790,7 @@ void _test_float32(float x)
     _dump(value);
     assert(BoltValue_type(value) == BOLT_FLOAT32);
     assert(BoltFloat32_get(value) == x ||
-           (isnanf(BoltFloat32_get(value)) && isnanf(x)));
+           (isnan(BoltFloat32_get(value)) && isnan(x)));
     BoltValue_destroy(value);
 }
 
@@ -828,7 +828,7 @@ void test_float32_array()
     assert(BoltFloat32Array_get(value, 7) == 3.402823e38F);
     assert(BoltFloat32Array_get(value, 8) == INFINITY);
     assert(BoltFloat32Array_get(value, 9) == -INFINITY);
-    assert(isnanf(BoltFloat32Array_get(value, 10)));
+    assert(isnan(BoltFloat32Array_get(value, 10)));
     BoltValue_destroy(value);
 }
 
