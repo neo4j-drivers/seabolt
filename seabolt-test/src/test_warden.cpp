@@ -35,7 +35,7 @@ SCENARIO("Test memcpy_r against memcpy")
         size_t size = strlen(data);
         WHEN("regular memcpy is used")
         {
-            char digits[size];
+            char* digits = new char[size];
             memcpy(&digits[0], data, size);
             THEN("the data should be copied in order")
             {
@@ -44,10 +44,11 @@ SCENARIO("Test memcpy_r against memcpy")
                 REQUIRE(digits[2] == 'C');
                 REQUIRE(digits[3] == 'D');
             }
+			delete[] digits;
         }
         WHEN("reverse memcpy is used")
         {
-            char digits[size];
+            char* digits = new char[size];
             memcpy_r(&digits[0], data, size);
             THEN("the data should be copied in reverse order")
             {
@@ -56,6 +57,7 @@ SCENARIO("Test memcpy_r against memcpy")
                 REQUIRE(digits[2] == 'B');
                 REQUIRE(digits[3] == 'A');
             }
+			delete[] digits;
         }
     }
 }

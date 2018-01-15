@@ -491,7 +491,7 @@ int test_num8()
 void test_num8_array(int size)
 {
     struct BoltValue* value = BoltValue_create();
-    uint8_t array[size];
+    uint8_t* array = new uint8_t[size];
     int n = 0;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x100)
@@ -507,6 +507,7 @@ void test_num8_array(int size)
         assert(BoltNum8Array_get(value, i) == array[i]);
     }
     BoltValue_destroy(value);
+	delete[] array;
 }
 
 int test_num16()
@@ -529,7 +530,7 @@ int test_num16()
 void test_num16_array(int size)
 {
     struct BoltValue* value = BoltValue_create();
-    uint16_t array[size];
+    uint16_t* array = new uint16_t[size];
     int n = 0;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x10000)
@@ -545,6 +546,7 @@ void test_num16_array(int size)
         assert(BoltNum16Array_get(value, i) == array[i]);
     }
     BoltValue_destroy(value);
+	delete[] array;
 }
 
 int test_num32()
@@ -567,7 +569,7 @@ int test_num32()
 void test_num32_array(int size)
 {
     struct BoltValue* value = BoltValue_create();
-    uint32_t array[size];
+    uint32_t* array = new uint32_t[size];
     int n = 0;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x100000000)
@@ -583,6 +585,7 @@ void test_num32_array(int size)
         assert(BoltNum32Array_get(value, i) == array[i]);
     }
     BoltValue_destroy(value);
+	delete[] array;
 }
 
 int test_num64()
@@ -605,7 +608,7 @@ int test_num64()
 void test_num64_array(int size)
 {
     struct BoltValue* value = BoltValue_create();
-    uint64_t array[size];
+    uint64_t* array = new uint64_t[size];
     int n = 0;
     unsigned long long x = 0, y = 1, z;
     while (x < 0xA000000000000000L)
@@ -621,6 +624,7 @@ void test_num64_array(int size)
         assert(BoltNum64Array_get(value, i) == array[i]);
     }
     BoltValue_destroy(value);
+	delete[] array;
 }
 
 int test_int8()
@@ -643,7 +647,7 @@ int test_int8()
 void test_int8_array(int size)
 {
     struct BoltValue* value = BoltValue_create();
-    int8_t array[size];
+    int8_t* array = new int8_t[size];
     int n = 0, s = 1;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x80)
@@ -659,6 +663,7 @@ void test_int8_array(int size)
         assert(BoltInt8Array_get(value, i) == array[i]);
     }
     BoltValue_destroy(value);
+	delete[] array;
 }
 
 int test_int16()
@@ -681,7 +686,7 @@ int test_int16()
 void test_int16_array(int size)
 {
     struct BoltValue* value = BoltValue_create();
-    int16_t array[size];
+    int16_t* array = new int16_t[size];
     int n = 0, s = 1;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x8000)
@@ -697,6 +702,7 @@ void test_int16_array(int size)
         assert(BoltInt16Array_get(value, i) == array[i]);
     }
     BoltValue_destroy(value);
+	delete[] array;
 }
 
 int test_int32()
@@ -719,7 +725,7 @@ int test_int32()
 void test_int32_array(int size)
 {
     struct BoltValue* value = BoltValue_create();
-    int32_t array[size];
+    int32_t* array = new int32_t[size];
     int n = 0, s = 1;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x80000000)
@@ -735,6 +741,7 @@ void test_int32_array(int size)
         assert(BoltInt32Array_get(value, i) == array[i]);
     }
     BoltValue_destroy(value);
+	delete[] array;
 }
 
 int test_int64()
@@ -757,7 +764,7 @@ int test_int64()
 void test_int64_array(int size)
 {
     struct BoltValue* value = BoltValue_create();
-    int64_t array[size];
+    int64_t* array = new int64_t[size];
     int n = 0, s = 1;
     unsigned long long x = 0, y = 1, z;
     while (x < 0x8000000000000000)
@@ -773,6 +780,7 @@ void test_int64_array(int size)
         assert(BoltInt64Array_get(value, i) == array[i]);
     }
     BoltValue_destroy(value);
+	delete[] array;
 }
 
 void _test_float32(float x)
@@ -956,4 +964,5 @@ int test_types()
     test_summary();
     assert(BoltMem_current_allocation() == 0);
     printf("*******\nMemory activity: %lld\n*******\n", BoltMem_allocation_events());
+	return 0;
 }
