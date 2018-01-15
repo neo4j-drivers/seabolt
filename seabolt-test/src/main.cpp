@@ -18,5 +18,19 @@
  */
 
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main()
+#define CATCH_CONFIG_RUNNER  // This tells Catch to provide a main()
 #include "catch.hpp"
+
+extern "C" {
+	#include "bolt.h"
+}
+
+int main(int argc, char* argv[]) {
+	Seabolt_init();
+
+	int result = Catch::Session().run(argc, argv);
+
+	Seabolt_destroy();
+
+	return result;
+}

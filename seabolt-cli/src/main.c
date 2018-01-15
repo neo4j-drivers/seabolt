@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <stdint.h>
 
+#include "bolt.h"
 #include "connect.h"
 #include "mem.h"
 #include "values.h"
@@ -200,10 +201,7 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
 
 int main(int argc, char* argv[])
 {
-#ifdef WIN32
-	WSADATA data;
-	WSAStartup(MAKEWORD(2, 2), &data);
-#endif
+	Seabolt_init();
 
     const char* BOLT_LOG = getenv_or_default("BOLT_LOG", "0");
     if (strcmp(BOLT_LOG, "1") == 0)
@@ -234,6 +232,8 @@ int main(int argc, char* argv[])
     fprintf(stderr, "current allocation   : %ld bytes\n", BoltMem_current_allocation());
     fprintf(stderr, "peak allocation      : %ld bytes\n", BoltMem_peak_allocation());
     fprintf(stderr, "allocation events    : %lld\n", BoltMem_allocation_events());
+
+	Seabolt_destroy();
 
     return 0;
 }

@@ -16,30 +16,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#ifndef SEABOLT_CONFIG_IMPL
-#define SEABOLT_CONFIG_IMPL
+
+#ifndef SEABOLT_BOLT
+#define SEABOLT_BOLT
 #include "config.h"
 
-#if USE_POSIXSOCK
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#endif // USE_POSIXSOCK
+BOLT_PUBLIC_API void Seabolt_init();
+BOLT_PUBLIC_API void Seabolt_destroy();
 
-#if USE_WINSOCK
-#include <winsock2.h>
-#include <Ws2tcpip.h>
-#endif // USE_WINSOCK
-
-#if USE_WINSSPI
-
-#endif // USE_WINSSPI
-
-#if USE_OPENSSL
-
-#include <openssl/bio.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-
-#endif // USE_OPENSSL
-
-#endif // SEABOLT_CONFIG_IMPL
+#endif // SEABOLT_BOLT

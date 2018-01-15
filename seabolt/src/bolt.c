@@ -17,7 +17,27 @@
  * limitations under the License.
  */
 
-#define	USE_OPENSSL	@OPENSSL@
-#define	USE_WINSOCK	@WINSOCK@
-#define	USE_WINSSPI	@WINSSPI@
-#define USE_POSIXSOCK @POSIXSOCK@
+#include "bolt.h"
+#include "config-impl.h"
+
+
+void Seabolt_init()
+{
+#if USE_WINSOCK
+	WSADATA data;
+	WSAStartup(MAKEWORD(2, 2), &data);
+#endif
+
+#if USE_OPENSSL
+
+#endif
+}
+
+void Seabolt_destroy()
+{
+#if USE_WINSOCK
+	// TODO: Do we need an argument whether to clean-up winsocks? It will probably terminate all winsock related in the process, not only seabolt related
+	//WSACleanup();
+#endif
+
+}
