@@ -450,6 +450,42 @@ int _handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int3
     }
 }
 
+void _extract_last_bookmark(struct BoltConnection * connection, struct BoltValue * summary)
+{
+    if (summary->size >= 1)
+    {
+        struct BoltValue * metadata = BoltSummary_value(summary, 0);
+        switch (BoltValue_type(metadata))
+        {
+            case BOLT_DICTIONARY8:
+            {
+                for (int32_t i = 0; i < metadata->size; i++)
+                {
+                    const char * key = BoltDictionary8_get_key(metadata, i);
+                    if (strcmp(key, "bookmark") == 0)
+                    {
+                        struct BoltValue * value = BoltDictionary8_value(metadata, i);
+                        switch (BoltValue_type(value))
+                        {
+                            case BOLT_STRING8:
+                            {
+                                memset(connection->last_bookmark, 0, MAX_BOOKMARK_SIZE);
+                                memcpy(connection->last_bookmark, BoltString8_get(value), (size_t)(value->size));
+                                BoltLog_info("bolt: Server now at bookmark %s", connection->last_bookmark);
+                            }
+                            default:
+                                break;
+                        }
+                    }
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+}
+
 struct BoltAddress* BoltAddress_create(const char * host, const char * port)
 {
     struct BoltAddress* service = BoltMem_allocate(sizeof(struct BoltAddress));
@@ -698,38 +734,7 @@ int BoltConnection_fetch_b(struct BoltConnection * connection, int request_id)
                 switch (code)
                 {
                     case 0x70:  // SUCCESS
-                        if (state->fetched->size >= 1)
-                        {
-                            struct BoltValue * metadata = BoltSummary_value(state->fetched, 0);
-                            switch (BoltValue_type(metadata))
-                            {
-                                case BOLT_DICTIONARY8:
-                                {
-                                    for (int32_t i = 0; i < metadata->size; i++)
-                                    {
-                                        const char * key = BoltDictionary8_get_key(metadata, i);
-                                        if (strcmp(key, "bookmark") == 0)
-                                        {
-                                            struct BoltValue * value = BoltDictionary8_value(metadata, i);
-                                            switch (BoltValue_type(value))
-                                            {
-                                                case BOLT_STRING8:
-                                                {
-                                                    memset(connection->last_bookmark, 0, MAX_BOOKMARK_SIZE);
-                                                    memcpy(connection->last_bookmark, BoltString8_get(value), (size_t)(value->size));
-                                                    BoltLog_info("bolt: Server now at bookmark %s", connection->last_bookmark);
-                                                }
-                                                default:
-                                                    break;
-                                            }
-                                        }
-                                    }
-                                    break;
-                                }
-                                default:
-                                    break;
-                            }
-                        }
+                        _extract_last_bookmark(connection, state->fetched);
                         _set_status(connection, BOLT_READY, BOLT_NO_ERROR);
                         return records;
                     case 0x7E:  // IGNORED
