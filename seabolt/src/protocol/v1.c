@@ -415,11 +415,10 @@ int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* val
             try(_load_map_header(connection, value->size));
             for (int32_t i = 0; i < value->size; i++)
             {
-                struct BoltValue* key = BoltDictionary8_key(value, i);
+                const char * key = BoltDictionary8_get_key(value, i);
                 if (key != NULL)
                 {
-                    const char* key_string = BoltString8_get(key);
-                    try(BoltProtocolV1_load_string(connection, key_string, key->size));
+                    try(BoltProtocolV1_load_string(connection, key, BoltDictionary8_get_key_size(value, i)));
                     try(BoltProtocolV1_load(connection, BoltDictionary8_value(value, i)));
                 }
             }

@@ -36,6 +36,8 @@
 #define INITIAL_TX_BUFFER_SIZE 8192
 #define INITIAL_RX_BUFFER_SIZE 8192
 
+#define MAX_BOOKMARK_SIZE 40
+
 #define char_to_uint16be(array) ((uint8_t)(header[0]) << 8) | (uint8_t)(header[1]);
 
 #define SOCKET(domain, type, protocol) socket(domain, type, protocol)
@@ -70,6 +72,8 @@ struct BoltConnection* _create(enum BoltTransport transport)
 
     connection->protocol_version = 0;
     connection->protocol_state = NULL;
+    connection->last_bookmark = BoltMem_allocate(MAX_BOOKMARK_SIZE);
+    memset(connection->last_bookmark, 0, MAX_BOOKMARK_SIZE);
 
     connection->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
     connection->rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
@@ -90,19 +94,19 @@ void _set_status(struct BoltConnection* connection, enum BoltConnectionStatus st
         switch (connection->status)
         {
             case BOLT_DISCONNECTED:
-                BoltLog_info("bolt: Disconnected");
+                BoltLog_info("bolt: <DISCONNECTED>");
                 break;
             case BOLT_CONNECTED:
-                BoltLog_info("bolt: Connected");
+                BoltLog_info("bolt: <CONNECTED>");
                 break;
             case BOLT_READY:
-                BoltLog_info("bolt: Ready");
+                BoltLog_info("bolt: <READY>");
                 break;
             case BOLT_FAILED:
-                BoltLog_info("bolt: FAILED");
+                BoltLog_info("bolt: <FAILED>");
                 break;
             case BOLT_DEFUNCT:
-                BoltLog_info("bolt: DEFUNCT");
+                BoltLog_info("bolt: <DEFUNCT>");
                 break;
         }
     }
@@ -271,6 +275,7 @@ void _destroy(struct BoltConnection* connection)
     }
     BoltBuffer_destroy(connection->rx_buffer);
     BoltBuffer_destroy(connection->tx_buffer);
+    BoltMem_deallocate(connection->last_bookmark, MAX_BOOKMARK_SIZE);
     BoltMem_deallocate(connection, sizeof(struct BoltConnection));
 }
 
@@ -693,6 +698,38 @@ int BoltConnection_fetch_b(struct BoltConnection * connection, int request_id)
                 switch (code)
                 {
                     case 0x70:  // SUCCESS
+                        if (state->fetched->size >= 1)
+                        {
+                            struct BoltValue * metadata = BoltSummary_value(state->fetched, 0);
+                            switch (BoltValue_type(metadata))
+                            {
+                                case BOLT_DICTIONARY8:
+                                {
+                                    for (int32_t i = 0; i < metadata->size; i++)
+                                    {
+                                        const char * key = BoltDictionary8_get_key(metadata, i);
+                                        if (strcmp(key, "bookmark") == 0)
+                                        {
+                                            struct BoltValue * value = BoltDictionary8_value(metadata, i);
+                                            switch (BoltValue_type(value))
+                                            {
+                                                case BOLT_STRING8:
+                                                {
+                                                    memset(connection->last_bookmark, 0, MAX_BOOKMARK_SIZE);
+                                                    memcpy(connection->last_bookmark, BoltString8_get(value), (size_t)(value->size));
+                                                    BoltLog_info("bolt: Server now at bookmark %s", connection->last_bookmark);
+                                                }
+                                                default:
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                    break;
+                                }
+                                default:
+                                    break;
+                            }
+                        }
                         _set_status(connection, BOLT_READY, BOLT_NO_ERROR);
                         return records;
                     case 0x7E:  // IGNORED
