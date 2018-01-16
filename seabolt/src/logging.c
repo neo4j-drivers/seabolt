@@ -19,7 +19,7 @@
 
 
 #include <stdarg.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #include "logging.h"
 
