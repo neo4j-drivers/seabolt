@@ -59,7 +59,7 @@ enum BoltConnectionError
     BOLT_UNKNOWN_ERROR,
     BOLT_UNSUPPORTED,
     BOLT_INTERRUPTED,
-    BOLT_UNRESOLVED_ADDRESS,
+    BOLT_NO_VALID_ADDRESS,
     BOLT_TIMED_OUT,
     BOLT_PERMISSION_DENIED,
     BOLT_OUT_OF_FILES,
@@ -131,6 +131,9 @@ struct BoltConnection
     int32_t protocol_version;
     /// State required by the protocol
     void* protocol_state;
+
+    /// The product name and version of the remote server
+    char * server;
     /// The last bookmark received from the server
     char * last_bookmark;
 

@@ -33,6 +33,7 @@
 #define INITIAL_RX_BUFFER_SIZE 8192
 
 #define MAX_BOOKMARK_SIZE 40
+#define MAX_SERVER_SIZE 200
 
 #define char_to_uint16be(array) ((uint8_t)(header[0]) << 8) | (uint8_t)(header[1]);
 #define SOCKADDR_STORAGE_SIZE sizeof(struct sockaddr_storage)
@@ -63,6 +64,9 @@ struct BoltConnection* _create(enum BoltTransport transport)
 
     connection->protocol_version = 0;
     connection->protocol_state = NULL;
+
+    connection->server = BoltMem_allocate(MAX_SERVER_SIZE);
+    memset(connection->server, 0, MAX_SERVER_SIZE);
     connection->last_bookmark = BoltMem_allocate(MAX_BOOKMARK_SIZE);
     memset(connection->last_bookmark, 0, MAX_BOOKMARK_SIZE);
 
@@ -183,7 +187,6 @@ int _open_b(struct BoltConnection* connection, const struct sockaddr_storage* ad
                 return -1;
         }
     }
-    _set_status(connection, BOLT_CONNECTED, BOLT_NO_ERROR);
     return 0;
 }
 
@@ -261,6 +264,7 @@ void _destroy(struct BoltConnection* connection)
     }
     BoltBuffer_destroy(connection->rx_buffer);
     BoltBuffer_destroy(connection->tx_buffer);
+    BoltMem_deallocate(connection->server, MAX_SERVER_SIZE);
     BoltMem_deallocate(connection->last_bookmark, MAX_BOOKMARK_SIZE);
     BoltMem_deallocate(connection, sizeof(struct BoltConnection));
 }
@@ -423,7 +427,7 @@ int _handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int3
     try(_transmit_b(connection, &handshake[0], 20));
     try(_receive_b(connection, &handshake[0], 4, 4));
     memcpy_be(&connection->protocol_version, &handshake[0], 4);
-    BoltLog_info("bolt: Using Bolt v%d", connection->protocol_version);
+    BoltLog_info("bolt: <SET protocol_version=%d>", connection->protocol_version);
     switch(connection->protocol_version)
     {
         case 1:
@@ -457,7 +461,24 @@ void _extract_last_bookmark(struct BoltConnection * connection, struct BoltValue
                             {
                                 memset(connection->last_bookmark, 0, MAX_BOOKMARK_SIZE);
                                 memcpy(connection->last_bookmark, BoltString8_get(value), (size_t)(value->size));
-                                BoltLog_info("bolt: Server now at bookmark %s", connection->last_bookmark);
+                                BoltLog_info("bolt: <SET last_bookmark=\"%s\">", connection->last_bookmark);
+                                break;
+                            }
+                            default:
+                                break;
+                        }
+                    }
+                    else if (strcmp(key, "server") == 0)
+                    {
+                        struct BoltValue * value = BoltDictionary8_value(metadata, i);
+                        switch (BoltValue_type(value))
+                        {
+                            case BOLT_STRING8:
+                            {
+                                memset(connection->server, 0, MAX_SERVER_SIZE);
+                                memcpy(connection->server, BoltString8_get(value), (size_t)(value->size));
+                                BoltLog_info("bolt: <SET server=\"%s\">", connection->server);
+                                break;
                             }
                             default:
                                 break;
@@ -494,7 +515,6 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
     hints.ai_flags = (AI_V4MAPPED | AI_ADDRCONFIG);
     struct addrinfo* ai;
     address->gai_status = getaddrinfo(address->host, address->port, &hints, &ai);
-    BoltLog_info("bolt: gai status = %d", address->gai_status);
     if (address->gai_status == 0)
     {
         unsigned short n_resolved = 0;
@@ -544,7 +564,7 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
 	if (address->n_resolved_hosts > 0)
 	{
 		struct sockaddr_storage *resolved = BoltAddress_resolved_host(address, 0);
-		in_port_t resolved_port = resolved->ss_family == AF_INET ? 
+		in_port_t resolved_port = resolved->ss_family == AF_INET ?
 			((struct sockaddr_in *)resolved)->sin_port : ((struct sockaddr_in6 *)resolved)->sin6_port;
 		address->resolved_port = ntohs(resolved_port);
 	}
@@ -598,32 +618,30 @@ void BoltAddress_write(struct BoltAddress * address, FILE * file)
 struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, struct BoltAddress* address)
 {
     struct BoltConnection* connection = _create(transport);
-    if (address->n_resolved_hosts > 0)
-    {
-        for (size_t i = 0; i < address->n_resolved_hosts; i++) {
-			const struct sockaddr_storage *resolved_addr = BoltAddress_resolved_host(address, i);
-            int opened = _open_b(connection, resolved_addr);
-            if (opened == 0)
+    for (size_t i = 0; i < address->n_resolved_hosts; i++) {
+        const struct sockaddr_storage *resolved_addr = BoltAddress_resolved_host(address, i);
+        int opened = _open_b(connection, resolved_addr);
+        if (opened == 0)
+        {
+            if (transport == BOLT_SECURE_SOCKET)
             {
-                if (transport == BOLT_SECURE_SOCKET)
-                {
-                    int secured = _secure_b(connection);
-                    if (secured == 0)
-                    {
-                        _handshake_b(connection, 1, 0, 0, 0);
-                    }
-                }
-                else
+                int secured = _secure_b(connection);
+                if (secured == 0)
                 {
                     _handshake_b(connection, 1, 0, 0, 0);
                 }
-                break;
             }
+            else
+            {
+                _handshake_b(connection, 1, 0, 0, 0);
+            }
+            _set_status(connection, BOLT_CONNECTED, BOLT_NO_ERROR);
+            break;
         }
     }
-    else
+    if (connection->status == BOLT_DISCONNECTED)
     {
-        _set_status(connection, BOLT_DEFUNCT, BOLT_UNRESOLVED_ADDRESS);
+        _set_status(connection, BOLT_DEFUNCT, BOLT_NO_VALID_ADDRESS);
     }
     return connection;
 }
