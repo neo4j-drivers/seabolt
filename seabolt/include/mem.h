@@ -72,7 +72,7 @@ PUBLIC void* BoltMem_deallocate(void* ptr, size_t old_size);
  * @param old_size the number of bytes already allocated
  * @param new_size the new number of bytes required
  */
-void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
+PUBLIC void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
 
 /**
  * Retrieve the amount of memory currently allocated.
