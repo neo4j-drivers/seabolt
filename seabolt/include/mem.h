@@ -28,16 +28,10 @@
 
 PUBLIC void* memcpy_r(void* dest, const void* src, size_t n);
 
-#ifdef _WIN32
-    // Windows endianness is always LE (I think)
-    #define memcpy_be(target, src, n) memcpy_r(target, src, n)
+#if IS_BIG_ENDIAN
+    #define memcpy_be(target, src, n) memcpy(target, src, n)
 #else
-    #include "endian.h"
-    #if __BYTE_ORDER == __BIG_ENDIAN
-        #define memcpy_be(target, src, n) memcpy(target, src, n)
-    #else
-        #define memcpy_be(target, src, n) memcpy_r(target, src, n)
-    #endif
+    #define memcpy_be(target, src, n) memcpy_r(target, src, n)
 #endif
 
 

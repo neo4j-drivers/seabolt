@@ -45,7 +45,7 @@
 #define TRANSMIT_S(socket, data, size, flags) SSL_write(socket, data, size)
 #define RECEIVE(socket, buffer, size, flags) (int)(recv(socket, buffer, (size_t)(size), flags))
 #define RECEIVE_S(socket, buffer, size, flags) SSL_read(socket, buffer, size)
-
+#define ADDR_SIZE(address) address->ss_family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6)
 
 void _copy_socket_address(struct sockaddr_storage* target, struct sockaddr_storage* source)
 {
@@ -116,7 +116,7 @@ int _open_b(struct BoltConnection* connection, const struct sockaddr_storage* ad
         {
             char host_string[NI_MAXHOST];
 			char port_string[NI_MAXSERV];
-			getnameinfo((const struct sockaddr *)address, SOCKADDR_STORAGE_SIZE, 
+			getnameinfo((const struct sockaddr *)address, ADDR_SIZE(address),
 				host_string, NI_MAXHOST, port_string, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
 			BoltLog_info("bolt: Opening %s connection to %s at port %s", 
 				address->ss_family == AF_INET ? "IPv4" : "IPv6", &host_string, &port_string);
@@ -154,7 +154,7 @@ int _open_b(struct BoltConnection* connection, const struct sockaddr_storage* ad
                 return -1;
         }
     }
-    int connected = CONNECT(connection->socket, (struct sockaddr *)address, SOCKADDR_STORAGE_SIZE);
+    int connected = CONNECT(connection->socket, (struct sockaddr *)address, ADDR_SIZE(address));
     if(connected == -1)
     {
         // TODO: Windows
@@ -606,9 +606,10 @@ void BoltAddress_write(struct BoltAddress * address, FILE * file)
     fprintf(file, "BoltAddress(host=\"%s\" port=\"%s\" resolved_hosts=IPv6[", address->host, address->port);
     for(size_t i = 0; i < address->n_resolved_hosts; i++)
     {
+        struct sockaddr_storage * resolved_address = BoltAddress_resolved_host(address, i);
         if (i > 0) fprintf(file, ", ");
 		char out[NI_MAXHOST];
-		getnameinfo((const struct sockaddr *)address, SOCKADDR_STORAGE_SIZE,
+		getnameinfo((const struct sockaddr *)resolved_address, ADDR_SIZE(resolved_address),
 			out, NI_MAXHOST, NULL, 0, NI_NUMERICHOST | NI_NUMERICSERV);
         fprintf(file, "\"%s\"", out);
     }
