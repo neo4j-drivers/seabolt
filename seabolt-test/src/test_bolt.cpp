@@ -83,8 +83,8 @@ SCENARIO("Test address resolution (IPv6)", "[dns]")
         REQUIRE(address->resolved_port == 0);
         for (int i = 0; i < 2; i++)
         {
-            BoltAddress_resolve_b(address);
-            if (address->gai_status == 0)
+            int status = BoltAddress_resolve_b(address);
+            if (status == 0)
             {
 //        BoltAddress_write(address, stdout);
                 REQUIRE(address->n_resolved_hosts == 1);
@@ -111,8 +111,8 @@ SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
         REQUIRE(address->resolved_port == 0);
         for (int i = 0; i < 2; i++)
         {
-            BoltAddress_resolve_b(address);
-            if (address->gai_status == 0)
+            int status = BoltAddress_resolve_b(address);
+            if (status == 0)
             {
 //        BoltAddress_write(address, stdout);
                 for (size_t j = 0; j < address->n_resolved_hosts; j++)
@@ -138,8 +138,8 @@ SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
 struct BoltAddress * _get_address(const char * host, const char * port)
 {
     struct BoltAddress * service = BoltAddress_create(host, port);
-    BoltAddress_resolve_b(service);
-    REQUIRE(service->gai_status == 0);
+    int status = BoltAddress_resolve_b(service);
+    REQUIRE(status == 0);
     return service;
 }
 

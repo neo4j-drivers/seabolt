@@ -89,16 +89,13 @@ struct BoltAddress
     struct sockaddr_storage * resolved_hosts;
     /// Resolved port number
     in_port_t resolved_port;
-
-    /// Status of the internal `getaddrinfo` call
-    int gai_status;
 };
 
 
 
 PUBLIC struct BoltAddress * BoltAddress_create(const char * host, const char * port);
 
-PUBLIC void BoltAddress_resolve_b(struct BoltAddress * address);
+PUBLIC int BoltAddress_resolve_b(struct BoltAddress * address);
 
 PUBLIC struct sockaddr_storage * BoltAddress_resolved_host(struct BoltAddress * address, size_t index);
 
