@@ -47,11 +47,6 @@
 #define RECEIVE_S(socket, buffer, size, flags) SSL_read(socket, buffer, size)
 #define ADDR_SIZE(address) address->ss_family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6)
 
-void _copy_socket_address(struct sockaddr_storage* target, struct sockaddr_storage* source)
-{
-    memcpy(&target[0], source, SOCKADDR_STORAGE_SIZE);
-}
-
 struct BoltConnection* _create(enum BoltTransport transport)
 {
     struct BoltConnection* connection = BoltMem_allocate(sizeof(struct BoltConnection));
@@ -501,11 +496,10 @@ struct BoltAddress* BoltAddress_create(const char * host, const char * port)
     service->n_resolved_hosts = 0;
     service->resolved_hosts = BoltMem_allocate(0);
     service->resolved_port = 0;
-    service->gai_status = 0;
     return service;
 }
 
-void BoltAddress_resolve_b(struct BoltAddress * address)
+int BoltAddress_resolve_b(struct BoltAddress * address)
 {
     BoltLog_info("bolt: Resolving address %s:%s", address->host, address->port);
     static struct addrinfo hints;
@@ -514,8 +508,8 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = (AI_V4MAPPED | AI_ADDRCONFIG);
     struct addrinfo* ai;
-    address->gai_status = getaddrinfo(address->host, address->port, &hints, &ai);
-    if (address->gai_status == 0)
+    int gai_status = getaddrinfo(address->host, address->port, &hints, &ai);
+    if (gai_status == 0)
     {
         unsigned short n_resolved = 0;
         for (struct addrinfo* ai_node = ai; ai_node != NULL; ai_node = ai_node->ai_next)
@@ -544,7 +538,9 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
                 case AF_INET:
                 case AF_INET6:
                 {
-                    _copy_socket_address(BoltAddress_resolved_host(address, p), (struct sockaddr_storage*)(ai_node->ai_addr));
+                    struct sockaddr_storage * target = BoltAddress_resolved_host(address, p);
+                    struct sockaddr_storage * source = (struct sockaddr_storage*)(ai_node->ai_addr);
+                    memcpy(target, source, ai_node->ai_addrlen);
                     break;
                 }
                 default:
@@ -558,7 +554,7 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
     }
     else
     {
-        BoltLog_info("bolt: Host resolution failed (status %d)", address->gai_status);
+        BoltLog_info("bolt: Host resolution failed (status %d)", gai_status);
     }
 
 	if (address->n_resolved_hosts > 0)
@@ -568,6 +564,8 @@ void BoltAddress_resolve_b(struct BoltAddress * address)
 			((struct sockaddr_in *)resolved)->sin_port : ((struct sockaddr_in6 *)resolved)->sin6_port;
 		address->resolved_port = ntohs(resolved_port);
 	}
+
+    return gai_status;
 }
 
 struct sockaddr_storage * BoltAddress_resolved_host(struct BoltAddress * address, size_t index)

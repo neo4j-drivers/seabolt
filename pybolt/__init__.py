@@ -205,7 +205,7 @@ class SeaboltTestCase(TestCase):
 
 
 if __name__ == "__main__":
-    #main()
+    _seabolt.Bolt_startup()
     addr = BoltAddress("localhost", "7687")
     addr.resolve_b()
     print(list(addr.resolved_hosts))
@@ -214,3 +214,4 @@ if __name__ == "__main__":
     print(conn.protocol_version)
     conn.close()
     addr.destroy()
+    _seabolt.Bolt_shutdown()
