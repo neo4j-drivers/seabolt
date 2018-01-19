@@ -539,8 +539,7 @@ int BoltAddress_resolve_b(struct BoltAddress * address)
                 case AF_INET6:
                 {
                     struct sockaddr_storage * target = BoltAddress_resolved_host(address, p);
-                    struct sockaddr_storage * source = (struct sockaddr_storage*)(ai_node->ai_addr);
-                    memcpy(target, source, ai_node->ai_addrlen);
+                    memcpy(target, ai_node->ai_addr, ai_node->ai_addrlen);
                     break;
                 }
                 default:
