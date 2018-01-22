@@ -101,6 +101,8 @@ PUBLIC struct sockaddr_storage * BoltAddress_resolved_host(struct BoltAddress * 
 
 PUBLIC char * BoltAddress_resolved_host_address(struct BoltAddress * address, size_t index);
 
+PUBLIC sa_family_t BoltAddress_unload_resolved_host(struct BoltAddress * address, size_t index, char * buffer, socklen_t buffer_size);
+
 PUBLIC int BoltAddress_resolved_host_is_ipv4(struct BoltAddress * address, size_t index);
 
 PUBLIC void BoltAddress_destroy(struct BoltAddress * address);

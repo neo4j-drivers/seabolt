@@ -586,6 +586,13 @@ char * BoltAddress_resolved_host_address(struct BoltAddress * address, size_t in
 	return host_address;
 }
 
+sa_family_t BoltAddress_unload_resolved_host(struct BoltAddress * address, size_t index, char * buffer, socklen_t buffer_size)
+{
+    struct sockaddr_storage * resolved_host = &address->resolved_hosts[SOCKADDR_STORAGE_SIZE * index];
+    int status = getnameinfo((const struct sockaddr *)resolved_host, SOCKADDR_STORAGE_SIZE, buffer, buffer_size, NULL, 0, NI_NUMERICHOST);
+    return status == 0 ? resolved_host->ss_family : (sa_family_t)(AF_UNSPEC);
+}
+
 int BoltAddress_resolved_host_is_ipv4(struct BoltAddress * address, size_t index)
 {
     struct sockaddr_storage * resolved_host = BoltAddress_resolved_host(address, index);
