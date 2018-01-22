@@ -59,12 +59,12 @@ SCENARIO("Test address resolution (IPv4)", "[dns]")
         for (int i = 0; i < 2; i++)
         {
             BoltAddress_resolve_b(address);
-//        BoltAddress_write(address, stdout);
             REQUIRE(address->n_resolved_hosts == 1);
-			char * host_string = BoltAddress_resolved_host_address(address, 0);
-			REQUIRE(strncmp(host_string, "52.215.65.80", 16) == 0);
+            char host_string[40];
+            sa_family_t af = BoltAddress_copy_resolved_host(address, 0, &host_string[0], sizeof(host_string));
+            REQUIRE(af == AF_INET);
+			REQUIRE(strcmp(host_string, "52.215.65.80") == 0);
         	REQUIRE(address->resolved_port == 7687);
-			free(host_string);
         }
         BoltAddress_destroy(address);
     }
@@ -86,12 +86,12 @@ SCENARIO("Test address resolution (IPv6)", "[dns]")
             int status = BoltAddress_resolve_b(address);
             if (status == 0)
             {
-//        BoltAddress_write(address, stdout);
                 REQUIRE(address->n_resolved_hosts == 1);
-				char * host_string = BoltAddress_resolved_host_address(address, 0);
-				REQUIRE(strncmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7", 64) == 0);
+                char host_string[40];
+                sa_family_t af = BoltAddress_copy_resolved_host(address, 0, &host_string[0], sizeof(host_string));
+                REQUIRE(af == AF_INET6);
+				REQUIRE(strcmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7") == 0);
                 REQUIRE(address->resolved_port == 7687);
-				free(host_string);
             }
         }
         BoltAddress_destroy(address);
@@ -114,19 +114,21 @@ SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
             int status = BoltAddress_resolve_b(address);
             if (status == 0)
             {
-//        BoltAddress_write(address, stdout);
                 for (size_t j = 0; j < address->n_resolved_hosts; j++)
                 {
-					char * host_string = BoltAddress_resolved_host_address(address, 0);
-                    if (BoltAddress_resolved_host_is_ipv4(address, j))
+                    char host_string[40];
+					sa_family_t af = BoltAddress_copy_resolved_host(address, j, &host_string[0], sizeof(host_string));
+                    switch (af)
                     {
-						REQUIRE(strncmp(host_string, "52.215.65.80", 16) == 0);
+                        case AF_INET:
+						    REQUIRE(strcmp(host_string, "52.215.65.80") == 0);
+                            break;
+                        case AF_INET6:
+    						REQUIRE(strcmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7") == 0);
+                            break;
+                        default:
+                            FAIL();
                     }
-                    else
-                    {
-						REQUIRE(strncmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7", 64) == 0);
-                    }
-					free(host_string);
                 }
                 REQUIRE(address->resolved_port == 7687);
             }

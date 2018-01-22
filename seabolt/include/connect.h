@@ -97,17 +97,9 @@ PUBLIC struct BoltAddress * BoltAddress_create(const char * host, const char * p
 
 PUBLIC int BoltAddress_resolve_b(struct BoltAddress * address);
 
-PUBLIC struct sockaddr_storage * BoltAddress_resolved_host(struct BoltAddress * address, size_t index);
-
-PUBLIC char * BoltAddress_resolved_host_address(struct BoltAddress * address, size_t index);
-
-PUBLIC sa_family_t BoltAddress_unload_resolved_host(struct BoltAddress * address, size_t index, char * buffer, socklen_t buffer_size);
-
-PUBLIC int BoltAddress_resolved_host_is_ipv4(struct BoltAddress * address, size_t index);
+PUBLIC sa_family_t BoltAddress_copy_resolved_host(struct BoltAddress * address, size_t index, char * buffer, socklen_t buffer_size);
 
 PUBLIC void BoltAddress_destroy(struct BoltAddress * address);
-
-PUBLIC void BoltAddress_write(struct BoltAddress * address, FILE * file);
 
 
 /**

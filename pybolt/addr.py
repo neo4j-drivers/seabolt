@@ -21,7 +21,6 @@ class _BoltAddress(Structure):
 
 _seabolt.BoltAddress_create.argtypes = [c_char_p, c_char_p]
 _seabolt.BoltAddress_create.restype = POINTER(_BoltAddress)
-_seabolt.BoltAddress_resolved_host.restype = c_void_p
 
 
 def c_str(s):
@@ -60,8 +59,8 @@ class BoltAddress(object):
         status = _seabolt.BoltAddress_resolve_b(self._)
         if status != 0:
             raise OSError("Cannot resolve host %r for port %r", self.__host, self.__port)
+        host_buffer = create_string_buffer(40)
         port = self._.contents.resolved_port
         for i in range(self._.contents.n_resolved_hosts):
-            buffer = create_string_buffer(16)
-            _seabolt.BoltAddress_unload_resolved_host(self._, i, buffer, 16)
-            yield buffer.value, port
+            _seabolt.BoltAddress_copy_resolved_host(self._, i, host_buffer, 40)
+            yield host_buffer.value, port

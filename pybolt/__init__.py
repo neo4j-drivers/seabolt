@@ -15,22 +15,6 @@ c_stdout = c_void_p.in_dll(libc, "stdout")
 _seabolt = CDLL(path_join(dirname(__file__), "..", "build", "lib", "libseabolt.so"))
 
 
-class _BoltAddress(Structure):
-
-    _fields_ = [
-        ("host", c_char_p),
-        ("port", c_char_p),
-        ("n_resolved_hosts", c_int),
-        ("resolved_hosts", c_char_p),
-        ("resolved_port", c_int16),
-        ("gai_status", c_int),
-    ]
-
-
-_seabolt.BoltAddress_create.restype = POINTER(_BoltAddress)
-_seabolt.BoltAddress_resolved_host.restype = c_void_p
-
-
 class _BoltConnection(Structure):
 
     _fields_ = [
@@ -208,8 +192,6 @@ if __name__ == "__main__":
     _seabolt.Bolt_startup()
     addr = BoltAddress("localhost", "7687")
     addr.resolve_b()
-    print(list(addr.resolved_hosts))
-    print(addr.resolved_port)
     conn = BoltConnection(addr)
     print(conn.protocol_version)
     conn.close()
