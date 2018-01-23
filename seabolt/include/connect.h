@@ -97,7 +97,20 @@ PUBLIC struct BoltAddress * BoltAddress_create(const char * host, const char * p
 
 PUBLIC int BoltAddress_resolve_b(struct BoltAddress * address);
 
-PUBLIC sa_family_t BoltAddress_copy_resolved_host(struct BoltAddress * address, size_t index, char * buffer, socklen_t buffer_size);
+/**
+ * Copy the textual representation of a resolved host IP address into a buffer.
+ *
+ * If successful, AF_INET or AF_INET6 is returned depending on the address
+ * family. If unsuccessful, -1 is returned. Failure may be a result of a
+ * system problem or because the supplied buffer is too small for the address.
+ *
+ * @param address pointer to a resolved BoltAddress
+ * @param index index of the resolved IP address
+ * @param buffer buffer in which to write the address representation
+ * @param buffer_size size of the buffer
+ * @return
+ */
+PUBLIC int BoltAddress_copy_resolved_host(struct BoltAddress * address, size_t index, char * buffer, socklen_t buffer_size);
 
 PUBLIC void BoltAddress_destroy(struct BoltAddress * address);
 

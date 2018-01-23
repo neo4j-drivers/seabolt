@@ -567,12 +567,18 @@ int BoltAddress_resolve_b(struct BoltAddress * address)
     return gai_status;
 }
 
-sa_family_t BoltAddress_copy_resolved_host(struct BoltAddress * address, size_t index, char * buffer,
+int BoltAddress_copy_resolved_host(struct BoltAddress * address, size_t index, char * buffer,
                                            socklen_t buffer_size)
 {
     struct sockaddr_storage * resolved_host = &address->resolved_hosts[index];
     int status = getnameinfo((const struct sockaddr *)resolved_host, SOCKADDR_STORAGE_SIZE, buffer, buffer_size, NULL, 0, NI_NUMERICHOST);
-    return status == 0 ? resolved_host->ss_family : (sa_family_t)(AF_UNSPEC);
+    switch (status)
+    {
+        case 0:
+            return resolved_host->ss_family;
+        default:
+            return -1;
+    }
 }
 
 void BoltAddress_destroy(struct BoltAddress * address)

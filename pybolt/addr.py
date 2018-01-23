@@ -4,7 +4,7 @@
 
 from ctypes import *
 from .imp import _seabolt
-from socket import inet_ntop, AF_INET, AF_INET6
+from socket import AF_INET, AF_INET6
 
 
 class _BoltAddress(Structure):
@@ -62,5 +62,12 @@ class BoltAddress(object):
         host_buffer = create_string_buffer(40)
         port = self._.contents.resolved_port
         for i in range(self._.contents.n_resolved_hosts):
-            _seabolt.BoltAddress_copy_resolved_host(self._, i, host_buffer, 40)
-            yield host_buffer.value, port
+            af = _seabolt.BoltAddress_copy_resolved_host(self._, i, host_buffer, 40)
+            if af == int(AF_INET):
+                yield AF_INET, host_buffer.value, port
+            elif af == int(AF_INET6):
+                yield AF_INET6, host_buffer.value, port
+            elif af < 0:
+                raise OSError("Unable to get resolved address")
+            else:
+                raise ValueError("Unsupported address family %r", af)
