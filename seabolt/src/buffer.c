@@ -24,6 +24,9 @@
 #include <mem.h>
 
 
+static const char REPLACEMENT_CHARACTER[2] = {(char)(0xFF), (char)(0xFD)};
+
+
 struct BoltBuffer* BoltBuffer_create(size_t size)
 {
     struct BoltBuffer* buffer = BoltMem_allocate(sizeof(struct BoltBuffer));
@@ -78,6 +81,67 @@ void BoltBuffer_load(struct BoltBuffer* buffer, const char* data, int size)
 {
     char* target = BoltBuffer_load_target(buffer, size);
     memcpy(target, data, size >= 0 ? (size_t)(size) : 0);
+}
+
+int BoltBuffer_sizeof_utf8_char(const uint32_t ch)
+{
+    if (ch < 0x80)
+    {
+        return 1;
+    }
+    if (ch < 0x800)
+    {
+        return 2;
+    }
+    if (ch < 0x10000)
+    {
+        return 3;
+    }
+    if (ch < 0x110000)
+    {
+        return 4;
+    }
+    return sizeof(REPLACEMENT_CHARACTER);
+}
+
+void BoltBuffer_load_utf8_char(struct BoltBuffer* buffer, const uint32_t ch)
+{
+    if (ch < 0x80)
+    {
+        char c = (char)(ch);
+        BoltBuffer_load(buffer, &c, 1);
+    }
+    else if (ch < 0x800)
+    {
+        char c[2] = {
+                (char)(((ch >> 6) & 0b00011111) | 0b11000000),
+                (char)(((ch >> 0) & 0b00111111) | 0b10000000),
+        };
+        BoltBuffer_load(buffer, &c[0], 2);
+    }
+    else if (ch < 0x10000)
+    {
+        char c[3] = {
+                (char)(((ch >> 12) & 0b00001111) | 0b11100000),
+                (char)(((ch >> 6) & 0b00111111) | 0b10000000),
+                (char)(((ch >> 0) & 0b00111111) | 0b10000000),
+        };
+        BoltBuffer_load(buffer, &c[0], 3);
+    }
+    else if (ch < 0x110000)
+    {
+        char c[4] = {
+                (char)(((ch >> 18) & 0b00000111) | 0b11110000),
+                (char)(((ch >> 12) & 0b00111111) | 0b10000000),
+                (char)(((ch >> 6) & 0b00111111) | 0b10000000),
+                (char)(((ch >> 0) & 0b00111111) | 0b10000000),
+        };
+        BoltBuffer_load(buffer, &c[0], 4);
+    }
+    else
+    {
+        BoltBuffer_load(buffer, &REPLACEMENT_CHARACTER[0], sizeof(REPLACEMENT_CHARACTER));
+    }
 }
 
 void BoltBuffer_load_int8(struct BoltBuffer* buffer, int8_t x)

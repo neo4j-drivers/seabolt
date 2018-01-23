@@ -17,35 +17,8 @@
  * limitations under the License.
  */
 
-#include <memory.h>
-#include <stdint.h>
-
+#include "integration.hpp"
 #include "catch.hpp"
-
-extern "C" {
-	#include "connect.h"
-    #include "values.h"
-}
-
-#if USE_WINSOCK
-#include <winsock2.h>
-#endif
-
-const char* getenv_or_default(const char* name, const char* default_value)
-{
-    const char* value = getenv(name);
-    return (value == nullptr) ? default_value : value;
-}
-
-const char* BOLT_ONLINE = getenv_or_default("BOLT_ONLINE", "0");
-const char* BOLT_IPV4_HOST = getenv_or_default("BOLT_IPV4_HOST", "127.0.0.1");
-const char* BOLT_IPV6_HOST = getenv_or_default("BOLT_IPV6_HOST", "::1");
-const char* BOLT_PORT = getenv_or_default("BOLT_PORT", "7687");
-const char* BOLT_USER = getenv_or_default("BOLT_USER", "neo4j");
-const char* BOLT_PASSWORD = getenv_or_default("BOLT_PASSWORD", "password");
-
-
-#define IS_ONLINE (strcmp(BOLT_ONLINE, "1") == 0)
 
 
 SCENARIO("Test address resolution (IPv4)", "[dns]")
@@ -140,21 +113,13 @@ SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
     }
 }
 
-struct BoltAddress * _get_address(const char * host, const char * port)
-{
-    struct BoltAddress * service = BoltAddress_create(host, port);
-    int status = BoltAddress_resolve_b(service);
-    REQUIRE(status == 0);
-    return service;
-}
-
 SCENARIO("Test basic secure connection (IPv4)", "[integration][ipv4][secure]")
 {
     if (IS_ONLINE)
     {
         GIVEN("a local server address")
         {
-            struct BoltAddress * address = _get_address(BOLT_IPV4_HOST, BOLT_PORT);
+            struct BoltAddress * address = bolt_get_address(BOLT_IPV4_HOST, BOLT_PORT);
             WHEN("a secure connection is opened")
             {
                 struct BoltConnection * connection = BoltConnection_open_b(BOLT_SECURE_SOCKET, address);
@@ -175,7 +140,7 @@ SCENARIO("Test basic secure connection (IPv6)", "[integration][ipv6][secure]")
     {
         GIVEN("a local server address")
         {
-            struct BoltAddress * address = _get_address(BOLT_IPV6_HOST, BOLT_PORT);
+            struct BoltAddress * address = bolt_get_address(BOLT_IPV6_HOST, BOLT_PORT);
             WHEN("a secure connection is opened")
             {
                 struct BoltConnection * connection = BoltConnection_open_b(BOLT_SECURE_SOCKET, address);
@@ -196,7 +161,7 @@ SCENARIO("Test basic insecure connection (IPv4)", "[integration][ipv4][insecure]
     {
         GIVEN("a local server address")
         {
-            struct BoltAddress * address = _get_address(BOLT_IPV4_HOST, BOLT_PORT);
+            struct BoltAddress * address = bolt_get_address(BOLT_IPV4_HOST, BOLT_PORT);
             WHEN("an insecure connection is opened")
             {
                 struct BoltConnection * connection = BoltConnection_open_b(BOLT_INSECURE_SOCKET, address);
@@ -217,7 +182,7 @@ SCENARIO("Test basic insecure connection (IPv6)", "[integration][ipv6][insecure]
     {
         GIVEN("a local server address")
         {
-            struct BoltAddress * address = _get_address(BOLT_IPV6_HOST, BOLT_PORT);
+            struct BoltAddress * address = bolt_get_address(BOLT_IPV6_HOST, BOLT_PORT);
             WHEN("an insecure connection is opened")
             {
                 struct BoltConnection * connection = BoltConnection_open_b(BOLT_INSECURE_SOCKET, address);
@@ -238,7 +203,7 @@ SCENARIO("Test secure connection to dead port", "[integration][ipv6][secure]")
     {
         GIVEN("a local server address")
         {
-            struct BoltAddress * address = _get_address(BOLT_IPV6_HOST, "9999");
+            struct BoltAddress * address = bolt_get_address(BOLT_IPV6_HOST, "9999");
             WHEN("a secure connection attempt is made")
             {
                 struct BoltConnection * connection = BoltConnection_open_b(BOLT_SECURE_SOCKET, address);
@@ -259,7 +224,7 @@ SCENARIO("Test insecure connection to dead port", "[integration][ipv6][insecure]
     {
         GIVEN("a local server address")
         {
-            struct BoltAddress * address = _get_address(BOLT_IPV6_HOST, "9999");
+            struct BoltAddress * address = bolt_get_address(BOLT_IPV6_HOST, "9999");
             WHEN("an insecure connection attempt is made")
             {
                 struct BoltConnection * connection = BoltConnection_open_b(BOLT_INSECURE_SOCKET, address);
@@ -274,22 +239,13 @@ SCENARIO("Test insecure connection to dead port", "[integration][ipv6][insecure]
     }
 }
 
-struct BoltConnection* _open_b(enum BoltTransport transport, const char* host, const char* port)
-{
-    struct BoltAddress * address = _get_address(BOLT_IPV6_HOST, BOLT_PORT);
-    struct BoltConnection* connection = BoltConnection_open_b(transport, address);
-    BoltAddress_destroy(address);
-    REQUIRE(connection->status == BOLT_CONNECTED);
-    return connection;
-}
-
 SCENARIO("Test init with valid credentials", "[integration][ipv6][secure]")
 {
     if (IS_ONLINE)
     {
         GIVEN("an open connection")
         {
-            struct BoltConnection * connection = _open_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT);
+            struct BoltConnection * connection = bolt_open_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT);
             WHEN("successfully initialised")
             {
                 int rv = BoltConnection_init_b(connection, "seabolt/1.0.0a", BOLT_USER, BOLT_PASSWORD);
@@ -313,7 +269,7 @@ SCENARIO("Test init with invalid credentials", "[integration][ipv6][secure]")
     {
         GIVEN("an open connection")
         {
-            struct BoltConnection * connection = _open_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT);
+            struct BoltConnection * connection = bolt_open_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT);
             WHEN("unsuccessfully initialised")
             {
                 REQUIRE(strcmp(BOLT_PASSWORD, "X") != 0);
@@ -332,23 +288,14 @@ SCENARIO("Test init with invalid credentials", "[integration][ipv6][secure]")
     }
 }
 
-struct BoltConnection* _open_and_init_b(enum BoltTransport transport, const char* host, const char* port,
-                                    const char* user, const char* password)
-{
-    struct BoltConnection* connection = _open_b(transport, host, port);
-    BoltConnection_init_b(connection, "seabolt/1.0.0a", user, password);
-    REQUIRE(connection->status == BOLT_READY);
-    return connection;
-}
-
 SCENARIO("Test execution of simple Cypher statement", "[integration][ipv6][secure]")
 {
     if (IS_ONLINE)
     {
         GIVEN("an open and initialised connection")
         {
-            struct BoltConnection * connection = _open_and_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
-                                                                  BOLT_USER, BOLT_PASSWORD);
+            struct BoltConnection * connection = bolt_open_and_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
+                                                                      BOLT_USER, BOLT_PASSWORD);
             WHEN("successfully executed Cypher")
             {
                 BoltConnection_set_cypher_template(connection, "RETURN 1", 8);
@@ -372,8 +319,8 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
     {
         GIVEN("an open and initialised connection")
         {
-            struct BoltConnection * connection = _open_and_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
-                                                                  BOLT_USER, BOLT_PASSWORD);
+            struct BoltConnection * connection = bolt_open_and_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
+                                                                      BOLT_USER, BOLT_PASSWORD);
             WHEN("successfully executed Cypher")
             {
                 BoltConnection_set_cypher_template(connection, "RETURN $x", 9);
@@ -386,9 +333,9 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
                 BoltConnection_send_b(connection);
                 int records = BoltConnection_fetch_summary_b(connection, run);
                 REQUIRE(records == 0);
-                struct BoltValue * last_received = BoltConnection_fetched(connection);
-                REQUIRE(BoltValue_type(last_received) == BOLT_SUMMARY);
-                REQUIRE(BoltSummary_code(last_received) == 0x70);
+                struct BoltValue * last_received = BoltConnection_data(connection);
+                REQUIRE(BoltValue_type(last_received) == BOLT_MESSAGE);
+                REQUIRE(BoltMessage_code(last_received) == 0x70);
                 while (BoltConnection_fetch_b(connection, pull))
                 {
                     REQUIRE(BoltValue_type(last_received) == BOLT_LIST);
@@ -398,8 +345,8 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
                     REQUIRE(BoltInt64_get(value) == 42);
                     records += 1;
                 }
-                REQUIRE(BoltValue_type(last_received) == BOLT_SUMMARY);
-                REQUIRE(BoltSummary_code(last_received) == 0x70);
+                REQUIRE(BoltValue_type(last_received) == BOLT_MESSAGE);
+                REQUIRE(BoltMessage_code(last_received) == 0x70);
                 REQUIRE(records == 1);
             }
             BoltConnection_close_b(connection);
@@ -413,8 +360,8 @@ SCENARIO("Test execution of multiple Cypher statements transmitted together", "[
     {
         GIVEN("an open and initialised connection")
         {
-            struct BoltConnection * connection = _open_and_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
-                                                                  BOLT_USER, BOLT_PASSWORD);
+            struct BoltConnection * connection = bolt_open_and_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
+                                                                      BOLT_USER, BOLT_PASSWORD);
             WHEN("successfully executed Cypher")
             {
                 BoltConnection_set_cypher_template(connection, "RETURN $x", 9);
@@ -442,8 +389,8 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
     {
         GIVEN("an open and initialised connection")
         {
-            struct BoltConnection * connection = _open_and_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
-                                                                  BOLT_USER, BOLT_PASSWORD);
+            struct BoltConnection * connection = bolt_open_and_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
+                                                                      BOLT_USER, BOLT_PASSWORD);
             WHEN("successfully executed Cypher")
             {
                 int begin = BoltConnection_load_begin_request(connection);
@@ -460,15 +407,15 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
 
                 int records = BoltConnection_fetch_summary_b(connection, begin);
                 REQUIRE(records == 0);
-                struct BoltValue * fetched = BoltConnection_fetched(connection);
-                REQUIRE(BoltValue_type(fetched) == BOLT_SUMMARY);
-                REQUIRE(BoltSummary_code(fetched) == 0x70);
+                struct BoltValue * fetched = BoltConnection_data(connection);
+                REQUIRE(BoltValue_type(fetched) == BOLT_MESSAGE);
+                REQUIRE(BoltMessage_code(fetched) == 0x70);
 
                 records = BoltConnection_fetch_summary_b(connection, run);
                 REQUIRE(records == 0);
-                fetched = BoltConnection_fetched(connection);
-                REQUIRE(BoltValue_type(fetched) == BOLT_SUMMARY);
-                REQUIRE(BoltSummary_code(fetched) == 0x70);
+                fetched = BoltConnection_data(connection);
+                REQUIRE(BoltValue_type(fetched) == BOLT_MESSAGE);
+                REQUIRE(BoltMessage_code(fetched) == 0x70);
 
                 while (BoltConnection_fetch_b(connection, pull))
                 {
@@ -479,15 +426,15 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
                     REQUIRE(BoltInt64_get(value) == 1);
                     records += 1;
                 }
-                REQUIRE(BoltValue_type(fetched) == BOLT_SUMMARY);
-                REQUIRE(BoltSummary_code(fetched) == 0x70);
+                REQUIRE(BoltValue_type(fetched) == BOLT_MESSAGE);
+                REQUIRE(BoltMessage_code(fetched) == 0x70);
                 REQUIRE(records == 1);
 
                 records = BoltConnection_fetch_summary_b(connection, commit);
                 REQUIRE(records == 0);
-                fetched = BoltConnection_fetched(connection);
-                REQUIRE(BoltValue_type(fetched) == BOLT_SUMMARY);
-                REQUIRE(BoltSummary_code(fetched) == 0x70);
+                fetched = BoltConnection_data(connection);
+                REQUIRE(BoltValue_type(fetched) == BOLT_MESSAGE);
+                REQUIRE(BoltMessage_code(fetched) == 0x70);
 
             }
             BoltConnection_close_b(connection);

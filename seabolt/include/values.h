@@ -34,9 +34,31 @@
 #error "Cannot compile if `char` is not 8-bit"
 #endif
 
+static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
+                                  '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+#define hex7(mem, offset) HEX_DIGITS[((mem)[offset] >> 28) & 0x0F]
+
+#define hex6(mem, offset) HEX_DIGITS[((mem)[offset] >> 24) & 0x0F]
+
+#define hex5(mem, offset) HEX_DIGITS[((mem)[offset] >> 20) & 0x0F]
+
+#define hex4(mem, offset) HEX_DIGITS[((mem)[offset] >> 16) & 0x0F]
+
+#define hex3(mem, offset) HEX_DIGITS[((mem)[offset] >> 12) & 0x0F]
+
+#define hex2(mem, offset) HEX_DIGITS[((mem)[offset] >> 8) & 0x0F]
+
+#define hex1(mem, offset) HEX_DIGITS[((mem)[offset] >> 4) & 0x0F]
+
+#define hex0(mem, offset) HEX_DIGITS[(mem)[offset] & 0x0F]
+
+
 #define sizeof_n(type, n) (size_t)((n) >= 0 ? sizeof(type) * (n) : 0)
 
+
 #define to_bit(x) (char)((x) == 0 ? 0 : 1);
+
 
 struct array_t;
 
@@ -44,37 +66,24 @@ struct BoltValue;
 
 enum BoltType
 {
-    /// Container types
+    /// Containers
     BOLT_NULL,                          /* Indicator of absence of value (Null in Bolt v1) */
     BOLT_LIST,                          /* Variable-length value container (List in Bolt v1) */
 
-    /// Bit types
+    /// Bits
     BOLT_BIT,                           /* ALSO IN BOLT v1 (as Boolean) */
-    BOLT_BYTE,
     BOLT_BIT_ARRAY,
+    BOLT_BYTE,
     BOLT_BYTE_ARRAY,                    /* ALSO IN BOLT v1 */
 
-    /// Text types
-    BOLT_CHAR16,                        /* UTF-32 character */
-    BOLT_CHAR32,                        /* UTF-32 character */
-    BOLT_CHAR16_ARRAY,                  /* Array of UTF-16 characters */
-    BOLT_CHAR32_ARRAY,                  /* Array of UTF-32 characters */
-    BOLT_STRING8,                       /* UTF-8 string (String in Bolt v1) */
-    BOLT_STRING16,                      /* UTF-16 string */
-    BOLT_STRING8_ARRAY,                 /* Array of UTF-8 strings */
-    BOLT_STRING16_ARRAY,                /* Array of UTF-16 strings */
-    BOLT_DICTIONARY8,                   /* Sequence of UTF-8 keys paired with values (Map in Bolt v1) */
-    BOLT_DICTIONARY16,                  /* Sequence of UTF-16 keys paired with values */
+    /// Text
+    BOLT_CHAR,                          /* Unicode (UTF-32) character */
+    BOLT_CHAR_ARRAY,                    /* Array of Unicode (UTF-32) characters */
+    BOLT_STRING,                        /* Unicode (UTF-8) string */
+    BOLT_STRING_ARRAY,                  /* Array of Unicode (UTF-8) strings */
+    BOLT_DICTIONARY,                    /* Sequence of Unicode (UTF-8) keys paired with values (similar to Map in Bolt v1) */
 
-    /// Numeric types
-    BOLT_NUM8,                          /* Unsigned 8-bit integer */
-    BOLT_NUM16,
-    BOLT_NUM32,
-    BOLT_NUM64,
-    BOLT_NUM8_ARRAY,
-    BOLT_NUM16_ARRAY,
-    BOLT_NUM32_ARRAY,
-    BOLT_NUM64_ARRAY,
+    /// Integers
     BOLT_INT8,
     BOLT_INT16,
     BOLT_INT32,
@@ -83,14 +92,8 @@ enum BoltType
     BOLT_INT16_ARRAY,
     BOLT_INT32_ARRAY,
     BOLT_INT64_ARRAY,
-    BOLT_FLOAT32,
-    BOLT_FLOAT32_PAIR,
-    BOLT_FLOAT32_TRIPLE,
-    BOLT_FLOAT32_QUAD,
-    BOLT_FLOAT32_ARRAY,
-    BOLT_FLOAT32_PAIR_ARRAY,
-    BOLT_FLOAT32_TRIPLE_ARRAY,
-    BOLT_FLOAT32_QUAD_ARRAY,
+
+    /// Floating point numbers
     BOLT_FLOAT64,                       /* ALSO IN BOLT v1 (as Float) */
     BOLT_FLOAT64_PAIR,
     BOLT_FLOAT64_TRIPLE,
@@ -100,11 +103,34 @@ enum BoltType
     BOLT_FLOAT64_TRIPLE_ARRAY,
     BOLT_FLOAT64_QUAD_ARRAY,
 
-    /// Composite types
+    /// Structures
     BOLT_STRUCTURE,                     /* ALSO IN BOLT v1 (as Structure) */
     BOLT_STRUCTURE_ARRAY,
-    BOLT_REQUEST,
-    BOLT_SUMMARY,
+
+    /// Messages
+    BOLT_MESSAGE,
+};
+
+
+struct double_pair
+{
+    double x;
+    double y;
+};
+
+struct double_triple
+{
+    double x;
+    double y;
+    double z;
+};
+
+struct double_quad
+{
+    double x;
+    double y;
+    double z;
+    double a;
 };
 
 union data_t
@@ -119,8 +145,10 @@ union data_t
     int16_t* as_int16;
     int32_t* as_int32;
     int64_t* as_int64;
-    float* as_float;
     double* as_double;
+    struct double_pair* as_double_pair;
+    struct double_triple* as_double_triple;
+    struct double_quad* as_double_quad;
     struct BoltValue* as_value;
     struct array_t* as_array;
 };
@@ -131,6 +159,8 @@ struct array_t
     union data_t data;
 };
 
+// A BoltValue consists of a 16-byte header
+// followed by a 16-byte data block
 struct BoltValue
 {
     int16_t type;
@@ -148,8 +178,8 @@ struct BoltValue
         int16_t as_int16[8];
         int32_t as_int32[4];
         int64_t as_int64[2];
-        float as_float[4];
         double as_double[2];
+        struct double_pair as_double_pair[1];
         union data_t extended;
     } data;
 };
@@ -209,41 +239,15 @@ PUBLIC void BoltValue_to_BitArray(struct BoltValue* value, char* array, int32_t 
 
 PUBLIC void BoltValue_to_ByteArray(struct BoltValue* value, char* array, int32_t size);
 
-PUBLIC void BoltValue_to_Char16(struct BoltValue* value, uint16_t x);
+PUBLIC void BoltValue_to_Char(struct BoltValue * value, uint32_t x);
 
-PUBLIC void BoltValue_to_Char32(struct BoltValue* value, uint32_t x);
+PUBLIC void BoltValue_to_CharArray(struct BoltValue * value, const uint32_t * array, int32_t size);
 
-PUBLIC void BoltValue_to_Char16Array(struct BoltValue* value, uint16_t* array, int32_t size);
+PUBLIC void BoltValue_to_String(struct BoltValue * value, const char * string, int32_t size);
 
-PUBLIC void BoltValue_to_Char32Array(struct BoltValue* value, uint32_t* array, int32_t size);
+PUBLIC void BoltValue_to_StringArray(struct BoltValue * value, int32_t size);
 
-PUBLIC void BoltValue_to_String8(struct BoltValue* value, const char* string, int32_t size);
-
-PUBLIC void BoltValue_to_String16(struct BoltValue* value, uint16_t* string, int32_t size);
-
-PUBLIC void BoltValue_to_String8Array(struct BoltValue* value, int32_t size);
-
-PUBLIC void BoltValue_to_String16Array(struct BoltValue* value, int32_t size);
-
-PUBLIC void BoltValue_to_Dictionary8(struct BoltValue* value, int32_t size);
-
-PUBLIC void BoltValue_to_Dictionary16(struct BoltValue* value, int32_t size);
-
-PUBLIC void BoltValue_to_Num8(struct BoltValue* value, uint8_t x);
-
-PUBLIC void BoltValue_to_Num16(struct BoltValue* value, uint16_t x);
-
-PUBLIC void BoltValue_to_Num32(struct BoltValue* value, uint32_t x);
-
-PUBLIC void BoltValue_to_Num64(struct BoltValue* value, uint64_t x);
-
-PUBLIC void BoltValue_to_Num8Array(struct BoltValue* value, uint8_t* array, int32_t size);
-
-PUBLIC void BoltValue_to_Num16Array(struct BoltValue* value, uint16_t* array, int32_t size);
-
-PUBLIC void BoltValue_to_Num32Array(struct BoltValue* value, uint32_t* array, int32_t size);
-
-PUBLIC void BoltValue_to_Num64Array(struct BoltValue* value, uint64_t* array, int32_t size);
+PUBLIC void BoltValue_to_Dictionary(struct BoltValue * value, int32_t size);
 
 PUBLIC void BoltValue_to_Int8(struct BoltValue* value, int8_t x);
 
@@ -261,45 +265,27 @@ PUBLIC void BoltValue_to_Int32Array(struct BoltValue* value, int32_t* array, int
 
 PUBLIC void BoltValue_to_Int64Array(struct BoltValue* value, int64_t* array, int32_t size);
 
-PUBLIC void BoltValue_to_Float32(struct BoltValue* value, float x);
-
-PUBLIC void BoltValue_to_Float32Pair(struct BoltValue* value, float x, float y);
-
-PUBLIC void BoltValue_to_Float32Triple(struct BoltValue* value, float x, float y, float z);
-
-PUBLIC void BoltValue_to_Float32Quad(struct BoltValue* value, float x, float y, float z, float a);
-
-PUBLIC void BoltValue_to_Float32Array(struct BoltValue* value, float* array, int32_t size);
-
-PUBLIC void BoltValue_to_Float32PairArray(struct BoltValue* value, int32_t size);
-
-PUBLIC void BoltValue_to_Float32TripleArray(struct BoltValue* value, int32_t size);
-
-PUBLIC void BoltValue_to_Float32QuadArray(struct BoltValue* value, int32_t size);
-
 PUBLIC void BoltValue_to_Float64(struct BoltValue* value, double x);
 
-PUBLIC void BoltValue_to_Float64Pair(struct BoltValue* value, double x, double y);
+PUBLIC void BoltValue_to_Float64Pair(struct BoltValue* value, struct double_pair x);
 
-PUBLIC void BoltValue_to_Float64Triple(struct BoltValue* value, double x, double y, double z);
+PUBLIC void BoltValue_to_Float64Triple(struct BoltValue* value, struct double_triple x);
 
-PUBLIC void BoltValue_to_Float64Quad(struct BoltValue* value, double x, double y, double z, double a);
+PUBLIC void BoltValue_to_Float64Quad(struct BoltValue* value, struct double_quad x);
 
 PUBLIC void BoltValue_to_Float64Array(struct BoltValue* value, double* array, int32_t size);
 
-PUBLIC void BoltValue_to_Float64PairArray(struct BoltValue* value, int32_t size);
+PUBLIC void BoltValue_to_Float64PairArray(struct BoltValue* value, struct double_pair * array, int32_t size);
 
-PUBLIC void BoltValue_to_Float64TripleArray(struct BoltValue* value, int32_t size);
+PUBLIC void BoltValue_to_Float64TripleArray(struct BoltValue* value, struct double_triple * array, int32_t size);
 
-PUBLIC void BoltValue_to_Float64QuadArray(struct BoltValue* value, int32_t size);
+PUBLIC void BoltValue_to_Float64QuadArray(struct BoltValue* value, struct double_quad * array, int32_t size);
 
 PUBLIC void BoltValue_to_Structure(struct BoltValue* value, int16_t code, int32_t size);
 
-PUBLIC void BoltValue_to_Request(struct BoltValue* value, int16_t code, int32_t size);
-
-PUBLIC void BoltValue_to_Summary(struct BoltValue* value, int16_t code, int32_t size);
-
 PUBLIC void BoltValue_to_StructureArray(struct BoltValue* value, int16_t code, int32_t size);
+
+PUBLIC void BoltValue_to_Message(struct BoltValue * value, int16_t code, int32_t size);
 
 PUBLIC enum BoltType BoltValue_type(const struct BoltValue* value);
 
@@ -344,90 +330,40 @@ PUBLIC int BoltByteArray_write(const struct BoltValue * value, FILE * file);
 
 
 
-PUBLIC uint16_t BoltChar16_get(const struct BoltValue* value);
+PUBLIC uint32_t BoltChar_get(const struct BoltValue * value);
 
-PUBLIC uint32_t BoltChar32_get(const struct BoltValue* value);
+PUBLIC uint32_t * BoltCharArray_get(struct BoltValue * value);
 
-PUBLIC uint16_t BoltChar16Array_get(const struct BoltValue* value, int32_t index);
+PUBLIC int BoltChar_write(const struct BoltValue * value, FILE * file);
 
-PUBLIC uint32_t BoltChar32Array_get(const struct BoltValue* value, int32_t index);
+PUBLIC int BoltCharArray_write(struct BoltValue * value, FILE * file);
 
 
+PUBLIC char* BoltString_get(struct BoltValue * value);
 
-PUBLIC char* BoltString8_get(struct BoltValue* value);
+PUBLIC char* BoltStringArray_get(struct BoltValue * value, int32_t index);
 
-PUBLIC uint16_t* BoltString16_get(struct BoltValue* value);
+PUBLIC void BoltStringArray_put(struct BoltValue * value, int32_t index, const char * string, int32_t size);
 
-PUBLIC char* BoltString8Array_get(struct BoltValue* value, int32_t index);
+PUBLIC int32_t BoltStringArray_get_size(struct BoltValue * value, int32_t index);
 
-PUBLIC uint16_t* BoltString16Array_get(struct BoltValue* value, int32_t index);
+PUBLIC int BoltString_write(struct BoltValue * value, FILE * file);
 
-PUBLIC void BoltString8Array_put(struct BoltValue* value, int32_t index, const char* string, int32_t size);
-
-PUBLIC void BoltString16Array_put(struct BoltValue* value, int32_t index, const uint16_t* string, int32_t size);
-
-PUBLIC int32_t BoltString8Array_get_size(struct BoltValue* value, int32_t index);
-
-PUBLIC int32_t BoltString16Array_get_size(struct BoltValue* value, int32_t index);
-
-PUBLIC int BoltString8_write(struct BoltValue * value, FILE * file);
-
-PUBLIC int BoltString8Array_write(struct BoltValue * value, FILE * file);
+PUBLIC int BoltStringArray_write(struct BoltValue * value, FILE * file);
 
 
 
-PUBLIC struct BoltValue* BoltDictionary8_key(struct BoltValue* value, int32_t index);
+PUBLIC struct BoltValue* BoltDictionary_key(struct BoltValue * value, int32_t index);
 
-PUBLIC const char * BoltDictionary8_get_key(struct BoltValue* value, int32_t index);
+PUBLIC const char * BoltDictionary_get_key(struct BoltValue * value, int32_t index);
 
-PUBLIC int32_t BoltDictionary8_get_key_size(struct BoltValue* value, int32_t index);
+PUBLIC int32_t BoltDictionary_get_key_size(struct BoltValue * value, int32_t index);
 
-PUBLIC struct BoltValue* BoltDictionary16_key(struct BoltValue* value, int32_t index);
+PUBLIC int BoltDictionary_set_key(struct BoltValue * value, int32_t index, const char * key, size_t key_size);
 
-PUBLIC int BoltDictionary8_set_key(struct BoltValue* value, int32_t index, const char* key, size_t key_size);
+PUBLIC struct BoltValue* BoltDictionary_value(struct BoltValue * value, int32_t index);
 
-PUBLIC struct BoltValue* BoltDictionary16_with_key(struct BoltValue* value, int32_t index, const uint16_t* key,
-                                            int32_t key_size);
-
-PUBLIC struct BoltValue* BoltDictionary8_value(struct BoltValue* value, int32_t index);
-
-PUBLIC struct BoltValue* BoltDictionary16_value(struct BoltValue* value, int32_t index);
-
-PUBLIC int BoltDictionary8_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
-
-
-
-PUBLIC uint8_t BoltNum8_get(const struct BoltValue* value);
-
-PUBLIC uint16_t BoltNum16_get(const struct BoltValue* value);
-
-PUBLIC uint32_t BoltNum32_get(const struct BoltValue* value);
-
-PUBLIC uint64_t BoltNum64_get(const struct BoltValue* value);
-
-PUBLIC uint8_t BoltNum8Array_get(const struct BoltValue* value, int32_t index);
-
-PUBLIC uint16_t BoltNum16Array_get(const struct BoltValue* value, int32_t index);
-
-PUBLIC uint32_t BoltNum32Array_get(const struct BoltValue* value, int32_t index);
-
-PUBLIC uint64_t BoltNum64Array_get(const struct BoltValue* value, int32_t index);
-
-PUBLIC int BoltNum8_write(struct BoltValue * value, FILE * file);
-
-PUBLIC int BoltNum16_write(struct BoltValue * value, FILE * file);
-
-PUBLIC int BoltNum32_write(struct BoltValue * value, FILE * file);
-
-PUBLIC int BoltNum64_write(struct BoltValue * value, FILE * file);
-
-PUBLIC int BoltNum8Array_write(struct BoltValue * value, FILE * file);
-
-PUBLIC int BoltNum16Array_write(struct BoltValue * value, FILE * file);
-
-PUBLIC int BoltNum32Array_write(struct BoltValue * value, FILE * file);
-
-PUBLIC int BoltNum64Array_write(struct BoltValue * value, FILE * file);
+PUBLIC int BoltDictionary_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
 
 
 
@@ -463,77 +399,46 @@ PUBLIC int BoltInt32Array_write(struct BoltValue * value, FILE * file);
 
 PUBLIC int BoltInt64Array_write(struct BoltValue * value, FILE * file);
 
-
-struct float_pair
-{
-    float x;
-    float y;
-};
-
-struct float_triple
-{
-    float x;
-    float y;
-    float z;
-};
-
-struct float_quad
-{
-    float x;
-    float y;
-    float z;
-    float a;
-};
-
-struct double_pair
-{
-    double x;
-    double y;
-};
-
-struct double_triple
-{
-    double x;
-    double y;
-    double z;
-};
-
-struct double_quad
-{
-    double x;
-    double y;
-    double z;
-    double a;
-};
-
-PUBLIC float BoltFloat32_get(const struct BoltValue* value);
-
-PUBLIC float BoltFloat32Array_get(const struct BoltValue* value, int32_t index);
-
 PUBLIC double BoltFloat64_get(const struct BoltValue* value);
+
+PUBLIC struct double_pair BoltFloat64Pair_get(const struct BoltValue* value);
+
+PUBLIC struct double_triple BoltFloat64Triple_get(const struct BoltValue* value);
+
+PUBLIC struct double_quad BoltFloat64Quad_get(const struct BoltValue* value);
 
 PUBLIC double BoltFloat64Array_get(const struct BoltValue* value, int32_t index);
 
-PUBLIC int BoltFloat32_write(struct BoltValue * value, FILE * file);
+PUBLIC struct double_pair BoltFloat64PairArray_get(const struct BoltValue * value, int32_t index);
 
-PUBLIC int BoltFloat32Array_write(struct BoltValue * value, FILE * file);
+PUBLIC struct double_triple BoltFloat64TripleArray_get(const struct BoltValue * value, int32_t index);
+
+PUBLIC struct double_quad BoltFloat64QuadArray_get(const struct BoltValue * value, int32_t index);
 
 PUBLIC int BoltFloat64_write(struct BoltValue * value, FILE * file);
 
+PUBLIC int BoltFloat64Pair_write(struct BoltValue * value, FILE * file);
+
+PUBLIC int BoltFloat64Triple_write(struct BoltValue * value, FILE * file);
+
+PUBLIC int BoltFloat64Quad_write(struct BoltValue * value, FILE * file);
+
 PUBLIC int BoltFloat64Array_write(struct BoltValue * value, FILE * file);
+
+PUBLIC int BoltFloat64PairArray_write(struct BoltValue * value, FILE * file);
+
+PUBLIC int BoltFloat64TripleArray_write(struct BoltValue * value, FILE * file);
+
+PUBLIC int BoltFloat64QuadArray_write(struct BoltValue * value, FILE * file);
 
 
 PUBLIC int16_t BoltStructure_code(const struct BoltValue* value);
 
-PUBLIC int16_t BoltRequest_code(const struct BoltValue* value);
-
-PUBLIC int16_t BoltSummary_code(const struct BoltValue* value);
+PUBLIC int16_t BoltMessage_code(const struct BoltValue * value);
 
 PUBLIC struct BoltValue* BoltStructure_value(const struct BoltValue* value, int32_t index);
 
-PUBLIC struct BoltValue* BoltRequest_value(const struct BoltValue* value, int32_t index);
-
-PUBLIC struct BoltValue* BoltSummary_value(const struct BoltValue* value, int32_t index);
+PUBLIC struct BoltValue* BoltMessage_value(const struct BoltValue * value, int32_t index);
 
 PUBLIC int32_t BoltStructureArray_get_size(const struct BoltValue* value, int32_t index);
 
@@ -545,9 +450,7 @@ PUBLIC int BoltStructure_write(struct BoltValue * value, FILE * file, int32_t pr
 
 PUBLIC int BoltStructureArray_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
 
-PUBLIC int BoltRequest_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
-
-PUBLIC int BoltSummary_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
+PUBLIC int BoltMessage_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
 
 
 #endif // SEABOLT_VALUES

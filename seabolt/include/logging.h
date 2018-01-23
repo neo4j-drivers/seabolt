@@ -30,8 +30,6 @@ void BoltLog_info(const char* message, ...);
 
 void BoltLog_error(const char* message, ...);
 
-void BoltLog_request(int request_id, struct BoltValue * value, int32_t protocol_version);
-
-void BoltLog_summary(int request_id, struct BoltValue * value, int32_t protocol_version);
+void BoltLog_message(const char * peer, int request_id, struct BoltValue * value, int32_t protocol_version);
 
 #endif // SEABOLT_LOGGING

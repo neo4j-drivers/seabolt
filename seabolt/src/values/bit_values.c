@@ -25,15 +25,6 @@
 
 
 
-static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
-                                  '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-
-#define hex1(mem, offset) HEX_DIGITS[((mem)[offset] >> 4) & 0x0F]
-
-#define hex0(mem, offset) HEX_DIGITS[(mem)[offset] & 0x0F]
-
-
-
 void BoltValue_to_Bit(struct BoltValue* value, char x)
 {
     _format(value, BOLT_BIT, 1, NULL, 0);
@@ -64,7 +55,10 @@ void BoltValue_to_ByteArray(struct BoltValue* value, char* array, int32_t size)
     if (size <= sizeof(value->data) / sizeof(char))
     {
         _format(value, BOLT_BYTE_ARRAY, size, NULL, 0);
-        memcpy(value->data.as_char, array, (size_t)(size));
+        if (array != NULL)
+        {
+            memcpy(value->data.as_char, array, (size_t)(size));
+        }
     }
     else
     {
@@ -105,14 +99,14 @@ char* BoltByteArray_get_all(struct BoltValue* value)
 int BoltBit_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_BIT);
-    fprintf(file, "b(%d)", BoltBit_get(value));
+    fprintf(file, "bit(%d)", BoltBit_get(value));
     return 0;
 }
 
 int BoltBitArray_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_BIT_ARRAY);
-    fprintf(file, "b[");
+    fprintf(file, "bit[");
     for (int i = 0; i < value->size; i++)
     {
         fprintf(file, "%d", BoltBitArray_get(value, i));
@@ -125,14 +119,14 @@ int BoltByte_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_BYTE);
     char byte = BoltByte_get(value);
-    fprintf(file, "b8(#%c%c)", hex1(&byte, 0), hex0(&byte, 0));
+    fprintf(file, "byte(#%c%c)", hex1(&byte, 0), hex0(&byte, 0));
     return 0;
 }
 
 int BoltByteArray_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_BYTE_ARRAY);
-    fprintf(file, "b8[#");
+    fprintf(file, "byte[#");
     for (int i = 0; i < value->size; i++)
     {
         char b = BoltByteArray_get(value, i);

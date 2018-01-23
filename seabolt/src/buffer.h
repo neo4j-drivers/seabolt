@@ -49,6 +49,10 @@ char* BoltBuffer_load_target(struct BoltBuffer* buffer, int size);
 
 void BoltBuffer_load(struct BoltBuffer* buffer, const char* data, int size);
 
+int BoltBuffer_sizeof_utf8_char(uint32_t ch);
+
+void BoltBuffer_load_utf8_char(struct BoltBuffer* buffer, uint32_t ch);
+
 void BoltBuffer_load_uint8(struct BoltBuffer* buffer, uint8_t x);
 
 void BoltBuffer_load_uint16_be(struct BoltBuffer* buffer, uint16_t x);

@@ -28,6 +28,12 @@
 #include <connect.h>
 
 
+#define BOLT_SUCCESS 0x70
+#define BOLT_RECORD  0x71
+#define BOLT_IGNORED 0x7E
+#define BOLT_FAILURE 0x7F
+
+
 enum BoltProtocolV1Type
 {
     BOLT_V1_NULL,
@@ -57,6 +63,7 @@ struct BoltProtocolV1State
 
     int next_request_id;
     int response_counter;
+    unsigned long long record_counter;
 
     struct _run_request run;
     struct _run_request begin;
@@ -66,7 +73,7 @@ struct BoltProtocolV1State
     struct BoltValue* pull_request;
 
     /// Holder for fetched data and metadata
-    struct BoltValue* fetched;
+    struct BoltValue* data;
 };
 
 struct BoltProtocolV1State* BoltProtocolV1_create_state();
@@ -75,25 +82,9 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state);
 
 struct BoltProtocolV1State* BoltProtocolV1_state(struct BoltConnection* connection);
 
-enum BoltProtocolV1Type BoltProtocolV1_marker_type(uint8_t marker);
+int BoltProtocolV1_load_message(struct BoltConnection * connection, struct BoltValue * value);
 
-int BoltProtocolV1_load_null(struct BoltConnection* connection);
-
-int BoltProtocolV1_load_boolean(struct BoltConnection* connection, int value);
-
-int BoltProtocolV1_load_integer(struct BoltConnection* connection, int64_t value);
-
-int BoltProtocolV1_load_float(struct BoltConnection* connection, double value);
-
-int BoltProtocolV1_load_bytes(struct BoltConnection* connection, const char* string, int32_t size);
-
-int BoltProtocolV1_load_string(struct BoltConnection* connection, const char* string, int32_t size);
-
-int BoltProtocolV1_load_request(struct BoltConnection* connection, struct BoltValue* value);
-
-int BoltProtocolV1_load_request_quietly(struct BoltConnection* connection, struct BoltValue* value);
-
-int BoltProtocolV1_load(struct BoltConnection* connection, struct BoltValue* value);
+int BoltProtocolV1_load_message_quietly(struct BoltConnection * connection, struct BoltValue * value);
 
 int BoltProtocolV1_compile_INIT(struct BoltValue* value, const char* user_agent, const char* user, const char* password);
 
@@ -110,9 +101,7 @@ int BoltProtocolV1_unload(struct BoltConnection* connection);
 
 const char* BoltProtocolV1_structure_name(int16_t code);
 
-const char* BoltProtocolV1_request_name(int16_t code);
-
-const char* BoltProtocolV1_summary_name(int16_t code);
+const char* BoltProtocolV1_message_name(int16_t code);
 
 
 #endif // SEABOLT_PROTOCOL_V1
