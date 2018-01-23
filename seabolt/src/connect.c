@@ -538,7 +538,7 @@ int BoltAddress_resolve_b(struct BoltAddress * address)
                 case AF_INET:
                 case AF_INET6:
                 {
-                    struct sockaddr_storage * target = BoltAddress_resolved_host(address, p);
+                    struct sockaddr_storage * target = &address->resolved_hosts[p];
                     memcpy(target, ai_node->ai_addr, ai_node->ai_addrlen);
                     break;
                 }
@@ -558,7 +558,7 @@ int BoltAddress_resolve_b(struct BoltAddress * address)
 
 	if (address->n_resolved_hosts > 0)
 	{
-		struct sockaddr_storage *resolved = BoltAddress_resolved_host(address, 0);
+        struct sockaddr_storage *resolved = &address->resolved_hosts[0];
 		in_port_t resolved_port = resolved->ss_family == AF_INET ?
 			((struct sockaddr_in *)resolved)->sin_port : ((struct sockaddr_in6 *)resolved)->sin6_port;
 		address->resolved_port = ntohs(resolved_port);
@@ -567,29 +567,18 @@ int BoltAddress_resolve_b(struct BoltAddress * address)
     return gai_status;
 }
 
-struct sockaddr_storage * BoltAddress_resolved_host(struct BoltAddress * address, size_t index)
+int BoltAddress_copy_resolved_host(struct BoltAddress * address, size_t index, char * buffer,
+                                           socklen_t buffer_size)
 {
-    return &address->resolved_hosts[SOCKADDR_STORAGE_SIZE * index];
-}
-
-char * BoltAddress_resolved_host_address(struct BoltAddress * address, size_t index)
-{
-	char *host_address = (char *)malloc(NI_MAXHOST * sizeof(char));
-	struct sockaddr_storage *resolved = BoltAddress_resolved_host(address, index);
-	socklen_t resolved_size = sizeof(struct sockaddr_storage);
-	int res = getnameinfo((const struct sockaddr *)resolved, resolved_size, host_address, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-	if (res)
-	{
-		free(host_address);
-		return NULL;
-	}
-	return host_address;
-}
-
-int BoltAddress_resolved_host_is_ipv4(struct BoltAddress * address, size_t index)
-{
-    struct sockaddr_storage * resolved_host = BoltAddress_resolved_host(address, index);
-	return resolved_host->ss_family == AF_INET;
+    struct sockaddr_storage * resolved_host = &address->resolved_hosts[index];
+    int status = getnameinfo((const struct sockaddr *)resolved_host, SOCKADDR_STORAGE_SIZE, buffer, buffer_size, NULL, 0, NI_NUMERICHOST);
+    switch (status)
+    {
+        case 0:
+            return resolved_host->ss_family;
+        default:
+            return -1;
+    }
 }
 
 void BoltAddress_destroy(struct BoltAddress * address)
@@ -598,27 +587,11 @@ void BoltAddress_destroy(struct BoltAddress * address)
     BoltMem_deallocate(address, sizeof(struct BoltAddress));
 }
 
-void BoltAddress_write(struct BoltAddress * address, FILE * file)
-{
-    fprintf(file, "BoltAddress(host=\"%s\" port=\"%s\" resolved_hosts=IPv6[", address->host, address->port);
-    for(size_t i = 0; i < address->n_resolved_hosts; i++)
-    {
-        struct sockaddr_storage * resolved_address = BoltAddress_resolved_host(address, i);
-        if (i > 0) fprintf(file, ", ");
-		char out[NI_MAXHOST];
-		getnameinfo((const struct sockaddr *)resolved_address, ADDR_SIZE(resolved_address),
-			out, NI_MAXHOST, NULL, 0, NI_NUMERICHOST | NI_NUMERICSERV);
-        fprintf(file, "\"%s\"", out);
-    }
-    fprintf(file, "] resolved_port=%d)", address->resolved_port);
-}
-
 struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, struct BoltAddress* address)
 {
     struct BoltConnection* connection = _create(transport);
     for (size_t i = 0; i < address->n_resolved_hosts; i++) {
-        const struct sockaddr_storage *resolved_addr = BoltAddress_resolved_host(address, i);
-        int opened = _open_b(connection, resolved_addr);
+        int opened = _open_b(connection, &address->resolved_hosts[i]);
         if (opened == 0)
         {
             if (transport == BOLT_SECURE_SOCKET)
