@@ -1,7 +1,5 @@
 @Echo Off
 
-SetLocal
-
 If "%~1" == "" (
 	Goto :Usage
 ) Else If Not "%~1" == "Debug" (
@@ -51,10 +49,10 @@ If Not Defined VCINSTALLDIR (
 Set SEABOLTDIR=%~dp0
 pushd %SEABOLTDIR%
 
-cmake -G "%CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CMAKE_BUILD%
+cmake.exe -G "%CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CMAKE_BUILD%
 Set EXITCODE=%ERRORLEVEL%
 If %EXITCODE% EQU 0 (
-	msbuild seabolt-all.sln /p:Platform=%VS_TARGET_PLATFORM%
+	msbuild.exe seabolt-all.sln /p:Platform=%VS_TARGET_PLATFORM%
 	Set EXITCODE=%ERRORLEVEL%
 )
 
