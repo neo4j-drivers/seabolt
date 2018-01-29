@@ -27,6 +27,9 @@ extern "C" {
     #include "values.h"
 }
 
+#if USE_WINSOCK
+#include <winsock2.h>
+#endif
 
 const char* getenv_or_default(const char* name, const char* default_value)
 {
@@ -61,7 +64,7 @@ SCENARIO("Test address resolution (IPv4)", "[dns]")
             BoltAddress_resolve_b(address);
             REQUIRE(address->n_resolved_hosts == 1);
             char host_string[40];
-            sa_family_t af = BoltAddress_copy_resolved_host(address, 0, &host_string[0], sizeof(host_string));
+            int af = BoltAddress_copy_resolved_host(address, 0, &host_string[0], sizeof(host_string));
             REQUIRE(af == AF_INET);
 			REQUIRE(strcmp(host_string, "52.215.65.80") == 0);
         	REQUIRE(address->resolved_port == 7687);
@@ -88,7 +91,7 @@ SCENARIO("Test address resolution (IPv6)", "[dns]")
             {
                 REQUIRE(address->n_resolved_hosts == 1);
                 char host_string[40];
-                sa_family_t af = BoltAddress_copy_resolved_host(address, 0, &host_string[0], sizeof(host_string));
+                int af = BoltAddress_copy_resolved_host(address, 0, &host_string[0], sizeof(host_string));
                 REQUIRE(af == AF_INET6);
 				REQUIRE(strcmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7") == 0);
                 REQUIRE(address->resolved_port == 7687);
@@ -117,7 +120,7 @@ SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
                 for (size_t j = 0; j < address->n_resolved_hosts; j++)
                 {
                     char host_string[40];
-					sa_family_t af = BoltAddress_copy_resolved_host(address, j, &host_string[0], sizeof(host_string));
+					int af = BoltAddress_copy_resolved_host(address, j, &host_string[0], sizeof(host_string));
                     switch (af)
                     {
                         case AF_INET:
