@@ -2,6 +2,7 @@
 
 Call %~dp0\make_debug.cmd || Goto :EOF
 %~dp0\build\bin\Debug\seabolt-test %* || Goto :Failure
+Exit /b 0
 
 :Failure
 	If Not "%TEAMCITY_PROJECT_NAME%" == "" (
