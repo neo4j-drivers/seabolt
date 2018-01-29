@@ -42,23 +42,19 @@ If Not Defined VCINSTALLDIR (
 	If Not Defined VCINSTALLDIR (
 		Echo "Visual Studio 2017 Installation Location could not be determined."
 		Echo "Ensure you've it installed and run this script in Visual Studio Developer Command Prompt."
-		Exit /B 1
+		Goto :EOF
 	)
 )
 
 Set SEABOLTDIR=%~dp0
 pushd %SEABOLTDIR%
 
-cmake.exe -G "%CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CMAKE_BUILD%
-Set EXITCODE=%ERRORLEVEL%
-If %EXITCODE% EQU 0 (
-	msbuild.exe seabolt-all.sln /p:Platform=%VS_TARGET_PLATFORM%
-	Set EXITCODE=%ERRORLEVEL%
-)
+cmake.exe -G "%CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CMAKE_BUILD% || Goto :EOF
+msbuild.exe seabolt-all.sln /p:Platform=%VS_TARGET_PLATFORM% || popd || Goto :EOF
 
 popd
-Exit /b %EXITCODE%
+Exit /b 0
 
 :Usage
 	@Echo "Usage: %~n0 (Debug|Release) (x86|x64)"
-	Exit /B 1
+	Goto :EOF
