@@ -42,19 +42,25 @@ If Not Defined VCINSTALLDIR (
 	If Not Defined VCINSTALLDIR (
 		Echo "Visual Studio 2017 Installation Location could not be determined."
 		Echo "Ensure you've it installed and run this script in Visual Studio Developer Command Prompt."
-		Goto :EOF
+		Goto :Failure
 	)
 )
 
 Set SEABOLTDIR=%~dp0
 pushd %SEABOLTDIR%
 
-cmake.exe -G "%CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CMAKE_BUILD% || Goto :EOF
-msbuild.exe seabolt-all.sln /p:Platform=%VS_TARGET_PLATFORM% || popd || Goto :EOF
+cmake.exe -G "%CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CMAKE_BUILD% || Goto :Failure
+msbuild.exe seabolt-all.sln /p:Platform=%VS_TARGET_PLATFORM% || popd || Goto :Failure
 
 popd
 Exit /b 0
 
 :Usage
 	@Echo "Usage: %~n0 (Debug|Release) (x86|x64)"
+	Goto :Failure
+	
+:Failure
+	If Not "%TEAMCITY_PROJECT_NAME%" == "" (
+		ECHO ##teamcity[buildStatus status='FAILURE' text='compilation failed']
+	)
 	Goto :EOF
