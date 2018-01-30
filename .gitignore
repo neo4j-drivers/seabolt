@@ -47,6 +47,7 @@ lib/
 *.dylib
 
 # Executables
+x64/
 bin/
 *.exe
 *.out
@@ -63,7 +64,6 @@ bin/
 
 # Kernel Module Compile Results
 *.mod*
-*.cmd
 .tmp_versions/
 modules.order
 Module.symvers

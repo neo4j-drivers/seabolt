@@ -28,6 +28,7 @@
 
 #ifdef WIN32
 typedef unsigned short in_port_t;
+typedef int socklen_t;
 #define PUBLIC __declspec(dllexport)
 #endif // USE_WINSOCK
 
