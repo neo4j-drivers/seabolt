@@ -24,7 +24,7 @@
 #ifndef SEABOLT_CONNECT
 #define SEABOLT_CONNECT
 #include "config.h"
-#include <stdio.h>
+#include <stdint.h>
 
 #define try(code) { int status = (code); if (status == -1) { return status; } }
 

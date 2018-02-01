@@ -23,54 +23,65 @@
 #include <assert.h>
 #include "mem.h"
 
-void BoltValue_to_Float64(struct BoltValue* value, double x)
+void BoltValue_to_Float64(struct BoltValue* value, double data)
 {
-    _format(value, BOLT_FLOAT64, 1, NULL, 0);
-    value->data.as_double[0] = x;
+    BoltValue_to_Float64Tuple(value, &data, 1);
 }
 
-void BoltValue_to_Float64Pair(struct BoltValue* value, struct double_pair x)
+void BoltValue_to_Float64Tuple(struct BoltValue* value, double * data, int16_t width)
 {
-    _format(value, BOLT_FLOAT64_PAIR, 1, NULL, 0);
-    value->data.as_double_pair[0] = x;
-}
-
-void BoltValue_to_Float64Triple(struct BoltValue* value, struct double_triple x)
-{
-    _format(value, BOLT_FLOAT64_TRIPLE, 1, &x, sizeof(x));
-}
-
-void BoltValue_to_Float64Quad(struct BoltValue* value, struct double_quad x)
-{
-    _format(value, BOLT_FLOAT64_QUAD, 1, &x, sizeof(x));
-}
-
-void BoltValue_to_Float64Array(struct BoltValue* value, double * array, int32_t size)
-{
-    if (size <= sizeof(value->data) / sizeof(double))
+    if (width <= 0)
     {
-        _format(value, BOLT_FLOAT64_ARRAY, size, NULL, 0);
-        memcpy(value->data.as_double, array, (size_t)(size));
+        BoltValue_to_Null(value);
+    }
+    else if (width == 1)
+    {
+        _format(value, BOLT_FLOAT64, 1, 1, NULL, 0);
+        value->data.as_double[0] = data[0];
     }
     else
     {
-        _format(value, BOLT_FLOAT64_ARRAY, size, array, sizeof_n(double, size));
+        size_t data_size = sizeof_n(double, width);
+        if (data_size <= sizeof(value->data))
+        {
+            _format(value, BOLT_FLOAT64, width, 1, NULL, 0);
+            memcpy(value->data.as_double, data, data_size);
+        }
+        else
+        {
+            _format(value, BOLT_FLOAT64, width, 1, data, data_size);
+        }
     }
 }
 
-void BoltValue_to_Float64PairArray(struct BoltValue* value, struct double_pair * array, int32_t size)
+void BoltValue_to_Float64Array(struct BoltValue* value, double * data, int32_t length)
 {
-    _format(value, BOLT_FLOAT64_PAIR_ARRAY, size, array, sizeof_n(struct double_pair, size));
+    BoltValue_to_Float64TupleArray(value, data, 1, length);
 }
 
-void BoltValue_to_Float64TripleArray(struct BoltValue* value, struct double_triple * array, int32_t size)
+void BoltValue_to_Float64TupleArray(struct BoltValue* value, double * data, int16_t width, int32_t length)
 {
-    _format(value, BOLT_FLOAT64_TRIPLE_ARRAY, size, array, sizeof_n(struct double_triple, size));
-}
-
-void BoltValue_to_Float64QuadArray(struct BoltValue* value, struct double_quad * array, int32_t size)
-{
-    _format(value, BOLT_FLOAT64_QUAD_ARRAY, size, array, sizeof_n(struct double_quad, size));
+    if (width <= 0)
+    {
+        BoltValue_to_Null(value);
+    }
+    else if (width == 1)
+    {
+        if (length <= sizeof(value->data) / sizeof(double))
+        {
+            _format(value, BOLT_FLOAT64_ARRAY, -1, length, NULL, 0);
+            memcpy(value->data.as_double, data, (size_t)(length));
+        }
+        else
+        {
+            _format(value, BOLT_FLOAT64_ARRAY, -1, length, data, sizeof_n(double, length));
+        }
+    }
+    else
+    {
+        size_t data_size = sizeof_n(double, width * length);
+        _format(value, BOLT_FLOAT64_ARRAY, width, length, data, data_size);
+    }
 }
 
 double BoltFloat64_get(const struct BoltValue* value)
@@ -78,19 +89,13 @@ double BoltFloat64_get(const struct BoltValue* value)
     return value->data.as_double[0];
 }
 
-struct double_pair BoltFloat64Pair_get(const struct BoltValue* value)
+double BoltFloat64Tuple_get(const struct BoltValue* value, int16_t offset)
 {
-    return value->data.as_double_pair[0];
-}
-
-struct double_triple BoltFloat64Triple_get(const struct BoltValue* value)
-{
-    return value->data.extended.as_double_triple[0];
-}
-
-struct double_quad BoltFloat64Quad_get(const struct BoltValue* value)
-{
-    return value->data.extended.as_double_quad[0];
+    int16_t width = value->subtype;
+    size_t data_size = sizeof_n(double, width);
+    const double * data = data_size <= sizeof(value->data) ?
+                          value->data.as_double : value->data.extended.as_double;
+    return data[offset];
 }
 
 double BoltFloat64Array_get(const struct BoltValue* value, int32_t index)
@@ -100,98 +105,39 @@ double BoltFloat64Array_get(const struct BoltValue* value, int32_t index)
     return data[index];
 }
 
-struct double_pair BoltFloat64PairArray_get(const struct BoltValue * value, int32_t index)
+double BoltFloat64TupleArray_get(const struct BoltValue * value, int32_t index, int16_t offset)
 {
-    return value->data.extended.as_double_pair[index];
-}
-
-struct double_triple BoltFloat64TripleArray_get(const struct BoltValue * value, int32_t index)
-{
-    return value->data.extended.as_double_triple[index];
-}
-
-struct double_quad BoltFloat64QuadArray_get(const struct BoltValue * value, int32_t index)
-{
-    return value->data.extended.as_double_quad[index];
+    int16_t width = value->subtype;
+    return value->data.extended.as_double[index * width + offset];
 }
 
 int BoltFloat64_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT64);
-    fprintf(file, "f64(%f)", BoltFloat64_get(value));
-    return 0;
-}
-
-int BoltFloat64Pair_write(struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_FLOAT64_PAIR);
-    struct double_pair tuple = BoltFloat64Pair_get(value);
-    fprintf(file, "ff64(%f %f)", tuple.x, tuple.y);
-    return 0;
-}
-
-int BoltFloat64Triple_write(struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_FLOAT64_TRIPLE);
-    struct double_triple tuple = BoltFloat64Triple_get(value);
-    fprintf(file, "fff64(%f %f %f)", tuple.x, tuple.y, tuple.z);
-    return 0;
-}
-
-int BoltFloat64Quad_write(struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_FLOAT64_QUAD);
-    struct double_quad tuple = BoltFloat64Quad_get(value);
-    fprintf(file, "ffff64(%f %f %f %f)", tuple.x, tuple.y, tuple.z, tuple.a);
+    int width = value->subtype;
+    fprintf(file, "f64(");
+    for (int16_t i = 0; i < width; i++)
+    {
+        if (i > 0) { fprintf(file, " "); }
+        fprintf(file, "%f", BoltFloat64Tuple_get(value, i));
+    }
+    fprintf(file, ")");
     return 0;
 }
 
 int BoltFloat64Array_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT64_ARRAY);
+    int width = value->subtype;
     fprintf(file, "f64[");
     for (int i = 0; i < value->size; i++)
     {
-        fprintf(file, i == 0 ? "%f" : ", %f", BoltFloat64Array_get(value, i));
-    }
-    fprintf(file, "]");
-    return 0;
-}
-
-int BoltFloat64PairArray_write(struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_FLOAT64_PAIR_ARRAY);
-    fprintf(file, "ff64[");
-    for (int i = 0; i < value->size; i++)
-    {
-        struct double_pair tuple = BoltFloat64PairArray_get(value, i);
-        fprintf(file, i == 0 ? "%f %f" : ", %f %f", tuple.x, tuple.y);
-    }
-    fprintf(file, "]");
-    return 0;
-}
-
-int BoltFloat64TripleArray_write(struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_FLOAT64_TRIPLE_ARRAY);
-    fprintf(file, "fff64[");
-    for (int i = 0; i < value->size; i++)
-    {
-        struct double_triple tuple = BoltFloat64TripleArray_get(value, i);
-        fprintf(file, i == 0 ? "%f %f %f" : ", %f %f %f", tuple.x, tuple.y, tuple.z);
-    }
-    fprintf(file, "]");
-    return 0;
-}
-
-int BoltFloat64QuadArray_write(struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_FLOAT64_QUAD_ARRAY);
-    fprintf(file, "ffff64[");
-    for (int i = 0; i < value->size; i++)
-    {
-        struct double_quad tuple = BoltFloat64QuadArray_get(value, i);
-        fprintf(file, i == 0 ? "%f %f %f %f" : ", %f %f %f %f", tuple.x, tuple.y, tuple.z, tuple.a);
+        if (i > 0) { fprintf(file, ", "); }
+        for (int j = 0; j < width; j++)
+        {
+            if (j > 0) { fprintf(file, " "); }
+            fprintf(file, "%f", BoltFloat64TupleArray_get(value, i, j));
+        }
     }
     fprintf(file, "]");
     return 0;

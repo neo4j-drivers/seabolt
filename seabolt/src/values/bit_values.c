@@ -25,44 +25,44 @@
 
 
 
-void BoltValue_to_Bit(struct BoltValue* value, char x)
+void BoltValue_to_Bit(struct BoltValue* value, char data)
 {
-    _format(value, BOLT_BIT, 1, NULL, 0);
-    value->data.as_char[0] = x;
+    _format(value, BOLT_BIT, 0, 1, NULL, 0);
+    value->data.as_char[0] = data;
 }
 
-void BoltValue_to_Byte(struct BoltValue* value, char x)
+void BoltValue_to_Byte(struct BoltValue* value, char data)
 {
-    _format(value, BOLT_BYTE, 1, NULL, 0);
-    value->data.as_char[0] = x;
+    _format(value, BOLT_BYTE, 0, 1, NULL, 0);
+    value->data.as_char[0] = data;
 }
 
-void BoltValue_to_BitArray(struct BoltValue* value, char* array, int32_t size)
+void BoltValue_to_BitArray(struct BoltValue* value, char* data, int32_t length)
 {
-    if (size <= sizeof(value->data) / sizeof(char))
+    if (length <= sizeof(value->data) / sizeof(char))
     {
-        _format(value, BOLT_BIT_ARRAY, size, NULL, 0);
-        memcpy(value->data.as_char, array, (size_t)(size));
+        _format(value, BOLT_BIT_ARRAY, 0, length, NULL, 0);
+        memcpy(value->data.as_char, data, (size_t)(length));
     }
     else
     {
-        _format(value, BOLT_BIT_ARRAY, size, array, sizeof_n(char, size));
+        _format(value, BOLT_BIT_ARRAY, 0, length, data, sizeof_n(char, length));
     }
 }
 
-void BoltValue_to_ByteArray(struct BoltValue* value, char* array, int32_t size)
+void BoltValue_to_ByteArray(struct BoltValue* value, char* data, int32_t length)
 {
-    if (size <= sizeof(value->data) / sizeof(char))
+    if (length <= sizeof(value->data) / sizeof(char))
     {
-        _format(value, BOLT_BYTE_ARRAY, size, NULL, 0);
-        if (array != NULL)
+        _format(value, BOLT_BYTE_ARRAY, 0, length, NULL, 0);
+        if (data != NULL)
         {
-            memcpy(value->data.as_char, array, (size_t)(size));
+            memcpy(value->data.as_char, data, (size_t)(length));
         }
     }
     else
     {
-        _format(value, BOLT_BYTE_ARRAY, size, array, sizeof_n(char, size));
+        _format(value, BOLT_BYTE_ARRAY, 0, length, data, sizeof_n(char, length));
     }
 }
 

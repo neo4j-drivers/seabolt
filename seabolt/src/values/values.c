@@ -62,14 +62,15 @@ void _recycle(struct BoltValue* value)
     }
 }
 
-void _set_type(struct BoltValue* value, enum BoltType type, int size)
+void _set_type(struct BoltValue* value, enum BoltType type, int16_t subtype, int32_t size)
 {
     assert(type < 0x80);
     value->type = (char)(type);
+    value->subtype = subtype;
     value->size = size;
 }
 
-void _format(struct BoltValue* value, enum BoltType type, int size, const void* data, size_t data_size)
+void _format(struct BoltValue* value, enum BoltType type, int16_t subtype, int32_t size, const void* data, size_t data_size)
 {
     _recycle(value);
     value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
@@ -78,7 +79,7 @@ void _format(struct BoltValue* value, enum BoltType type, int size, const void* 
     {
         memcpy(value->data.extended.as_char, data, data_size);
     }
-    _set_type(value, type, size);
+    _set_type(value, type, subtype, size);
 }
 
 
@@ -126,9 +127,10 @@ struct BoltValue* BoltValue_create()
 {
     size_t size = sizeof(struct BoltValue);
     struct BoltValue* value = BoltMem_allocate(size);
-    _set_type(value, BOLT_NULL, 0);
+    _set_type(value, BOLT_NULL, 0, 0);
     value->data_size = 0;
-    value->data.as_uint64[0] = 0;
+    value->data.as_int64[0] = 0;
+    value->data.as_int64[1] = 0;
     value->data.extended.as_ptr = NULL;
     return value;
 }
@@ -137,24 +139,24 @@ void BoltValue_to_Null(struct BoltValue* value)
 {
     if (BoltValue_type(value) != BOLT_NULL)
     {
-        _format(value, BOLT_NULL, 0, NULL, 0);
+        _format(value, BOLT_NULL, 0, 0, NULL, 0);
     }
 }
 
-void BoltValue_to_List(struct BoltValue* value, int32_t size)
+void BoltValue_to_List(struct BoltValue* value, int32_t length)
 {
     if (BoltValue_type(value) == BOLT_LIST)
     {
-        BoltList_resize(value, size);
+        BoltList_resize(value, length);
     }
     else
     {
-        size_t data_size = sizeof(struct BoltValue) * size;
+        size_t data_size = sizeof(struct BoltValue) * length;
         _recycle(value);
         value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
         value->data_size = data_size;
         memset(value->data.extended.as_char, 0, data_size);
-        _set_type(value, BOLT_LIST, size);
+        _set_type(value, BOLT_LIST, 0, length);
     }
 }
 
@@ -245,20 +247,8 @@ int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_vers
             return BoltInt64Array_write(value, file);
         case BOLT_FLOAT64:
             return BoltFloat64_write(value, file);
-        case BOLT_FLOAT64_PAIR:
-            return BoltFloat64Pair_write(value, file);
-        case BOLT_FLOAT64_TRIPLE:
-            return BoltFloat64Triple_write(value, file);
-        case BOLT_FLOAT64_QUAD:
-            return BoltFloat64Quad_write(value, file);
         case BOLT_FLOAT64_ARRAY:
             return BoltFloat64Array_write(value, file);
-        case BOLT_FLOAT64_PAIR_ARRAY:
-            return BoltFloat64PairArray_write(value, file);
-        case BOLT_FLOAT64_TRIPLE_ARRAY:
-            return BoltFloat64TripleArray_write(value, file);
-        case BOLT_FLOAT64_QUAD_ARRAY:
-            return BoltFloat64QuadArray_write(value, file);
         case BOLT_STRUCTURE:
             return BoltStructure_write(value, file, protocol_version);
         case BOLT_STRUCTURE_ARRAY:

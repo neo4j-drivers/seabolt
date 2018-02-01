@@ -27,10 +27,10 @@
 static const char * const REPLACEMENT_CHARACTER = "\xFF\xFD";
 
 
-void BoltValue_to_Char(struct BoltValue * value, uint32_t x)
+void BoltValue_to_Char(struct BoltValue * value, uint32_t data)
 {
-    _format(value, BOLT_CHAR, 1, NULL, 0);
-    value->data.as_uint32[0] = x;
+    _format(value, BOLT_CHAR, 0, 1, NULL, 0);
+    value->data.as_uint32[0] = data;
 }
 
 uint32_t BoltChar_get(const struct BoltValue * value)
@@ -38,17 +38,17 @@ uint32_t BoltChar_get(const struct BoltValue * value)
     return value->data.as_uint32[0];
 }
 
-void BoltValue_to_String(struct BoltValue * value, const char * string, int32_t size)
+void BoltValue_to_String(struct BoltValue * value, const char * data, int32_t length)
 {
-    size_t data_size = size >= 0 ? sizeof(char) * size : 0;
-    if (size <= sizeof(value->data) / sizeof(char))
+    size_t data_size = length >= 0 ? sizeof(char) * length : 0;
+    if (length <= sizeof(value->data) / sizeof(char))
     {
         // If the string is short, it can fit entirely within the
         // BoltValue instance
-        _format(value, BOLT_STRING, size, NULL, 0);
-        if (string != NULL)
+        _format(value, BOLT_STRING, 0, length, NULL, 0);
+        if (data != NULL)
         {
-            memcpy(value->data.as_char, string, (size_t)(size));
+            memcpy(value->data.as_char, data, (size_t)(length));
         }
     }
     else if (BoltValue_type(value) == BOLT_STRING)
@@ -56,72 +56,72 @@ void BoltValue_to_String(struct BoltValue * value, const char * string, int32_t 
         // This is already a UTF-8 string so we can just tweak the value
         value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
         value->data_size = data_size;
-        value->size = size;
-        if (string != NULL)
+        value->size = length;
+        if (data != NULL)
         {
-            memcpy(value->data.extended.as_char, string, data_size);
+            memcpy(value->data.extended.as_char, data, data_size);
         }
     }
     else
     {
         // If all else fails, allocate some new external data space
-        _format(value, BOLT_STRING, size, string, data_size);
+        _format(value, BOLT_STRING, 0, length, data, data_size);
     }
 }
 
-void BoltValue_to_CharArray(struct BoltValue * value, const uint32_t * array, int32_t size)
+void BoltValue_to_CharArray(struct BoltValue * value, const uint32_t * data, int32_t length)
 {
-    size_t data_size = size >= 0 ? sizeof(uint32_t) * size : 0;
-    if (size <= sizeof(value->data) / sizeof(uint32_t))
+    size_t data_size = length >= 0 ? sizeof(uint32_t) * length : 0;
+    if (length <= sizeof(value->data) / sizeof(uint32_t))
     {
-        _format(value, BOLT_CHAR_ARRAY, size, NULL, 0);
-        if (array != NULL)
+        _format(value, BOLT_CHAR_ARRAY, 0, length, NULL, 0);
+        if (data != NULL)
         {
-            memcpy(value->data.as_uint32, array, data_size);
+            memcpy(value->data.as_uint32, data, data_size);
         }
     }
     else if (BoltValue_type(value) == BOLT_CHAR_ARRAY)
     {
         value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
         value->data_size = data_size;
-        value->size = size;
-        if (array != NULL)
+        value->size = length;
+        if (data != NULL)
         {
-            memcpy(value->data.extended.as_uint32, array, data_size);
+            memcpy(value->data.extended.as_uint32, data, data_size);
         }
     }
     else
     {
         // If all else fails, allocate some new external data space
-        _format(value, BOLT_CHAR_ARRAY, size, array, data_size);
+        _format(value, BOLT_CHAR_ARRAY, 0, length, data, data_size);
     }
 }
 
-void BoltValue_to_StringArray(struct BoltValue * value, int32_t size)
+void BoltValue_to_StringArray(struct BoltValue * value, int32_t length)
 {
-    _format(value, BOLT_STRING_ARRAY, size, NULL, sizeof_n(struct array_t, size));
-    for (int i = 0; i < size; i++)
+    _format(value, BOLT_STRING_ARRAY, 0, length, NULL, sizeof_n(struct array_t, length));
+    for (int i = 0; i < length; i++)
     {
         value->data.extended.as_array[i].size = 0;
         value->data.extended.as_array[i].data.as_ptr = NULL;
     }
 }
 
-void BoltValue_to_Dictionary(struct BoltValue * value, int32_t size)
+void BoltValue_to_Dictionary(struct BoltValue * value, int32_t length)
 {
     if (value->type == BOLT_DICTIONARY)
     {
-        _resize(value, size, 2);
+        _resize(value, length, 2);
     }
     else
     {
         size_t unit_size = sizeof(struct BoltValue);
-        size_t data_size = 2 * unit_size * size;
+        size_t data_size = 2 * unit_size * length;
         _recycle(value);
         value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
         value->data_size = data_size;
         memset(value->data.extended.as_char, 0, data_size);
-        _set_type(value, BOLT_DICTIONARY, size);
+        _set_type(value, BOLT_DICTIONARY, 0, length);
     }
 }
 

@@ -25,79 +25,79 @@
 #include "mem.h"
 
 
-void BoltValue_to_Int8(struct BoltValue* value, int8_t x)
+void BoltValue_to_Int8(struct BoltValue* value, int8_t data)
 {
-    _format(value, BOLT_INT8, 1, NULL, 0);
-    value->data.as_int8[0] = x;
+    _format(value, BOLT_INT8, 0, 1, NULL, 0);
+    value->data.as_int8[0] = data;
 }
 
-void BoltValue_to_Int16(struct BoltValue* value, int16_t x)
+void BoltValue_to_Int16(struct BoltValue* value, int16_t data)
 {
-    _format(value, BOLT_INT16, 1, NULL, 0);
-    value->data.as_int16[0] = x;
+    _format(value, BOLT_INT16, 0, 1, NULL, 0);
+    value->data.as_int16[0] = data;
 }
 
-void BoltValue_to_Int32(struct BoltValue* value, int32_t x)
+void BoltValue_to_Int32(struct BoltValue* value, int32_t data)
 {
-    _format(value, BOLT_INT32, 1, NULL, 0);
-    value->data.as_int32[0] = x;
+    _format(value, BOLT_INT32, 0, 1, NULL, 0);
+    value->data.as_int32[0] = data;
 }
 
-void BoltValue_to_Int64(struct BoltValue* value, int64_t x)
+void BoltValue_to_Int64(struct BoltValue* value, int64_t data)
 {
-    _format(value, BOLT_INT64, 1, NULL, 0);
-    value->data.as_int64[0] = x;
+    _format(value, BOLT_INT64, 0, 1, NULL, 0);
+    value->data.as_int64[0] = data;
 }
 
-void BoltValue_to_Int8Array(struct BoltValue* value, int8_t* array, int32_t size)
+void BoltValue_to_Int8Array(struct BoltValue* value, int8_t* data, int32_t length)
 {
-    if (size <= sizeof(value->data) / sizeof(int8_t))
+    if (length <= sizeof(value->data) / sizeof(int8_t))
     {
-        _format(value, BOLT_INT8_ARRAY, size, NULL, 0);
-        memcpy(value->data.as_int8, array, (size_t)(size));
+        _format(value, BOLT_INT8_ARRAY, 0, length, NULL, 0);
+        memcpy(value->data.as_int8, data, (size_t)(length));
     }
     else
     {
-        _format(value, BOLT_INT8_ARRAY, size, array, sizeof_n(int8_t, size));
+        _format(value, BOLT_INT8_ARRAY, 0, length, data, sizeof_n(int8_t, length));
     }
 }
 
-void BoltValue_to_Int16Array(struct BoltValue* value, int16_t* array, int32_t size)
+void BoltValue_to_Int16Array(struct BoltValue* value, int16_t* data, int32_t length)
 {
-    if (size <= sizeof(value->data) / sizeof(int16_t))
+    if (length <= sizeof(value->data) / sizeof(int16_t))
     {
-        _format(value, BOLT_INT16_ARRAY, size, NULL, 0);
-        memcpy(value->data.as_int16, array, (size_t)(size));
+        _format(value, BOLT_INT16_ARRAY, 0, length, NULL, 0);
+        memcpy(value->data.as_int16, data, (size_t)(length));
     }
     else
     {
-        _format(value, BOLT_INT16_ARRAY, size, array, sizeof_n(int16_t, size));
+        _format(value, BOLT_INT16_ARRAY, 0, length, data, sizeof_n(int16_t, length));
     }
 }
 
-void BoltValue_to_Int32Array(struct BoltValue* value, int32_t* array, int32_t size)
+void BoltValue_to_Int32Array(struct BoltValue* value, int32_t* data, int32_t length)
 {
-    if (size <= sizeof(value->data) / sizeof(int32_t))
+    if (length <= sizeof(value->data) / sizeof(int32_t))
     {
-        _format(value, BOLT_INT32_ARRAY, size, NULL, 0);
-        memcpy(value->data.as_int32, array, (size_t)(size));
+        _format(value, BOLT_INT32_ARRAY, 0, length, NULL, 0);
+        memcpy(value->data.as_int32, data, (size_t)(length));
     }
     else
     {
-        _format(value, BOLT_INT32_ARRAY, size, array, sizeof_n(int32_t, size));
+        _format(value, BOLT_INT32_ARRAY, 0, length, data, sizeof_n(int32_t, length));
     }
 }
 
-void BoltValue_to_Int64Array(struct BoltValue* value, int64_t* array, int32_t size)
+void BoltValue_to_Int64Array(struct BoltValue* value, int64_t* data, int32_t length)
 {
-    if (size <= sizeof(value->data) / sizeof(int64_t))
+    if (length <= sizeof(value->data) / sizeof(int64_t))
     {
-        _format(value, BOLT_INT64_ARRAY, size, NULL, 0);
-        memcpy(value->data.as_int64, array, (size_t)(size));
+        _format(value, BOLT_INT64_ARRAY, 0, length, NULL, 0);
+        memcpy(value->data.as_int64, data, (size_t)(length));
     }
     else
     {
-        _format(value, BOLT_INT64_ARRAY, size, array, sizeof_n(int64_t, size));
+        _format(value, BOLT_INT64_ARRAY, 0, length, data, sizeof_n(int64_t, length));
     }
 }
 
