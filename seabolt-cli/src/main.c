@@ -123,7 +123,7 @@ int Bolt_connect(struct Bolt* bolt)
 
 int Bolt_dump_last_received(struct Bolt* bolt)
 {
-    struct BoltValue* last_received = BoltConnection_fetched(bolt->connection);
+    struct BoltValue* last_received = BoltConnection_data(bolt->connection);
     if (last_received == NULL) return -1;
     BoltValue_write(last_received, stdout, bolt->connection->protocol_version);
     fprintf(stdout, "\n");

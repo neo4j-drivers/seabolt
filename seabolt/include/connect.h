@@ -24,7 +24,7 @@
 #ifndef SEABOLT_CONNECT
 #define SEABOLT_CONNECT
 #include "config.h"
-#include <stdio.h>
+#include <stdint.h>
 
 #define try(code) { int status = (code); if (status == -1) { return status; } }
 
@@ -266,7 +266,7 @@ PUBLIC int BoltConnection_fetch_summary_b(struct BoltConnection * connection, in
  * @param connection
  * @return
  */
-PUBLIC struct BoltValue* BoltConnection_fetched(struct BoltConnection * connection);
+PUBLIC struct BoltValue* BoltConnection_data(struct BoltConnection * connection);
 
 /**
  * Set a Cypher statement for subsequent execution.
