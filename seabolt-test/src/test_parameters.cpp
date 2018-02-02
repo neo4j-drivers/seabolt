@@ -609,37 +609,6 @@ SCENARIO("Test float64 in, float64 out", "[integration][ipv6][secure]")
     }
 }
 
-SCENARIO("Test float64 tuple in, list of float64 out", "[integration][ipv6][secure]")
-{
-    if (IS_ONLINE)
-    {
-        GIVEN("an open and initialised connection")
-        {
-            struct BoltConnection * connection = NEW_BOLT_CONNECTION();
-            WHEN("successfully executed Cypher")
-            {
-                PREPARE_RETURN_X(connection, x);
-                double data_in[4] = {3.141592653589, 6.283185307179, -123.456789, NAN};
-                BoltValue_to_Float64Tuple(x, &data_in[0], 4);
-                RUN_PULL_SEND(connection, result);
-                struct BoltValue * data = BoltConnection_data(connection);
-                while (BoltConnection_fetch_b(connection, result))
-                {
-                    REQUIRE_BOLT_LIST(data, 1);
-                    struct BoltValue * tuple = BoltList_value(data, 0);
-                    REQUIRE_BOLT_LIST(tuple, 4);
-                    REQUIRE_BOLT_FLOAT64(BoltList_value(tuple, 0), 3.141592653589);
-                    REQUIRE_BOLT_FLOAT64(BoltList_value(tuple, 1), 6.283185307179);
-                    REQUIRE_BOLT_FLOAT64(BoltList_value(tuple, 2), -123.456789);
-                    REQUIRE(std::isnan(BoltFloat64_get(BoltList_value(tuple, 3))));
-                }
-                REQUIRE_BOLT_SUCCESS(data);
-            }
-            BoltConnection_close_b(connection);
-        }
-    }
-}
-
 SCENARIO("Test float64 array in, list of float64 out", "[integration][ipv6][secure]")
 {
     if (IS_ONLINE)
@@ -670,48 +639,6 @@ SCENARIO("Test float64 array in, list of float64 out", "[integration][ipv6][secu
         }
     }
 }
-
-SCENARIO("Test float64 tuple array in, list of lists of float64 out", "[integration][ipv6][secure]")
-{
-    if (IS_ONLINE)
-    {
-        GIVEN("an open and initialised connection")
-        {
-            struct BoltConnection * connection = NEW_BOLT_CONNECTION();
-            WHEN("successfully executed Cypher")
-            {
-                PREPARE_RETURN_X(connection, x);
-                const size_t array_size = 3;
-                double array_in[4* array_size] = {
-                        -1.23, 2.34, -3.45, 9.87,
-                        3.45, -4.56, 5.67, 0.0,
-                        -5.67, -6.78, 7.89, 3.141592653589,
-                };
-                BoltValue_to_Float64TupleArray(x, &array_in[0], 4, array_size);
-                RUN_PULL_SEND(connection, result);
-                struct BoltValue * data = BoltConnection_data(connection);
-                while (BoltConnection_fetch_b(connection, result))
-                {
-                    REQUIRE_BOLT_LIST(data, 1);
-                    struct BoltValue * array_out = BoltList_value(data, 0);
-                    REQUIRE_BOLT_LIST(array_out, array_size);
-                    for (int i = 0; i < array_size; i++)
-                    {
-                        struct BoltValue * tuple = BoltList_value(array_out, i);
-                        REQUIRE_BOLT_LIST(tuple, 4);
-                        REQUIRE_BOLT_FLOAT64(BoltList_value(tuple, 0), array_in[4 * i + 0]);
-                        REQUIRE_BOLT_FLOAT64(BoltList_value(tuple, 1), array_in[4 * i + 1]);
-                        REQUIRE_BOLT_FLOAT64(BoltList_value(tuple, 2), array_in[4 * i + 2]);
-                        REQUIRE_BOLT_FLOAT64(BoltList_value(tuple, 3), array_in[4 * i + 3]);
-                    }
-                }
-                REQUIRE_BOLT_SUCCESS(data);
-            }
-            BoltConnection_close_b(connection);
-        }
-    }
-}
-
 
 SCENARIO("Test structure in result", "[integration][ipv6][secure]")
 {

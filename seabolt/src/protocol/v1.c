@@ -487,84 +487,16 @@ int load(struct BoltConnection * connection, struct BoltValue * value)
             LOAD_LIST_FROM_INT_ARRAY(connection, value, Int64);
             return 0;
         case BOLT_FLOAT64:
-            switch(value->subtype)
-            {
-                case 2:
-                {
-                    try(load_list_header(connection, 2));
-                    try(load_float(connection, BoltFloat64Tuple_get(value, 0)));
-                    try(load_float(connection, BoltFloat64Tuple_get(value, 1)));
-                    return 0;
-                }
-                case 3:
-                {
-                    try(load_list_header(connection, 3));
-                    try(load_float(connection, BoltFloat64Tuple_get(value, 0)));
-                    try(load_float(connection, BoltFloat64Tuple_get(value, 1)));
-                    try(load_float(connection, BoltFloat64Tuple_get(value, 2)));
-                    return 0;
-                }
-                case 4:
-                {
-                    try(load_list_header(connection, 4));
-                    try(load_float(connection, BoltFloat64Tuple_get(value, 0)));
-                    try(load_float(connection, BoltFloat64Tuple_get(value, 1)));
-                    try(load_float(connection, BoltFloat64Tuple_get(value, 2)));
-                    try(load_float(connection, BoltFloat64Tuple_get(value, 3)));
-                    return 0;
-                }
-                default:
-                    return load_float(connection, BoltFloat64_get(value));
-            }
+            return load_float(connection, BoltFloat64_get(value));
         case BOLT_FLOAT64_ARRAY:
-            switch(value->subtype)
+        {
+            try(load_list_header(connection, value->size));
+            for (int32_t i = 0; i < value->size; i++)
             {
-                case 2:
-                {
-                    try(load_list_header(connection, value->size));
-                    for (int32_t i = 0; i < value->size; i++)
-                    {
-                        try(load_list_header(connection, 2));
-                        try(load_float(connection, BoltFloat64TupleArray_get(value, i, 0)));
-                        try(load_float(connection, BoltFloat64TupleArray_get(value, i, 1)));
-                    }
-                    return 0;
-                }
-                case 3:
-                {
-                    try(load_list_header(connection, value->size));
-                    for (int32_t i = 0; i < value->size; i++)
-                    {
-                        try(load_list_header(connection, 3));
-                        try(load_float(connection, BoltFloat64TupleArray_get(value, i, 0)));
-                        try(load_float(connection, BoltFloat64TupleArray_get(value, i, 1)));
-                        try(load_float(connection, BoltFloat64TupleArray_get(value, i, 2)));
-                    }
-                    return 0;
-                }
-                case 4:
-                {
-                    try(load_list_header(connection, value->size));
-                    for (int32_t i = 0; i < value->size; i++)
-                    {
-                        try(load_list_header(connection, 4));
-                        try(load_float(connection, BoltFloat64TupleArray_get(value, i, 0)));
-                        try(load_float(connection, BoltFloat64TupleArray_get(value, i, 1)));
-                        try(load_float(connection, BoltFloat64TupleArray_get(value, i, 2)));
-                        try(load_float(connection, BoltFloat64TupleArray_get(value, i, 3)));
-                    }
-                    return 0;
-                }
-                default:
-                {
-                    try(load_list_header(connection, value->size));
-                    for (int32_t i = 0; i < value->size; i++)
-                    {
-                        try(load_float(connection, BoltFloat64Array_get(value, i)));
-                    }
-                    return 0;
-                }
+                try(load_float(connection, BoltFloat64Array_get(value, i)));
             }
+            return 0;
+        }
         case BOLT_STRUCTURE:
         {
             try(load_structure_header(connection, BoltStructure_code(value), value->size));

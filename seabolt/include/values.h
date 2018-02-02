@@ -229,11 +229,7 @@ PUBLIC void BoltValue_to_Int64Array(struct BoltValue * value, int64_t * data, in
 
 PUBLIC void BoltValue_to_Float64(struct BoltValue * value, double data);
 
-PUBLIC void BoltValue_to_Float64Tuple(struct BoltValue * value, double * data, int16_t width);
-
 PUBLIC void BoltValue_to_Float64Array(struct BoltValue * value, double * data, int32_t length);
-
-PUBLIC void BoltValue_to_Float64TupleArray(struct BoltValue* value, double * data, int16_t width, int32_t length);
 
 PUBLIC void BoltValue_to_Structure(struct BoltValue * value, int16_t code, int32_t length);
 
@@ -355,11 +351,7 @@ PUBLIC int BoltInt64Array_write(struct BoltValue * value, FILE * file);
 
 PUBLIC double BoltFloat64_get(const struct BoltValue* value);
 
-PUBLIC double BoltFloat64Tuple_get(const struct BoltValue* value, int16_t offset);
-
 PUBLIC double BoltFloat64Array_get(const struct BoltValue* value, int32_t index);
-
-PUBLIC double BoltFloat64TupleArray_get(const struct BoltValue * value, int32_t index, int16_t offset);
 
 PUBLIC int BoltFloat64_write(struct BoltValue * value, FILE * file);
 
