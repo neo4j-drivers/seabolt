@@ -52,6 +52,14 @@ void BoltLog_error(const char* message, ...)
     fprintf(__bolt_log_file, "\n");
 }
 
+void BoltLog_value(struct BoltValue * value, int32_t protocol_version, const char * prefix, const char * suffix)
+{
+    if (__bolt_log_file == NULL) return;
+    fprintf(__bolt_log_file, "bolt: %s", prefix);
+    BoltValue_write(value, __bolt_log_file, protocol_version);
+    fprintf(__bolt_log_file, "%s\n", suffix);
+}
+
 void BoltLog_message(const char * peer, int request_id, struct BoltValue * value, int32_t protocol_version)
 {
     if (__bolt_log_file == NULL) return;

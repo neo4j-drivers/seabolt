@@ -62,6 +62,7 @@ struct BoltConnection* _create(enum BoltTransport transport)
 
     connection->server = BoltMem_allocate(MAX_SERVER_SIZE);
     memset(connection->server, 0, MAX_SERVER_SIZE);
+    connection->fields = BoltValue_create();
     connection->last_bookmark = BoltMem_allocate(MAX_BOOKMARK_SIZE);
     memset(connection->last_bookmark, 0, MAX_BOOKMARK_SIZE);
 
@@ -260,6 +261,7 @@ void _destroy(struct BoltConnection* connection)
     BoltBuffer_destroy(connection->rx_buffer);
     BoltBuffer_destroy(connection->tx_buffer);
     BoltMem_deallocate(connection->server, MAX_SERVER_SIZE);
+    BoltValue_destroy(connection->fields);
     BoltMem_deallocate(connection->last_bookmark, MAX_BOOKMARK_SIZE);
     BoltMem_deallocate(connection, sizeof(struct BoltConnection));
 }
@@ -441,7 +443,7 @@ int _handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int3
     }
 }
 
-void _extract_last_bookmark(struct BoltConnection * connection, struct BoltValue * summary)
+void _extract_metadata(struct BoltConnection * connection, struct BoltValue * summary)
 {
     if (summary->size >= 1)
     {
@@ -463,6 +465,34 @@ void _extract_last_bookmark(struct BoltConnection * connection, struct BoltValue
                                 memset(connection->last_bookmark, 0, MAX_BOOKMARK_SIZE);
                                 memcpy(connection->last_bookmark, BoltString_get(value), (size_t)(value->size));
                                 BoltLog_info("bolt: <SET last_bookmark=\"%s\">", connection->last_bookmark);
+                                break;
+                            }
+                            default:
+                                break;
+                        }
+                    }
+                    else if (strcmp(key, "fields") == 0)
+                    {
+                        struct BoltValue * value = BoltDictionary_value(metadata, i);
+                        switch (BoltValue_type(value))
+                        {
+                            case BOLT_LIST:
+                            {
+                                struct BoltValue * target_value = connection->fields;
+                                BoltValue_to_StringArray(target_value, value->size);
+                                for (int j = 0; j < value->size; j++)
+                                {
+                                    struct BoltValue * source_value = BoltList_value(value, j);
+                                    switch (BoltValue_type(source_value))
+                                    {
+                                        case BOLT_STRING:
+                                            BoltStringArray_put(target_value, j, BoltString_get(source_value), source_value->size);
+                                            break;
+                                        default:
+                                            BoltStringArray_put(target_value, j, "?", 1);
+                                    }
+                                }
+                                BoltLog_value(target_value, 1, "<SET fields=", ">");
                                 break;
                             }
                             default:
@@ -702,7 +732,7 @@ int BoltConnection_fetch_b(struct BoltConnection * connection, int request_id)
                 switch (code)
                 {
                     case BOLT_SUCCESS:
-                        _extract_last_bookmark(connection, state->data);
+                        _extract_metadata(connection, state->data);
                         _set_status(connection, BOLT_READY, BOLT_NO_ERROR);
                         return records;
                     case BOLT_IGNORED:
@@ -950,6 +980,53 @@ int BoltConnection_load_pull_request(struct BoltConnection * connection, int32_t
             {
                 struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
                 return BoltProtocolV1_load_message(connection, state->pull_request);
+            }
+        default:
+            return -1;
+    }
+}
+
+int32_t BoltConnection_n_fields(struct BoltConnection * connection)
+{
+    switch (BoltValue_type(connection->fields))
+    {
+        case BOLT_STRING_ARRAY:
+            return connection->fields->size;
+        default:
+            return -1;
+    }
+}
+
+const char * BoltConnection_field_name(struct BoltConnection * connection, int32_t index)
+{
+    switch (BoltValue_type(connection->fields))
+    {
+        case BOLT_STRING_ARRAY:
+            if (index >=0 && index < connection->fields->size)
+            {
+                return BoltStringArray_get(connection->fields, index);
+            }
+            else
+            {
+                return NULL;
+            }
+        default:
+            return NULL;
+    }
+}
+
+int32_t BoltConnection_field_name_size(struct BoltConnection * connection, int32_t index)
+{
+    switch (BoltValue_type(connection->fields))
+    {
+        case BOLT_STRING_ARRAY:
+            if (index >=0 && index < connection->fields->size)
+            {
+                return BoltStringArray_get_size(connection->fields, index);
+            }
+            else
+            {
+                return -1;
             }
         default:
             return -1;
