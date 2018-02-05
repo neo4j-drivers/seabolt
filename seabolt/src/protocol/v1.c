@@ -451,7 +451,17 @@ int load(struct BoltConnection * connection, struct BoltValue * value)
         case BOLT_STRING:
             return load_string(connection, BoltString_get(value), value->size);
         case BOLT_STRING_ARRAY:
-            return -1;
+        {
+            struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+            load_list_header(connection, value->size);
+            for (int32_t i = 0; i < value->size; i++)
+            {
+                int string_size = BoltStringArray_get_size(value, i);
+                load_string_header(connection, string_size);
+                BoltBuffer_load(state->tx_buffer, BoltStringArray_get(value, i), string_size);
+            }
+            return 0;
+        }
         case BOLT_DICTIONARY:
         {
             try(load_map_header(connection, value->size));

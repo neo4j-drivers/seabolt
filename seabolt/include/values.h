@@ -125,14 +125,24 @@ struct array_t
     union data_t data;
 };
 
-// A BoltValue consists of a 16-byte header
-// followed by a 16-byte data block
+// A BoltValue consists of a 128-bit header followed by a 128-byte data block. For
+// values that require more space than 128 bits, external memory is allocated and
+// a pointer to this is held in the inline data field.
+//
+// +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+// |  type   | subtype |  (logical) size   |         (physical) data size          |
+// |[16 bits]|[16 bits]|     [32 bits]     |               [64 bits]               |
+// +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+// |                      inline data or pointer to external data                  |
+// |                                  [128 bits]                                   |
+// +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+//
 struct BoltValue
 {
     int16_t type;
     int16_t subtype;
     int32_t size;               // logical size
-    size_t data_size;           // physical size
+    uint64_t data_size;         // physical size
     union
     {
         char as_char[16];

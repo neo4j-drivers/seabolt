@@ -138,6 +138,8 @@ struct BoltConnection
 
     /// The product name and version of the remote server
     char * server;
+    /// A BoltValue containing field names
+    struct BoltValue * fields;
     /// The last bookmark received from the server
     char * last_bookmark;
 
@@ -299,12 +301,17 @@ PUBLIC int BoltConnection_load_commit_request(struct BoltConnection * connection
 
 PUBLIC int BoltConnection_load_rollback_request(struct BoltConnection * connection);
 
-PUBLIC const char * BoltConnection_last_bookmark(struct BoltConnection * connection);
-
 PUBLIC int BoltConnection_load_run_request(struct BoltConnection * connection);
 
 PUBLIC int BoltConnection_load_discard_request(struct BoltConnection * connection, int32_t n);
 
 PUBLIC int BoltConnection_load_pull_request(struct BoltConnection * connection, int32_t n);
+
+PUBLIC int32_t BoltConnection_n_fields(struct BoltConnection * connection);
+
+PUBLIC const char * BoltConnection_field_name(struct BoltConnection * connection, int32_t index);
+
+PUBLIC int32_t BoltConnection_field_name_size(struct BoltConnection * connection, int32_t index);
+
 
 #endif // SEABOLT_CONNECT

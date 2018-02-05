@@ -307,6 +307,69 @@ SCENARIO("Test char array in, list of strings out", "[integration][ipv6][secure]
     }
 }
 
+SCENARIO("Test string in, string out", "[integration][ipv6][secure][current]")
+{
+    if (IS_ONLINE)
+    {
+        GIVEN("an open and initialised connection")
+        {
+            struct BoltConnection * connection = NEW_BOLT_CONNECTION();
+            WHEN("successfully executed Cypher")
+            {
+                PREPARE_RETURN_X(connection, x);
+                BoltValue_to_String(x, "hello, world", 12);
+                RUN_PULL_SEND(connection, result);
+                struct BoltValue * data = BoltConnection_data(connection);
+                while (BoltConnection_fetch_b(connection, result))
+                {
+                    REQUIRE_BOLT_LIST(data, 1);
+                    REQUIRE_BOLT_STRING(BoltList_value(data, 0), "hello, world", 12);
+                }
+                REQUIRE_BOLT_SUCCESS(data);
+            }
+            BoltConnection_close_b(connection);
+        }
+    }
+}
+
+SCENARIO("Test string array in, list of strings out", "[integration][ipv6][secure]")
+{
+    if (IS_ONLINE)
+    {
+        GIVEN("an open and initialised connection")
+        {
+            struct BoltConnection * connection = NEW_BOLT_CONNECTION();
+            WHEN("successfully executed Cypher")
+            {
+                PREPARE_RETURN_X(connection, x);
+                BoltValue_to_StringArray(x, 3);
+                BoltStringArray_put(x, 0, "first", 5);
+                BoltStringArray_put(x, 1, "second", 6);
+                BoltStringArray_put(x, 2, "third", 5);
+                REQUIRE(strcmp(BoltStringArray_get(x, 0), "first") == 0);
+                REQUIRE(BoltStringArray_get_size(x, 0) == 5);
+                REQUIRE(strcmp(BoltStringArray_get(x, 1), "second") == 0);
+                REQUIRE(BoltStringArray_get_size(x, 1) == 6);
+                REQUIRE(strcmp(BoltStringArray_get(x, 2), "third") == 0);
+                REQUIRE(BoltStringArray_get_size(x, 2) == 5);
+                RUN_PULL_SEND(connection, result);
+                struct BoltValue * data = BoltConnection_data(connection);
+                while (BoltConnection_fetch_b(connection, result))
+                {
+                    REQUIRE_BOLT_LIST(data, 1);
+                    struct BoltValue * array = BoltList_value(data, 0);
+                    REQUIRE_BOLT_LIST(array, 3);
+                    REQUIRE_BOLT_STRING(BoltList_value(array, 0), "first", 5);
+                    REQUIRE_BOLT_STRING(BoltList_value(array, 1), "second", 6);
+                    REQUIRE_BOLT_STRING(BoltList_value(array, 2), "third", 5);
+                }
+                REQUIRE_BOLT_SUCCESS(data);
+            }
+            BoltConnection_close_b(connection);
+        }
+    }
+}
+
 SCENARIO("Test dictionary in, dictionary out", "[integration][ipv6][secure]")
 {
     if (IS_ONLINE)
