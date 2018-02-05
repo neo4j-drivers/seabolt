@@ -32,7 +32,7 @@ If Not Defined VCINSTALLDIR (
 	For %%D In (Enterprise Professional Community BuildTools) Do (
 		If Exist "C:\Program Files (x86)\Microsoft Visual Studio\2017\%%D\VC\Auxiliary\Build\vcvarsall.bat" (
 			Call "C:\Program Files (x86)\Microsoft Visual Studio\2017\%%D\VC\Auxiliary\Build\vcvarsall.bat" %VS_TOOLS_ARCH%
-			If %ERRORLEVEL% EQU 0 (
+			If ERRORLEVEL 0 (
 				Goto :FoundVS
 			)
 		)
@@ -47,12 +47,12 @@ If Not Defined VCINSTALLDIR (
 )
 
 Set SEABOLTDIR=%~dp0
-pushd %SEABOLTDIR%
+pushd.exe %SEABOLTDIR%
 
 cmake.exe -G "%CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CMAKE_BUILD% || Goto :Failure
-msbuild.exe seabolt-all.sln /p:Platform=%VS_TARGET_PLATFORM% || popd || Goto :Failure
+msbuild.exe seabolt-all.sln /p:Platform=%VS_TARGET_PLATFORM% || Goto :Failure
 
-popd
+popd.exe
 Exit /b 0
 
 :Usage
@@ -63,4 +63,5 @@ Exit /b 0
 	If Not "%TEAMCITY_PROJECT_NAME%" == "" (
 		ECHO ##teamcity[buildStatus status='FAILURE' text='compilation failed']
 	)
+	popd.exe
 	Goto :EOF
