@@ -313,6 +313,44 @@ SCENARIO("Test execution of simple Cypher statement", "[integration][ipv6][secur
     }
 }
 
+SCENARIO("Test field names returned from Cypher execution", "[integration][ipv6][secure][current]")
+{
+    if (IS_ONLINE)
+    {
+        GIVEN("an open and initialised connection")
+        {
+            struct BoltConnection * connection = bolt_open_and_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
+                                                                      BOLT_USER, BOLT_PASSWORD);
+            WHEN("successfully executed Cypher")
+            {
+                const char * statement = "RETURN 1 AS first, true AS second, 3.14 AS third";
+                BoltConnection_set_cypher_template(connection, statement, strlen(statement));
+                BoltConnection_set_n_cypher_parameters(connection, 0);
+                int run = BoltConnection_load_run_request(connection);
+                BoltConnection_load_pull_request(connection, -1);
+                int last = BoltConnection_send_b(connection);
+                BoltConnection_fetch_summary_b(connection, run);
+                int n_fields = BoltConnection_n_fields(connection);
+                REQUIRE(n_fields == 3);
+                const char * field_name = BoltConnection_field_name(connection, 0);
+                int field_name_size = BoltConnection_field_name_size(connection, 0);
+                REQUIRE(strcmp(field_name, "first") == 0);
+                REQUIRE(field_name_size == 5);
+                field_name = BoltConnection_field_name(connection, 1);
+                field_name_size = BoltConnection_field_name_size(connection, 1);
+                REQUIRE(strcmp(field_name, "second") == 0);
+                REQUIRE(field_name_size == 6);
+                field_name = BoltConnection_field_name(connection, 2);
+                field_name_size = BoltConnection_field_name_size(connection, 2);
+                REQUIRE(strcmp(field_name, "third") == 0);
+                REQUIRE(field_name_size == 5);
+                BoltConnection_fetch_summary_b(connection, last);
+            }
+            BoltConnection_close_b(connection);
+        }
+    }
+}
+
 SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
 {
     if (IS_ONLINE)

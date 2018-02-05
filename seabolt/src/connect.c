@@ -1002,7 +1002,7 @@ const char * BoltConnection_field_name(struct BoltConnection * connection, int32
     switch (BoltValue_type(connection->fields))
     {
         case BOLT_STRING_ARRAY:
-            if (index >=0 && index < connection->fields->size)
+            if (index >= 0 && index < connection->fields->size)
             {
                 return BoltStringArray_get(connection->fields, index);
             }
@@ -1020,7 +1020,7 @@ int32_t BoltConnection_field_name_size(struct BoltConnection * connection, int32
     switch (BoltValue_type(connection->fields))
     {
         case BOLT_STRING_ARRAY:
-            if (index >=0 && index < connection->fields->size)
+            if (index >= 0 && index < connection->fields->size)
             {
                 return BoltStringArray_get_size(connection->fields, index);
             }
