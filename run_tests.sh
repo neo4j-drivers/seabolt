@@ -2,6 +2,7 @@
 
 BASE=$(dirname $0)
 PASSWORD="password"
+PORT=7699
 PYTHON="python"
 TEST_ARGS=$@
 
@@ -67,6 +68,14 @@ function run_tests
     fi
     echo "-- Server installed at ${NEO4J_DIR}"
 
+    echo "-- Configuring server to listen on port ${PORT}"
+    neoctrl-configure "${NEO4J_DIR}" dbms.connector.bolt.listen_address=:${PORT}
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Unable to configure server port."
+        exit ${SERVER_CONFIG_FAILED}
+    fi
+
     echo "-- Configuring server to accept IPv6 connections"
     neoctrl-configure "${NEO4J_DIR}" dbms.connectors.default_listen_address=::
     if [ "$?" -ne "0" ]
@@ -94,7 +103,7 @@ function run_tests
     echo "-- Server is listening at ${NEO4J_BOLT_URI}"
 
     echo "-- Checking server"
-    BOLT_LOG=2 BOLT_PASSWORD="${PASSWORD}" ${BASE}/build/bin/seabolt "UNWIND range(1, 10000) AS n RETURN n"
+    BOLT_LOG=2 BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${PORT}" ${BASE}/build/bin/seabolt "UNWIND range(1, 10000) AS n RETURN n"
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Server is incorrectly configured."
@@ -102,7 +111,7 @@ function run_tests
     fi
 
     echo "-- Running tests"
-    ${BASE}/build/bin/seabolt-test ${TEST_ARGS}
+    BOLT_PORT="${PORT}" ${BASE}/build/bin/seabolt-test ${TEST_ARGS}
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Test execution failed."
