@@ -296,15 +296,13 @@ SCENARIO("Test field names returned from Cypher execution", "[integration][ipv6]
             REQUIRE(n_fields == 3);
             const char * field_name = BoltConnection_field_name(connection, 0);
             int field_name_size = BoltConnection_field_name_size(connection, 0);
-            REQUIRE(strcmp(field_name, "first") == 0);
-            REQUIRE(field_name_size == 5);
+            REQUIRE(strncmp(field_name, "first", field_name_size) == 0);
             field_name = BoltConnection_field_name(connection, 1);
             field_name_size = BoltConnection_field_name_size(connection, 1);
-            REQUIRE(strcmp(field_name, "second") == 0);
-            REQUIRE(field_name_size == 6);
+            REQUIRE(strncmp(field_name, "second", field_name_size) == 0);
             field_name = BoltConnection_field_name(connection, 2);
             field_name_size = BoltConnection_field_name_size(connection, 2);
-            REQUIRE(strcmp(field_name, "third") == 0);
+            REQUIRE(strncmp(field_name, "third", field_name_size) == 0);
             REQUIRE(field_name_size == 5);
             BoltConnection_fetch_summary_b(connection, last);
         }

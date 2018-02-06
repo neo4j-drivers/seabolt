@@ -151,20 +151,11 @@ int32_t BoltStringArray_get_size(struct BoltValue * value, int32_t index)
 void BoltStringArray_put(struct BoltValue * value, int32_t index, const char * string, int32_t size)
 {
     struct array_t* s = &value->data.extended.as_array[index];
-    if (size == 0)
+    s->data.as_ptr = BoltMem_adjust(s->data.as_ptr, (size_t)(s->size), (size_t)(size));
+    s->size = size;
+    if (size > 0)
     {
-        s->data.as_ptr = BoltMem_adjust(s->data.as_ptr, (size_t)(s->size), 0);
-        s->size = 0;
-    }
-    else
-    {
-        s->data.as_ptr = BoltMem_adjust(s->data.as_ptr, (size_t)(s->size), (size_t)(size) + 1);
-        s->size = size;
-        if (size > 0)
-        {
-            memcpy(s->data.as_ptr, string, (size_t)(size));
-            ((char *)(s->data.as_ptr))[size] = '\0';
-        }
+        memcpy(s->data.as_ptr, string, (size_t)(size));
     }
 }
 
