@@ -37,14 +37,11 @@ extern "C" {
 
 #define SETTING(name, default_value) ((getenv(name) == nullptr) ? (default_value) : getenv(name))
 
-#define BOLT_ONLINE     SETTING("BOLT_ONLINE", "0")
 #define BOLT_IPV4_HOST  SETTING("BOLT_IPV4_HOST", "127.0.0.1")
 #define BOLT_IPV6_HOST  SETTING("BOLT_IPV6_HOST", "::1")
 #define BOLT_PORT       SETTING("BOLT_PORT", "7687")
 #define BOLT_USER       SETTING("BOLT_USER", "neo4j")
 #define BOLT_PASSWORD   SETTING("BOLT_PASSWORD", "password")
-
-#define IS_ONLINE (strcmp(BOLT_ONLINE, "1") == 0)
 
 #define VERBOSE() BoltLog_set_file(stderr)
 
