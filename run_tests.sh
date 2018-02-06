@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 BASE=$(dirname $0)
+PASSWORD="password"
 PYTHON="python"
 TEST_ARGS=$@
 
@@ -10,6 +11,7 @@ SERVER_INSTALL_FAILED=13
 SERVER_CONFIG_FAILED=14
 SERVER_START_FAILED=15
 SERVER_STOP_FAILED=16
+SERVER_INCORRECTLY_CONFIGURED=17
 TESTS_FAILED=199
 
 function check_boltkit
@@ -52,7 +54,7 @@ function run_tests
     NEO4J_VERSION=$1
 
     SERVER=${BASE}/build/server
-    rm -r ${SERVER}
+    rm -r ${SERVER} 2> /dev/null
 
     echo "Testing against Neo4j ${NEO4J_VERSION}"
 
@@ -74,7 +76,7 @@ function run_tests
     fi
 
     echo "-- Setting initial password"
-    neoctrl-set-initial-password "password" "${NEO4J_DIR}"
+    neoctrl-set-initial-password "${PASSWORD}" "${NEO4J_DIR}"
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Unable to set initial password."
@@ -89,6 +91,15 @@ function run_tests
         exit ${SERVER_START_FAILED}
     fi
     trap "stop_server ${NEO4J_DIR}" EXIT
+    echo "-- Server is listening at ${NEO4J_BOLT_URI}"
+
+    echo "-- Checking server"
+    BOLT_LOG=2 BOLT_PASSWORD="${PASSWORD}" ${BASE}/build/bin/seabolt "UNWIND range(1, 10000) AS n RETURN n"
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Server is incorrectly configured."
+        exit ${SERVER_INCORRECTLY_CONFIGURED}
+    fi
 
     echo "-- Running tests"
     ${BASE}/build/bin/seabolt-test ${TEST_ARGS}

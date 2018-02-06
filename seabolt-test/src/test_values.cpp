@@ -311,12 +311,15 @@ SCENARIO("Test string array in, list of strings out", "[integration][ipv6][secur
             BoltStringArray_put(x, 0, "first", 5);
             BoltStringArray_put(x, 1, "second", 6);
             BoltStringArray_put(x, 2, "third", 5);
-            REQUIRE(strcmp(BoltStringArray_get(x, 0), "first") == 0);
-            REQUIRE(BoltStringArray_get_size(x, 0) == 5);
-            REQUIRE(strcmp(BoltStringArray_get(x, 1), "second") == 0);
-            REQUIRE(BoltStringArray_get_size(x, 1) == 6);
-            REQUIRE(strcmp(BoltStringArray_get(x, 2), "third") == 0);
-            REQUIRE(BoltStringArray_get_size(x, 2) == 5);
+            int32_t field_name_size = BoltStringArray_get_size(x, 0);
+            const char * field_name = BoltStringArray_get(x, 0);
+            REQUIRE(strncmp(field_name, "first", field_name_size) == 0);
+            field_name = BoltStringArray_get(x, 1);
+            field_name_size = BoltStringArray_get_size(x, 1);
+            REQUIRE(strncmp(field_name, "second", field_name_size) == 0);
+            field_name = BoltStringArray_get(x, 2);
+            field_name_size = BoltStringArray_get_size(x, 2);
+            REQUIRE(strncmp(field_name, "third", field_name_size) == 0);
             RUN_PULL_SEND(connection, result);
             struct BoltValue * data = BoltConnection_data(connection);
             while (BoltConnection_fetch_b(connection, result))
