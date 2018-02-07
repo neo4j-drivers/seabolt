@@ -1,6 +1,6 @@
 @Echo Off
 
-%~dp0\make_debug.cmd || Goto :EOF
+Call %~dp0\make_debug.cmd || Goto :EOF
 %~dp0\build\bin\Debug\seabolt-test.exe %* || Goto :Failure
 Exit /b 0
 
