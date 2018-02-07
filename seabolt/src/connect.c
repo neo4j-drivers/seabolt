@@ -89,7 +89,7 @@ int _last_error_to_bolt_error()
 	case EAFNOSUPPORT:
 	case EINVAL:
 	case EPROTONOSUPPORT:
-		return BOLT_DEFUNCT, BOLT_UNSUPPORTED;
+		return BOLT_UNSUPPORTED;
 	case EMFILE:
 	case ENFILE:
 		return BOLT_OUT_OF_FILES;
