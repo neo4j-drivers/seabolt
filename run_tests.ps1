@@ -202,8 +202,10 @@ catch
 
     If ( $env:TEAMCITY_PROJECT_NAME )
     {
-        Write-Host "##teamcity[buildProblem description='$($ErrorMessage)' identity='$($ErrorCode)']"
-        Write-Host "##teamcity[buildStatus status='FAILURE' text='$($ErrorMessage)']"
+        $CleanedErrorMessage = $ErrorMessage -replace "[^a-zA-Z0-9., ]"
+
+        Write-Host "##teamcity[buildProblem description='$($CleanedErrorMessage)' identity='$($ErrorCode)']"
+        Write-Host "##teamcity[buildStatus status='FAILURE' text='$($CleanedErrorMessage)']"
     }
     Else
     {
