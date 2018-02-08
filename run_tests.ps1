@@ -191,15 +191,24 @@ try
 }
 catch
 {
+    $ErrorCode = 1
+    $ErrorMessage = $_.Exception.Message
+
+    If ( $_.TargetObject.Code -and $_.TargetObject.Message )
+    {
+        $ErrorCode = $_.TargetObject.Code
+        $ErrorMessage = $_.TargetObject.Message
+    }
+
     If ( $env:TEAMCITY_PROJECT_NAME )
     {
-        Write-Host "##teamcity[buildProblem description='$($_.TargetObject.Message)' identity='$($_.TargetObject.Code)']"
-        Write-Host "##teamcity[buildStatus status='FAILURE' text='$($_.TargetObject.Message)']"
+        Write-Host "##teamcity[buildProblem description='$($ErrorMessage)' identity='$($ErrorCode)']"
+        Write-Host "##teamcity[buildStatus status='FAILURE' text='$($ErrorMessage)']"
     }
     Else
     {
-        Write-Host "$($_.TargetObject.Message) [$($_.TargetObject.Code)]"
+        Write-Host "$($ErrorMessage) [$($ErrorCode)]"
     }
 
-    Exit $_.TargetObject.Code
+    Exit $ErrorCode
 }
