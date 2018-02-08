@@ -47,6 +47,72 @@
 #define RECEIVE_S(socket, buffer, size, flags) SSL_read(socket, buffer, size)
 #define ADDR_SIZE(address) address->ss_family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6)
 
+int _last_error()
+{
+#if USE_WINSOCK
+	return WSAGetLastError();
+#else
+	return errno;
+#endif
+}
+
+int _last_error_to_bolt_error()
+{
+	switch (_last_error())
+	{
+#if USE_WINSOCK
+	case WSAEACCES:
+		return BOLT_PERMISSION_DENIED;
+	case WSAEAFNOSUPPORT:
+	case WSAEINVAL:
+	case WSAEPROTONOSUPPORT:
+		return BOLT_UNSUPPORTED;
+	case WSAEMFILE:
+		return BOLT_OUT_OF_FILES;
+	case WSAENOBUFS:
+	case WSA_NOT_ENOUGH_MEMORY:
+		return BOLT_OUT_OF_MEMORY;
+	case WSAECONNREFUSED:
+		return BOLT_CONNECTION_REFUSED;
+	case WSAEINTR:
+		return BOLT_INTERRUPTED;
+	case WSAENETUNREACH:
+	case WSAENETRESET:
+	case WSAENETDOWN:
+		return BOLT_NETWORK_UNREACHABLE;
+	case WSAETIMEDOUT:
+		return BOLT_TIMED_OUT;
+#else
+	case EACCES:
+	case EPERM:
+		return BOLT_PERMISSION_DENIED;
+	case EAFNOSUPPORT:
+	case EINVAL:
+	case EPROTONOSUPPORT:
+		return BOLT_UNSUPPORTED;
+	case EMFILE:
+	case ENFILE:
+		return BOLT_OUT_OF_FILES;
+	case ENOBUFS:
+	case ENOMEM:
+		return BOLT_OUT_OF_MEMORY;
+	case EAGAIN:
+		return BOLT_OUT_OF_PORTS;
+	case ECONNREFUSED:
+		return BOLT_CONNECTION_REFUSED;
+	case EINTR:
+		return BOLT_INTERRUPTED;
+	case ENETUNREACH:
+		return BOLT_NETWORK_UNREACHABLE;
+	case ETIMEDOUT:
+		return BOLT_TIMED_OUT;
+
+#endif
+	default:
+		return BOLT_UNKNOWN_ERROR;
+	}
+}
+
 struct BoltConnection* _create(enum BoltTransport transport)
 {
     struct BoltConnection* connection = BoltMem_allocate(sizeof(struct BoltConnection));
@@ -126,62 +192,14 @@ int _open_b(struct BoltConnection* connection, const struct sockaddr_storage* ad
     connection->socket = SOCKET(address->ss_family, SOCK_STREAM, IPPROTO_TCP);
     if (connection->socket == -1)
     {
-        // TODO: Windows
-        switch(errno)
-        {
-            case EACCES:
-                _set_status(connection, BOLT_DEFUNCT, BOLT_PERMISSION_DENIED);
-                return -1;
-            case EAFNOSUPPORT:
-            case EINVAL:
-            case EPROTONOSUPPORT:
-                _set_status(connection, BOLT_DEFUNCT, BOLT_UNSUPPORTED);
-                return -1;
-            case EMFILE:
-            case ENFILE:
-                _set_status(connection, BOLT_DEFUNCT, BOLT_OUT_OF_FILES);
-                return -1;
-            case ENOBUFS:
-            case ENOMEM:
-                _set_status(connection, BOLT_DEFUNCT, BOLT_OUT_OF_MEMORY);
-                return -1;
-            default:
-                _set_status(connection, BOLT_DEFUNCT, BOLT_UNKNOWN_ERROR);
-                return -1;
-        }
+		_set_status(connection, BOLT_DEFUNCT, _last_error_to_bolt_error());
+		return -1;
     }
     int connected = CONNECT(connection->socket, (struct sockaddr *)address, ADDR_SIZE(address));
     if(connected == -1)
     {
-        // TODO: Windows
-        switch(errno)
-        {
-            case EACCES:
-            case EPERM:
-                _set_status(connection, BOLT_DEFUNCT, BOLT_PERMISSION_DENIED);
-                return -1;
-            case EAFNOSUPPORT:
-                _set_status(connection, BOLT_DEFUNCT, BOLT_UNSUPPORTED);
-                return -1;
-            case EAGAIN:
-                _set_status(connection, BOLT_DEFUNCT, BOLT_OUT_OF_PORTS);
-                return -1;
-            case ECONNREFUSED:
-                _set_status(connection, BOLT_DEFUNCT, BOLT_CONNECTION_REFUSED);
-                return -1;
-            case EINTR:
-                _set_status(connection, BOLT_DEFUNCT, BOLT_INTERRUPTED);
-                return -1;
-            case ENETUNREACH:
-                _set_status(connection, BOLT_DEFUNCT, BOLT_NETWORK_UNREACHABLE);
-                return -1;
-            case ETIMEDOUT:
-                _set_status(connection, BOLT_DEFUNCT, BOLT_TIMED_OUT);
-                return -1;
-            default:
-                _set_status(connection, BOLT_DEFUNCT, BOLT_UNKNOWN_ERROR);
-                return -1;
-        }
+		_set_status(connection, BOLT_DEFUNCT, _last_error_to_bolt_error());
+		return -1;
     }
     return 0;
 }
@@ -303,7 +321,7 @@ int _transmit_b(struct BoltConnection* connection, const char * data, int size)
             switch (connection->transport)
             {
                 case BOLT_INSECURE_SOCKET:
-                    _set_status(connection, BOLT_DEFUNCT, errno);
+                    _set_status(connection, BOLT_DEFUNCT, _last_error());
                     BoltLog_error("bolt: Socket error %d on transmit", connection->error);
                     break;
                 case BOLT_SECURE_SOCKET:
@@ -363,7 +381,7 @@ int _receive_b(struct BoltConnection* connection, char* buffer, int min_size, in
             switch (connection->transport)
             {
                 case BOLT_INSECURE_SOCKET:
-                    _set_status(connection, BOLT_DEFUNCT, errno);
+                    _set_status(connection, BOLT_DEFUNCT, _last_error());
                     BoltLog_error("bolt: Socket error %d on receive", connection->error);
                     break;
                 case BOLT_SECURE_SOCKET:
