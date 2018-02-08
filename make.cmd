@@ -31,10 +31,13 @@ REM Check if in Visual Studio Developer Command Prompt
 If Not Defined VCINSTALLDIR (
 	For %%D In (Enterprise Professional Community BuildTools) Do (
 		If Exist "C:\Program Files (x86)\Microsoft Visual Studio\2017\%%D\VC\Auxiliary\Build\vcvarsall.bat" (
+			Pushd %cd%
 			Call "C:\Program Files (x86)\Microsoft Visual Studio\2017\%%D\VC\Auxiliary\Build\vcvarsall.bat" %VS_TOOLS_ARCH%
 			If ERRORLEVEL 0 (
+				Popd
 				Goto :FoundVS
 			)
+			Popd
 		)
 	)
 
@@ -47,12 +50,12 @@ If Not Defined VCINSTALLDIR (
 )
 
 Set SEABOLTDIR=%~dp0
-pushd.exe %SEABOLTDIR%
+Pushd %SEABOLTDIR%
 
 cmake.exe -G "%CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CMAKE_BUILD% || Goto :Failure
 msbuild.exe seabolt-all.sln /p:Platform=%VS_TARGET_PLATFORM% || Goto :Failure
 
-popd.exe
+Popd
 Exit /b 0
 
 :Usage
@@ -60,8 +63,10 @@ Exit /b 0
 	Goto :Failure
 	
 :Failure
-	If Not "%TEAMCITY_PROJECT_NAME%" == "" (
-		ECHO ##teamcity[buildStatus status='FAILURE' text='compilation failed']
+	If "%NEO4J_CHILD_SCRIPT%" == "" (
+		If Not "%TEAMCITY_PROJECT_NAME%" == "" (
+			ECHO ##teamcity[buildStatus status='FAILURE' text='compilation failed']
+		)
 	)
 	popd.exe
-	Goto :EOF
+	Exit /b 1
