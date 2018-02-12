@@ -28,10 +28,10 @@
 #include <connect.h>
 
 
-#define BOLT_SUCCESS 0x70
-#define BOLT_RECORD  0x71
-#define BOLT_IGNORED 0x7E
-#define BOLT_FAILURE 0x7F
+#define BOLT_V1_SUCCESS 0x70
+#define BOLT_V1_RECORD  0x71
+#define BOLT_V1_IGNORED 0x7E
+#define BOLT_V1_FAILURE 0x7F
 
 
 enum BoltProtocolV1Type
@@ -61,8 +61,15 @@ struct BoltProtocolV1State
     struct BoltBuffer* tx_buffer;
     struct BoltBuffer* rx_buffer;
 
-    int next_request_id;
-    int response_counter;
+    /// The product name and version of the remote server
+    char * server;
+    /// A BoltValue containing field names
+    struct BoltValue * fields;
+    /// The last bookmark received from the server
+    char * last_bookmark;
+
+    bolt_request_t next_request_id;
+    bolt_request_t response_counter;
     unsigned long long record_counter;
 
     struct _run_request run;
@@ -88,6 +95,8 @@ int BoltProtocolV1_load_message_quietly(struct BoltConnection * connection, stru
 
 int BoltProtocolV1_compile_INIT(struct BoltValue* value, const char* user_agent, const char* user, const char* password);
 
+int BoltProtocolV1_fetch_b(struct BoltConnection * connection, bolt_request_t request_id);
+
 /**
  * Top-level unload.
  *
@@ -102,6 +111,11 @@ int BoltProtocolV1_unload(struct BoltConnection* connection);
 const char* BoltProtocolV1_structure_name(int16_t code);
 
 const char* BoltProtocolV1_message_name(int16_t code);
+
+int BoltProtocolV1_init_b(struct BoltConnection * connection, const char * user_agent,
+                          const char * user, const char * password);
+
+void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct BoltValue * summary);
 
 
 #endif // SEABOLT_PROTOCOL_V1

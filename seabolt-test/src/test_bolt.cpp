@@ -265,8 +265,10 @@ SCENARIO("Test execution of simple Cypher statement", "[integration][ipv6][secur
         {
             BoltConnection_set_cypher_template(connection, "RETURN 1", 8);
             BoltConnection_set_n_cypher_parameters(connection, 0);
-            int run = BoltConnection_load_run_request(connection);
-            int pull = BoltConnection_load_pull_request(connection, -1);
+            BoltConnection_load_run_request(connection);
+            bolt_request_t run = BoltConnection_last_request(connection);
+            BoltConnection_load_pull_request(connection, -1);
+            bolt_request_t pull = BoltConnection_last_request(connection);
             BoltConnection_send_b(connection);
             int records = BoltConnection_fetch_summary_b(connection, run);
             REQUIRE(records == 0);
@@ -288,9 +290,11 @@ SCENARIO("Test field names returned from Cypher execution", "[integration][ipv6]
             const char * statement = "RETURN 1 AS first, true AS second, 3.14 AS third";
             BoltConnection_set_cypher_template(connection, statement, strlen(statement));
             BoltConnection_set_n_cypher_parameters(connection, 0);
-            int run = BoltConnection_load_run_request(connection);
+            BoltConnection_load_run_request(connection);
+            bolt_request_t run = BoltConnection_last_request(connection);
             BoltConnection_load_pull_request(connection, -1);
-            int last = BoltConnection_send_b(connection);
+            BoltConnection_send_b(connection);
+            bolt_request_t last = BoltConnection_last_request(connection);
             BoltConnection_fetch_summary_b(connection, run);
             int n_fields = BoltConnection_n_fields(connection);
             REQUIRE(n_fields == 3);
@@ -323,8 +327,10 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
             BoltConnection_set_cypher_parameter_key(connection, 0, "x", 1);
             BoltValue * x = BoltConnection_cypher_parameter_value(connection, 0);
             BoltValue_to_Int64(x, 42);
-            int run = BoltConnection_load_run_request(connection);
-            int pull = BoltConnection_load_pull_request(connection, -1);
+            BoltConnection_load_run_request(connection);
+            bolt_request_t run = BoltConnection_last_request(connection);
+            BoltConnection_load_pull_request(connection, -1);
+            bolt_request_t pull = BoltConnection_last_request(connection);
             BoltConnection_send_b(connection);
             int records = BoltConnection_fetch_summary_b(connection, run);
             REQUIRE(records == 0);
@@ -366,7 +372,8 @@ SCENARIO("Test execution of multiple Cypher statements transmitted together", "[
             BoltValue_to_Int8(x, 2);
             BoltConnection_load_run_request(connection);
             BoltConnection_load_pull_request(connection, -1);
-            int last = BoltConnection_send_b(connection);
+            BoltConnection_send_b(connection);
+            unsigned long long last = BoltConnection_last_request(connection);
             int records = BoltConnection_fetch_summary_b(connection, last);
             REQUIRE(records == 1);
         }
@@ -382,16 +389,21 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
                                                                   BOLT_USER, BOLT_PASSWORD);
         WHEN("successfully executed Cypher")
         {
-            int begin = BoltConnection_load_begin_request(connection);
+            BoltConnection_load_begin_request(connection);
+            bolt_request_t begin = BoltConnection_last_request(connection);
 
             BoltConnection_set_cypher_template(connection, "RETURN 1", 8);
             BoltConnection_set_n_cypher_parameters(connection, 0);
-            int run = BoltConnection_load_run_request(connection);
-            int pull = BoltConnection_load_pull_request(connection, -1);
+            BoltConnection_load_run_request(connection);
+            bolt_request_t run = BoltConnection_last_request(connection);
+            BoltConnection_load_pull_request(connection, -1);
+            bolt_request_t pull = BoltConnection_last_request(connection);
 
-            int commit = BoltConnection_load_commit_request(connection);
+            BoltConnection_load_commit_request(connection);
+            bolt_request_t commit = BoltConnection_last_request(connection);
 
-            int last = BoltConnection_send_b(connection);
+            BoltConnection_send_b(connection);
+            bolt_request_t last = BoltConnection_last_request(connection);
             REQUIRE(last == commit);
 
             int records = BoltConnection_fetch_summary_b(connection, begin);
