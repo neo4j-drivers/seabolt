@@ -183,15 +183,6 @@ PUBLIC int BoltConnection_init_b(struct BoltConnection* connection, const char* 
 PUBLIC int BoltConnection_send_b(struct BoltConnection * connection);
 
 /**
- * Obtain a handle to the last request sent to the server. This handle
- * can be used to fetch response data for a particular request.
- *
- * @param connection
- * @return
- */
-PUBLIC bolt_request_t BoltConnection_last_request(struct BoltConnection * connection);
-
-/**
  * Take an exact amount of data from the receive buffer, deferring to
  * the socket if not enough data is available.
  *
@@ -299,6 +290,15 @@ PUBLIC int BoltConnection_load_run_request(struct BoltConnection * connection);
 PUBLIC int BoltConnection_load_discard_request(struct BoltConnection * connection, int32_t n);
 
 PUBLIC int BoltConnection_load_pull_request(struct BoltConnection * connection, int32_t n);
+
+/**
+ * Obtain a handle to the last request sent to the server. This handle
+ * can be used to fetch response data for a particular request.
+ *
+ * @param connection
+ * @return
+ */
+PUBLIC bolt_request_t BoltConnection_last_request(struct BoltConnection * connection);
 
 PUBLIC int32_t BoltConnection_n_fields(struct BoltConnection * connection);
 

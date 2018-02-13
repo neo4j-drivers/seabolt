@@ -117,5 +117,32 @@ int BoltProtocolV1_init_b(struct BoltConnection * connection, const char * user_
 
 void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct BoltValue * summary);
 
+int BoltProtocolV1_set_cypher_template(struct BoltConnection * connection, const char * statement, size_t size);
+
+int BoltProtocolV1_set_n_cypher_parameters(struct BoltConnection * connection, int32_t size);
+
+int BoltProtocolV1_set_cypher_parameter_key(struct BoltConnection * connection, int32_t index, const char * key,
+                                            size_t key_size);
+
+struct BoltValue * BoltProtocolV1_cypher_parameter_value(struct BoltConnection * connection, int32_t index);
+
+int BoltProtocolV1_load_bookmark(struct BoltConnection * connection, const char * bookmark);
+
+int BoltProtocolV1_load_begin_request(struct BoltConnection * connection);
+
+int BoltProtocolV1_load_commit_request(struct BoltConnection * connection);
+
+int BoltProtocolV1_load_rollback_request(struct BoltConnection * connection);
+
+int BoltProtocolV1_load_run_request(struct BoltConnection * connection);
+
+int BoltProtocolV1_load_pull_request(struct BoltConnection * connection, int32_t n);
+
+int32_t BoltProtocolV1_n_fields(struct BoltConnection * connection);
+
+const char * BoltProtocolV1_field_name(struct BoltConnection * connection, int32_t index);
+
+int32_t BoltProtocolV1_field_name_size(struct BoltConnection * connection, int32_t index);
+
 
 #endif // SEABOLT_PROTOCOL_V1
