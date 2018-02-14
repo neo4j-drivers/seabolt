@@ -23,10 +23,16 @@
 
 #ifndef SEABOLT_CONNECT
 #define SEABOLT_CONNECT
+
+#include "addressing.h"
 #include "config.h"
 #include <stdint.h>
 
+
 #define try(code) { int status = (code); if (status == -1) { return status; } }
+
+
+typedef unsigned long long bolt_request_t;
 
 
 /**
@@ -72,49 +78,6 @@ enum BoltConnectionError
     BOLT_END_OF_TRANSMISSION,
 };
 
-
-/**
- * Bolt server address.
- */
-struct BoltAddress
-{
-    /// Original host name or IP address string
-    const char * host;
-    /// Original service name or port number string
-    const char * port;
-
-    /// Number of resolved IP addresses
-    int n_resolved_hosts;
-    /// Resolved IP address data
-    struct sockaddr_storage * resolved_hosts;
-    /// Resolved port number
-    in_port_t resolved_port;
-};
-
-
-
-PUBLIC struct BoltAddress * BoltAddress_create(const char * host, const char * port);
-
-PUBLIC int BoltAddress_resolve_b(struct BoltAddress * address);
-
-/**
- * Copy the textual representation of a resolved host IP address into a buffer.
- *
- * If successful, AF_INET or AF_INET6 is returned depending on the address
- * family. If unsuccessful, -1 is returned. Failure may be a result of a
- * system problem or because the supplied buffer is too small for the address.
- *
- * @param address pointer to a resolved BoltAddress
- * @param index index of the resolved IP address
- * @param buffer buffer in which to write the address representation
- * @param buffer_size size of the buffer
- * @return
- */
-PUBLIC int BoltAddress_copy_resolved_host(struct BoltAddress * address, size_t index, char * buffer, socklen_t buffer_size);
-
-PUBLIC void BoltAddress_destroy(struct BoltAddress * address);
-
-
 /**
  * A Bolt client-server connection instance.
  *
@@ -135,13 +98,6 @@ struct BoltConnection
     int32_t protocol_version;
     /// State required by the protocol
     void* protocol_state;
-
-    /// The product name and version of the remote server
-    char * server;
-    /// A BoltValue containing field names
-    struct BoltValue * fields;
-    /// The last bookmark received from the server
-    char * last_bookmark;
 
     // These buffers contain data exactly as it is transmitted or
     // received. Therefore for Bolt v1, chunk headers are included
@@ -227,30 +183,58 @@ PUBLIC int BoltConnection_init_b(struct BoltConnection* connection, const char* 
 PUBLIC int BoltConnection_send_b(struct BoltConnection * connection);
 
 /**
- * Fetch the next value from the current result stream.
- *
- * After calling this function, the value returned by
- * `BoltConnection_fetched` should contain either record data
- * (stored in a `BOLT_LIST`) or summary metadata (in a `BOLT_SUMMARY`).
+ * Take an exact amount of data from the receive buffer, deferring to
+ * the socket if not enough data is available.
  *
  * @param connection
- * @return 1 if record data is received, 0 if summary metadata is received
- *
- */
-PUBLIC int BoltConnection_fetch_b(struct BoltConnection * connection, int request_id);
-
-/**
- * Fetch values from the current result stream, up to and
- * including the next summary.
- *
- * After calling this function, the value returned by
- * `BoltConnection_fetched` should contain the summary
- * metadata of the received result.
- *
- * @param connection
+ * @param buffer
+ * @param size
  * @return
  */
-PUBLIC int BoltConnection_fetch_summary_b(struct BoltConnection * connection, int request_id);
+PUBLIC int BoltConnection_receive_b(struct BoltConnection * connection, char * buffer, int size);
+
+/**
+ * Fetch the next value from the result stream for a given request.
+ * This will discard the responses of earlier requests that have not
+ * already been fully consumed. This function will always consume at
+ * least one record from the result stream and is not able to check
+ * whether the given request has already been fully consumed; doing
+ * so is the responsibility of the calling application.
+ *
+ * After calling this function, the value returned by
+ * `BoltConnection_data` should contain either record data
+ * (stored in a `BOLT_LIST`) or summary metadata (in a `BOLT_SUMMARY`).
+ *
+ * This function will block until an appropriate value has been fetched.
+ *
+ * @param connection the connection to fetch from
+ * @param request the request for which to fetch a response
+ * @return 1 if record data is received,
+ *         0 if summary metadata is received,
+ *         -1 if an error occurs
+ *
+ */
+PUBLIC int BoltConnection_fetch_b(struct BoltConnection * connection, bolt_request_t request);
+
+/**
+ * Fetch values from the result stream for a given request, up to and
+ * including the next summary. This will discard any unconsumed result
+ * data for this request as well as the responses of earlier requests
+ * that have not already been fully consumed. This function will always
+ * consume at least one record from the result stream and is not able
+ * to check whether the given request has already been fully consumed;
+ * doing so is the responsibility of the calling application.
+ *
+ * After calling this function, the value returned by
+ * `BoltConnection_data` should contain the summary metadata of the
+ * received result (in a `BOLT_SUMMARY`).
+ *
+ * @param connection the connection to fetch from
+ * @param request the request for which to fetch a response
+ * @return >=0 the number of records discarded from this result
+ *         -1 if an error occurs
+ */
+PUBLIC int BoltConnection_fetch_summary_b(struct BoltConnection * connection, bolt_request_t request);
 
 /**
  * Obtain a pointer to the last fetched data values or summary metadata.
@@ -266,9 +250,9 @@ PUBLIC int BoltConnection_fetch_summary_b(struct BoltConnection * connection, in
  * will become invalid after subsequent receive function calls.
  *
  * @param connection
- * @return
+ * @return pointer to a `BoltValue` data structure
  */
-PUBLIC struct BoltValue* BoltConnection_data(struct BoltConnection * connection);
+PUBLIC struct BoltValue * BoltConnection_data(struct BoltConnection * connection);
 
 /**
  * Set a Cypher statement for subsequent execution.
@@ -306,6 +290,15 @@ PUBLIC int BoltConnection_load_run_request(struct BoltConnection * connection);
 PUBLIC int BoltConnection_load_discard_request(struct BoltConnection * connection, int32_t n);
 
 PUBLIC int BoltConnection_load_pull_request(struct BoltConnection * connection, int32_t n);
+
+/**
+ * Obtain a handle to the last request sent to the server. This handle
+ * can be used to fetch response data for a particular request.
+ *
+ * @param connection
+ * @return
+ */
+PUBLIC bolt_request_t BoltConnection_last_request(struct BoltConnection * connection);
 
 PUBLIC int32_t BoltConnection_n_fields(struct BoltConnection * connection);
 

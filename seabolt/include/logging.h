@@ -23,6 +23,7 @@
 #include "config.h"
 #include <stdio.h>
 #include "values.h"
+#include "connect.h"
 
 PUBLIC void BoltLog_set_file(FILE* log_file);
 
@@ -32,6 +33,6 @@ void BoltLog_error(const char* message, ...);
 
 void BoltLog_value(struct BoltValue * value, int32_t protocol_version, const char * prefix, const char * suffix);
 
-void BoltLog_message(const char * peer, int request_id, struct BoltValue * value, int32_t protocol_version);
+void BoltLog_message(const char * peer, bolt_request_t request_id, struct BoltValue * value, int32_t protocol_version);
 
 #endif // SEABOLT_LOGGING

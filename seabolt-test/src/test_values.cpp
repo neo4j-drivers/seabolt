@@ -41,7 +41,8 @@
 #define RUN_PULL_SEND(connection, result)\
     BoltConnection_load_run_request(connection);\
     BoltConnection_load_pull_request(connection, -1);\
-    int (result) = BoltConnection_send_b(connection);
+    BoltConnection_send_b(connection);\
+    bolt_request_t (result) = BoltConnection_last_request(connection);
 
 
 SCENARIO("Test null parameter", "[integration][ipv6][secure]")
@@ -649,9 +650,11 @@ SCENARIO("Test structure in result", "[integration][ipv6][secure]")
             BoltConnection_set_cypher_template(connection, statement, strlen(statement));
             BoltConnection_set_n_cypher_parameters(connection, 0);
             BoltConnection_load_run_request(connection);
-            int result = BoltConnection_load_pull_request(connection, -1);
+            BoltConnection_load_pull_request(connection, -1);
+            bolt_request_t result = BoltConnection_last_request(connection);
             BoltConnection_load_rollback_request(connection);
-            int last = BoltConnection_send_b(connection);
+            BoltConnection_send_b(connection);
+            bolt_request_t last = BoltConnection_last_request(connection);
             struct BoltValue * data = BoltConnection_data(connection);
             while (BoltConnection_fetch_b(connection, result))
             {

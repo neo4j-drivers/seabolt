@@ -1,5 +1,19 @@
 #!/usr/bin/env bash
 
+OPT_QUICK=0
+while getopts ":q" opt
+do
+  case ${opt} in
+    q)
+      OPT_QUICK=1
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      ;;
+  esac
+done
+shift $((OPTIND -1))
+
 BASE=$(dirname $0)
 PASSWORD="password"
 PORT=7699
@@ -102,12 +116,15 @@ function run_tests
     trap "stop_server ${NEO4J_DIR}" EXIT
     echo "-- Server is listening at ${NEO4J_BOLT_URI}"
 
-    echo "-- Checking server"
-    BOLT_LOG=2 BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${PORT}" ${BASE}/build/bin/seabolt "UNWIND range(1, 10000) AS n RETURN n"
-    if [ "$?" -ne "0" ]
+    if [ "${OPT_QUICK}" == "0" ]
     then
-        echo "FATAL: Server is incorrectly configured."
-        exit ${SERVER_INCORRECTLY_CONFIGURED}
+        echo "-- Checking server"
+        BOLT_LOG=2 BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${PORT}" ${BASE}/build/bin/seabolt "UNWIND range(1, 10000) AS n RETURN n"
+        if [ "$?" -ne "0" ]
+        then
+            echo "FATAL: Server is incorrectly configured."
+            exit ${SERVER_INCORRECTLY_CONFIGURED}
+        fi
     fi
 
     echo "-- Running tests"
@@ -128,5 +145,9 @@ compile
 for NEO4J_VERSION in $(grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" COMPATIBILITY)
 do
     run_tests "${NEO4J_VERSION}"
+    if [ "${OPT_QUICK}" != "0" ]
+    then
+        break
+    fi
 done
 echo "Seabolt test run completed at $(date -Ins)"

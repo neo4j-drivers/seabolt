@@ -159,9 +159,12 @@ int Bolt_run(struct Bolt* bolt, const char* statement)
     BoltConnection_load_begin_request(bolt->connection);
     BoltConnection_set_cypher_template(bolt->connection, statement, (int32_t)(strlen(statement)));
     BoltConnection_set_n_cypher_parameters(bolt->connection, 0);
-    int run = BoltConnection_load_run_request(bolt->connection);
-    int pull = BoltConnection_load_pull_request(bolt->connection, -1);
-    int commit = BoltConnection_load_commit_request(bolt->connection);
+    BoltConnection_load_run_request(bolt->connection);
+    bolt_request_t run = BoltConnection_last_request(bolt->connection);
+    BoltConnection_load_pull_request(bolt->connection, -1);
+    bolt_request_t pull = BoltConnection_last_request(bolt->connection);
+    BoltConnection_load_commit_request(bolt->connection);
+    bolt_request_t commit = BoltConnection_last_request(bolt->connection);
 
     BoltConnection_send_b(bolt->connection);
 

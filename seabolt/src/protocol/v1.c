@@ -34,7 +34,12 @@
 #define INITIAL_TX_BUFFER_SIZE 8192
 #define INITIAL_RX_BUFFER_SIZE 8192
 
+#define MAX_BOOKMARK_SIZE 40
+#define MAX_SERVER_SIZE 200
+
 #define MAX_LOGGED_RECORDS 3
+
+#define char_to_uint16be(array) ((uint8_t)(header[0]) << 8) | (uint8_t)(header[1]);
 
 
 int BoltProtocolV1_compile_INIT(struct BoltValue* value, const char* user_agent, const char* user, const char* password)
@@ -75,6 +80,12 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
     state->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
     state->rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
 
+    state->server = BoltMem_allocate(MAX_SERVER_SIZE);
+    memset(state->server, 0, MAX_SERVER_SIZE);
+    state->fields = BoltValue_create();
+    state->last_bookmark = BoltMem_allocate(MAX_BOOKMARK_SIZE);
+    memset(state->last_bookmark, 0, MAX_BOOKMARK_SIZE);
+
     state->next_request_id = 0;
     state->response_counter = 0;
 
@@ -110,6 +121,10 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state)
 
     BoltValue_destroy(state->discard_request);
     BoltValue_destroy(state->pull_request);
+
+    BoltMem_deallocate(state->server, MAX_SERVER_SIZE);
+    BoltValue_destroy(state->fields);
+    BoltMem_deallocate(state->last_bookmark, MAX_BOOKMARK_SIZE);
 
     BoltValue_destroy(state->data);
 
@@ -167,9 +182,8 @@ int load(struct BoltConnection * connection, struct BoltValue * value);
  * Copy request data from buffer 1 to buffer 0, also adding chunks.
  *
  * @param connection
- * @return request ID
  */
-int enqueue(struct BoltConnection * connection);
+void enqueue(struct BoltConnection * connection);
 
 int load_null(struct BoltConnection * connection)
 {
@@ -389,7 +403,8 @@ int load_message(struct BoltConnection * connection, struct BoltValue * value)
     {
         try(load(connection, BoltMessage_value(value, i)));
     }
-    return enqueue(connection);
+    enqueue(connection);
+    return 0;
 }
 
 int BoltProtocolV1_load_message(struct BoltConnection * connection, struct BoltValue * value)
@@ -532,7 +547,7 @@ int load(struct BoltConnection * connection, struct BoltValue * value)
  * @param connection
  * @return request ID
  */
-int enqueue(struct BoltConnection * connection)
+void enqueue(struct BoltConnection * connection)
 {
     // TODO: more chunks if size is too big
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
@@ -546,13 +561,7 @@ int enqueue(struct BoltConnection * connection)
     header[1] = (char)(0);
     BoltBuffer_load(connection->tx_buffer, &header[0], sizeof(header));
     BoltBuffer_compact(state->tx_buffer);
-    int request_id = state->next_request_id;
     state->next_request_id += 1;
-    if (state->next_request_id < 0)
-    {
-        state->next_request_id = 0;
-    }
-    return request_id;
 }
 
 int unload(struct BoltConnection * connection, struct BoltValue * value);
@@ -871,6 +880,53 @@ int unload(struct BoltConnection * connection, struct BoltValue * value)
     }
 }
 
+int BoltProtocolV1_fetch_b(struct BoltConnection * connection, bolt_request_t request_id)
+{
+    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+    bolt_request_t response_id;
+    do
+    {
+        char header[2];
+        int fetched = BoltConnection_receive_b(connection, &header[0], 2);
+        if (fetched == -1)
+        {
+            BoltLog_error("bolt: Could not fetch chunk header");
+            return -1;
+        }
+        uint16_t chunk_size = char_to_uint16be(header);
+        BoltBuffer_compact(state->rx_buffer);
+        while (chunk_size != 0)
+        {
+            fetched = BoltConnection_receive_b(connection, BoltBuffer_load_target(state->rx_buffer, chunk_size),
+                                               chunk_size);
+            if (fetched == -1)
+            {
+                BoltLog_error("bolt: Could not fetch chunk data");
+                return -1;
+            }
+            fetched = BoltConnection_receive_b(connection, &header[0], 2);
+            if (fetched == -1)
+            {
+                BoltLog_error("bolt: Could not fetch chunk header");
+                return -1;
+            }
+            chunk_size = char_to_uint16be(header);
+        }
+        response_id = state->response_counter;
+        BoltProtocolV1_unload(connection);
+        if (BoltValue_type(state->data) == BOLT_MESSAGE)
+        {
+            state->response_counter += 1;
+        }
+    } while (response_id != request_id);
+    if (BoltValue_type(state->data) == BOLT_MESSAGE)
+    {
+        BoltProtocolV1_extract_metadata(connection, state->data);
+        return 0;
+    }
+    return 1;
+}
+
 int BoltProtocolV1_unload(struct BoltConnection* connection)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
@@ -889,7 +945,7 @@ int BoltProtocolV1_unload(struct BoltConnection* connection)
     size = marker & 0x0F;
     struct BoltValue* received = ((struct BoltProtocolV1State*)(connection->protocol_state))->data;
     BoltBuffer_unload_uint8(state->rx_buffer, &code);
-    if (code == BOLT_RECORD)
+    if (code == BOLT_V1_RECORD)
     {
         if (size >= 1)
         {
@@ -972,5 +1028,260 @@ const char* BoltProtocolV1_message_name(int16_t code)
             return "FAILURE";
         default:
             return "?";
+    }
+}
+
+int BoltProtocolV1_init_b(struct BoltConnection * connection, const char * user_agent,
+                          const char * user, const char * password)
+{
+    struct BoltValue * init = BoltValue_create();
+    BoltProtocolV1_compile_INIT(init, user_agent, user, "*******");
+    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+    BoltLog_message("C", state->next_request_id, init, connection->protocol_version);
+    BoltProtocolV1_compile_INIT(init, user_agent, user, password);
+    BoltProtocolV1_load_message_quietly(connection, init);
+    bolt_request_t init_id = BoltConnection_last_request(connection);
+    BoltValue_destroy(init);
+    try(BoltConnection_send_b(connection));
+    BoltConnection_fetch_summary_b(connection, init_id);
+    return BoltMessage_code(BoltConnection_data(connection));
+}
+
+void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct BoltValue * summary)
+{
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+    if (summary->size >= 1)
+    {
+        struct BoltValue * metadata = BoltMessage_value(summary, 0);
+        switch (BoltValue_type(metadata))
+        {
+            case BOLT_DICTIONARY:
+            {
+                for (int32_t i = 0; i < metadata->size; i++)
+                {
+                    const char * key = BoltDictionary_get_key(metadata, i);
+                    if (strcmp(key, "bookmark") == 0)
+                    {
+                        struct BoltValue * value = BoltDictionary_value(metadata, i);
+                        switch (BoltValue_type(value))
+                        {
+                            case BOLT_STRING:
+                            {
+                                memset(state->last_bookmark, 0, MAX_BOOKMARK_SIZE);
+                                memcpy(state->last_bookmark, BoltString_get(value), (size_t)(value->size));
+                                BoltLog_info("bolt: <SET last_bookmark=\"%s\">", state->last_bookmark);
+                                break;
+                            }
+                            default:
+                                break;
+                        }
+                    }
+                    else if (strcmp(key, "fields") == 0)
+                    {
+                        struct BoltValue * value = BoltDictionary_value(metadata, i);
+                        switch (BoltValue_type(value))
+                        {
+                            case BOLT_LIST:
+                            {
+                                struct BoltValue * target_value = state->fields;
+                                BoltValue_to_StringArray(target_value, value->size);
+                                for (int j = 0; j < value->size; j++)
+                                {
+                                    struct BoltValue * source_value = BoltList_value(value, j);
+                                    switch (BoltValue_type(source_value))
+                                    {
+                                        case BOLT_STRING:
+                                            BoltStringArray_put(target_value, j, BoltString_get(source_value), source_value->size);
+                                            break;
+                                        default:
+                                            BoltStringArray_put(target_value, j, "?", 1);
+                                    }
+                                }
+                                BoltLog_value(target_value, 1, "<SET fields=", ">");
+                                break;
+                            }
+                            default:
+                                break;
+                        }
+                    }
+                    else if (strcmp(key, "server") == 0)
+                    {
+                        struct BoltValue * value = BoltDictionary_value(metadata, i);
+                        switch (BoltValue_type(value))
+                        {
+                            case BOLT_STRING:
+                            {
+                                memset(state->server, 0, MAX_SERVER_SIZE);
+                                memcpy(state->server, BoltString_get(value), (size_t)(value->size));
+                                BoltLog_info("bolt: <SET server=\"%s\">", state->server);
+                                break;
+                            }
+                            default:
+                                break;
+                        }
+                    }
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+}
+
+int BoltProtocolV1_set_cypher_template(struct BoltConnection * connection, const char * statement, size_t size)
+{
+    if (size <= INT32_MAX)
+    {
+        struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+        BoltValue_to_String(state->run.statement, statement, (int32_t)(size));
+        return 0;
+    }
+    return -1;
+}
+
+int BoltProtocolV1_set_n_cypher_parameters(struct BoltConnection * connection, int32_t size)
+{
+    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+    BoltValue_to_Dictionary(state->run.parameters, size);
+    return 0;
+}
+
+int BoltProtocolV1_set_cypher_parameter_key(struct BoltConnection * connection, int32_t index, const char * key,
+                                            size_t key_size)
+{
+    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+    return BoltDictionary_set_key(state->run.parameters, index, key, key_size);
+}
+
+struct BoltValue * BoltProtocolV1_cypher_parameter_value(struct BoltConnection * connection, int32_t index)
+{
+    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+    return BoltDictionary_value(state->run.parameters, index);
+}
+
+int BoltProtocolV1_load_bookmark(struct BoltConnection * connection, const char * bookmark)
+{
+    if (bookmark == NULL)
+    {
+        return 0;
+    }
+    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+    struct BoltValue * bookmarks;
+    if (state->begin.parameters->size == 0)
+    {
+        BoltValue_to_Dictionary(state->begin.parameters, 1);
+        BoltDictionary_set_key(state->begin.parameters, 0, "bookmarks", 9);
+        bookmarks = BoltDictionary_value(state->begin.parameters, 0);
+        BoltValue_to_List(bookmarks, 0);
+    }
+    else
+    {
+        bookmarks = BoltDictionary_value(state->begin.parameters, 0);
+    }
+    int32_t n_bookmarks = bookmarks->size;
+    BoltList_resize(bookmarks, n_bookmarks + 1);
+    size_t bookmark_size = strlen(bookmark);
+    if (bookmark_size > INT32_MAX)
+    {
+        return -1;
+    }
+    BoltValue_to_String(BoltList_value(bookmarks, n_bookmarks), bookmark, (int32_t)(bookmark_size));
+    return 1;
+}
+
+int BoltProtocolV1_load_begin_request(struct BoltConnection * connection)
+{
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+    BoltProtocolV1_load_message(connection, state->begin.request);
+    BoltValue_to_Dictionary(state->begin.parameters, 0);
+    BoltProtocolV1_load_message(connection, state->discard_request);
+    return 0;
+}
+
+int BoltProtocolV1_load_commit_request(struct BoltConnection * connection)
+{
+    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+    BoltProtocolV1_load_message(connection, state->commit.request);
+    BoltProtocolV1_load_message(connection, state->discard_request);
+    return 0;
+}
+
+int BoltProtocolV1_load_rollback_request(struct BoltConnection * connection)
+{
+    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+    BoltProtocolV1_load_message(connection, state->rollback.request);
+    BoltProtocolV1_load_message(connection, state->discard_request);
+    return 0;
+}
+
+int BoltProtocolV1_load_run_request(struct BoltConnection * connection)
+{
+    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+    BoltProtocolV1_load_message(connection, state->run.request);
+    return 0;
+}
+
+int BoltProtocolV1_load_pull_request(struct BoltConnection * connection, int32_t n)
+{
+    if (n >= 0)
+    {
+        return -1;
+    }
+    else
+    {
+        struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+        BoltProtocolV1_load_message(connection, state->pull_request);
+        return 0;
+    }
+}
+
+int32_t BoltProtocolV1_n_fields(struct BoltConnection * connection)
+{
+    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+    switch (BoltValue_type(state->fields))
+    {
+        case BOLT_STRING_ARRAY:
+            return state->fields->size;
+        default:
+            return -1;
+    }
+}
+
+const char * BoltProtocolV1_field_name(struct BoltConnection * connection, int32_t index)
+{
+    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+    switch (BoltValue_type(state->fields))
+    {
+        case BOLT_STRING_ARRAY:
+            if (index >= 0 && index < state->fields->size)
+            {
+                return BoltStringArray_get(state->fields, index);
+            }
+            else
+            {
+                return NULL;
+            }
+        default:
+            return NULL;
+    }
+}
+
+int32_t BoltProtocolV1_field_name_size(struct BoltConnection * connection, int32_t index)
+{
+    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+    switch (BoltValue_type(state->fields))
+    {
+        case BOLT_STRING_ARRAY:
+            if (index >= 0 && index < state->fields->size)
+            {
+                return BoltStringArray_get_size(state->fields, index);
+            }
+            else
+            {
+                return -1;
+            }
+        default:
+            return -1;
     }
 }
