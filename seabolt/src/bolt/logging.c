@@ -21,7 +21,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-#include "logging.h"
+#include "bolt/logging.h"
 
 
 static FILE* __bolt_log_file;

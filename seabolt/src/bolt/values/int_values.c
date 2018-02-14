@@ -19,10 +19,10 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <values.h>
+#include <bolt/values.h>
 #include <assert.h>
 #include <inttypes.h>
-#include "mem.h"
+#include "bolt/mem.h"
 
 
 void BoltValue_to_Int8(struct BoltValue* value, int8_t data)

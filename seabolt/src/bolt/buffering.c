@@ -18,10 +18,10 @@
  */
 
 
-#include "buffer.h"
+#include "buffering.h"
 #include <limits.h>
 #include <memory.h>
-#include <mem.h>
+#include <bolt/mem.h>
 
 
 static const char REPLACEMENT_CHARACTER[2] = {(char)(0xFF), (char)(0xFD)};
@@ -180,12 +180,6 @@ void BoltBuffer_load_int64_be(struct BoltBuffer* buffer, int64_t x)
     memcpy_be(&target[0], &x, sizeof(x));
 }
 
-void BoltBuffer_load_float_be(struct BoltBuffer* buffer, float x)
-{
-    char* target = BoltBuffer_load_target(buffer, (int)((sizeof(x))));
-    memcpy_be(&target[0], &x, sizeof(x));
-}
-
 void BoltBuffer_load_double_be(struct BoltBuffer* buffer, double x)
 {
     char* target = BoltBuffer_load_target(buffer, (int)((sizeof(x))));
@@ -272,14 +266,6 @@ int BoltBuffer_unload_int32_be(struct BoltBuffer* buffer, int32_t* x)
 }
 
 int BoltBuffer_unload_int64_be(struct BoltBuffer* buffer, int64_t* x)
-{
-    if (BoltBuffer_unloadable(buffer) < sizeof(*x)) return -1;
-    memcpy_be(x, &buffer->data[buffer->cursor], sizeof(*x));
-    buffer->cursor += sizeof(*x);
-    return 0;
-}
-
-int BoltBuffer_unload_float_be(struct BoltBuffer* buffer, float* x)
 {
     if (BoltBuffer_unloadable(buffer) < sizeof(*x)) return -1;
     memcpy_be(x, &buffer->data[buffer->cursor], sizeof(*x));

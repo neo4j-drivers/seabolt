@@ -1,16 +1,21 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(seabolt C)
-set(CMAKE_C_STANDARD 99)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_FLAGS_DEBUG "-g -Wall")
+set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG -Wall")
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 0)
 set(PROJECT_VERSION_PATCH 0)
 
 include_directories(include)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/bin")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/lib")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/bin")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/lib")
 
 include (TestBigEndian)
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
@@ -35,18 +40,18 @@ endif ()
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file (
-  "${PROJECT_SOURCE_DIR}/config-options.h.in"
-  "${PROJECT_SOURCE_DIR}/include/config-options.h"
+  "${PROJECT_SOURCE_DIR}/include/bolt/config-options.h.in"
+  "${PROJECT_SOURCE_DIR}/include/bolt/config-options.h"
   )
 
 
-file(GLOB H_FILES include/*.h)
-file(GLOB C_FILES src/*.c src/**/*.c)
+file(GLOB H_FILES include/bolt/*.h)
+file(GLOB C_FILES src/bolt/*.c src/bolt/**/*.c)
 add_library(${PROJECT_NAME} SHARED ${H_FILES} ${C_FILES})
 
 target_link_libraries(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES
-        SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+        SOVERSION 0
         VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}"
         )
 
@@ -82,13 +87,14 @@ set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include
 include (InstallRequiredSystemLibraries)
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "Neo4j")
-set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/pkg")
+set(CPACK_PACKAGE_CONTACT "Neo4j Drivers Team <drivers@neo4j.com>")
+set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/pkg")
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE")
-set(CPACK_GENERATOR "TGZ;TXZ;ZIP")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_GENERATOR "DEB;RPM;TGZ;TXZ;ZIP")
 include (CPack)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
-install(FILES ${H_FILES} DESTINATION include)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/bolt" DESTINATION include FILES_MATCHING PATTERN "*.h")

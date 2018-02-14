@@ -25,7 +25,7 @@
 #define SEABOLT_PROTOCOL_V1
 
 #include <stdint.h>
-#include <connect.h>
+#include <bolt/connect.h>
 
 
 #define BOLT_V1_SUCCESS 0x70

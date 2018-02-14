@@ -19,13 +19,13 @@
 
 
 #include <stdlib.h>
-#include <values.h>
+#include <bolt/values.h>
 #include <memory.h>
 #include <assert.h>
-#include "../buffer.h"
+#include "../buffering.h"
 #include "v1.h"
-#include "mem.h"
-#include "logging.h"
+#include "bolt/mem.h"
+#include "bolt/logging.h"
 
 #define RUN 0x10
 #define DISCARD_ALL 0x2F

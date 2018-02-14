@@ -26,9 +26,9 @@
 #include <cstdlib>
 
 extern "C" {
-    #include "connect.h"
-    #include "values.h"
-    #include "logging.h"
+    #include "bolt/connect.h"
+    #include "bolt/values.h"
+    #include "bolt/logging.h"
 }
 
 #if USE_WINSOCK

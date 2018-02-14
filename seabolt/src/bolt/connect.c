@@ -17,14 +17,14 @@
  * limitations under the License.
  */
 
-#include "config-impl.h"
+#include "bolt/config-impl.h"
 #include <stdint.h>
-#include <connect.h>
+#include <bolt/connect.h>
 #include "protocol/v1.h"
-#include "buffer.h"
-#include <values.h>
-#include "logging.h"
-#include "mem.h"
+#include "buffering.h"
+#include <bolt/values.h>
+#include "bolt/logging.h"
+#include "bolt/mem.h"
 
 
 #define INITIAL_TX_BUFFER_SIZE 8192

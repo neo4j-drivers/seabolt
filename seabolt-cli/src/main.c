@@ -23,11 +23,11 @@
 #include <assert.h>
 #include <stdint.h>
 
-#include "bolt.h"
-#include "connect.h"
-#include "mem.h"
-#include "values.h"
-#include "logging.h"
+#include "bolt/lifecycle.h"
+#include "bolt/connect.h"
+#include "bolt/mem.h"
+#include "bolt/values.h"
+#include "bolt/logging.h"
 
 #ifdef WIN32
 #include <winsock2.h>

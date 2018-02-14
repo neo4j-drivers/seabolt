@@ -21,8 +21,8 @@
  * @file
  */
 
-#ifndef SEABOLT_BUFFER
-#define SEABOLT_BUFFER
+#ifndef SEABOLT_BUFFERING
+#define SEABOLT_BUFFERING
 
 #include <stddef.h>
 #include <stdint.h>
@@ -65,8 +65,6 @@ void BoltBuffer_load_int32_be(struct BoltBuffer* buffer, int32_t x);
 
 void BoltBuffer_load_int64_be(struct BoltBuffer* buffer, int64_t x);
 
-void BoltBuffer_load_float_be(struct BoltBuffer* buffer, float x);
-
 void BoltBuffer_load_double_be(struct BoltBuffer* buffer, double x);
 
 int BoltBuffer_unloadable(struct BoltBuffer* buffer);
@@ -89,9 +87,7 @@ int BoltBuffer_unload_int32_be(struct BoltBuffer* buffer, int32_t* x);
 
 int BoltBuffer_unload_int64_be(struct BoltBuffer* buffer, int64_t* x);
 
-int BoltBuffer_unload_float_be(struct BoltBuffer* buffer, float* x);
-
 int BoltBuffer_unload_double_be(struct BoltBuffer* buffer, double* x);
 
 
-#endif // SEABOLT_BUFFER
+#endif // SEABOLT_BUFFERING

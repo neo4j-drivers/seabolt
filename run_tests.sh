@@ -27,7 +27,8 @@ SERVER_CONFIG_FAILED=14
 SERVER_START_FAILED=15
 SERVER_STOP_FAILED=16
 SERVER_INCORRECTLY_CONFIGURED=17
-TESTS_FAILED=199
+TESTS_FAILED=18
+PACKAGING_FAILED=19
 
 function check_boltkit
 {
@@ -40,14 +41,59 @@ function check_boltkit
     fi
 }
 
-function compile
+function compile_debug
 {
-    echo "Compiling"
-    ${BASE}/make_debug.sh
+    if [ "${OPT_QUICK}" == "0" ]
+    then
+        make clean
+    fi
+    echo "Compiling for debug"
+    cmake -DCMAKE_BUILD_TYPE=Debug .
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Compilation failed."
         exit ${COMPILATION_FAILED}
+    fi
+    make
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Compilation failed."
+        exit ${COMPILATION_FAILED}
+    fi
+}
+
+function compile_release
+{
+    echo "Compiling for release"
+    make clean
+    cmake -DCMAKE_BUILD_TYPE=Release .
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Compilation failed."
+        exit ${COMPILATION_FAILED}
+    fi
+    make
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Compilation failed."
+        exit ${COMPILATION_FAILED}
+    fi
+}
+
+function package
+{
+    echo "Packaging"
+    cpack
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Packaging failed."
+        exit ${PACKAGING_FAILED}
+    fi
+    lintian ${BASE}/seabolt/build/pkg/*.deb
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Packaging failed."
+        exit ${PACKAGING_FAILED}
     fi
 }
 
@@ -141,7 +187,7 @@ function run_tests
 
 echo "Seabolt test run started at $(date -Ins)"
 check_boltkit
-compile
+compile_debug
 for NEO4J_VERSION in $(grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" COMPATIBILITY)
 do
     run_tests "${NEO4J_VERSION}"
@@ -150,4 +196,13 @@ do
         break
     fi
 done
+if [ "${OPT_QUICK}" == "0" ]
+then
+    compile_release
+    for NEO4J_VERSION in $(grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" COMPATIBILITY)
+    do
+        run_tests "${NEO4J_VERSION}"
+    done
+    package
+fi
 echo "Seabolt test run completed at $(date -Ins)"

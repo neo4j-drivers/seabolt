@@ -12,7 +12,7 @@ from unittest import TestCase, main
 libc = cdll.LoadLibrary("libc.so.6")
 c_stdout = c_void_p.in_dll(libc, "stdout")
 
-_seabolt = CDLL(path_join(dirname(__file__), "..", "build", "lib", "libseabolt.so"))
+_seabolt = CDLL(path_join(dirname(__file__), "..", "build", "lib", "seabolt.so"))
 
 
 class _BoltConnection(Structure):

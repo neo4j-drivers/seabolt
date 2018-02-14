@@ -17,8 +17,8 @@
  * limitations under the License.
  */
 
-#include "bolt.h"
-#include "config-impl.h"
+#include "bolt/lifecycle.h"
+#include "bolt/config-impl.h"
 
 
 void Bolt_startup()

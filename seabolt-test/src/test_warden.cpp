@@ -23,7 +23,7 @@
 #include "catch.hpp"
 
 extern "C" {
-    #include "mem.h"
+    #include "bolt/mem.h"
 }
 
 

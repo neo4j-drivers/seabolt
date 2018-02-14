@@ -21,8 +21,8 @@
 #include <assert.h>
 #include <memory.h>
 #include <stdint.h>
-#include <values.h>
-#include "mem.h"
+#include <bolt/values.h>
+#include "bolt/mem.h"
 
 
 /**
