@@ -16,7 +16,9 @@ shift $((OPTIND -1))
 
 BASE=$(dirname $0)
 PASSWORD="password"
-PORT=7699
+BOLT_PORT=7699
+HTTPS_PORT=7698
+HTTP_PORT=7697
 PYTHON="python"
 TEST_ARGS=$@
 
@@ -128,8 +130,24 @@ function run_tests
     fi
     echo "-- Server installed at ${NEO4J_DIR}"
 
-    echo "-- Configuring server to listen on port ${PORT}"
-    neoctrl-configure "${NEO4J_DIR}" dbms.connector.bolt.listen_address=:${PORT}
+    echo "-- Configuring server to listen for Bolt on port ${BOLT_PORT}"
+    neoctrl-configure "${NEO4J_DIR}" dbms.connector.bolt.listen_address=:${BOLT_PORT}
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Unable to configure server port."
+        exit ${SERVER_CONFIG_FAILED}
+    fi
+
+    echo "-- Configuring server to listen for HTTPS on port ${HTTPS_PORT}"
+    neoctrl-configure "${NEO4J_DIR}" dbms.connector.https.listen_address=:${HTTPS_PORT}
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Unable to configure server port."
+        exit ${SERVER_CONFIG_FAILED}
+    fi
+
+    echo "-- Configuring server to listen for HTTP on port ${HTTP_PORT}"
+    neoctrl-configure "${NEO4J_DIR}" dbms.connector.http.listen_address=:${HTTP_PORT}
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Unable to configure server port."
@@ -165,7 +183,7 @@ function run_tests
     if [ "${OPT_QUICK}" == "0" ]
     then
         echo "-- Checking server"
-        BOLT_LOG=2 BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${PORT}" ${BASE}/build/bin/seabolt "UNWIND range(1, 10000) AS n RETURN n"
+        BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt debug "UNWIND range(1, 10000) AS n RETURN n"
         if [ "$?" -ne "0" ]
         then
             echo "FATAL: Server is incorrectly configured."
@@ -174,7 +192,7 @@ function run_tests
     fi
 
     echo "-- Running tests"
-    BOLT_PORT="${PORT}" ${BASE}/build/bin/seabolt-test ${TEST_ARGS}
+    BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt-test ${TEST_ARGS}
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Test execution failed."
