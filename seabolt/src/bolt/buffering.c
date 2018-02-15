@@ -27,11 +27,11 @@
 static const char REPLACEMENT_CHARACTER[2] = {(char)(0xFF), (char)(0xFD)};
 
 
-struct BoltBuffer* BoltBuffer_create(size_t size)
+struct BoltBuffer* BoltBuffer_create(int size)
 {
     struct BoltBuffer* buffer = BoltMem_allocate(sizeof(struct BoltBuffer));
     buffer->size = size;
-    buffer->data = BoltMem_allocate(buffer->size);
+    buffer->data = BoltMem_allocate((size_t)(buffer->size));
     buffer->extent = 0;
     buffer->cursor = 0;
     return buffer;
@@ -39,7 +39,7 @@ struct BoltBuffer* BoltBuffer_create(size_t size)
 
 void BoltBuffer_destroy(struct BoltBuffer* buffer)
 {
-    buffer->data = BoltMem_deallocate(buffer->data, buffer->size);
+    buffer->data = BoltMem_deallocate(buffer->data, (size_t)(buffer->size));
     BoltMem_deallocate(buffer, sizeof(struct BoltBuffer));
 }
 
@@ -59,8 +59,8 @@ void BoltBuffer_compact(struct BoltBuffer* buffer)
 
 int BoltBuffer_loadable(struct BoltBuffer* buffer)
 {
-    size_t available = buffer->size - buffer->extent;
-    return available > INT_MAX ? INT_MAX : (int)(available);
+    int available = buffer->size - buffer->extent;
+    return available > INT_MAX ? INT_MAX : available;
 }
 
 char* BoltBuffer_load_target(struct BoltBuffer* buffer, int size)
@@ -68,8 +68,8 @@ char* BoltBuffer_load_target(struct BoltBuffer* buffer, int size)
     int available = BoltBuffer_loadable(buffer);
     if (size > available)
     {
-        size_t new_size = buffer->size + (size - available);
-        buffer->data = BoltMem_reallocate(buffer->data, buffer->size, new_size);
+        int new_size = buffer->size + (size - available);
+        buffer->data = BoltMem_reallocate(buffer->data, (size_t)(buffer->size), (size_t)(new_size));
         buffer->size = new_size;
     }
     int extent = buffer->extent;
@@ -186,12 +186,12 @@ void BoltBuffer_load_double_be(struct BoltBuffer* buffer, double x)
     memcpy_be(&target[0], &x, sizeof(x));
 }
 
-int BoltBuffer_unloadable(struct BoltBuffer* buffer)
+int BoltBuffer_unloadable(struct BoltBuffer * buffer)
 {
     return buffer->extent - buffer->cursor;
 }
 
-char* BoltBuffer_unload_target(struct BoltBuffer* buffer, int size)
+char * BoltBuffer_unload_target(struct BoltBuffer* buffer, int size)
 {
     int available = BoltBuffer_unloadable(buffer);
     if (size > available) return NULL;

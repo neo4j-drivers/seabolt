@@ -30,14 +30,14 @@
 
 struct BoltBuffer
 {
-    size_t size;
+    int size;
     int extent;
     int cursor;
     char* data;
 };
 
 
-struct BoltBuffer* BoltBuffer_create(size_t size);
+struct BoltBuffer* BoltBuffer_create(int size);
 
 void BoltBuffer_destroy(struct BoltBuffer* buffer);
 
@@ -67,7 +67,7 @@ void BoltBuffer_load_int64_be(struct BoltBuffer* buffer, int64_t x);
 
 void BoltBuffer_load_double_be(struct BoltBuffer* buffer, double x);
 
-int BoltBuffer_unloadable(struct BoltBuffer* buffer);
+int BoltBuffer_unloadable(struct BoltBuffer * buffer);
 
 char* BoltBuffer_unload_target(struct BoltBuffer* buffer, int size);
 

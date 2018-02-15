@@ -67,8 +67,8 @@ struct BoltValue;
 enum BoltType
 {
     /// Containers
-    BOLT_NULL,                          /* Indicator of absence of value (Null in Bolt v1) */
-    BOLT_LIST,                          /* Variable-length value container (List in Bolt v1) */
+    BOLT_NULL,                          /* Indicator of absence of value (Null in BoltApplication v1) */
+    BOLT_LIST,                          /* Variable-length value container (List in BoltApplication v1) */
 
     /// Bits
     BOLT_BIT,                           /* ALSO IN BOLT v1 (as Boolean) */
@@ -81,7 +81,7 @@ enum BoltType
     BOLT_CHAR_ARRAY,                    /* Array of Unicode (UTF-32) characters */
     BOLT_STRING,                        /* Unicode (UTF-8) string */
     BOLT_STRING_ARRAY,                  /* Array of Unicode (UTF-8) strings */
-    BOLT_DICTIONARY,                    /* Sequence of Unicode (UTF-8) keys paired with values (similar to Map in Bolt v1) */
+    BOLT_DICTIONARY,                    /* Sequence of Unicode (UTF-8) keys paired with values (similar to Map in BoltApplication v1) */
 
     /// Integers
     BOLT_INT8,

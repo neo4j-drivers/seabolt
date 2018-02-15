@@ -770,3 +770,25 @@ int32_t BoltConnection_field_name_size(struct BoltConnection * connection, int32
             return -1;
     }
 }
+
+int BoltConnection_dump_field_names(struct BoltConnection * connection, FILE * file)
+{
+    switch (connection->protocol_version)
+    {
+        case 1:
+            return BoltProtocolV1_dump(BoltProtocolV1_state(connection)->fields, file);
+        default:
+            return -1;
+    }
+}
+
+int BoltConnection_dump_data(struct BoltConnection * connection, FILE * file)
+{
+    switch (connection->protocol_version)
+    {
+        case 1:
+            return BoltProtocolV1_dump(BoltProtocolV1_state(connection)->data, file);
+        default:
+            return -1;
+    }
+}
