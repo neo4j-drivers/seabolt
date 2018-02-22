@@ -35,11 +35,7 @@ extern "C" {
 #include <winsock2.h>
 #endif
 
-#ifdef WIN32
-#define SETTING(name, default_value) ((_dupenv_s(name) == nullptr) ? (default_value) : _dupenv_s(name))
-#else
 #define SETTING(name, default_value) ((getenv(name) == nullptr) ? (default_value) : getenv(name))
-#endif
 
 #define BOLT_IPV4_HOST  SETTING("BOLT_IPV4_HOST", "127.0.0.1")
 #define BOLT_IPV6_HOST  SETTING("BOLT_IPV6_HOST", "::1")

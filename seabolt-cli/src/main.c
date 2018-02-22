@@ -81,15 +81,9 @@ struct Application
     char ** argv;
 };
 
-#ifdef WIN32
-#define GETENV _dupenv_s
-#else
-#define GETENV getenv
-#endif
-
 const char* getenv_or_default(const char* name, const char* default_value)
 {
-    const char* value = GETENV(name);
+    const char* value = getenv(name);
     return (value == NULL) ? default_value : value;
 }
 
@@ -115,7 +109,7 @@ struct Application* app_create(int argc, char ** argv)
     const char* BOLT_HOST = getenv_or_default("BOLT_HOST", "localhost");
     const char* BOLT_PORT = getenv_or_default("BOLT_PORT", "7687");
     const char* BOLT_USER = getenv_or_default("BOLT_USER", "neo4j");
-    const char* BOLT_PASSWORD = GETENV("BOLT_PASSWORD");
+    const char* BOLT_PASSWORD = getenv("BOLT_PASSWORD");
 
     struct Application * app = BoltMem_allocate(sizeof(struct Application));
     app->transport = (strcmp(BOLT_SECURE, "1") == 0) ? BOLT_SECURE_SOCKET : BOLT_INSECURE_SOCKET;
