@@ -22,7 +22,7 @@
 #include <bolt/values.h>
 #include <memory.h>
 #include <assert.h>
-#include "../buffering.h"
+#include "bolt/buffering.h"
 #include "v1.h"
 #include "bolt/mem.h"
 #include "bolt/logging.h"

@@ -18,7 +18,7 @@
  */
 
 
-#include "buffering.h"
+#include "bolt/buffering.h"
 #include <limits.h>
 #include <memory.h>
 #include <bolt/mem.h>

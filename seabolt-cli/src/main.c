@@ -28,7 +28,7 @@
 #include "bolt/mem.h"
 #include "bolt/values.h"
 #include "bolt/logging.h"
-#include "../../seabolt/src/bolt/buffering.h"
+#include "bolt/buffering.h"
 
 #ifdef WIN32
 #include <winsock2.h>

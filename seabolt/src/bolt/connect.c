@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <bolt/connect.h>
 #include "protocol/v1.h"
-#include "buffering.h"
+#include "bolt/buffering.h"
 #include <bolt/values.h>
 #include "bolt/logging.h"
 #include "bolt/mem.h"
