@@ -82,23 +82,6 @@ function compile_release
     fi
 }
 
-function package
-{
-    echo "Packaging"
-    cpack
-    if [ "$?" -ne "0" ]
-    then
-        echo "FATAL: Packaging failed."
-        exit ${PACKAGING_FAILED}
-    fi
-    lintian ${BASE}/seabolt/build/pkg/*.deb
-    if [ "$?" -ne "0" ]
-    then
-        echo "FATAL: Packaging failed."
-        exit ${PACKAGING_FAILED}
-    fi
-}
-
 function stop_server
 {
     NEO4J_DIR=$1
@@ -221,6 +204,5 @@ then
     do
         run_tests "${NEO4J_VERSION}"
     done
-    package
 fi
 echo "Seabolt test run completed at $(date -Ins)"

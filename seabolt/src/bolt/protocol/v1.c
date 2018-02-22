@@ -1277,16 +1277,7 @@ int32_t BoltProtocolV1_field_name_size(struct BoltConnection * connection, int32
     }
 }
 
-int BoltProtocolV1_dump(struct BoltValue * value, FILE * file)
+int BoltProtocolV1_dump(struct BoltValue * value, struct BoltBuffer * buffer)
 {
-    struct BoltBuffer * buffer = BoltBuffer_create(1024);
-    load(buffer, value);
-    int size = BoltBuffer_unloadable(buffer);
-    char * data = BoltBuffer_unload_target(buffer, size);
-    for (int i = 0; i < size; i++)
-    {
-        putc(data[i], file);
-    }
-    BoltBuffer_destroy(buffer);
-    return size;
+    return load(buffer, value);
 }

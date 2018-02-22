@@ -15,7 +15,7 @@ Connection Management
 Addressing
 ==========
 
-A :class:`BoltAddress` structure holds details of a BoltApplication server address.
+A :class:`BoltAddress` structure holds details of a Application server address.
 This structure will typically be initialised with a logical address (i.e. a domain name) that can later be resolved into one or more physical IP addresses.
 The :func:`BoltAddress_create` function is used to create and initialise a structure, the :func:`BoltAddress_resolve_b` function performs a blocking lookup on the host and port and may be repeated multiple times.
 All resolved IP addresses are stored as IPv6 addresses, using the `IPv4 mapped address scheme <https://tools.ietf.org/html/rfc5156#section-2.2>`_ for IPv4 addresses.
@@ -37,7 +37,7 @@ All resolved IP addresses are stored as IPv6 addresses, using the `IPv4 mapped a
 Connections
 ===========
 
-Connections provide the core means of communication to a BoltApplication server.
+Connections provide the core means of communication to a Application server.
 
 .. doxygenstruct:: BoltConnection
    :members:

@@ -144,7 +144,7 @@ const char * BoltProtocolV1_field_name(struct BoltConnection * connection, int32
 
 int32_t BoltProtocolV1_field_name_size(struct BoltConnection * connection, int32_t index);
 
-int BoltProtocolV1_dump(struct BoltValue * value, FILE * file);
+int BoltProtocolV1_dump(struct BoltValue * value, struct BoltBuffer * buffer);
 
 
 #endif // SEABOLT_PROTOCOL_V1
