@@ -17,14 +17,14 @@
  * limitations under the License.
  */
 
-#include "config-impl.h"
+#include "bolt/config-impl.h"
 #include <stdint.h>
-#include <connect.h>
+#include <bolt/connect.h>
 #include "protocol/v1.h"
-#include "buffer.h"
-#include <values.h>
-#include "logging.h"
-#include "mem.h"
+#include "bolt/buffering.h"
+#include <bolt/values.h>
+#include "bolt/logging.h"
+#include "bolt/mem.h"
 
 
 #define INITIAL_TX_BUFFER_SIZE 8192
@@ -766,6 +766,28 @@ int32_t BoltConnection_field_name_size(struct BoltConnection * connection, int32
     {
         case 1:
             return BoltProtocolV1_field_name_size(connection, index);
+        default:
+            return -1;
+    }
+}
+
+int BoltConnection_dump_field_names(struct BoltConnection * connection, struct BoltBuffer * buffer)
+{
+    switch (connection->protocol_version)
+    {
+        case 1:
+            return BoltProtocolV1_dump(BoltProtocolV1_state(connection)->fields, buffer);
+        default:
+            return -1;
+    }
+}
+
+int BoltConnection_dump_data(struct BoltConnection * connection, struct BoltBuffer * buffer)
+{
+    switch (connection->protocol_version)
+    {
+        case 1:
+            return BoltProtocolV1_dump(BoltProtocolV1_state(connection)->data, buffer);
         default:
             return -1;
     }

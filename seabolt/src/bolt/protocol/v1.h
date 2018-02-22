@@ -25,7 +25,7 @@
 #define SEABOLT_PROTOCOL_V1
 
 #include <stdint.h>
-#include <connect.h>
+#include <bolt/connect.h>
 
 
 #define BOLT_V1_SUCCESS 0x70
@@ -143,6 +143,8 @@ int32_t BoltProtocolV1_n_fields(struct BoltConnection * connection);
 const char * BoltProtocolV1_field_name(struct BoltConnection * connection, int32_t index);
 
 int32_t BoltProtocolV1_field_name_size(struct BoltConnection * connection, int32_t index);
+
+int BoltProtocolV1_dump(struct BoltValue * value, struct BoltBuffer * buffer);
 
 
 #endif // SEABOLT_PROTOCOL_V1

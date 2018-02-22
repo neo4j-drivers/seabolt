@@ -18,7 +18,7 @@
  */
 
 #include <string.h>
-#include <values.h>
+#include <bolt/values.h>
 #include <assert.h>
 
 

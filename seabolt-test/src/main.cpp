@@ -22,7 +22,7 @@
 #include "catch.hpp"
 
 extern "C" {
-	#include "bolt.h"
+	#include "bolt/lifecycle.h"
 }
 
 int main(int argc, char* argv[]) {

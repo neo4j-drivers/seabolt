@@ -16,7 +16,9 @@ shift $((OPTIND -1))
 
 BASE=$(dirname $0)
 PASSWORD="password"
-PORT=7699
+BOLT_PORT=7699
+HTTPS_PORT=7698
+HTTP_PORT=7697
 PYTHON="python"
 TEST_ARGS=$@
 
@@ -27,7 +29,8 @@ SERVER_CONFIG_FAILED=14
 SERVER_START_FAILED=15
 SERVER_STOP_FAILED=16
 SERVER_INCORRECTLY_CONFIGURED=17
-TESTS_FAILED=199
+TESTS_FAILED=18
+PACKAGING_FAILED=19
 
 function check_boltkit
 {
@@ -40,10 +43,38 @@ function check_boltkit
     fi
 }
 
-function compile
+function compile_debug
 {
-    echo "Compiling"
-    ${BASE}/make_debug.sh
+    if [ "${OPT_QUICK}" == "0" ]
+    then
+        make clean
+    fi
+    echo "Compiling for debug"
+    cmake -DCMAKE_BUILD_TYPE=Debug .
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Compilation failed."
+        exit ${COMPILATION_FAILED}
+    fi
+    make
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Compilation failed."
+        exit ${COMPILATION_FAILED}
+    fi
+}
+
+function compile_release
+{
+    echo "Compiling for release"
+    make clean
+    cmake -DCMAKE_BUILD_TYPE=Release .
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Compilation failed."
+        exit ${COMPILATION_FAILED}
+    fi
+    make
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Compilation failed."
@@ -82,8 +113,24 @@ function run_tests
     fi
     echo "-- Server installed at ${NEO4J_DIR}"
 
-    echo "-- Configuring server to listen on port ${PORT}"
-    neoctrl-configure "${NEO4J_DIR}" dbms.connector.bolt.listen_address=:${PORT}
+    echo "-- Configuring server to listen for Bolt on port ${BOLT_PORT}"
+    neoctrl-configure "${NEO4J_DIR}" dbms.connector.bolt.listen_address=:${BOLT_PORT}
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Unable to configure server port."
+        exit ${SERVER_CONFIG_FAILED}
+    fi
+
+    echo "-- Configuring server to listen for HTTPS on port ${HTTPS_PORT}"
+    neoctrl-configure "${NEO4J_DIR}" dbms.connector.https.listen_address=:${HTTPS_PORT}
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Unable to configure server port."
+        exit ${SERVER_CONFIG_FAILED}
+    fi
+
+    echo "-- Configuring server to listen for HTTP on port ${HTTP_PORT}"
+    neoctrl-configure "${NEO4J_DIR}" dbms.connector.http.listen_address=:${HTTP_PORT}
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Unable to configure server port."
@@ -119,7 +166,7 @@ function run_tests
     if [ "${OPT_QUICK}" == "0" ]
     then
         echo "-- Checking server"
-        BOLT_LOG=2 BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${PORT}" ${BASE}/build/bin/seabolt "UNWIND range(1, 10000) AS n RETURN n"
+        BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt debug "UNWIND range(1, 10000) AS n RETURN n"
         if [ "$?" -ne "0" ]
         then
             echo "FATAL: Server is incorrectly configured."
@@ -128,7 +175,7 @@ function run_tests
     fi
 
     echo "-- Running tests"
-    BOLT_PORT="${PORT}" ${BASE}/build/bin/seabolt-test ${TEST_ARGS}
+    BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt-test ${TEST_ARGS}
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Test execution failed."
@@ -141,7 +188,7 @@ function run_tests
 
 echo "Seabolt test run started at $(date -Ins)"
 check_boltkit
-compile
+compile_debug
 for NEO4J_VERSION in $(grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" COMPATIBILITY)
 do
     run_tests "${NEO4J_VERSION}"
@@ -150,4 +197,12 @@ do
         break
     fi
 done
+if [ "${OPT_QUICK}" == "0" ]
+then
+    compile_release
+    for NEO4J_VERSION in $(grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" COMPATIBILITY)
+    do
+        run_tests "${NEO4J_VERSION}"
+    done
+fi
 echo "Seabolt test run completed at $(date -Ins)"

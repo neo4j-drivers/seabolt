@@ -19,9 +19,9 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <values.h>
+#include <bolt/values.h>
 #include <assert.h>
-#include "mem.h"
+#include "bolt/mem.h"
 
 
 

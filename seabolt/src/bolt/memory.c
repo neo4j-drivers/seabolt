@@ -22,7 +22,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "mem.h"
+#include "bolt/mem.h"
 
 
 void* memcpy_r(void* dest, const void* src, size_t n)

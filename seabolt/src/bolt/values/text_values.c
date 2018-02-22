@@ -20,8 +20,8 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
-#include <values.h>
-#include "mem.h"
+#include <bolt/values.h>
+#include "bolt/mem.h"
 
 
 static const char * const REPLACEMENT_CHARACTER = "\xFF\xFD";

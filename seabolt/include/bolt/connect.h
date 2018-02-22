@@ -27,6 +27,7 @@
 #include "addressing.h"
 #include "config.h"
 #include <stdint.h>
+#include <stdio.h>
 
 
 #define try(code) { int status = (code); if (status == -1) { return status; } }
@@ -100,7 +101,7 @@ struct BoltConnection
     void* protocol_state;
 
     // These buffers contain data exactly as it is transmitted or
-    // received. Therefore for Bolt v1, chunk headers are included
+    // received. Therefore for Application v1, chunk headers are included
     // in these buffers
 
     /// Transmit buffer
@@ -305,6 +306,10 @@ PUBLIC int32_t BoltConnection_n_fields(struct BoltConnection * connection);
 PUBLIC const char * BoltConnection_field_name(struct BoltConnection * connection, int32_t index);
 
 PUBLIC int32_t BoltConnection_field_name_size(struct BoltConnection * connection, int32_t index);
+
+PUBLIC int BoltConnection_dump_field_names(struct BoltConnection * connection, struct BoltBuffer * buffer);
+
+PUBLIC int BoltConnection_dump_data(struct BoltConnection * connection, struct BoltBuffer * buffer);
 
 
 #endif // SEABOLT_CONNECT

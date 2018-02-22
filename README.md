@@ -38,6 +38,7 @@ Currently windows builds also depend on OpenSSL, however support for windows sec
 
 To build the project, run either the `make_debug.sh` or the `make_release.sh` script from the project root directory.
 This will compile and deposit project artifacts in the `build/bin` and `build/lib` directories.
+To create distributable packages, use `make_packages.sh` instead.
 
 ## Docs 
 

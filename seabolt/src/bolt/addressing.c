@@ -18,11 +18,11 @@
  */
 
 
-#include "addressing.h"
-#include "logging.h"
-#include "mem.h"
+#include "bolt/addressing.h"
+#include "bolt/logging.h"
+#include "bolt/mem.h"
 #include "memory.h"
-#include "config-impl.h"
+#include "bolt/config-impl.h"
 
 
 #define SOCKADDR_STORAGE_SIZE sizeof(struct sockaddr_storage)
