@@ -41,7 +41,14 @@ struct BoltAddress* BoltAddress_create(const char * host, const char * port)
 
 int BoltAddress_resolve_b(struct BoltAddress * address)
 {
-    BoltLog_info("bolt: Resolving address %s:%s", address->host, address->port);
+    if (strchr(address->host, ':') == NULL)
+    {
+        BoltLog_info("bolt: Resolving address %s:%s", address->host, address->port);
+    }
+    else
+    {
+        BoltLog_info("bolt: Resolving address [%s]:%s", address->host, address->port);
+    }
     static struct addrinfo hints;
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -89,7 +96,14 @@ int BoltAddress_resolve_b(struct BoltAddress * address)
             p += 1;
         }
         freeaddrinfo(ai);
-        BoltLog_info("bolt: Host resolved to %d IP addresses", address->n_resolved_hosts);
+        if (address->n_resolved_hosts == 1)
+        {
+            BoltLog_info("bolt: Host resolved to 1 IP address");
+        }
+        else
+        {
+            BoltLog_info("bolt: Host resolved to %d IP addresses", address->n_resolved_hosts);
+        }
     }
     else
     {

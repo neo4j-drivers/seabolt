@@ -18,10 +18,10 @@
  */
 
 
-#include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
 
+#include "bolt/logging.h"
 #include "bolt/mem.h"
 
 

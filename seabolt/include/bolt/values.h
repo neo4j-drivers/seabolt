@@ -84,11 +84,9 @@ enum BoltType
     BOLT_DICTIONARY,                    /* Sequence of Unicode (UTF-8) keys paired with values (similar to Map in Bolt v1) */
 
     /// Integers
-    BOLT_INT8,
     BOLT_INT16,
     BOLT_INT32,
     BOLT_INT64,                         /* ALSO IN BOLT v1 (as Integer) */
-    BOLT_INT8_ARRAY,
     BOLT_INT16_ARRAY,
     BOLT_INT32_ARRAY,
     BOLT_INT64_ARRAY,
@@ -221,15 +219,11 @@ PUBLIC void BoltValue_to_StringArray(struct BoltValue * value, int32_t length);
 
 PUBLIC void BoltValue_to_Dictionary(struct BoltValue * value, int32_t length);
 
-PUBLIC void BoltValue_to_Int8(struct BoltValue * value, int8_t data);
-
 PUBLIC void BoltValue_to_Int16(struct BoltValue * value, int16_t data);
 
 PUBLIC void BoltValue_to_Int32(struct BoltValue * value, int32_t data);
 
 PUBLIC void BoltValue_to_Int64(struct BoltValue * value, int64_t data);
-
-PUBLIC void BoltValue_to_Int8Array(struct BoltValue * value, int8_t * data, int32_t length);
 
 PUBLIC void BoltValue_to_Int16Array(struct BoltValue * value, int16_t * data, int32_t length);
 

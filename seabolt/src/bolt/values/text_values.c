@@ -17,14 +17,60 @@
  * limitations under the License.
  */
 
+
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
-#include <bolt/values.h>
+
 #include "bolt/mem.h"
+#include "bolt/values.h"
 
 
-static const char * const REPLACEMENT_CHARACTER = "\xFF\xFD";
+#define CHAR_ARRAY_QUOTE  '\''
+#define STRING_QUOTE '"'
+#define CODE_POINT_OPEN_BRACKET '{'
+#define CODE_POINT_CLOSE_BRACKET '}'
+#define REPLACEMENT_CHARACTER "\xFF\xFD"
+
+#define IS_PRINTABLE_ASCII(ch) ((ch) >= ' ' && (ch) <= '~')
+
+
+void write_string(FILE * file, const char * data, size_t size)
+{
+    fputc(STRING_QUOTE, file);
+    for (size_t i = 0; i < size; i++)
+    {
+        fputc(data[i], file);
+    }
+    fputc(STRING_QUOTE, file);
+}
+
+void write_code_point(FILE * file, const uint32_t ch)
+{
+    if (ch < 0x10000)
+    {
+        fprintf(file, "U+%c%c%c%c", hex3(&ch, 0), hex2(&ch, 0), hex1(&ch, 0), hex0(&ch, 0));
+    }
+    else if (ch < 0x100000)
+    {
+        fprintf(file, "U+%c%c%c%c%c", hex4(&ch, 0), hex3(&ch, 0), hex2(&ch, 0), hex1(&ch, 0), hex0(&ch, 0));
+    }
+    else if (ch < 0x1000000)
+    {
+        fprintf(file, "U+%c%c%c%c%c%c", hex5(&ch, 0), hex4(&ch, 0), hex3(&ch, 0), hex2(&ch, 0), hex1(&ch, 0), hex0(&ch, 0));
+    }
+    else
+    {
+        fprintf(file, REPLACEMENT_CHARACTER);
+    }
+}
+
+void write_bracketed_code_point(FILE * file, const uint32_t ch)
+{
+    fputc(CODE_POINT_OPEN_BRACKET, file);
+    write_code_point(file, ch);
+    fputc(CODE_POINT_CLOSE_BRACKET, file);
+}
 
 
 void BoltValue_to_Char(struct BoltValue * value, uint32_t data)
@@ -201,62 +247,32 @@ struct BoltValue* BoltDictionary_value(struct BoltValue * value, int32_t index)
     return &value->data.extended.as_value[2 * index + 1];
 }
 
-void _write_string(FILE* file, const char* data, size_t size)
-{
-    fprintf(file, "\"");
-    for (size_t i = 0; i < size; i++)
-    {
-        fprintf(file, "%c", data[i]);
-    }
-    fprintf(file, "\"");
-}
-
-int _write_char(FILE* file, const uint32_t ch)
-{
-    if (ch >= 0x20 && ch <= 0x7E && ch != '\'')
-    {
-        fprintf(file, "'%c'", (char)(ch));
-        return 0;
-    }
-    if (ch < 0x10000)
-    {
-        fprintf(file, "U+%c%c%c%c", hex3(&ch, 0), hex2(&ch, 0), hex1(&ch, 0), hex0(&ch, 0));
-        return 0;
-    }
-    if (ch < 0x100000)
-    {
-        fprintf(file, "U+%c%c%c%c%c", hex4(&ch, 0), hex3(&ch, 0), hex2(&ch, 0), hex1(&ch, 0), hex0(&ch, 0));
-        return 0;
-    }
-    if (ch < 0x1000000)
-    {
-        fprintf(file, "U+%c%c%c%c%c%c", hex5(&ch, 0), hex4(&ch, 0), hex3(&ch, 0), hex2(&ch, 0), hex1(&ch, 0), hex0(&ch, 0));
-        return 0;
-    }
-    fprintf(file, "?");
-    return -1;
-}
-
 int BoltChar_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_CHAR);
-    fprintf(file, "char(");
-    int status = _write_char(file, BoltChar_get(value));
-    fprintf(file, ")");
-    return status;
+    write_code_point(file, BoltChar_get(value));
+    return 0;
 }
 
 int BoltCharArray_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_CHAR_ARRAY);
-    uint32_t * array = BoltCharArray_get(value);
-    fprintf(file, "char[");
+    uint32_t * chars = BoltCharArray_get(value);
+    fputc(CHAR_ARRAY_QUOTE, file);
     for (int32_t i = 0; i < value->size; i++)
     {
-        if (i > 0) { fprintf(file, ", "); }
-        _write_char(file, array[i]);
+        uint32_t ch = chars[i];
+        if (IS_PRINTABLE_ASCII(ch) && ch != CHAR_ARRAY_QUOTE &&
+            ch != CODE_POINT_OPEN_BRACKET && ch != CODE_POINT_CLOSE_BRACKET)
+        {
+            fputc(ch, file);
+        }
+        else
+        {
+            write_bracketed_code_point(file, ch);
+        }
     }
-    fprintf(file, "]");
+    fputc(CHAR_ARRAY_QUOTE, file);
     return 0;
 }
 
@@ -264,17 +280,18 @@ int BoltString_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_STRING);
     char * data = BoltString_get(value);
-    fprintf(file, "str(\"");
+    fputc(STRING_QUOTE, file);
     for (int i = 0; i < value->size; i++)
     {
         char ch0 = data[i];
-        if (ch0 >= ' ' && ch0 <= '~' && ch0 != '"')
+        if (IS_PRINTABLE_ASCII(ch0) && ch0 != STRING_QUOTE && 
+                ch0 != CODE_POINT_OPEN_BRACKET && ch0 != CODE_POINT_CLOSE_BRACKET)
         {
-            fprintf(file, "%c", ch0);
+            fputc(ch0, file);
         }
         else if (ch0 >= 0)
         {
-            fprintf(file, "\\u00%c%c", hex1(&ch0, 0), hex0(&ch0, 0));
+            write_bracketed_code_point(file, (uint32_t)(ch0));
         }
         else if ((ch0 & 0b11100000) == 0b11000000)
         {
@@ -282,7 +299,7 @@ int BoltString_write(struct BoltValue * value, FILE * file)
             {
                 char ch1 = data[++i];
                 uint32_t ch = ((ch0 & (uint32_t)(0b00011111)) << 6) | (ch1 & (uint32_t)(0b00111111));
-                fprintf(file, "\\u%c%c%c%c", hex3(&ch, 0), hex2(&ch, 0), hex1(&ch, 0), hex0(&ch, 0));
+                write_bracketed_code_point(file, ch);
             }
             else
             {
@@ -296,7 +313,7 @@ int BoltString_write(struct BoltValue * value, FILE * file)
                 char ch1 = data[++i];
                 char ch2 = data[++i];
                 uint32_t ch = ((ch0 & (uint32_t)(0b00001111)) << 12) | ((ch1 & (uint32_t)(0b00111111)) << 6) | (ch2 & (uint32_t)(0b00111111));
-                fprintf(file, "\\u%c%c%c%c", hex3(&ch, 0), hex2(&ch, 0), hex1(&ch, 0), hex0(&ch, 0));
+                write_bracketed_code_point(file, ch);
             }
             else
             {
@@ -311,7 +328,7 @@ int BoltString_write(struct BoltValue * value, FILE * file)
                 char ch2 = data[++i];
                 char ch3 = data[++i];
                 uint32_t ch = ((ch0 & (uint32_t)(0b00000111)) << 18) | ((ch1 & (uint32_t)(0b00111111)) << 12) | ((ch2 & (uint32_t)(0b00111111)) << 6) | (ch3 & (uint32_t)(0b00111111));
-                fprintf(file, "\\U%c%c%c%c%c%c%c%c", hex7(&ch, 0), hex6(&ch, 0), hex5(&ch, 0), hex4(&ch, 0), hex3(&ch, 0), hex2(&ch, 0), hex1(&ch, 0), hex0(&ch, 0));
+                write_bracketed_code_point(file, ch);
             }
             else
             {
@@ -323,14 +340,14 @@ int BoltString_write(struct BoltValue * value, FILE * file)
             fprintf(file, REPLACEMENT_CHARACTER);
         }
     }
-    fprintf(file, "\")");
+    fputc(STRING_QUOTE, file);
     return 0;
 }
 
 int BoltStringArray_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_STRING_ARRAY);
-    fprintf(file, "str[");
+    fprintf(file, "$[");
     for (long i = 0; i < value->size; i++)
     {
         if (i > 0) { fprintf(file, ", "); }
@@ -341,7 +358,7 @@ int BoltStringArray_write(struct BoltValue * value, FILE * file)
         }
         else
         {
-            _write_string(file, string.data.as_char, (size_t)(string.size));
+            write_string(file, string.data.as_char, (size_t)(string.size));
         }
     }
     fprintf(file, "]");
@@ -351,7 +368,7 @@ int BoltStringArray_write(struct BoltValue * value, FILE * file)
 int BoltDictionary_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
 {
     assert(BoltValue_type(value) == BOLT_DICTIONARY);
-    fprintf(file, "dict[");
+    fprintf(file, "{");
     int comma = 0;
     for (int i = 0; i < value->size; i++)
     {
@@ -359,12 +376,12 @@ int BoltDictionary_write(struct BoltValue * value, FILE * file, int32_t protocol
         if (key != NULL)
         {
             if (comma) fprintf(file, ", ");
-            _write_string(file, key, (size_t)(BoltDictionary_get_key_size(value, i)));
-            fprintf(file, " ");
+            write_string(file, key, (size_t)(BoltDictionary_get_key_size(value, i)));
+            fprintf(file, ": ");
             BoltValue_write(BoltDictionary_value(value, i), file, protocol_version);
             comma = 1;
         }
     }
-    fprintf(file, "]");
+    fprintf(file, "}");
     return 0;
 }

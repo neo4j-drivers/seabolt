@@ -24,13 +24,11 @@
 #ifndef SEABOLT_CONNECT
 #define SEABOLT_CONNECT
 
-#include "addressing.h"
-#include "config.h"
 #include <stdint.h>
 #include <stdio.h>
 
-
-#define try(code) { int status = (code); if (status == -1) { return status; } }
+#include "addressing.h"
+#include "config.h"
 
 
 typedef unsigned long long bolt_request_t;
@@ -79,12 +77,23 @@ enum BoltConnectionError
     BOLT_END_OF_TRANSMISSION,
 };
 
+struct BoltConnectionMetrics
+{
+    struct timespec time_opened;
+    struct timespec time_closed;
+    unsigned long long bytes_sent;
+    unsigned long long bytes_received;
+};
+
 /**
  * A Bolt client-server connection instance.
  *
  */
 struct BoltConnection
 {
+    /// The agent currently responsible for using this connection
+    const void * agent;
+
     /// Transport type for this connection
     enum BoltTransport transport;
 
@@ -101,7 +110,7 @@ struct BoltConnection
     void* protocol_state;
 
     // These buffers contain data exactly as it is transmitted or
-    // received. Therefore for Application v1, chunk headers are included
+    // received. Therefore for Bolt v1, chunk headers are included
     // in these buffers
 
     /// Transmit buffer
@@ -109,6 +118,8 @@ struct BoltConnection
     /// Receive buffer
     struct BoltBuffer* rx_buffer;
 
+    /// Connection metrics
+    struct BoltConnectionMetrics metrics;
     /// Current status of the connection
     enum BoltConnectionStatus status;
     /// Current connection error code
@@ -117,13 +128,23 @@ struct BoltConnection
 
 
 /**
+ *
+ *
+ * @return
+ */
+PUBLIC struct BoltConnection * BoltConnection_create();
+
+/**
+ *
+ */
+PUBLIC void BoltConnection_destroy(struct BoltConnection* connection);
+
+/**
  * Open a connection to a Bolt server.
  *
- * This function allocates a new BoltConnection struct for the given _transport_
- * and attempts to connect it to _address_. The BoltConnection is returned
- * regardless of whether or not the connection attempt is successful. The
- * `address` should be a pointer to a `BoltAddress` struct that has bee
- * successfully resolved.
+ * This function attempts to connect a BoltConnection to _address_ over
+ * _transport_. The `address` should be a pointer to a `BoltAddress` struct
+ * that has been successfully resolved.
  *
  * This function blocks until the connection attempt succeeds or fails.
  * On returning, the connection status will be set to either `BOLT_CONNECTED`
@@ -149,11 +170,12 @@ struct BoltConnection
  * ========================  ====================================================================
  * @endverbatim
  *
+ * @param connection the connection to open
  * @param transport the type of transport over which to connect
  * @param address descriptor of the remote Bolt server address
- * @return a pointer to a new BoltConnection struct
+ * @return 0 if the connection was opened successfully, -1 otherwise
  */
-PUBLIC struct BoltConnection* BoltConnection_open_b(enum BoltTransport transport, struct BoltAddress* address);
+PUBLIC int BoltConnection_open_b(struct BoltConnection * connection, enum BoltTransport transport, struct BoltAddress * address);
 
 /**
  * Close a connection.
@@ -174,6 +196,16 @@ PUBLIC void BoltConnection_close_b(struct BoltConnection* connection);
  */
 PUBLIC int BoltConnection_init_b(struct BoltConnection* connection, const char* user_agent,
                           const char* user, const char* password);
+
+/**
+ * Reset the connection to discard any outstanding results,
+ * rollback the current transaction and clear any unacknowledged
+ * failures.
+ *
+ * @param connection
+ * @return
+ */
+PUBLIC int BoltConnection_reset_b(struct BoltConnection * connection);
 
 /**
  * Send all queued requests.
@@ -256,27 +288,31 @@ PUBLIC int BoltConnection_fetch_summary_b(struct BoltConnection * connection, bo
 PUBLIC struct BoltValue * BoltConnection_data(struct BoltConnection * connection);
 
 /**
- * Set a Cypher statement for subsequent execution.
+ * Set the next Cypher statement template to be run on this connection
+ * from a null-terminated string.
  *
  * @param connection
- * @param statement
- * @param size
+ * @param cypher
+ * @param n_parameters
  * @return
  */
-PUBLIC int BoltConnection_set_cypher_template(struct BoltConnection * connection, const char * statement, size_t size);
+PUBLIC int BoltConnection_cypher(struct BoltConnection * connection, const char * cypher, int32_t n_parameters);
 
 /**
- * Set the number of parameters to use in subsequent Cypher execution.
+ * Set the next Cypher statement template to be run on this connection
+ * from an explicitly-sized string.
  *
  * @param connection
- * @param size
+ * @param cypher
+ * @param cypher_size
+ * @param n_parameters
  * @return
  */
-PUBLIC int BoltConnection_set_n_cypher_parameters(struct BoltConnection * connection, int32_t size);
+PUBLIC int BoltConnection_cypher_x(struct BoltConnection * connection, const char * cypher, size_t cypher_size, int32_t n_parameters);
 
-PUBLIC int BoltConnection_set_cypher_parameter_key(struct BoltConnection * connection, int32_t index, const char * key, size_t key_size);
+PUBLIC struct BoltValue * BoltConnection_cypher_parameter(struct BoltConnection * connection, int32_t index, const char * key);
 
-PUBLIC struct BoltValue* BoltConnection_cypher_parameter_value(struct BoltConnection * connection, int32_t index);
+PUBLIC struct BoltValue * BoltConnection_cypher_parameter_x(struct BoltConnection * connection, int32_t index, const char * key, size_t key_size);
 
 PUBLIC int BoltConnection_load_bookmark(struct BoltConnection * connection, const char * bookmark);
 

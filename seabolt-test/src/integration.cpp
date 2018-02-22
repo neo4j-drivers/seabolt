@@ -27,16 +27,17 @@
 
 struct BoltAddress * bolt_get_address(const char * host, const char * port)
 {
-    struct BoltAddress * service = BoltAddress_create(host, port);
-    int status = BoltAddress_resolve_b(service);
+    struct BoltAddress * address = BoltAddress_create(host, port);
+    int status = BoltAddress_resolve_b(address);
     REQUIRE(status == 0);
-    return service;
+    return address;
 }
 
 struct BoltConnection* bolt_open_b(enum BoltTransport transport, const char * host, const char * port)
 {
     struct BoltAddress * address = bolt_get_address(host, port);
-    struct BoltConnection* connection = BoltConnection_open_b(transport, address);
+    struct BoltConnection* connection = BoltConnection_create();
+    BoltConnection_open_b(connection, transport, address);
     BoltAddress_destroy(address);
     REQUIRE(connection->status == BOLT_CONNECTED);
     return connection;
@@ -45,8 +46,14 @@ struct BoltConnection* bolt_open_b(enum BoltTransport transport, const char * ho
 struct BoltConnection* bolt_open_and_init_b(enum BoltTransport transport, const char * host, const char * port,
                                             const char * user, const char * password)
 {
-    struct BoltConnection* connection = bolt_open_b(transport, host, port);
+    struct BoltConnection * connection = bolt_open_b(transport, host, port);
     BoltConnection_init_b(connection, "seabolt/1.0.0a", user, password);
     REQUIRE(connection->status == BOLT_READY);
     return connection;
+}
+
+void bolt_close_and_destroy_b(struct BoltConnection * connection)
+{
+    BoltConnection_close_b(connection);
+    BoltConnection_destroy(connection);
 }

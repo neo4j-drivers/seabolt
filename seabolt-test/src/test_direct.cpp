@@ -17,92 +17,10 @@
  * limitations under the License.
  */
 
+
 #include "integration.hpp"
 #include "catch.hpp"
 
-
-SCENARIO("Test address resolution (IPv4)", "[dns]")
-{
-    const char * host = "ipv4-only.bolt-test.net";
-    const char * port = "7687";
-    struct BoltAddress * address = BoltAddress_create(host, port);
-    REQUIRE(strcmp(address->host, host) == 0);
-    REQUIRE(strcmp(address->port, port) == 0);
-    REQUIRE(address->n_resolved_hosts == 0);
-    REQUIRE(address->resolved_port == 0);
-    for (int i = 0; i < 2; i++)
-    {
-        BoltAddress_resolve_b(address);
-        REQUIRE(address->n_resolved_hosts == 1);
-        char host_string[40];
-        int af = BoltAddress_copy_resolved_host(address, 0, &host_string[0], sizeof(host_string));
-        REQUIRE(af == AF_INET);
-        REQUIRE(strcmp(host_string, "52.215.65.80") == 0);
-        REQUIRE(address->resolved_port == 7687);
-    }
-    BoltAddress_destroy(address);
-}
-
-SCENARIO("Test address resolution (IPv6)", "[dns]")
-{
-    const char * host = "ipv6-only.bolt-test.net";
-    const char * port = "7687";
-    struct BoltAddress * address = BoltAddress_create(host, port);
-    REQUIRE(strcmp(address->host, host) == 0);
-    REQUIRE(strcmp(address->port, port) == 0);
-    REQUIRE(address->n_resolved_hosts == 0);
-    REQUIRE(address->resolved_port == 0);
-    for (int i = 0; i < 2; i++)
-    {
-        int status = BoltAddress_resolve_b(address);
-        if (status == 0)
-        {
-            REQUIRE(address->n_resolved_hosts == 1);
-            char host_string[40];
-            int af = BoltAddress_copy_resolved_host(address, 0, &host_string[0], sizeof(host_string));
-            REQUIRE(af == AF_INET6);
-            REQUIRE(strcmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7") == 0);
-            REQUIRE(address->resolved_port == 7687);
-        }
-    }
-    BoltAddress_destroy(address);
-}
-
-SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
-{
-    const char * host = "ipv4-and-ipv6.bolt-test.net";
-    const char * port = "7687";
-    struct BoltAddress * address = BoltAddress_create(host, port);
-    REQUIRE(strcmp(address->host, host) == 0);
-    REQUIRE(strcmp(address->port, port) == 0);
-    REQUIRE(address->n_resolved_hosts == 0);
-    REQUIRE(address->resolved_port == 0);
-    for (int i = 0; i < 2; i++)
-    {
-        int status = BoltAddress_resolve_b(address);
-        if (status == 0)
-        {
-            for (size_t j = 0; j < address->n_resolved_hosts; j++)
-            {
-                char host_string[40];
-                int af = BoltAddress_copy_resolved_host(address, j, &host_string[0], sizeof(host_string));
-                switch (af)
-                {
-                    case AF_INET:
-                        REQUIRE(strcmp(host_string, "52.215.65.80") == 0);
-                        break;
-                    case AF_INET6:
-                        REQUIRE(strcmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7") == 0);
-                        break;
-                    default:
-                        FAIL();
-                }
-            }
-            REQUIRE(address->resolved_port == 7687);
-        }
-    }
-    BoltAddress_destroy(address);
-}
 
 SCENARIO("Test basic secure connection (IPv4)", "[integration][ipv4][secure]")
 {
@@ -111,12 +29,14 @@ SCENARIO("Test basic secure connection (IPv4)", "[integration][ipv4][secure]")
         struct BoltAddress * address = bolt_get_address(BOLT_IPV4_HOST, BOLT_PORT);
         WHEN("a secure connection is opened")
         {
-            struct BoltConnection * connection = BoltConnection_open_b(BOLT_SECURE_SOCKET, address);
+            struct BoltConnection * connection = BoltConnection_create();
+            BoltConnection_open_b(connection, BOLT_SECURE_SOCKET, address);
             THEN("the connection should be connected")
             {
                 REQUIRE(connection->status == BOLT_CONNECTED);
             }
             BoltConnection_close_b(connection);
+            BoltConnection_destroy(connection);
         }
         BoltAddress_destroy(address);
     }
@@ -129,12 +49,14 @@ SCENARIO("Test basic secure connection (IPv6)", "[integration][ipv6][secure]")
         struct BoltAddress * address = bolt_get_address(BOLT_IPV6_HOST, BOLT_PORT);
         WHEN("a secure connection is opened")
         {
-            struct BoltConnection * connection = BoltConnection_open_b(BOLT_SECURE_SOCKET, address);
+            struct BoltConnection * connection = BoltConnection_create();
+            BoltConnection_open_b(connection, BOLT_SECURE_SOCKET, address);
             THEN("the connection should be connected")
             {
                 REQUIRE(connection->status == BOLT_CONNECTED);
             }
             BoltConnection_close_b(connection);
+            BoltConnection_destroy(connection);
         }
         BoltAddress_destroy(address);
     }
@@ -147,12 +69,14 @@ SCENARIO("Test basic insecure connection (IPv4)", "[integration][ipv4][insecure]
         struct BoltAddress * address = bolt_get_address(BOLT_IPV4_HOST, BOLT_PORT);
         WHEN("an insecure connection is opened")
         {
-            struct BoltConnection * connection = BoltConnection_open_b(BOLT_INSECURE_SOCKET, address);
+            struct BoltConnection * connection = BoltConnection_create();
+            BoltConnection_open_b(connection, BOLT_INSECURE_SOCKET, address);
             THEN("the connection should be connected")
             {
                 REQUIRE(connection->status == BOLT_CONNECTED);
             }
             BoltConnection_close_b(connection);
+            BoltConnection_destroy(connection);
         }
         BoltAddress_destroy(address);
     }
@@ -165,12 +89,14 @@ SCENARIO("Test basic insecure connection (IPv6)", "[integration][ipv6][insecure]
         struct BoltAddress * address = bolt_get_address(BOLT_IPV6_HOST, BOLT_PORT);
         WHEN("an insecure connection is opened")
         {
-            struct BoltConnection * connection = BoltConnection_open_b(BOLT_INSECURE_SOCKET, address);
+            struct BoltConnection * connection = BoltConnection_create();
+            BoltConnection_open_b(connection, BOLT_INSECURE_SOCKET, address);
             THEN("the connection should be connected")
             {
                 REQUIRE(connection->status == BOLT_CONNECTED);
             }
             BoltConnection_close_b(connection);
+            BoltConnection_destroy(connection);
         }
         BoltAddress_destroy(address);
     }
@@ -183,12 +109,14 @@ SCENARIO("Test secure connection to dead port", "[integration][ipv6][secure]")
         struct BoltAddress * address = bolt_get_address(BOLT_IPV6_HOST, "9999");
         WHEN("a secure connection attempt is made")
         {
-            struct BoltConnection * connection = BoltConnection_open_b(BOLT_SECURE_SOCKET, address);
+            struct BoltConnection * connection = BoltConnection_create();
+            BoltConnection_open_b(connection, BOLT_SECURE_SOCKET, address);
             THEN("a DEFUNCT connection should be returned")
             {
                 REQUIRE(connection->status == BOLT_DEFUNCT);
             }
             BoltConnection_close_b(connection);
+            BoltConnection_destroy(connection);
         }
         BoltAddress_destroy(address);
     }
@@ -201,12 +129,70 @@ SCENARIO("Test insecure connection to dead port", "[integration][ipv6][insecure]
         struct BoltAddress * address = bolt_get_address(BOLT_IPV6_HOST, "9999");
         WHEN("an insecure connection attempt is made")
         {
-            struct BoltConnection * connection = BoltConnection_open_b(BOLT_INSECURE_SOCKET, address);
+            struct BoltConnection * connection = BoltConnection_create();
+            BoltConnection_open_b(connection, BOLT_INSECURE_SOCKET, address);
             THEN("a DEFUNCT connection should be returned")
             {
                 REQUIRE(connection->status == BOLT_DEFUNCT);
             }
             BoltConnection_close_b(connection);
+            BoltConnection_destroy(connection);
+        }
+        BoltAddress_destroy(address);
+    }
+}
+
+SCENARIO("Test connection reuse after graceful shutdown", "[integration][ipv6][secure]")
+{
+    GIVEN("a local server address")
+    {
+        struct BoltAddress * address = bolt_get_address(BOLT_IPV6_HOST, BOLT_PORT);
+        WHEN("a secure connection is opened")
+        {
+            struct BoltConnection * connection = BoltConnection_create();
+            BoltConnection_open_b(connection, BOLT_SECURE_SOCKET, address);
+            THEN("the connection should be connected")
+            {
+                REQUIRE(connection->status == BOLT_CONNECTED);
+            }
+            BoltConnection_close_b(connection);
+            THEN("the connection should be disconnected")
+            {
+                REQUIRE(connection->status == BOLT_DISCONNECTED);
+            }
+            BoltConnection_open_b(connection, BOLT_SECURE_SOCKET, address);
+            THEN("the connection should be connected")
+            {
+                REQUIRE(connection->status == BOLT_CONNECTED);
+            }
+            BoltConnection_close_b(connection);
+            BoltConnection_destroy(connection);
+        }
+        BoltAddress_destroy(address);
+    }
+}
+
+SCENARIO("Test connection reuse after graceless shutdown", "[integration][ipv6][secure]")
+{
+    GIVEN("a local server address")
+    {
+        struct BoltAddress * address = bolt_get_address(BOLT_IPV6_HOST, BOLT_PORT);
+        WHEN("a secure connection is opened")
+        {
+            struct BoltConnection * connection = BoltConnection_create();
+            BoltConnection_open_b(connection, BOLT_SECURE_SOCKET, address);
+            THEN("the connection should be connected")
+            {
+                REQUIRE(connection->status == BOLT_CONNECTED);
+            }
+            connection->status = BOLT_DEFUNCT;
+            BoltConnection_open_b(connection, BOLT_SECURE_SOCKET, address);
+            THEN("the connection should be connected")
+            {
+                REQUIRE(connection->status == BOLT_CONNECTED);
+            }
+            BoltConnection_close_b(connection);
+            BoltConnection_destroy(connection);
         }
         BoltAddress_destroy(address);
     }
@@ -230,6 +216,7 @@ SCENARIO("Test init with valid credentials", "[integration][ipv6][secure]")
             }
         }
         BoltConnection_close_b(connection);
+        BoltConnection_destroy(connection);
     }
 }
 
@@ -252,6 +239,7 @@ SCENARIO("Test init with invalid credentials", "[integration][ipv6][secure]")
             }
         }
         BoltConnection_close_b(connection);
+        BoltConnection_destroy(connection);
     }
 }
 
@@ -263,8 +251,7 @@ SCENARIO("Test execution of simple Cypher statement", "[integration][ipv6][secur
                                                                   BOLT_USER, BOLT_PASSWORD);
         WHEN("successfully executed Cypher")
         {
-            BoltConnection_set_cypher_template(connection, "RETURN 1", 8);
-            BoltConnection_set_n_cypher_parameters(connection, 0);
+            BoltConnection_cypher(connection, "RETURN 1", 0);
             BoltConnection_load_run_request(connection);
             bolt_request_t run = BoltConnection_last_request(connection);
             BoltConnection_load_pull_request(connection, -1);
@@ -279,7 +266,7 @@ SCENARIO("Test execution of simple Cypher statement", "[integration][ipv6][secur
     }
 }
 
-SCENARIO("Test field names returned from Cypher execution", "[integration][ipv6][secure][current]")
+SCENARIO("Test field names returned from Cypher execution", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection")
     {
@@ -287,9 +274,7 @@ SCENARIO("Test field names returned from Cypher execution", "[integration][ipv6]
                                                                   BOLT_USER, BOLT_PASSWORD);
         WHEN("successfully executed Cypher")
         {
-            const char * statement = "RETURN 1 AS first, true AS second, 3.14 AS third";
-            BoltConnection_set_cypher_template(connection, statement, strlen(statement));
-            BoltConnection_set_n_cypher_parameters(connection, 0);
+            BoltConnection_cypher(connection, "RETURN 1 AS first, true AS second, 3.14 AS third", 0);
             BoltConnection_load_run_request(connection);
             bolt_request_t run = BoltConnection_last_request(connection);
             BoltConnection_load_pull_request(connection, -1);
@@ -322,10 +307,8 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
                                                                   BOLT_USER, BOLT_PASSWORD);
         WHEN("successfully executed Cypher")
         {
-            BoltConnection_set_cypher_template(connection, "RETURN $x", 9);
-            BoltConnection_set_n_cypher_parameters(connection, 1);
-            BoltConnection_set_cypher_parameter_key(connection, 0, "x", 1);
-            BoltValue * x = BoltConnection_cypher_parameter_value(connection, 0);
+            BoltConnection_cypher(connection, "RETURN $x", 1);
+            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x");
             BoltValue_to_Int64(x, 42);
             BoltConnection_load_run_request(connection);
             bolt_request_t run = BoltConnection_last_request(connection);
@@ -362,14 +345,12 @@ SCENARIO("Test execution of multiple Cypher statements transmitted together", "[
                                                                   BOLT_USER, BOLT_PASSWORD);
         WHEN("successfully executed Cypher")
         {
-            BoltConnection_set_cypher_template(connection, "RETURN $x", 9);
-            BoltConnection_set_n_cypher_parameters(connection, 1);
-            BoltConnection_set_cypher_parameter_key(connection, 0, "x", 1);
-            BoltValue * x = BoltConnection_cypher_parameter_value(connection, 0);
-            BoltValue_to_Int8(x, 1);
+            BoltConnection_cypher(connection, "RETURN $x", 1);
+            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x");
+            BoltValue_to_Int32(x, 1);
             BoltConnection_load_run_request(connection);
             BoltConnection_load_discard_request(connection, -1);
-            BoltValue_to_Int8(x, 2);
+            BoltValue_to_Int32(x, 2);
             BoltConnection_load_run_request(connection);
             BoltConnection_load_pull_request(connection, -1);
             BoltConnection_send_b(connection);
@@ -392,8 +373,7 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
             BoltConnection_load_begin_request(connection);
             bolt_request_t begin = BoltConnection_last_request(connection);
 
-            BoltConnection_set_cypher_template(connection, "RETURN 1", 8);
-            BoltConnection_set_n_cypher_parameters(connection, 0);
+            BoltConnection_cypher(connection, "RETURN 1", 0);
             BoltConnection_load_run_request(connection);
             bolt_request_t run = BoltConnection_last_request(connection);
             BoltConnection_load_pull_request(connection, -1);
