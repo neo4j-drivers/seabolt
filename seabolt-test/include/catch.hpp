@@ -8674,7 +8674,7 @@ namespace Catch {
     }
     auto StringRef::numberOfCharacters() const noexcept -> size_type {
         size_type noChars = m_size;
-        // Make adjustments for uft encodings
+        // Make adjustments for utf encodings
         for( size_type i=0; i < m_size; ++i ) {
             char c = m_start[i];
             if( ( c & 0b11000000 ) == 0b11000000 ) {
