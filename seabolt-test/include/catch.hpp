@@ -4319,7 +4319,7 @@ namespace Catch {
     using StringMatcher = Matchers::Impl::MatcherBase<std::string>;
 
     // This is the general overload that takes a any string matcher
-    // There is another overload, in catch_assertinhandler.h/.cpp, that only takes a string and infers
+    // There is another overload, in catch_assertionhandler.h/.cpp, that only takes a string and infers
     // the Equals matcher (so the header does not mention matchers)
     void handleExceptionMatchExpr( AssertionHandler& handler, StringMatcher const& matcher, StringRef matcherString  ) {
         std::string exceptionMessage = Catch::translateActiveException();
@@ -8674,7 +8674,7 @@ namespace Catch {
     }
     auto StringRef::numberOfCharacters() const noexcept -> size_type {
         size_type noChars = m_size;
-        // Make adjustments for uft encodings
+        // Make adjustments for utf encodings
         for( size_type i=0; i < m_size; ++i ) {
             char c = m_start[i];
             if( ( c & 0b11000000 ) == 0b11000000 ) {
