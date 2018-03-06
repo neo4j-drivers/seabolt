@@ -25,7 +25,7 @@
 #define SEABOLT_PROTOCOL_V1
 
 #include <stdint.h>
-#include <bolt/connect.h>
+#include <bolt/direct.h>
 
 
 #define BOLT_V1_SUCCESS 0x70
@@ -78,6 +78,7 @@ struct BoltProtocolV1State
     struct _run_request rollback;
     struct BoltValue* discard_request;
     struct BoltValue* pull_request;
+    struct BoltValue* reset_request;
 
     /// Holder for fetched data and metadata
     struct BoltValue* data;
@@ -114,6 +115,8 @@ const char* BoltProtocolV1_message_name(int16_t code);
 
 int BoltProtocolV1_init_b(struct BoltConnection * connection, const char * user_agent,
                           const char * user, const char * password);
+
+int BoltProtocolV1_reset_b(struct BoltConnection * connection);
 
 void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct BoltValue * summary);
 

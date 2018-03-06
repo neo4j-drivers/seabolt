@@ -25,12 +25,6 @@
 #include "bolt/mem.h"
 
 
-void BoltValue_to_Int8(struct BoltValue* value, int8_t data)
-{
-    _format(value, BOLT_INT8, 0, 1, NULL, 0);
-    value->data.as_int8[0] = data;
-}
-
 void BoltValue_to_Int16(struct BoltValue* value, int16_t data)
 {
     _format(value, BOLT_INT16, 0, 1, NULL, 0);
@@ -47,19 +41,6 @@ void BoltValue_to_Int64(struct BoltValue* value, int64_t data)
 {
     _format(value, BOLT_INT64, 0, 1, NULL, 0);
     value->data.as_int64[0] = data;
-}
-
-void BoltValue_to_Int8Array(struct BoltValue* value, int8_t* data, int32_t length)
-{
-    if (length <= sizeof(value->data) / sizeof(int8_t))
-    {
-        _format(value, BOLT_INT8_ARRAY, 0, length, NULL, 0);
-        memcpy(value->data.as_int8, data, (size_t)(length));
-    }
-    else
-    {
-        _format(value, BOLT_INT8_ARRAY, 0, length, data, sizeof_n(int8_t, length));
-    }
 }
 
 void BoltValue_to_Int16Array(struct BoltValue* value, int16_t* data, int32_t length)
@@ -149,50 +130,31 @@ int64_t BoltInt64Array_get(const struct BoltValue* value, int32_t index)
     return data[index];
 }
 
-int BoltInt8_write(struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_INT8);
-    fprintf(file, "i8(%" PRIi8 ")", BoltInt8_get(value));
-    return 0;
-}
-
 int BoltInt16_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_INT16);
-    fprintf(file, "i16(%" PRIi16 ")", BoltInt16_get(value));
+    fprintf(file, "%" PRIi16 "s", BoltInt16_get(value));
     return 0;
 }
 
 int BoltInt32_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_INT32);
-    fprintf(file, "i32(%" PRIi32 ")", BoltInt32_get(value));
+    fprintf(file, "%" PRIi32, BoltInt32_get(value));
     return 0;
 }
 
 int BoltInt64_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_INT64);
-    fprintf(file, "i64(%" PRIi64 ")", BoltInt64_get(value));
-    return 0;
-}
-
-int BoltInt8Array_write(struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_INT8_ARRAY);
-    fprintf(file, "i8[");
-    for (int i = 0; i < value->size; i++)
-    {
-        fprintf(file, i == 0 ? "%" PRId8 : ", %" PRId8, BoltInt8Array_get(value, i));
-    }
-    fprintf(file, "]");
+    fprintf(file, "%" PRIi64 "L", BoltInt64_get(value));
     return 0;
 }
 
 int BoltInt16Array_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_INT16_ARRAY);
-    fprintf(file, "i16[");
+    fprintf(file, "s[");
     for (int i = 0; i < value->size; i++)
     {
         fprintf(file, i == 0 ? "%" PRId16 : ", %" PRId16, BoltInt16Array_get(value, i));
@@ -204,7 +166,7 @@ int BoltInt16Array_write(struct BoltValue * value, FILE * file)
 int BoltInt32Array_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_INT32_ARRAY);
-    fprintf(file, "i32[");
+    fprintf(file, "_[");
     for (int i = 0; i < value->size; i++)
     {
         fprintf(file, i == 0 ? "%" PRId32 : ", %" PRId32, BoltInt32Array_get(value, i));
@@ -216,7 +178,7 @@ int BoltInt32Array_write(struct BoltValue * value, FILE * file)
 int BoltInt64Array_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_INT64_ARRAY);
-    fprintf(file, "i64[");
+    fprintf(file, "L[");
     for (int i = 0; i < value->size; i++)
     {
         fprintf(file, i == 0 ? "%" PRId64 : ", %" PRId64, BoltInt64Array_get(value, i));

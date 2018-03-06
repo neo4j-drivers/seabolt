@@ -99,14 +99,14 @@ char* BoltByteArray_get_all(struct BoltValue* value)
 int BoltBit_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_BIT);
-    fprintf(file, "bit(%d)", BoltBit_get(value));
+    fprintf(file, "!%d", BoltBit_get(value));
     return 0;
 }
 
 int BoltBitArray_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_BIT_ARRAY);
-    fprintf(file, "bit[");
+    fprintf(file, "![");
     for (int i = 0; i < value->size; i++)
     {
         fprintf(file, "%d", BoltBitArray_get(value, i));
@@ -119,14 +119,14 @@ int BoltByte_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_BYTE);
     char byte = BoltByte_get(value);
-    fprintf(file, "byte(#%c%c)", hex1(&byte, 0), hex0(&byte, 0));
+    fprintf(file, "#%c%c", hex1(&byte, 0), hex0(&byte, 0));
     return 0;
 }
 
 int BoltByteArray_write(const struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_BYTE_ARRAY);
-    fprintf(file, "byte[#");
+    fprintf(file, "#[");
     for (int i = 0; i < value->size; i++)
     {
         char b = BoltByteArray_get(value, i);

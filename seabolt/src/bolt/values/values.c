@@ -229,16 +229,12 @@ int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_vers
             return BoltStringArray_write(value, file);
         case BOLT_DICTIONARY:
             return BoltDictionary_write(value, file, protocol_version);
-        case BOLT_INT8:
-            return BoltInt8_write(value, file);
         case BOLT_INT16:
             return BoltInt16_write(value, file);
         case BOLT_INT32:
             return BoltInt32_write(value, file);
         case BOLT_INT64:
             return BoltInt64_write(value, file);
-        case BOLT_INT8_ARRAY:
-            return BoltInt8Array_write(value, file);
         case BOLT_INT16_ARRAY:
             return BoltInt16Array_write(value, file);
         case BOLT_INT32_ARRAY:

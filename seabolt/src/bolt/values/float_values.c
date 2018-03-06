@@ -56,14 +56,14 @@ double BoltFloat64Array_get(const struct BoltValue* value, int32_t index)
 int BoltFloat64_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT64);
-    fprintf(file, "f64(%f)", BoltFloat64_get(value));
+    fprintf(file, "%f", BoltFloat64_get(value));
     return 0;
 }
 
 int BoltFloat64Array_write(struct BoltValue * value, FILE * file)
 {
     assert(BoltValue_type(value) == BOLT_FLOAT64_ARRAY);
-    fprintf(file, "f64[");
+    fprintf(file, ".[");
     for (int i = 0; i < value->size; i++)
     {
         if (i > 0) { fprintf(file, ", "); }

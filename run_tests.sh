@@ -166,10 +166,10 @@ function run_tests
     if [ "${OPT_QUICK}" == "0" ]
     then
         echo "-- Checking server"
-        BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt debug "UNWIND range(1, 10000) AS n RETURN n"
+        BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt debug -a "UNWIND range(1, 10000) AS n RETURN n"
         if [ "$?" -ne "0" ]
         then
-            echo "FATAL: Server is incorrectly configured."
+            echo "FATAL: Server checks failed."
             exit ${SERVER_INCORRECTLY_CONFIGURED}
         fi
     fi

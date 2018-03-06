@@ -26,9 +26,10 @@
 #include <cstdlib>
 
 extern "C" {
-    #include "bolt/connect.h"
-    #include "bolt/values.h"
+    #include "bolt/direct.h"
     #include "bolt/logging.h"
+    #include "bolt/pooling.h"
+    #include "bolt/values.h"
 }
 
 #if USE_WINSOCK
@@ -53,7 +54,10 @@ struct BoltConnection * bolt_open_b(enum BoltTransport transport, const char * h
 struct BoltConnection * bolt_open_and_init_b(enum BoltTransport transport, const char * host, const char * port,
                                              const char * user, const char * password);
 
+void bolt_close_and_destroy_b(struct BoltConnection * connection);
+
 #define NEW_BOLT_CONNECTION() bolt_open_and_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, BOLT_USER, BOLT_PASSWORD)
+
 
 
 #endif // SEABOLT_TEST_INTEGRATION
