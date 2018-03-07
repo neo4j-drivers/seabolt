@@ -208,7 +208,7 @@ PUBLIC void BoltConnection_close_b(struct BoltConnection* connection);
  * @param profile credentials for a database user
  * @return
  */
-PUBLIC int BoltConnection_init_b(struct BoltConnection * connection, struct BoltUserProfile * profile);
+PUBLIC int BoltConnection_init_b(struct BoltConnection * connection, const struct BoltUserProfile * profile);
 
 /**
  * Reset the connection to discard any outstanding results,

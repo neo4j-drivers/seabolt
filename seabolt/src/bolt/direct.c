@@ -569,7 +569,7 @@ struct BoltValue* BoltConnection_data(struct BoltConnection * connection)
     }
 }
 
-int BoltConnection_init_b(struct BoltConnection * connection, struct BoltUserProfile * profile)
+int BoltConnection_init_b(struct BoltConnection * connection, const struct BoltUserProfile * profile)
 {
     BoltLog_info("bolt: Initialising connection for user '%s'", profile->user);
     switch (connection->protocol_version)

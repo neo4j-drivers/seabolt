@@ -47,7 +47,7 @@
 #define TRY(code) { int status = (code); if (status == -1) { return status; } }
 
 
-int BoltProtocolV1_compile_INIT(struct BoltValue* value, struct BoltUserProfile * profile)
+int BoltProtocolV1_compile_INIT(struct BoltValue* value, const struct BoltUserProfile * profile)
 {
     switch(profile->auth_scheme)
     {
@@ -70,9 +70,10 @@ int BoltProtocolV1_compile_INIT(struct BoltValue* value, struct BoltUserProfile 
                 BoltValue_to_String(BoltDictionary_value(auth, 1), profile->user, strlen(profile->user));
                 BoltValue_to_String(BoltDictionary_value(auth, 2), profile->password, strlen(profile->password));
             }
-            return 0;
         }
+        break;
     }
+    return 0;
 }
 
 void compile_RUN(struct _run_request * run, int32_t n_parameters)
@@ -1033,7 +1034,7 @@ const char* BoltProtocolV1_message_name(int16_t code)
     }
 }
 
-int BoltProtocolV1_init_b(struct BoltConnection * connection, struct BoltUserProfile * profile)
+int BoltProtocolV1_init_b(struct BoltConnection * connection, const struct BoltUserProfile * profile)
 {
     struct BoltUserProfile masked_profile;
     memcpy(&masked_profile, profile, sizeof(struct BoltUserProfile));

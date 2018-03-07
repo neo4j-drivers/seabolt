@@ -43,20 +43,23 @@ extern "C" {
 #define BOLT_PORT       SETTING("BOLT_PORT", "7687")
 #define BOLT_USER       SETTING("BOLT_USER", "neo4j")
 #define BOLT_PASSWORD   SETTING("BOLT_PASSWORD", "password")
+#define BOLT_USER_AGENT SETTING("BOLT_USER_AGENT", "seabolt/1.0.0a")
 
 #define VERBOSE() BoltLog_set_file(stderr)
+
+static const struct BoltUserProfile BOLT_PROFILE { BOLT_AUTH_BASIC, BOLT_USER, BOLT_PASSWORD, BOLT_USER_AGENT };
 
 
 struct BoltAddress * bolt_get_address(const char * host, const char * port);
 
 struct BoltConnection * bolt_open_b(enum BoltTransport transport, const char * host, const char * port);
 
-struct BoltConnection * bolt_open_and_init_b(enum BoltTransport transport, const char * host, const char * port,
-                                             const char * user, const char * password);
+struct BoltConnection * bolt_open_init_b(enum BoltTransport transport, const char * host, const char * port,
+                                         const struct BoltUserProfile * profile);
 
 void bolt_close_and_destroy_b(struct BoltConnection * connection);
 
-#define NEW_BOLT_CONNECTION() bolt_open_and_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, BOLT_USER, BOLT_PASSWORD)
+#define NEW_BOLT_CONNECTION() bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &BOLT_PROFILE)
 
 
 

@@ -43,12 +43,11 @@ struct BoltConnection* bolt_open_b(enum BoltTransport transport, const char * ho
     return connection;
 }
 
-struct BoltConnection* bolt_open_and_init_b(enum BoltTransport transport, const char * host, const char * port,
-                                            const char * user, const char * password)
+struct BoltConnection* bolt_open_init_b(enum BoltTransport transport, const char * host, const char * port,
+                                        const struct BoltUserProfile * profile)
 {
     struct BoltConnection * connection = bolt_open_b(transport, host, port);
-    struct BoltUserProfile profile { BOLT_AUTH_BASIC, user, password, "seabolt/1.0.0a" };
-    BoltConnection_init_b(connection, &profile);
+    BoltConnection_init_b(connection, profile);
     REQUIRE(connection->status == BOLT_READY);
     return connection;
 }
