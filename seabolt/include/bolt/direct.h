@@ -39,8 +39,8 @@ typedef unsigned long long bolt_request_t;
  */
 enum BoltTransport
 {
+    BOLT_SOCKET,
     BOLT_SECURE_SOCKET,
-    BOLT_INSECURE_SOCKET,
 };
 
 /**

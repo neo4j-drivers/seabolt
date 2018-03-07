@@ -70,7 +70,7 @@ SCENARIO("Test basic insecure connection (IPv4)", "[integration][ipv4][insecure]
         WHEN("an insecure connection is opened")
         {
             struct BoltConnection * connection = BoltConnection_create();
-            BoltConnection_open_b(connection, BOLT_INSECURE_SOCKET, address);
+            BoltConnection_open_b(connection, BOLT_SOCKET, address);
             THEN("the connection should be connected")
             {
                 REQUIRE(connection->status == BOLT_CONNECTED);
@@ -90,7 +90,7 @@ SCENARIO("Test basic insecure connection (IPv6)", "[integration][ipv6][insecure]
         WHEN("an insecure connection is opened")
         {
             struct BoltConnection * connection = BoltConnection_create();
-            BoltConnection_open_b(connection, BOLT_INSECURE_SOCKET, address);
+            BoltConnection_open_b(connection, BOLT_SOCKET, address);
             THEN("the connection should be connected")
             {
                 REQUIRE(connection->status == BOLT_CONNECTED);
@@ -130,7 +130,7 @@ SCENARIO("Test insecure connection to dead port", "[integration][ipv6][insecure]
         WHEN("an insecure connection attempt is made")
         {
             struct BoltConnection * connection = BoltConnection_create();
-            BoltConnection_open_b(connection, BOLT_INSECURE_SOCKET, address);
+            BoltConnection_open_b(connection, BOLT_SOCKET, address);
             THEN("a DEFUNCT connection should be returned")
             {
                 REQUIRE(connection->status == BOLT_DEFUNCT);

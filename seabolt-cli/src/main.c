@@ -111,7 +111,7 @@ struct Application* app_create(int argc, char ** argv)
     const char* BOLT_PASSWORD = getenv("BOLT_PASSWORD");
 
     struct Application * app = BoltMem_allocate(sizeof(struct Application));
-    app->transport = (strcmp(BOLT_SECURE, "1") == 0) ? BOLT_SECURE_SOCKET : BOLT_INSECURE_SOCKET;
+    app->transport = (strcmp(BOLT_SECURE, "1") == 0) ? BOLT_SECURE_SOCKET : BOLT_SOCKET;
     app->address = BoltAddress_create(BOLT_HOST, BOLT_PORT);
     BoltAddress_resolve_b(app->address);
     app->user = BOLT_USER;

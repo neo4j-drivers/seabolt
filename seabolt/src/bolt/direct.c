@@ -222,7 +222,7 @@ void close_b(struct BoltConnection * connection)
     connection->protocol_version = 0;
     switch(connection->transport)
     {
-        case BOLT_INSECURE_SOCKET:
+        case BOLT_SOCKET:
         {
             SHUTDOWN(connection->socket, SHUT_RDWR);
             break;
@@ -263,7 +263,7 @@ int send_b(struct BoltConnection * connection, const char * data, int size)
         int sent = 0;
         switch(connection->transport)
         {
-            case BOLT_INSECURE_SOCKET:
+            case BOLT_SOCKET:
             {
                 sent = TRANSMIT(connection->socket, data, size, 0);
                 break;
@@ -284,7 +284,7 @@ int send_b(struct BoltConnection * connection, const char * data, int size)
         {
             switch (connection->transport)
             {
-                case BOLT_INSECURE_SOCKET:
+                case BOLT_SOCKET:
                     set_status(connection, BOLT_DEFUNCT, last_error());
                     BoltLog_error("bolt: Socket error %d on transmit", connection->error);
                     break;
@@ -322,7 +322,7 @@ int receive_b(struct BoltConnection * connection, char * buffer, int min_size, i
         int received = 0;
         switch (connection->transport)
         {
-            case BOLT_INSECURE_SOCKET:
+            case BOLT_SOCKET:
                 received = RECEIVE(connection->socket, buffer, max_remaining, 0);
                 break;
             case BOLT_SECURE_SOCKET:
@@ -345,7 +345,7 @@ int receive_b(struct BoltConnection * connection, char * buffer, int min_size, i
         {
             switch (connection->transport)
             {
-                case BOLT_INSECURE_SOCKET:
+                case BOLT_SOCKET:
                     set_status(connection, BOLT_DEFUNCT, last_error());
                     BoltLog_error("bolt: Socket error %d on receive", connection->error);
                     break;
