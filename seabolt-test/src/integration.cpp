@@ -47,7 +47,8 @@ struct BoltConnection* bolt_open_and_init_b(enum BoltTransport transport, const 
                                             const char * user, const char * password)
 {
     struct BoltConnection * connection = bolt_open_b(transport, host, port);
-    BoltConnection_init_b(connection, "seabolt/1.0.0a", user, password);
+    struct BoltUserProfile profile { BOLT_AUTH_BASIC, user, password, "seabolt/1.0.0a" };
+    BoltConnection_init_b(connection, &profile);
     REQUIRE(connection->status == BOLT_READY);
     return connection;
 }

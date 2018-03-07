@@ -35,17 +35,15 @@ struct BoltConnectionPool
     pthread_mutex_t mutex;
     enum BoltTransport transport;
     struct BoltAddress * address;
-    const char * user_agent;
-    const char * user;
-    const char * password;
+    struct BoltUserProfile * profile;
     size_t size;
     struct BoltConnection * connections;
 };
 
 
-PUBLIC struct BoltConnectionPool * BoltConnectionPool_create(
-        enum BoltTransport transport, const char * host, const char * port,
-        const char * user_agent, const char * user, const char * password, size_t size);
+PUBLIC struct BoltConnectionPool *
+BoltConnectionPool_create(enum BoltTransport transport, const char * host, const char * port,
+                          struct BoltUserProfile * profile, size_t size);
 
 PUBLIC void BoltConnectionPool_destroy(struct BoltConnectionPool * pool);
 

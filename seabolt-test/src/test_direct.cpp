@@ -205,7 +205,8 @@ SCENARIO("Test init with valid credentials", "[integration][ipv6][secure]")
         struct BoltConnection * connection = bolt_open_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT);
         WHEN("successfully initialised")
         {
-            int rv = BoltConnection_init_b(connection, "seabolt/1.0.0a", BOLT_USER, BOLT_PASSWORD);
+            struct BoltUserProfile profile { BOLT_AUTH_BASIC, BOLT_USER, BOLT_PASSWORD, "seabolt/1.0.0a" };
+            int rv = BoltConnection_init_b(connection, &profile);
             THEN("return value should be 0")
             {
                 REQUIRE(rv == 0);
@@ -228,7 +229,8 @@ SCENARIO("Test init with invalid credentials", "[integration][ipv6][secure]")
         WHEN("unsuccessfully initialised")
         {
             REQUIRE(strcmp(BOLT_PASSWORD, "X") != 0);
-            int rv = BoltConnection_init_b(connection, "seabolt/1.0.0a", BOLT_USER, "X");
+            struct BoltUserProfile profile { BOLT_AUTH_BASIC, BOLT_USER, "X", "seabolt/1.0.0a" };
+            int rv = BoltConnection_init_b(connection, &profile);
             THEN("return value should not be 0")
             {
                 REQUIRE(rv != 0);

@@ -24,10 +24,10 @@
 
 SCENARIO("Test using a pooled connection", "[integration][ipv6][secure][pooling]")
 {
-    VERBOSE();
     GIVEN("a new connection pool")
     {
-        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, "seabolt/1.0.0a", BOLT_USER, BOLT_PASSWORD, 10);
+        struct BoltUserProfile profile { BOLT_AUTH_BASIC, BOLT_USER, BOLT_PASSWORD, "seabolt/1.0.0a" };
+        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &profile, 10);
         WHEN("a connection is acquired")
         {
             struct BoltConnection * connection = BoltConnectionPool_acquire(pool, "test");
@@ -45,7 +45,8 @@ SCENARIO("Test reusing a pooled connection", "[integration][ipv6][secure][poolin
 {
     GIVEN("a new connection pool with one entry")
     {
-        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, "seabolt/1.0.0a", BOLT_USER, BOLT_PASSWORD, 1);
+        struct BoltUserProfile profile { BOLT_AUTH_BASIC, BOLT_USER, BOLT_PASSWORD, "seabolt/1.0.0a" };
+        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &profile, 1);
         WHEN("a connection is acquired, released and acquired again")
         {
             struct BoltConnection * connection1 = BoltConnectionPool_acquire(pool, "test");
@@ -69,7 +70,8 @@ SCENARIO("Test reusing a pooled connection that was abandoned", "[integration][i
 {
     GIVEN("a new connection pool with one entry")
     {
-        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, "seabolt/1.0.0a", BOLT_USER, BOLT_PASSWORD, 1);
+        struct BoltUserProfile profile { BOLT_AUTH_BASIC, BOLT_USER, BOLT_PASSWORD, "seabolt/1.0.0a" };
+        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &profile, 1);
         WHEN("a connection is acquired, released and acquired again")
         {
             struct BoltConnection * connection1 = BoltConnectionPool_acquire(pool, "test");
@@ -96,7 +98,8 @@ SCENARIO("Test running out of connections", "[integration][ipv6][secure][pooling
 {
     GIVEN("a new connection pool with one entry")
     {
-        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, "seabolt/1.0.0a", BOLT_USER, BOLT_PASSWORD, 1);
+        struct BoltUserProfile profile { BOLT_AUTH_BASIC, BOLT_USER, BOLT_PASSWORD, "seabolt/1.0.0a" };
+        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &profile, 1);
         WHEN("two connections are acquired in turn")
         {
             struct BoltConnection * connection1 = BoltConnectionPool_acquire(pool, "test");

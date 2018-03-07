@@ -76,7 +76,7 @@ int find_connection(struct BoltConnectionPool * pool, struct BoltConnection * co
 int init(struct BoltConnectionPool * pool, int index)
 {
     struct BoltConnection * connection = &pool->connections[index];
-    switch (BoltConnection_init_b(connection, pool->user_agent, pool->user, pool->password))
+    switch (BoltConnection_init_b(connection, pool->profile))
     {
         case 0:
             return index;
@@ -136,6 +136,7 @@ int reset_or_open_init(struct BoltConnectionPool * pool, int index)
 void reset_or_close(struct BoltConnectionPool * pool, int index)
 {
     struct BoltConnection * connection = &pool->connections[index];
+    // TODO: disconnect if too old
     switch (BoltConnection_reset_b(connection))
     {
         case 0:
@@ -146,16 +147,13 @@ void reset_or_close(struct BoltConnectionPool * pool, int index)
 }
 
 struct BoltConnectionPool * BoltConnectionPool_create(enum BoltTransport transport, const char * host, const char * port,
-                                                      const char * user_agent, const char * user,
-                                                      const char * password, size_t size)
+                                                      struct BoltUserProfile * profile, size_t size)
 {
     struct BoltConnectionPool * pool = BoltMem_allocate(SIZE_OF_CONNECTION_POOL);
     pthread_mutex_init(&pool->mutex, NULL);
     pool->transport = transport;
     pool->address = BoltAddress_create(host, port);
-    pool->user_agent = user_agent;
-    pool->user = user;
-    pool->password = password;
+    pool->profile = profile;
     pool->size = size;
     pool->connections = BoltMem_allocate(size * sizeof(struct BoltConnection));
     memset(pool->connections, 0, size * sizeof(struct BoltConnection));
@@ -191,12 +189,14 @@ struct BoltConnection * BoltConnectionPool_acquire(struct BoltConnectionPool * p
             case BOLT_CONNECTED:
                 // If CONNECTED, the connection will need to be initialised.
                 // This state should rarely, if ever, be encountered here.
+                // TODO: disconnect if too old
                 index = init(pool, index);
                 break;
             case BOLT_FAILED:
                 // If FAILED, attempt to RESET the connection, reopening
                 // from scratch if that fails. This state should rarely,
                 // if ever, be encountered here.
+                // TODO: disconnect if too old
                 index = reset_or_open_init(pool, index);
                 break;
             case BOLT_READY:
@@ -205,6 +205,7 @@ struct BoltConnection * BoltConnectionPool_acquire(struct BoltConnectionPool * p
                 // timed out by some piece of network housekeeping
                 // infrastructure. Such timeouts should instead be managed
                 // by setting the maximum connection lifetime.
+                // TODO: disconnect if too old
                 break;
         }
     }

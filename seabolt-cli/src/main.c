@@ -205,7 +205,12 @@ int app_init(struct Application * app)
 {
     struct timespec t[2];
     timespec_get(&t[0], TIME_UTC);
-    BoltConnection_init_b(app->connection, "seabolt/1.0.0a", app->user, app->password);
+    struct BoltUserProfile profile;
+    profile.auth_scheme = BOLT_AUTH_BASIC;
+    profile.user = app->user;
+    profile.password = app->password;
+    profile.user_agent = "seabolt/1.0.0a";
+    BoltConnection_init_b(app->connection, &profile);
     if (app->connection->status != BOLT_READY)
     {
         fprintf(stderr, "FATAL: Failed to initialise connection\n");

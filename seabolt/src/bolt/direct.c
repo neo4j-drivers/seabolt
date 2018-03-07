@@ -569,15 +569,14 @@ struct BoltValue* BoltConnection_data(struct BoltConnection * connection)
     }
 }
 
-int BoltConnection_init_b(struct BoltConnection* connection, const char* user_agent,
-                          const char* user, const char* password)
+int BoltConnection_init_b(struct BoltConnection * connection, struct BoltUserProfile * profile)
 {
-    BoltLog_info("bolt: Initialising connection for user '%s'", user);
+    BoltLog_info("bolt: Initialising connection for user '%s'", profile->user);
     switch (connection->protocol_version)
     {
         case 1:
         {
-            int code = BoltProtocolV1_init_b(connection, user_agent, user, password);
+            int code = BoltProtocolV1_init_b(connection, profile);
             switch (code)
             {
                 case BOLT_V1_SUCCESS:

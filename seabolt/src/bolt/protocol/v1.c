@@ -18,15 +18,16 @@
  */
 
 
-#include <stdlib.h>
-#include <bolt/values.h>
-#include <memory.h>
 #include <assert.h>
-#include "bolt/buffering.h"
-#include "v1.h"
-#include "bolt/mem.h"
-#include "bolt/logging.h"
+#include <memory.h>
+#include <stdlib.h>
 
+#include "bolt/buffering.h"
+#include "bolt/logging.h"
+#include "bolt/mem.h"
+#include "v1.h"
+
+#define INIT        0x01
 #define ACK_FAILURE 0x0E
 #define RESET       0x0F
 #define RUN         0x10
@@ -46,26 +47,32 @@
 #define TRY(code) { int status = (code); if (status == -1) { return status; } }
 
 
-int BoltProtocolV1_compile_INIT(struct BoltValue* value, const char* user_agent, const char* user, const char* password)
+int BoltProtocolV1_compile_INIT(struct BoltValue* value, struct BoltUserProfile * profile)
 {
-    BoltValue_to_Message(value, 0x01, 2);
-    BoltValue_to_String(BoltMessage_value(value, 0), user_agent, strlen(user_agent));
-    struct BoltValue* auth = BoltMessage_value(value, 1);
-    if (user == NULL || password == NULL)
+    switch(profile->auth_scheme)
     {
-        BoltValue_to_Dictionary(auth, 0);
+        case BOLT_AUTH_BASIC:
+        {
+            BoltValue_to_Message(value, INIT, 2);
+            BoltValue_to_String(BoltMessage_value(value, 0), profile->user_agent, strlen(profile->user_agent));
+            struct BoltValue* auth = BoltMessage_value(value, 1);
+            if (profile->user == NULL || profile->password == NULL)
+            {
+                BoltValue_to_Dictionary(auth, 0);
+            }
+            else
+            {
+                BoltValue_to_Dictionary(auth, 3);
+                BoltDictionary_set_key(auth, 0, "scheme", 6);
+                BoltDictionary_set_key(auth, 1, "principal", 9);
+                BoltDictionary_set_key(auth, 2, "credentials", 11);
+                BoltValue_to_String(BoltDictionary_value(auth, 0), "basic", 5);
+                BoltValue_to_String(BoltDictionary_value(auth, 1), profile->user, strlen(profile->user));
+                BoltValue_to_String(BoltDictionary_value(auth, 2), profile->password, strlen(profile->password));
+            }
+            return 0;
+        }
     }
-    else
-    {
-        BoltValue_to_Dictionary(auth, 3);
-        BoltDictionary_set_key(auth, 0, "scheme", 6);
-        BoltDictionary_set_key(auth, 1, "principal", 9);
-        BoltDictionary_set_key(auth, 2, "credentials", 11);
-        BoltValue_to_String(BoltDictionary_value(auth, 0), "basic", 5);
-        BoltValue_to_String(BoltDictionary_value(auth, 1), user, strlen(user));
-        BoltValue_to_String(BoltDictionary_value(auth, 2), password, strlen(password));
-    }
-    return 0;
 }
 
 void compile_RUN(struct _run_request * run, int32_t n_parameters)
@@ -1026,19 +1033,21 @@ const char* BoltProtocolV1_message_name(int16_t code)
     }
 }
 
-int BoltProtocolV1_init_b(struct BoltConnection * connection, const char * user_agent,
-                          const char * user, const char * password)
+int BoltProtocolV1_init_b(struct BoltConnection * connection, struct BoltUserProfile * profile)
 {
+    struct BoltUserProfile masked_profile;
+    memcpy(&masked_profile, profile, sizeof(struct BoltUserProfile));
+    masked_profile.password = "*******";
     struct BoltValue * init = BoltValue_create();
-    BoltProtocolV1_compile_INIT(init, user_agent, user, "*******");
+    BoltProtocolV1_compile_INIT(init, &masked_profile);
     struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
     BoltLog_message("C", state->next_request_id, init, connection->protocol_version);
-    BoltProtocolV1_compile_INIT(init, user_agent, user, password);
+    BoltProtocolV1_compile_INIT(init, profile);
     BoltProtocolV1_load_message_quietly(connection, init);
     bolt_request_t init_request = BoltConnection_last_request(connection);
     BoltValue_destroy(init);
     TRY(BoltConnection_send_b(connection));
-    BoltConnection_fetch_summary_b(connection, init_request);
+    TRY(BoltConnection_fetch_summary_b(connection, init_request));
     return BoltMessage_code(BoltConnection_data(connection));
 }
 
@@ -1048,7 +1057,7 @@ int BoltProtocolV1_reset_b(struct BoltConnection * connection)
     BoltProtocolV1_load_message(connection, state->reset_request);
     bolt_request_t reset_request = BoltConnection_last_request(connection);
     TRY(BoltConnection_send_b(connection));
-    BoltConnection_fetch_summary_b(connection, reset_request);
+    TRY(BoltConnection_fetch_summary_b(connection, reset_request));
     return BoltMessage_code(BoltConnection_data(connection));
 }
 

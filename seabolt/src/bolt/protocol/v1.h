@@ -25,7 +25,8 @@
 #define SEABOLT_PROTOCOL_V1
 
 #include <stdint.h>
-#include <bolt/direct.h>
+
+#include "bolt/direct.h"
 
 
 #define BOLT_V1_SUCCESS 0x70
@@ -94,7 +95,7 @@ int BoltProtocolV1_load_message(struct BoltConnection * connection, struct BoltV
 
 int BoltProtocolV1_load_message_quietly(struct BoltConnection * connection, struct BoltValue * value);
 
-int BoltProtocolV1_compile_INIT(struct BoltValue* value, const char* user_agent, const char* user, const char* password);
+int BoltProtocolV1_compile_INIT(struct BoltValue* value, struct BoltUserProfile * profile);
 
 int BoltProtocolV1_fetch_b(struct BoltConnection * connection, bolt_request_t request_id);
 
@@ -113,8 +114,7 @@ const char* BoltProtocolV1_structure_name(int16_t code);
 
 const char* BoltProtocolV1_message_name(int16_t code);
 
-int BoltProtocolV1_init_b(struct BoltConnection * connection, const char * user_agent,
-                          const char * user, const char * password);
+int BoltProtocolV1_init_b(struct BoltConnection * connection, struct BoltUserProfile * profile);
 
 int BoltProtocolV1_reset_b(struct BoltConnection * connection);
 

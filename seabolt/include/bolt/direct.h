@@ -126,6 +126,22 @@ struct BoltConnection
     enum BoltConnectionError error;
 };
 
+enum BoltAuthScheme
+{
+    BOLT_AUTH_BASIC,
+};
+
+/**
+ * The profile of a database user.
+ */
+struct BoltUserProfile
+{
+    enum BoltAuthScheme auth_scheme;
+    const char * user;
+    const char * password;
+    const char * user_agent;
+};
+
 
 /**
  *
@@ -189,13 +205,10 @@ PUBLIC void BoltConnection_close_b(struct BoltConnection* connection);
  * authentication scheme.
  *
  * @param connection the connection to initialise
- * @param user_agent a string to identify this client software
- * @param user the user to authenticate as
- * @param password a valid password for the given user
+ * @param profile credentials for a database user
  * @return
  */
-PUBLIC int BoltConnection_init_b(struct BoltConnection* connection, const char* user_agent,
-                          const char* user, const char* password);
+PUBLIC int BoltConnection_init_b(struct BoltConnection * connection, struct BoltUserProfile * profile);
 
 /**
  * Reset the connection to discard any outstanding results,
