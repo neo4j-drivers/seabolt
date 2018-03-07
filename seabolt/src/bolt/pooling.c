@@ -146,13 +146,13 @@ void reset_or_close(struct BoltConnectionPool * pool, int index)
     }
 }
 
-struct BoltConnectionPool * BoltConnectionPool_create(enum BoltTransport transport, const char * host, const char * port,
-                                                      struct BoltUserProfile * profile, size_t size)
+struct BoltConnectionPool * BoltConnectionPool_create(enum BoltTransport transport, struct BoltAddress * address,
+                                                      const struct BoltUserProfile * profile, size_t size)
 {
     struct BoltConnectionPool * pool = BoltMem_allocate(SIZE_OF_CONNECTION_POOL);
     pthread_mutex_init(&pool->mutex, NULL);
     pool->transport = transport;
-    pool->address = BoltAddress_create(host, port);
+    pool->address = address;
     pool->profile = profile;
     pool->size = size;
     pool->connections = BoltMem_allocate(size * sizeof(struct BoltConnection));
@@ -166,7 +166,6 @@ void BoltConnectionPool_destroy(struct BoltConnectionPool * pool)
     {
         close_pool_entry(pool, index);
     }
-    BoltAddress_destroy(pool->address);
     pool->connections = BoltMem_deallocate(pool->connections, pool->size * sizeof(struct BoltConnection));
     pthread_mutex_destroy(&pool->mutex);
     BoltMem_deallocate(pool, SIZE_OF_CONNECTION_POOL);
