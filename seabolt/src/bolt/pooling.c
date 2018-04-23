@@ -114,7 +114,7 @@ void close_pool_entry(struct BoltConnectionPool * pool, int index)
     {
         struct timespec now;
         struct timespec diff;
-        timespec_get(&now, TIME_UTC);
+        clock_gettime(CLOCK_MONOTONIC, &now);
         timespec_diff(&diff, &now, &connection->metrics.time_opened);
         BoltLog_info("bolt: Connection alive for %lds %09ldns", (long)(diff.tv_sec), diff.tv_nsec);
         BoltConnection_close_b(connection);

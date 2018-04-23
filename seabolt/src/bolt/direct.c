@@ -167,7 +167,7 @@ int open_b(struct BoltConnection * connection, enum BoltTransport transport, con
     TRY(setsockopt(connection->socket, SOL_SOCKET, SO_KEEPALIVE, &TRUE, sizeof(TRUE)));
     TRY(setsockopt(connection->socket, IPPROTO_TCP, TCP_NODELAY, &TRUE, sizeof(TRUE)));
     TRY(CONNECT(connection->socket, (struct sockaddr *)(address), ADDR_SIZE(address)));
-    timespec_get(&connection->metrics.time_opened, TIME_UTC);
+    clock_gettime(CLOCK_MONOTONIC, &connection->metrics.time_opened);
     connection->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
     connection->rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
     return 0;
@@ -242,7 +242,7 @@ void close_b(struct BoltConnection * connection)
             break;
         }
     }
-    timespec_get(&connection->metrics.time_closed, TIME_UTC);
+    clock_gettime(CLOCK_MONOTONIC, &connection->metrics.time_closed);
     connection->socket = 0;
     set_status(connection, BOLT_DISCONNECTED, BOLT_NO_ERROR);
 }
