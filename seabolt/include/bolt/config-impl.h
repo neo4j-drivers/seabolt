@@ -20,6 +20,7 @@
 #define SEABOLT_CONFIG_IMPL
 #include "config.h"
 
+#ifdef _WIN32
 #pragma  warning(push)
 #pragma  warning(disable:4255)
 #pragma  warning(disable:4265)
@@ -27,6 +28,7 @@
 #pragma  warning(disable:4626)
 #pragma  warning(disable:4668)
 #pragma  warning(disable:4820)
+#endif
 
 #include <memory.h>
 #include <time.h>
@@ -52,6 +54,8 @@
 #include <openssl/ssl.h>
 #endif // USE_OPENSSL
 
+#ifdef _WIN32
 #pragma  warning(pop)
+#endif
 
 #endif // SEABOLT_CONFIG_IMPL
