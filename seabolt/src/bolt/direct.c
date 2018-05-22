@@ -170,8 +170,8 @@ int open_b(struct BoltConnection * connection, enum BoltTransport transport, con
     }
     const int YES = 1;
     // TODO: socket options in Windows
-    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_KEEPALIVE, &YES, sizeof(TRUE)));
-    TRY(SETSOCKETOPT(connection->socket, IPPROTO_TCP, TCP_NODELAY, &YES, sizeof(TRUE)));
+    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_KEEPALIVE, &YES, sizeof(YES)));
+    TRY(SETSOCKETOPT(connection->socket, IPPROTO_TCP, TCP_NODELAY, &YES, sizeof(YES)));
     TRY(CONNECT(connection->socket, (struct sockaddr *)(address), ADDR_SIZE(address)));
     BoltUtil_get_time(&connection->metrics.time_opened);
     connection->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
