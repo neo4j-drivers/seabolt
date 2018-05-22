@@ -3,9 +3,15 @@ cmake_minimum_required(VERSION 3.5)
 project(seabolt C)
 
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_FLAGS_DEBUG "-g -Wall")
-set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG -Wall")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+if (MSVC)
+	set(CMAKE_C_FLAGS_DEBUG "/DEBUG:Full /Wall")
+	set(CMAKE_C_FLAGS_RELEASE "/Ox /DEBUG:None /Wall")
+else()
+	set(CMAKE_C_FLAGS_DEBUG "-g -Wall")
+	set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG -Wall")
+endif()
 
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 0)

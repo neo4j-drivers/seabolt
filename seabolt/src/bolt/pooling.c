@@ -17,14 +17,10 @@
  * limitations under the License.
  */
 
-
-#include <memory.h>
-#include <time.h>
-
+#include "bolt/config-impl.h"
 #include "bolt/logging.h"
 #include "bolt/mem.h"
 #include "bolt/pooling.h"
-
 
 #define SIZE_OF_CONNECTION_POOL sizeof(struct BoltConnectionPool)
 
@@ -49,7 +45,7 @@ void timespec_diff(struct timespec* t, struct timespec* t0, struct timespec* t1)
 
 int find_unused_connection(struct BoltConnectionPool * pool)
 {
-    for (int i = 0; i < pool->size; i++)
+    for (size_t i = 0; i < pool->size; i++)
     {
         struct BoltConnection * connection = &pool->connections[i];
         if (connection->agent == NULL)
@@ -62,7 +58,7 @@ int find_unused_connection(struct BoltConnectionPool * pool)
 
 int find_connection(struct BoltConnectionPool * pool, struct BoltConnection * connection)
 {
-    for (int i = 0; i < pool->size; i++)
+    for (size_t i = 0; i < pool->size; i++)
     {
         struct BoltConnection * candidate = &pool->connections[i];
         if (candidate == connection)
@@ -114,7 +110,7 @@ void close_pool_entry(struct BoltConnectionPool * pool, int index)
     {
         struct timespec now;
         struct timespec diff;
-        clock_gettime(CLOCK_MONOTONIC, &now);
+        BoltUtil_get_time(&now);
         timespec_diff(&diff, &now, &connection->metrics.time_opened);
         BoltLog_info("bolt: Connection alive for %lds %09ldns", (long)(diff.tv_sec), diff.tv_nsec);
         BoltConnection_close_b(connection);
@@ -150,7 +146,7 @@ struct BoltConnectionPool * BoltConnectionPool_create(enum BoltTransport transpo
                                                       const struct BoltUserProfile * profile, size_t size)
 {
     struct BoltConnectionPool * pool = BoltMem_allocate(SIZE_OF_CONNECTION_POOL);
-    pthread_mutex_init(&pool->mutex, NULL);
+    BoltUtil_mutex_create(&pool->mutex);
     pool->transport = transport;
     pool->address = address;
     pool->profile = profile;
@@ -162,18 +158,18 @@ struct BoltConnectionPool * BoltConnectionPool_create(enum BoltTransport transpo
 
 void BoltConnectionPool_destroy(struct BoltConnectionPool * pool)
 {
-    for (int index = 0; index < pool->size; index++)
+    for (size_t index = 0; index < pool->size; index++)
     {
         close_pool_entry(pool, index);
     }
     pool->connections = BoltMem_deallocate(pool->connections, pool->size * sizeof(struct BoltConnection));
-    pthread_mutex_destroy(&pool->mutex);
+    BoltUtil_mutex_destroy(&pool->mutex);
     BoltMem_deallocate(pool, SIZE_OF_CONNECTION_POOL);
 }
 
 struct BoltConnection * BoltConnectionPool_acquire(struct BoltConnectionPool * pool, const void * agent)
 {
-    pthread_mutex_lock(&pool->mutex);
+    BoltUtil_mutex_lock(&pool->mutex);
     int index = find_unused_connection(pool);
     if (index >= 0)
     {
@@ -218,19 +214,19 @@ struct BoltConnection * BoltConnectionPool_acquire(struct BoltConnectionPool * p
     {
         connection = NULL;
     }
-    pthread_mutex_unlock(&pool->mutex);
+    BoltUtil_mutex_unlock(&pool->mutex);
     return connection;
 }
 
 int BoltConnectionPool_release(struct BoltConnectionPool * pool, struct BoltConnection * connection)
 {
-    pthread_mutex_lock(&pool->mutex);
+    BoltUtil_mutex_lock(&pool->mutex);
     int index = find_connection(pool, connection);
     if (index >= 0)
     {
         connection->agent = NULL;
         reset_or_close(pool, index);
     }
-    pthread_mutex_unlock(&pool->mutex);
+	BoltUtil_mutex_unlock(&pool->mutex);
     return index;
 }

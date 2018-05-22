@@ -20,9 +20,21 @@
 #define SEABOLT_CONFIG_IMPL
 #include "config.h"
 
+#pragma  warning(push)
+#pragma  warning(disable:4255)
+#pragma  warning(disable:4265)
+#pragma  warning(disable:4625)
+#pragma  warning(disable:4626)
+#pragma  warning(disable:4668)
+#pragma  warning(disable:4820)
+
+#include <memory.h>
+#include <time.h>
+
 #if USE_POSIXSOCK
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netinet/tcp.h>
 #endif // USE_POSIXSOCK
 
 #if USE_WINSOCK
@@ -35,11 +47,11 @@
 #endif // USE_WINSSPI
 
 #if USE_OPENSSL
-
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
-
 #endif // USE_OPENSSL
+
+#pragma  warning(pop)
 
 #endif // SEABOLT_CONFIG_IMPL

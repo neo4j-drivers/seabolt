@@ -3,9 +3,15 @@ cmake_minimum_required(VERSION 3.5)
 project(seabolt-cli C)
 
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_FLAGS_DEBUG "-g -Wall")
-set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG -Wall")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+if (MSVC)
+	set(CMAKE_CXX_FLAGS_DEBUG "/DEBUG:Full /Wall")
+	set(CMAKE_CXX_FLAGS_RELEASE "/Ox /DEBUG:None /Wall")
+else()
+	set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
+	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wall")
+endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/bin")
 
