@@ -26,6 +26,10 @@
 #include <mach/mach.h>
 #endif
 
+#ifndef _WIN32
+#include <pthread.h>
+#endif
+
 int BoltUtil_get_time(struct timespec *tp)
 {
 #ifdef __APPLE__
