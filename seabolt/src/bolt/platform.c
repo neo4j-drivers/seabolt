@@ -38,8 +38,8 @@ int BoltUtil_get_time(struct timespec *tp)
 	host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
 	clock_get_time(cclock, &mts);
 	mach_port_deallocate(mach_task_self(), cclock);
-	ts->tv_sec = mts.tv_sec;
-	ts->tv_nsec = mts.tv_nsec;
+	tp->tv_sec = mts.tv_sec;
+	tp->tv_nsec = mts.tv_nsec;
 	return 0;
 #else
 	return timespec_get(tp, TIME_UTC);
