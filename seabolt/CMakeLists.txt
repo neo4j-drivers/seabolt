@@ -36,11 +36,13 @@ set(OPENSSL 1)
 set(WINSOCK 0)
 set(POSIXSOCK 1)
 set(WINSSPI 0)
+set(PTHREAD 1)
 if ( WIN32 )
 	set(OPENSSL 1)
 	set(POSIXSOCK 0)
 	set(WINSOCK 1)
 	set(WINSSPI 0)
+	set(PTHREAD 0)
 endif ()
 
 # configure a header file to pass some of the CMake settings
@@ -84,6 +86,10 @@ if ( ${OPENSSL} )
 
 	target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIRS})
 	target_link_libraries(${PROJECT_NAME} ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
+endif ()
+
+if ( ${PTHREAD} )
+	target_link_libraries(${PROJECT_NAME} "pthread")
 endif ()
 
 set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include
