@@ -423,8 +423,8 @@ int main(int argc, char * argv[])
     if (with_allocation_report)
     {
         fprintf(stderr, "=====================================\n");
-        fprintf(stderr, "current allocation   : %ld bytes\n", BoltMem_current_allocation());
-        fprintf(stderr, "peak allocation      : %ld bytes\n", BoltMem_peak_allocation());
+        fprintf(stderr, "current allocation   : %zu bytes\n", BoltMem_current_allocation());
+        fprintf(stderr, "peak allocation      : %zu bytes\n", BoltMem_peak_allocation());
         fprintf(stderr, "allocation events    : %lld\n", BoltMem_allocation_events());
         fprintf(stderr, "=====================================\n");
     }

@@ -50,7 +50,7 @@ int find_unused_connection(struct BoltConnectionPool * pool)
         struct BoltConnection * connection = &pool->connections[i];
         if (connection->agent == NULL)
         {
-            return i;
+            return (int)i;
         }
     }
     return -1;
@@ -63,7 +63,7 @@ int find_connection(struct BoltConnectionPool * pool, struct BoltConnection * co
         struct BoltConnection * candidate = &pool->connections[i];
         if (candidate == connection)
         {
-            return i;
+            return (int)i;
         }
     }
     return -1;
@@ -160,7 +160,7 @@ void BoltConnectionPool_destroy(struct BoltConnectionPool * pool)
 {
     for (size_t index = 0; index < pool->size; index++)
     {
-        close_pool_entry(pool, index);
+        close_pool_entry(pool, (int)index);
     }
     pool->connections = BoltMem_deallocate(pool->connections, pool->size * sizeof(struct BoltConnection));
     BoltUtil_mutex_destroy(&pool->mutex);

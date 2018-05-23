@@ -205,6 +205,7 @@ int BoltList_write(const struct BoltValue * value, FILE * file, int32_t protocol
 
 int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
 {
+	file = stdout;
     switch (BoltValue_type(value))
     {
         case BOLT_NULL:

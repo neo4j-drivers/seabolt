@@ -52,9 +52,9 @@ PUBLIC char* BoltBuffer_load_target(struct BoltBuffer* buffer, int size);
 
 PUBLIC void BoltBuffer_load(struct BoltBuffer* buffer, const char* data, int size);
 
-PUBLIC int BoltBuffer_sizeof_utf8_char(uint32_t ch);
+PUBLIC int BoltBuffer_sizeof_utf8_char(const uint32_t ch);
 
-PUBLIC void BoltBuffer_load_utf8_char(struct BoltBuffer* buffer, uint32_t ch);
+PUBLIC void BoltBuffer_load_utf8_char(struct BoltBuffer* buffer, const uint32_t ch);
 
 PUBLIC void BoltBuffer_load_uint8(struct BoltBuffer* buffer, uint8_t x);
 
