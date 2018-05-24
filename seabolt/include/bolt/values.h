@@ -119,29 +119,6 @@ struct BoltValue
 };
 
 
-/**
- * Clean up a value for reuse.
- *
- * This sets any nested values to null.
- *
- * @param value
- */
-void _recycle(struct BoltValue* value);
-
-void _set_type(struct BoltValue* value, enum BoltType type, int16_t subtype, int32_t size);
-
-void _format(struct BoltValue* value, enum BoltType type, int16_t subtype, int32_t size, const void* data, size_t data_size);
-
-
-/**
- * Resize a value that contains multiple sub-values.
- *
- * @param value
- * @param size
- * @param multiplier
- */
-void _resize(struct BoltValue* value, int32_t size, int multiplier);
-
 
 /**
  * Create a new BoltValue instance.
@@ -150,15 +127,14 @@ void _resize(struct BoltValue* value, int32_t size, int multiplier);
  */
 PUBLIC struct BoltValue* BoltValue_create();
 
-PUBLIC enum BoltType BoltValue_type(const struct BoltValue * value);
-
-
 /**
  * Destroy a BoltValue instance.
  *
  * @param value
  */
 PUBLIC void BoltValue_destroy(struct BoltValue* value);
+
+PUBLIC enum BoltType BoltValue_type(const struct BoltValue * value);
 
 PUBLIC int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
 
