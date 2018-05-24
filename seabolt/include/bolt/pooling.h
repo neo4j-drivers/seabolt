@@ -24,15 +24,12 @@
 #ifndef SEABOLT_POOLING_H
 #define SEABOLT_POOLING_H
 
-
-#include <pthread.h>
-
 #include "direct.h"
-
+#include "platform.h"
 
 struct BoltConnectionPool
 {
-    pthread_mutex_t mutex;
+    mutex_t mutex;
     enum BoltTransport transport;
     struct BoltAddress * address;
     const struct BoltUserProfile * profile;

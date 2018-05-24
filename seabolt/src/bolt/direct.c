@@ -17,16 +17,15 @@
  * limitations under the License.
  */
 
-
-#include <netinet/tcp.h>
+#include "bolt/config-impl.h"
 
 #include "bolt/buffering.h"
-#include "bolt/config-impl.h"
 #include "bolt/direct.h"
 #include "bolt/logging.h"
 #include "bolt/mem.h"
 
 #include "protocol/v1.h"
+#include "bolt/platform.h"
 
 
 #define INITIAL_TX_BUFFER_SIZE 8192
@@ -40,10 +39,17 @@
 #define RECEIVE(socket, buffer, size, flags) (int)(recv(socket, buffer, (size_t)(size), flags))
 #define RECEIVE_S(socket, buffer, size, flags) SSL_read(socket, buffer, size)
 #define ADDR_SIZE(address) address->ss_family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6)
-
+#ifdef USE_WINSOCK
+#define SETSOCKETOPT(socket, level, optname, optval, optlen) setsockopt(socket, level, optname, (const char *)optval, optlen)
+#else
+#define SETSOCKETOPT(socket, level, optname, optval, optlen) setsockopt(socket, level, optname, (const void *)optval, optlen)
+#endif
 
 #define TRY(code) { int status = (code); if (status == -1) { set_status(connection, BOLT_DEFUNCT, last_error()); return status; } }
 
+#ifndef SHUT_RDWR
+#define SHUT_RDWR SD_BOTH
+#endif
 
 enum BoltConnectionError last_error()
 {
@@ -162,12 +168,12 @@ int open_b(struct BoltConnection * connection, enum BoltTransport transport, con
         set_status(connection, BOLT_DEFUNCT, last_error());
 		return -1;
     }
-    const int TRUE = 1;
+    const int YES = 1;
     // TODO: socket options in Windows
-    TRY(setsockopt(connection->socket, SOL_SOCKET, SO_KEEPALIVE, &TRUE, sizeof(TRUE)));
-    TRY(setsockopt(connection->socket, IPPROTO_TCP, TCP_NODELAY, &TRUE, sizeof(TRUE)));
+    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_KEEPALIVE, &YES, sizeof(YES)));
+    TRY(SETSOCKETOPT(connection->socket, IPPROTO_TCP, TCP_NODELAY, &YES, sizeof(YES)));
     TRY(CONNECT(connection->socket, (struct sockaddr *)(address), ADDR_SIZE(address)));
-    clock_gettime(CLOCK_MONOTONIC, &connection->metrics.time_opened);
+    BoltUtil_get_time(&connection->metrics.time_opened);
     connection->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
     connection->rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
     return 0;
@@ -224,7 +230,7 @@ void close_b(struct BoltConnection * connection)
     {
         case BOLT_SOCKET:
         {
-            SHUTDOWN(connection->socket, SHUT_RDWR);
+			SHUTDOWN(connection->socket, SHUT_RDWR);
             break;
         }
         case BOLT_SECURE_SOCKET:
@@ -242,7 +248,7 @@ void close_b(struct BoltConnection * connection)
             break;
         }
     }
-    clock_gettime(CLOCK_MONOTONIC, &connection->metrics.time_closed);
+    BoltUtil_get_time(&connection->metrics.time_closed);
     connection->socket = 0;
     set_status(connection, BOLT_DISCONNECTED, BOLT_NO_ERROR);
 }
@@ -414,13 +420,13 @@ int BoltConnection_open_b(struct BoltConnection * connection, enum BoltTransport
     {
         BoltConnection_close_b(connection);
     }
-    for (size_t i = 0; i < address->n_resolved_hosts; i++) {
-        int opened = open_b(connection, transport, &address->resolved_hosts[i]);
+    for (int i = 0; i < address->n_resolved_hosts; i++) {
+        const int opened = open_b(connection, transport, &address->resolved_hosts[i]);
         if (opened == 0)
         {
             if (connection->transport == BOLT_SECURE_SOCKET)
             {
-                int secured = secure_b(connection);
+                const int secured = secure_b(connection);
                 if (secured == 0)
                 {
                     handshake_b(connection, 1, 0, 0, 0);

@@ -20,6 +20,7 @@
 
 #include <assert.h>
 #include <memory.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include "bolt/buffering.h"
@@ -54,7 +55,7 @@ int BoltProtocolV1_compile_INIT(struct BoltValue* value, const struct BoltUserPr
         case BOLT_AUTH_BASIC:
         {
             BoltValue_to_Message(value, INIT, 2);
-            BoltValue_to_String(BoltMessage_value(value, 0), profile->user_agent, strlen(profile->user_agent));
+            BoltValue_to_String(BoltMessage_value(value, 0), profile->user_agent, (int32_t)strlen(profile->user_agent));
             struct BoltValue* auth = BoltMessage_value(value, 1);
             if (profile->user == NULL || profile->password == NULL)
             {
@@ -67,8 +68,8 @@ int BoltProtocolV1_compile_INIT(struct BoltValue* value, const struct BoltUserPr
                 BoltDictionary_set_key(auth, 1, "principal", 9);
                 BoltDictionary_set_key(auth, 2, "credentials", 11);
                 BoltValue_to_String(BoltDictionary_value(auth, 0), "basic", 5);
-                BoltValue_to_String(BoltDictionary_value(auth, 1), profile->user, strlen(profile->user));
-                BoltValue_to_String(BoltDictionary_value(auth, 2), profile->password, strlen(profile->password));
+                BoltValue_to_String(BoltDictionary_value(auth, 1), profile->user, (int32_t)strlen(profile->user));
+                BoltValue_to_String(BoltDictionary_value(auth, 2), profile->password, (int32_t)strlen(profile->password));
             }
         }
         break;
@@ -404,7 +405,7 @@ int load_message(struct BoltConnection * connection, struct BoltValue * value)
 {
     assert(BoltValue_type(value) == BOLT_MESSAGE);
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    TRY(load_structure_header(state->tx_buffer, BoltMessage_code(value), value->size));
+    TRY(load_structure_header(state->tx_buffer, BoltMessage_code(value), (int8_t)value->size));
     for (int32_t i = 0; i < value->size; i++)
     {
         TRY(load(state->tx_buffer, BoltMessage_value(value, i)));
@@ -524,7 +525,7 @@ int load(struct BoltBuffer * buffer, struct BoltValue * value)
         }
         case BOLT_STRUCTURE:
         {
-            TRY(load_structure_header(buffer, BoltStructure_code(value), value->size));
+            TRY(load_structure_header(buffer, BoltStructure_code(value), (int8_t)value->size));
             for (int32_t i = 0; i < value->size; i++)
             {
                 TRY(load(buffer, BoltStructure_value(value, i)));

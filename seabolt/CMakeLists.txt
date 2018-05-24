@@ -3,9 +3,15 @@ cmake_minimum_required(VERSION 3.5)
 project(seabolt C)
 
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_FLAGS_DEBUG "-g -Wall")
-set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG -Wall")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+if (MSVC)
+	set(CMAKE_C_FLAGS_DEBUG "/DEBUG /W4")
+	set(CMAKE_C_FLAGS_RELEASE "/Ox /DEBUG:NONE /W4")
+else()
+	set(CMAKE_C_FLAGS_DEBUG "-g -Wall")
+	set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG -Wall")
+endif()
 
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 0)
@@ -13,9 +19,9 @@ set(PROJECT_VERSION_PATCH 0)
 
 include_directories(include)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/bin")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/lib")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/bin")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/lib")
 
 include (TestBigEndian)
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
@@ -30,11 +36,13 @@ set(OPENSSL 1)
 set(WINSOCK 0)
 set(POSIXSOCK 1)
 set(WINSSPI 0)
+set(PTHREAD 1)
 if ( WIN32 )
 	set(OPENSSL 1)
 	set(POSIXSOCK 0)
 	set(WINSOCK 1)
 	set(WINSSPI 0)
+	set(PTHREAD 0)
 endif ()
 
 # configure a header file to pass some of the CMake settings
@@ -78,6 +86,10 @@ if ( ${OPENSSL} )
 
 	target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIRS})
 	target_link_libraries(${PROJECT_NAME} ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
+endif ()
+
+if ( ${PTHREAD} )
+	target_link_libraries(${PROJECT_NAME} "pthread")
 endif ()
 
 set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include

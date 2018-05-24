@@ -16,22 +16,29 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#ifndef SEABOLT_CONFIG
-#define SEABOLT_CONFIG
-#include "config-options.h"
-#include <stddef.h>
 
-#define PUBLIC
+#ifndef SEABOLT_UTILS_H
+#define SEABOLT_UTILS_H
 
-#if USE_POSIXSOCK
-#include <netdb.h>
+#include "config.h"
+
+#if  _WIN32
+typedef void * mutex_t;
+#else
+typedef pthread_mutex_t mutex_t;
 #endif
 
-#ifdef WIN32
-typedef unsigned short in_port_t;
-typedef int socklen_t;
-#undef PUBLIC
-#define PUBLIC __declspec(dllexport)
-#endif // USE_WINSOCK
+int BoltUtil_get_time(struct timespec *tp);
 
-#endif // SEABOLT_CONFIG
+int BoltUtil_mutex_create(mutex_t *mutex);
+
+int BoltUtil_mutex_destroy(mutex_t *mutex);
+
+int BoltUtil_mutex_lock(mutex_t *mutex);
+
+int BoltUtil_mutex_unlock(mutex_t *mutex);
+
+int BoltUtil_mutex_trylock(mutex_t *mutex);
+
+#endif //SEABOLT_UTILS_H
+

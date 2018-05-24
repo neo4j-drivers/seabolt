@@ -232,7 +232,7 @@ int BoltDictionary_set_key(struct BoltValue * value, int32_t index, const char *
     if (key_size <= INT32_MAX)
     {
         assert(BoltValue_type(value) == BOLT_DICTIONARY);
-        BoltValue_to_String(&value->data.extended.as_value[2 * index], key, key_size);
+        BoltValue_to_String(&value->data.extended.as_value[2 * index], key, (int32_t)key_size);
         return 0;
     }
     else
