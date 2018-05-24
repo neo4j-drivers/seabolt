@@ -186,7 +186,7 @@ int secure_b(struct BoltConnection * connection)
     SSL_library_init();
     SSL_load_error_strings();
     OpenSSL_add_all_algorithms();
-    connection->ssl_context = SSL_CTX_new(TLSv1_2_client_method());
+    connection->ssl_context = SSL_CTX_new(TLS_client_method());
     if (connection->ssl_context == NULL)
     {
         set_status(connection, BOLT_DEFUNCT, BOLT_TLS_ERROR);
