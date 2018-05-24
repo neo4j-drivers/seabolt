@@ -37,7 +37,7 @@ struct BoltAddress
     const char * port;
 
     /// Number of resolved IP addresses
-    int n_resolved_hosts;
+    size_t n_resolved_hosts;
     /// Resolved IP address data
     struct sockaddr_storage * resolved_hosts;
     /// Resolved port number

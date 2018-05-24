@@ -25,6 +25,7 @@
 #include "bolt/mem.h"
 
 
+
 /**
  * Clean up a value for reuse.
  *
@@ -35,29 +36,18 @@
 void _recycle(struct BoltValue* value)
 {
     enum BoltType type = BoltValue_type(value);
-    if (type == BOLT_LIST || type == BOLT_STRUCTURE || type == BOLT_STRUCTURE_ARRAY || type == BOLT_MESSAGE)
+    if (type == BOLT_LIST || type == BOLT_STRUCTURE || type == BOLT_MESSAGE)
     {
         for (long i = 0; i < value->size; i++)
         {
-            BoltValue_to_Null(&value->data.extended.as_value[i]);
-        }
-    }
-    else if (type == BOLT_STRING_ARRAY)
-    {
-        for (long i = 0; i < value->size; i++)
-        {
-            struct array_t string = value->data.extended.as_array[i];
-            if (string.size > 0)
-            {
-                BoltMem_deallocate(string.data.as_ptr, (size_t)(string.size));
-            }
+            BoltValue_format_as_Null(&value->data.extended.as_value[i]);
         }
     }
     else if (type == BOLT_DICTIONARY)
     {
         for (long i = 0; i < 2 * value->size; i++)
         {
-            BoltValue_to_Null(&value->data.extended.as_value[i]);
+            BoltValue_format_as_Null(&value->data.extended.as_value[i]);
         }
     }
 }
@@ -109,7 +99,7 @@ void _resize(struct BoltValue* value, int32_t size, int multiplier)
         // shrink logically
         for (long i = multiplier * size; i < multiplier * value->size; i++)
         {
-            BoltValue_to_Null(&value->data.extended.as_value[i]);
+            BoltValue_format_as_Null(&value->data.extended.as_value[i]);
         }
         value->size = size;
         // shrink physically
@@ -135,7 +125,7 @@ struct BoltValue* BoltValue_create()
     return value;
 }
 
-void BoltValue_to_Null(struct BoltValue* value)
+void BoltValue_format_as_Null(struct BoltValue * value)
 {
     if (BoltValue_type(value) != BOLT_NULL)
     {
@@ -143,7 +133,7 @@ void BoltValue_to_Null(struct BoltValue* value)
     }
 }
 
-void BoltValue_to_List(struct BoltValue* value, int32_t length)
+void BoltValue_format_as_List(struct BoltValue * value, int32_t length)
 {
     if (BoltValue_type(value) == BOLT_LIST)
     {
@@ -167,7 +157,7 @@ enum BoltType BoltValue_type(const struct BoltValue* value)
 
 void BoltValue_destroy(struct BoltValue* value)
 {
-    BoltValue_to_Null(value);
+    BoltValue_format_as_Null(value);
     BoltMem_deallocate(value, sizeof(struct BoltValue));
 }
 
@@ -205,51 +195,26 @@ int BoltList_write(const struct BoltValue * value, FILE * file, int32_t protocol
 
 int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
 {
-	file = stdout;
     switch (BoltValue_type(value))
     {
         case BOLT_NULL:
             return BoltNull_write(value, file);
-        case BOLT_LIST:
-            return BoltList_write(value, file, protocol_version);
-        case BOLT_BIT:
-            return BoltBit_write(value, file);
-        case BOLT_BYTE:
-            return BoltByte_write(value, file);
-        case BOLT_BIT_ARRAY:
-            return BoltBitArray_write(value, file);
-        case BOLT_BYTE_ARRAY:
-            return BoltByteArray_write(value, file);
-        case BOLT_CHAR:
-            return BoltChar_write(value, file);
-        case BOLT_CHAR_ARRAY:
-            return BoltCharArray_write(value, file);
+        case BOLT_BOOLEAN:
+            return BoltBoolean_write(value, file);
+        case BOLT_INTEGER:
+            return BoltInteger_write(value, file);
+        case BOLT_FLOAT:
+            return BoltFloat_write(value, file);
         case BOLT_STRING:
             return BoltString_write(value, file);
-        case BOLT_STRING_ARRAY:
-            return BoltStringArray_write(value, file);
         case BOLT_DICTIONARY:
             return BoltDictionary_write(value, file, protocol_version);
-        case BOLT_INT16:
-            return BoltInt16_write(value, file);
-        case BOLT_INT32:
-            return BoltInt32_write(value, file);
-        case BOLT_INT64:
-            return BoltInt64_write(value, file);
-        case BOLT_INT16_ARRAY:
-            return BoltInt16Array_write(value, file);
-        case BOLT_INT32_ARRAY:
-            return BoltInt32Array_write(value, file);
-        case BOLT_INT64_ARRAY:
-            return BoltInt64Array_write(value, file);
-        case BOLT_FLOAT64:
-            return BoltFloat64_write(value, file);
-        case BOLT_FLOAT64_ARRAY:
-            return BoltFloat64Array_write(value, file);
+        case BOLT_LIST:
+            return BoltList_write(value, file, protocol_version);
+        case BOLT_BYTES:
+            return BoltBytes_write(value, file);
         case BOLT_STRUCTURE:
             return BoltStructure_write(value, file, protocol_version);
-        case BOLT_STRUCTURE_ARRAY:
-            return BoltStructureArray_write(value, file, protocol_version);
         case BOLT_MESSAGE:
             return BoltMessage_write(value, file, protocol_version);
         default:

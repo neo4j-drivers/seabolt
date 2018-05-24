@@ -21,40 +21,33 @@
 #include <string.h>
 #include <bolt/values.h>
 #include <assert.h>
-#include "bolt/mem.h"
 
 
 
-void BoltValue_to_Bit(struct BoltValue* value, char data)
+void BoltValue_format_as_Boolean(struct BoltValue * value, char data)
 {
-    _format(value, BOLT_BIT, 0, 1, NULL, 0);
+    _format(value, BOLT_BOOLEAN, 0, 1, NULL, 0);
     value->data.as_char[0] = data;
 }
 
-void BoltValue_to_Byte(struct BoltValue* value, char data)
+char BoltBoolean_get(const struct BoltValue * value)
 {
-    _format(value, BOLT_BYTE, 0, 1, NULL, 0);
-    value->data.as_char[0] = data;
+    return to_bit(value->data.as_char[0]);
 }
 
-void BoltValue_to_BitArray(struct BoltValue* value, char* data, int32_t length)
+int BoltBoolean_write(const struct BoltValue * value, FILE * file)
+{
+    assert(BoltValue_type(value) == BOLT_BOOLEAN);
+    fprintf(file, "!%d", BoltBoolean_get(value));
+    return 0;
+}
+
+
+void BoltValue_format_as_Bytes(struct BoltValue * value, char * data, int32_t length)
 {
     if (length <= sizeof(value->data) / sizeof(char))
     {
-        _format(value, BOLT_BIT_ARRAY, 0, length, NULL, 0);
-        memcpy(value->data.as_char, data, (size_t)(length));
-    }
-    else
-    {
-        _format(value, BOLT_BIT_ARRAY, 0, length, data, sizeof_n(char, length));
-    }
-}
-
-void BoltValue_to_ByteArray(struct BoltValue* value, char* data, int32_t length)
-{
-    if (length <= sizeof(value->data) / sizeof(char))
-    {
-        _format(value, BOLT_BYTE_ARRAY, 0, length, NULL, 0);
+        _format(value, BOLT_BYTES, 0, length, NULL, 0);
         if (data != NULL)
         {
             memcpy(value->data.as_char, data, (size_t)(length));
@@ -62,74 +55,30 @@ void BoltValue_to_ByteArray(struct BoltValue* value, char* data, int32_t length)
     }
     else
     {
-        _format(value, BOLT_BYTE_ARRAY, 0, length, data, sizeof_n(char, length));
+        _format(value, BOLT_BYTES, 0, length, data, sizeof_n(char, length));
     }
 }
 
-char BoltBit_get(const struct BoltValue* value)
-{
-    return to_bit(value->data.as_char[0]);
-}
-
-char BoltByte_get(const struct BoltValue* value)
-{
-    return value->data.as_char[0];
-}
-
-char BoltBitArray_get(const struct BoltValue* value, int32_t index)
-{
-    const char* data = value->size <= sizeof(value->data) / sizeof(char) ?
-                       value->data.as_char : value->data.extended.as_char;
-    return to_bit(data[index]);
-}
-
-char BoltByteArray_get(const struct BoltValue* value, int32_t index)
+char BoltBytes_get(const struct BoltValue * value, int32_t index)
 {
     const char* data = value->size <= sizeof(value->data) / sizeof(char) ?
                        value->data.as_char : value->data.extended.as_char;
     return data[index];
 }
 
-char* BoltByteArray_get_all(struct BoltValue* value)
+char* BoltBytes_get_all(struct BoltValue * value)
 {
     return value->size <= sizeof(value->data) / sizeof(char) ?
            value->data.as_char : value->data.extended.as_char;
 }
 
-int BoltBit_write(const struct BoltValue * value, FILE * file)
+int BoltBytes_write(const struct BoltValue * value, FILE * file)
 {
-    assert(BoltValue_type(value) == BOLT_BIT);
-    fprintf(file, "!%d", BoltBit_get(value));
-    return 0;
-}
-
-int BoltBitArray_write(const struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_BIT_ARRAY);
-    fprintf(file, "![");
-    for (int i = 0; i < value->size; i++)
-    {
-        fprintf(file, "%d", BoltBitArray_get(value, i));
-    }
-    fprintf(file, "]");
-    return 0;
-}
-
-int BoltByte_write(const struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_BYTE);
-    char byte = BoltByte_get(value);
-    fprintf(file, "#%c%c", hex1(&byte, 0), hex0(&byte, 0));
-    return 0;
-}
-
-int BoltByteArray_write(const struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_BYTE_ARRAY);
+    assert(BoltValue_type(value) == BOLT_BYTES);
     fprintf(file, "#[");
     for (int i = 0; i < value->size; i++)
     {
-        char b = BoltByteArray_get(value, i);
+        char b = BoltBytes_get(value, i);
         fprintf(file, "%c%c", hex1(&b, 0), hex0(&b, 0));
     }
     fprintf(file, "]");

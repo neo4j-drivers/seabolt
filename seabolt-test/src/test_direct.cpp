@@ -311,7 +311,7 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
         {
             BoltConnection_cypher(connection, "RETURN $x", 1);
             BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x");
-            BoltValue_to_Int64(x, 42);
+            BoltValue_format_as_Integer(x, 42);
             BoltConnection_load_run_request(connection);
             bolt_request_t run = BoltConnection_last_request(connection);
             BoltConnection_load_pull_request(connection, -1);
@@ -327,8 +327,8 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
                 REQUIRE(BoltValue_type(last_received) == BOLT_LIST);
                 REQUIRE(last_received->size == 1);
                 BoltValue * value = BoltList_value(last_received, 0);
-                REQUIRE(BoltValue_type(value) == BOLT_INT64);
-                REQUIRE(BoltInt64_get(value) == 42);
+                REQUIRE(BoltValue_type(value) == BOLT_INTEGER);
+                REQUIRE(BoltInteger_get(value) == 42);
                 records += 1;
             }
             REQUIRE(BoltValue_type(last_received) == BOLT_MESSAGE);
@@ -349,10 +349,10 @@ SCENARIO("Test execution of multiple Cypher statements transmitted together", "[
         {
             BoltConnection_cypher(connection, "RETURN $x", 1);
             BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x");
-            BoltValue_to_Int32(x, 1);
+            BoltValue_format_as_Integer(x, 1);
             BoltConnection_load_run_request(connection);
             BoltConnection_load_discard_request(connection, -1);
-            BoltValue_to_Int32(x, 2);
+            BoltValue_format_as_Integer(x, 2);
             BoltConnection_load_run_request(connection);
             BoltConnection_load_pull_request(connection, -1);
             BoltConnection_send_b(connection);
@@ -405,8 +405,8 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
                 REQUIRE(BoltValue_type(fetched) == BOLT_LIST);
                 REQUIRE(fetched->size == 1);
                 BoltValue * value = BoltList_value(fetched, 0);
-                REQUIRE(BoltValue_type(value) == BOLT_INT64);
-                REQUIRE(BoltInt64_get(value) == 1);
+                REQUIRE(BoltValue_type(value) == BOLT_INTEGER);
+                REQUIRE(BoltInteger_get(value) == 1);
                 records += 1;
             }
             REQUIRE(BoltValue_type(fetched) == BOLT_MESSAGE);

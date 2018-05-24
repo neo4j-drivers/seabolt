@@ -36,28 +36,19 @@ void _to_structure(struct BoltValue* value, enum BoltType type, int16_t code, in
     _set_type(value, type, code, size);
 }
 
-void BoltValue_to_Structure(struct BoltValue* value, int16_t code, int32_t length)
+void BoltValue_format_as_Structure(struct BoltValue * value, int16_t code, int32_t length)
 {
     _to_structure(value, BOLT_STRUCTURE, code, length);
 }
 
-void BoltValue_to_StructureArray(struct BoltValue* value, int16_t code, int32_t length)
-{
-    _to_structure(value, BOLT_STRUCTURE_ARRAY, code, length);
-    for (long i = 0; i < length; i++)
-    {
-        BoltValue_to_List(&value->data.extended.as_value[i], 0);
-    }
-}
-
-void BoltValue_to_Message(struct BoltValue * value, int16_t code, int32_t length)
+void BoltValue_format_as_Message(struct BoltValue * value, int16_t code, int32_t length)
 {
     _to_structure(value, BOLT_MESSAGE, code, length);
 }
 
 int16_t BoltStructure_code(const struct BoltValue* value)
 {
-    assert(BoltValue_type(value) == BOLT_STRUCTURE || BoltValue_type(value) == BOLT_STRUCTURE_ARRAY);
+    assert(BoltValue_type(value) == BOLT_STRUCTURE);
     return value->subtype;
 }
 
@@ -77,21 +68,6 @@ struct BoltValue* BoltMessage_value(const struct BoltValue * value, int32_t inde
 {
     assert(BoltValue_type(value) == BOLT_MESSAGE);
     return &value->data.extended.as_value[index];
-}
-
-int32_t BoltStructureArray_get_size(const struct BoltValue* value, int32_t index)
-{
-    return value->data.extended.as_value[index].size;
-}
-
-void BoltStructureArray_set_size(struct BoltValue* value, int32_t index, int32_t size)
-{
-    BoltList_resize(&value->data.extended.as_value[index], size);
-}
-
-struct BoltValue* BoltStructureArray_at(const struct BoltValue* value, int32_t array_index, int32_t structure_index)
-{
-    return BoltList_value(&value->data.extended.as_value[array_index], structure_index);
 }
 
 int BoltStructure_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
@@ -116,42 +92,6 @@ int BoltStructure_write(struct BoltValue * value, FILE * file, int32_t protocol_
         BoltValue_write(BoltStructure_value(value, i), file, protocol_version);
     }
     fprintf(file, ")");
-    return 0;
-}
-
-int BoltStructureArray_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
-{
-    assert(BoltValue_type(value) == BOLT_STRUCTURE_ARRAY);
-    int16_t code = BoltStructure_code(value);
-    switch (protocol_version)
-    {
-        case 1:
-        {
-            const char* name = BoltProtocolV1_structure_name(code);
-            if (name == NULL)
-            {
-                fprintf(file, "&#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
-            }
-            else
-            {
-                fprintf(file, "&%s", name);
-            }
-            break;
-        }
-        default:
-            fprintf(file, "&#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
-    }
-    fprintf(file, "[");
-    for (int i = 0; i < value->size; i++)
-    {
-        if (i > 0) fprintf(file, ", ");
-        for (int j = 0; j < BoltStructureArray_get_size(value, i); j++)
-        {
-            if (j > 0) fprintf(file, " ");
-            BoltValue_write(BoltStructureArray_at(value, i, j), file, protocol_version);
-        }
-    }
-    fprintf(file, "]");
     return 0;
 }
 

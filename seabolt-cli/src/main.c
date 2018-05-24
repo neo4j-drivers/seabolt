@@ -319,7 +319,8 @@ int app_run(struct Application * app, const char * cypher)
             {
                 putc('\t', stdout);
             }
-            BoltValue_to_String(name, BoltConnection_field_name(app->connection, i), BoltConnection_field_name_size(app->connection, i));
+            BoltValue_format_as_String(name, BoltConnection_field_name(app->connection, i),
+                                       BoltConnection_field_name_size(app->connection, i));
             BoltValue_write(name, stdout, app->connection->protocol_version);
         }
         putc('\n', stdout);
