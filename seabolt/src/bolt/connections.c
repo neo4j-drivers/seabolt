@@ -469,7 +469,7 @@ void BoltConnection_close(struct BoltConnection * connection)
 int BoltConnection_send(struct BoltConnection * connection)
 {
     int size = BoltBuffer_unloadable(connection->tx_buffer);
-    TRY(send_b(connection, BoltBuffer_unload_target(connection->tx_buffer, size), size));
+    TRY(send_b(connection, BoltBuffer_unload_pointer(connection->tx_buffer, size), size));
     BoltBuffer_compact(connection->tx_buffer);
     return 0;
 }
@@ -490,7 +490,7 @@ int BoltConnection_receive(struct BoltConnection * connection, char * buffer, in
                 max_size = BoltBuffer_loadable(connection->rx_buffer);
             }
             max_size = delta > max_size ? delta : max_size;
-            int received = receive_b(connection, BoltBuffer_load_target(connection->rx_buffer, max_size), delta,
+            int received = receive_b(connection, BoltBuffer_load_pointer(connection->rx_buffer, max_size), delta,
                                      max_size);
             if (received == -1)
             {

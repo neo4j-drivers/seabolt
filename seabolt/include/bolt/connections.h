@@ -423,9 +423,5 @@ PUBLIC const char * BoltConnection_field_name(struct BoltConnection * connection
  */
 PUBLIC int32_t BoltConnection_field_name_size(struct BoltConnection * connection, int32_t index);
 
-PUBLIC int BoltConnection_dump_field_names(struct BoltConnection * connection, struct BoltBuffer * buffer);
-
-PUBLIC int BoltConnection_dump_data(struct BoltConnection * connection, struct BoltBuffer * buffer);
-
 
 #endif // SEABOLT_CONNECT

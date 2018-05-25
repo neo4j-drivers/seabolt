@@ -6,6 +6,8 @@ Values
 
 .. doxygenstruct:: BoltValue
 
+.. doxygenunion:: BoltExtendedValue
+
 .. doxygenfunction:: BoltValue_create
 
 .. doxygenfunction:: BoltValue_destroy

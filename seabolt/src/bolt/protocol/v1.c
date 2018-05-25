@@ -316,14 +316,6 @@ int load_string(struct BoltBuffer * buffer, const char * string, int32_t size)
     return 0;
 }
 
-int load_string_from_char(struct BoltBuffer * buffer, uint32_t ch)
-{
-    int ch_size = BoltBuffer_sizeof_utf8_code_point(ch);
-    load_string_header(buffer, ch_size);
-    BoltBuffer_load_utf8_code_point(buffer, ch);
-    return ch_size;
-}
-
 int load_list_header(struct BoltBuffer * buffer, int32_t size)
 {
     if (size < 0)
@@ -348,18 +340,6 @@ int load_list_header(struct BoltBuffer * buffer, int32_t size)
     {
         BoltBuffer_load_u8(buffer, 0xD6);
         BoltBuffer_load_i32be(buffer, size);
-    }
-    return 0;
-}
-
-int load_list_of_strings_from_char_array(struct BoltBuffer * buffer, const uint32_t * array, int32_t size)
-{
-    load_list_header(buffer, size);
-    for (int32_t i = 0; i < size; i++)
-    {
-        int ch_size = BoltBuffer_sizeof_utf8_code_point(array[i]);
-        load_string_header(buffer, ch_size);
-        BoltBuffer_load_utf8_code_point(buffer, array[i]);
     }
     return 0;
 }
@@ -427,15 +407,6 @@ int BoltProtocolV1_load_message_quietly(struct BoltConnection * connection, stru
 {
     return load_message(connection, value);
 }
-
-#define LOAD_LIST_FROM_INT_ARRAY(connection, value, type)                               \
-{                                                                                       \
-    TRY(load_list_header(connection, (value)->size));                                   \
-    for (int32_t i = 0; i < (value)->size; i++)                                         \
-    {                                                                                   \
-        TRY(load_integer(connection, Bolt##type##Array_get(value, i)));                 \
-    }                                                                                   \
-}                                                                                       \
 
 int load(struct BoltBuffer * buffer, struct BoltValue * value)
 {
@@ -511,7 +482,7 @@ void enqueue(struct BoltConnection * connection)
     header[0] = (char)(size >> 8);
     header[1] = (char)(size);
     BoltBuffer_load(connection->tx_buffer, &header[0], sizeof(header));
-    BoltBuffer_load(connection->tx_buffer, BoltBuffer_unload_target(state->tx_buffer, size), size);
+    BoltBuffer_load(connection->tx_buffer, BoltBuffer_unload_pointer(state->tx_buffer, size), size);
     header[0] = (char)(0);
     header[1] = (char)(0);
     BoltBuffer_load(connection->tx_buffer, &header[0], sizeof(header));
@@ -852,7 +823,7 @@ int BoltProtocolV1_fetch_b(struct BoltConnection * connection, bolt_request_t re
         BoltBuffer_compact(state->rx_buffer);
         while (chunk_size != 0)
         {
-            fetched = BoltConnection_receive(connection, BoltBuffer_load_target(state->rx_buffer, chunk_size),
+            fetched = BoltConnection_receive(connection, BoltBuffer_load_pointer(state->rx_buffer, chunk_size),
                                              chunk_size);
             if (fetched == -1)
             {

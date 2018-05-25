@@ -1,9 +1,7 @@
-======
-Memory
-======
+=================
+Memory Management
+=================
 
-
-.. doxygenfunction:: BoltMem_reverse_copy
 
 .. doxygenfunction:: BoltMem_allocate
 
@@ -18,3 +16,5 @@ Memory
 .. doxygenfunction:: BoltMem_peak_allocation
 
 .. doxygenfunction:: BoltMem_allocation_events
+
+.. doxygenfunction:: BoltMem_reverse_copy

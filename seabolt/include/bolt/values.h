@@ -56,8 +56,6 @@ static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
 #define to_bit(x) (char)((x) == 0 ? 0 : 1);
 
 
-struct array_t;
-
 struct BoltValue;
 
 /**
@@ -65,29 +63,26 @@ struct BoltValue;
  */
 enum BoltType
 {
-    BOLT_NULL,
-    BOLT_BOOLEAN,
-    BOLT_INTEGER,
-    BOLT_FLOAT,
-    BOLT_STRING,
-    BOLT_DICTIONARY,
-    BOLT_LIST,
-    BOLT_BYTES,
-    BOLT_STRUCTURE,
-    BOLT_MESSAGE,
+    BOLT_NULL = 0,
+    BOLT_BOOLEAN = 1,
+    BOLT_INTEGER = 2,
+    BOLT_FLOAT = 3,
+    BOLT_STRING = 4,
+    BOLT_DICTIONARY = 5,
+    BOLT_LIST = 6,
+    BOLT_BYTES = 7,
+    BOLT_STRUCTURE = 8,
+    BOLT_MESSAGE = 9,
 };
 
-union data_t
+/**
+ * For holding extended values that exceed the size of a single BoltValue.
+ */
+union BoltExtendedValue
 {
     void * as_ptr;
     char * as_char;
     struct BoltValue * as_value;
-};
-
-struct array_t
-{
-    int32_t size;
-    union data_t data;
 };
 
 /**
@@ -106,10 +101,24 @@ struct array_t
  */
 struct BoltValue
 {
+    /// Type of this value, as defined in BoltType.
     int16_t type;
+
+    /// Subtype tag, for use with Structure values.
     int16_t subtype;
-    int32_t size;               // logical size
-    uint64_t data_size;         // physical size
+
+    /// Logical size of this value.
+    /// For portability between platforms, the logical
+    /// size of a value (e.g. string length or list size)
+    /// cannot exceed 2^31, therefore an int32_t is safe
+    /// here.
+    int32_t size;
+
+    /// Physical size of this value, in bytes.
+    uint64_t data_size;
+
+    /// Data content of the value, or a pointer to
+    /// extended content.
     union
     {
         char as_char[16];
@@ -119,8 +128,9 @@ struct BoltValue
         int32_t as_int32[4];
         int64_t as_int64[2];
         double as_double[2];
-        union data_t extended;
+        union BoltExtendedValue extended;
     } data;
+
 };
 
 

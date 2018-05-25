@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "bolt/buffering.h"
 #include "bolt/connections.h"
 #include "bolt/lifecycle.h"
 #include "bolt/mem.h"
@@ -57,7 +56,6 @@ enum Command
     CMD_HELP,
     CMD_DEBUG,
     CMD_RUN,
-    CMD_EXPORT,
 };
 
 struct Application
@@ -158,10 +156,6 @@ struct Application* app_create(int argc, char ** argv)
             else if (strcmp(arg, "run") == 0)
             {
                 app->command = CMD_RUN;
-            }
-            else if (strcmp(arg, "export") == 0)
-            {
-                app->command = CMD_EXPORT;
             }
             else
             {
@@ -353,57 +347,11 @@ int app_run(struct Application * app, const char * cypher)
     return 0;
 }
 
-int app_export(struct Application * app, const char * cypher)
-{
-    Bolt_startup(NULL);
-
-    struct BoltBuffer * buffer = BoltBuffer_create(8192);
-
-    app_connect(app);
-    app_init(app);
-
-    BoltConnection_cypher(app->connection, cypher, strlen(cypher), 0);
-    BoltConnection_load_run_request(app->connection);
-    bolt_request_t run = BoltConnection_last_request(app->connection);
-    BoltConnection_load_pull_request(app->connection, -1);
-    bolt_request_t pull = BoltConnection_last_request(app->connection);
-
-    BoltConnection_send(app->connection);
-
-    BoltConnection_fetch_summary(app->connection, run);
-    if (app->with_header)
-    {
-        BoltConnection_dump_field_names(app->connection, buffer);
-    }
-
-    while (BoltConnection_fetch(app->connection, pull))
-    {
-        BoltConnection_dump_data(app->connection, buffer);
-    }
-
-    BoltConnection_close(app->connection);
-    BoltConnection_destroy(app->connection);
-
-    int size = BoltBuffer_unloadable(buffer);
-    char * data = BoltBuffer_unload_target(buffer, size);
-    for (int i = 0; i < size; i++)
-    {
-        putc(data[i], stdout);
-    }
-
-    BoltBuffer_destroy(buffer);
-
-    Bolt_shutdown();
-
-    return 0;
-}
-
 void app_help()
 {
     fprintf(stderr, "seabolt help\n");
     fprintf(stderr, "seabolt debug <statement>\n");
     fprintf(stderr, "seabolt run <statement>\n");
-    fprintf(stderr, "seabolt export <statement>\n");
     exit(EXIT_SUCCESS);
 }
 
@@ -421,9 +369,6 @@ int main(int argc, char * argv[])
             break;
         case CMD_RUN:
             app_run(app, argv[app->first_arg_index]);
-            break;
-        case CMD_EXPORT:
-            app_export(app, argv[app->first_arg_index]);
             break;
     }
     int with_allocation_report = app->with_allocation_report;

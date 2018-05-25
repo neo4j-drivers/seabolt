@@ -31,7 +31,7 @@ PUBLIC void* BoltMem_reverse_copy(void * dest, const void * src, size_t n);
 #if IS_BIG_ENDIAN
     #define memcpy_be(target, src, n) memcpy(target, src, n)
 #else
-    #define memcpy_be(target, src, n) memcpy_r(target, src, n)
+    #define memcpy_be(target, src, n) BoltMem_reverse_copy(target, src, n)
 #endif
 
 
