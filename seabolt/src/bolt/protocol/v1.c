@@ -930,7 +930,7 @@ const char* BoltProtocolV1_structure_name(int16_t code)
     }
 }
 
-const char* BoltProtocolV1_message_name(int16_t code)
+const char * BoltProtocolV1_message_name(int16_t code)
 {
     switch(code)
     {
@@ -953,7 +953,7 @@ const char* BoltProtocolV1_message_name(int16_t code)
         case 0x7F:
             return "FAILURE";
         default:
-            return "?";
+            return NULL;
     }
 }
 

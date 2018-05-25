@@ -149,8 +149,22 @@ PUBLIC struct BoltValue* BoltValue_create();
  */
 PUBLIC void BoltValue_destroy(struct BoltValue* value);
 
+/**
+ * Return the type of a BoltValue.
+ *
+ * @param value
+ * @return
+ */
 PUBLIC enum BoltType BoltValue_type(const struct BoltValue * value);
 
+/**
+ * Write a textual representation of a BoltValue to a FILE.
+ *
+ * @param value
+ * @param file
+ * @param protocol_version
+ * @return
+ */
 PUBLIC int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
 
 
@@ -162,15 +176,11 @@ PUBLIC int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protoc
  */
 PUBLIC void BoltValue_format_as_Null(struct BoltValue * value);
 
-PUBLIC int BoltNull_write(const struct BoltValue * value, FILE * file);
-
 
 
 PUBLIC void BoltValue_format_as_Boolean(struct BoltValue * value, char data);
 
 PUBLIC char BoltBoolean_get(const struct BoltValue * value);
-
-PUBLIC int BoltBoolean_write(const struct BoltValue * value, FILE * file);
 
 
 
@@ -178,23 +188,17 @@ PUBLIC void BoltValue_format_as_Integer(struct BoltValue * value, int64_t data);
 
 PUBLIC int64_t BoltInteger_get(const struct BoltValue * value);
 
-PUBLIC int BoltInteger_write(struct BoltValue * value, FILE * file);
-
 
 
 PUBLIC void BoltValue_format_as_Float(struct BoltValue * value, double data);
 
 PUBLIC double BoltFloat_get(const struct BoltValue * value);
 
-PUBLIC int BoltFloat_write(struct BoltValue * value, FILE * file);
-
 
 
 PUBLIC void BoltValue_format_as_String(struct BoltValue * value, const char * data, int32_t length);
 
 PUBLIC char* BoltString_get(struct BoltValue * value);
-
-PUBLIC int BoltString_write(struct BoltValue * value, FILE * file);
 
 
 
@@ -210,8 +214,6 @@ PUBLIC int BoltDictionary_set_key(struct BoltValue * value, int32_t index, const
 
 PUBLIC struct BoltValue * BoltDictionary_value(struct BoltValue * value, int32_t index);
 
-PUBLIC int BoltDictionary_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
-
 
 
 /**
@@ -226,8 +228,6 @@ PUBLIC void BoltList_resize(struct BoltValue* value, int32_t size);
 
 PUBLIC struct BoltValue * BoltList_value(const struct BoltValue* value, int32_t index);
 
-PUBLIC int BoltList_write(const struct BoltValue * value, FILE * file, int32_t protocol_version);
-
 
 
 PUBLIC void BoltValue_format_as_Bytes(struct BoltValue * value, char * data, int32_t length);
@@ -235,8 +235,6 @@ PUBLIC void BoltValue_format_as_Bytes(struct BoltValue * value, char * data, int
 PUBLIC char BoltBytes_get(const struct BoltValue * value, int32_t index);
 
 PUBLIC char * BoltBytes_get_all(struct BoltValue * value);
-
-PUBLIC int BoltBytes_write(const struct BoltValue * value, FILE * file);
 
 
 
@@ -246,8 +244,6 @@ PUBLIC int16_t BoltStructure_code(const struct BoltValue* value);
 
 PUBLIC struct BoltValue * BoltStructure_value(const struct BoltValue* value, int32_t index);
 
-PUBLIC int BoltStructure_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
-
 
 
 PUBLIC void BoltValue_format_as_Message(struct BoltValue * value, int16_t code, int32_t length);
@@ -255,8 +251,6 @@ PUBLIC void BoltValue_format_as_Message(struct BoltValue * value, int16_t code, 
 PUBLIC int16_t BoltMessage_code(const struct BoltValue * value);
 
 PUBLIC struct BoltValue * BoltMessage_value(const struct BoltValue * value, int32_t index);
-
-PUBLIC int BoltMessage_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
 
 
 

@@ -22,8 +22,6 @@ Null
 
 .. doxygenfunction:: BoltValue_format_as_Null
 
-.. doxygenfunction:: BoltNull_write
-
 
 Boolean
 =======
@@ -31,8 +29,6 @@ Boolean
 .. doxygenfunction:: BoltValue_format_as_Boolean
 
 .. doxygenfunction:: BoltBoolean_get
-
-.. doxygenfunction:: BoltBoolean_write
 
 
 Integer
@@ -42,8 +38,6 @@ Integer
 
 .. doxygenfunction:: BoltInteger_get
 
-.. doxygenfunction:: BoltInteger_write
-
 
 Float
 =====
@@ -52,8 +46,6 @@ Float
 
 .. doxygenfunction:: BoltFloat_get
 
-.. doxygenfunction:: BoltFloat_write
-
 
 String
 ======
@@ -61,8 +53,6 @@ String
 .. doxygenfunction:: BoltValue_format_as_String
 
 .. doxygenfunction:: BoltString_get
-
-.. doxygenfunction:: BoltString_write
 
 
 Dictionary
@@ -80,8 +70,6 @@ Dictionary
 
 .. doxygenfunction:: BoltDictionary_value
 
-.. doxygenfunction:: BoltDictionary_write
-
 
 List
 ====
@@ -91,8 +79,6 @@ List
 .. doxygenfunction:: BoltList_resize
 
 .. doxygenfunction:: BoltList_value
-
-.. doxygenfunction:: BoltList_write
 
 
 Bytes
@@ -104,8 +90,6 @@ Bytes
 
 .. doxygenfunction:: BoltBytes_get_all
 
-.. doxygenfunction:: BoltBytes_write
-
 
 Structure
 =========
@@ -116,8 +100,6 @@ Structure
 
 .. doxygenfunction:: BoltStructure_value
 
-.. doxygenfunction:: BoltStructure_write
-
 
 Message
 =======
@@ -127,5 +109,3 @@ Message
 .. doxygenfunction:: BoltMessage_code
 
 .. doxygenfunction:: BoltMessage_value
-
-.. doxygenfunction:: BoltMessage_write

@@ -132,16 +132,6 @@ void _format_as_structure(struct BoltValue * value, enum BoltType type, int16_t 
     _set_type(value, type, code, size);
 }
 
-void _write_string(FILE * file, const char * data, size_t size)
-{
-    fputc(STRING_QUOTE, file);
-    for (size_t i = 0; i < size; i++)
-    {
-        fputc(data[i], file);
-    }
-    fputc(STRING_QUOTE, file);
-}
-
 void _write_escaped_code_point(FILE * file, const uint32_t ch)
 {
     if (ch < 0x10000)
@@ -156,6 +146,72 @@ void _write_escaped_code_point(FILE * file, const uint32_t ch)
     {
         fprintf(file, REPLACEMENT_CHARACTER);
     }
+}
+
+void _write_string(FILE * file, const char * data, size_t size)
+{
+    fputc(STRING_QUOTE, file);
+    for (int i = 0; i < size; i++)
+    {
+        char ch0 = data[i];
+        if (IS_PRINTABLE_ASCII(ch0) && ch0 != STRING_QUOTE)
+        {
+            fputc(ch0, file);
+        }
+        else if (ch0 >= 0)
+        {
+            _write_escaped_code_point(file, (uint32_t)(ch0));
+        }
+        else if ((ch0 & 0b11100000) == 0b11000000)
+        {
+            if (i + 1 < size)
+            {
+                char ch1 = data[++i];
+                uint32_t ch = ((ch0 & (uint32_t)(0b00011111)) << 6) | (ch1 & (uint32_t)(0b00111111));
+                _write_escaped_code_point(file, ch);
+            }
+            else
+            {
+                fprintf(file, REPLACEMENT_CHARACTER);
+            }
+        }
+        else if ((ch0 & 0b11110000) == 0b11100000)
+        {
+            if (i + 2 < size)
+            {
+                char ch1 = data[++i];
+                char ch2 = data[++i];
+                uint32_t ch = ((ch0 & (uint32_t)(0b00001111)) << 12) | ((ch1 & (uint32_t)(0b00111111)) << 6) |
+                              (ch2 & (uint32_t)(0b00111111));
+                _write_escaped_code_point(file, ch);
+            }
+            else
+            {
+                fprintf(file, REPLACEMENT_CHARACTER);
+            }
+        }
+        else if ((ch0 & 0b11111000) == 0b11110000)
+        {
+            if (i + 3 < size)
+            {
+                char ch1 = data[++i];
+                char ch2 = data[++i];
+                char ch3 = data[++i];
+                uint32_t ch = ((ch0 & (uint32_t)(0b00000111)) << 18) | ((ch1 & (uint32_t)(0b00111111)) << 12) |
+                              ((ch2 & (uint32_t)(0b00111111)) << 6) | (ch3 & (uint32_t)(0b00111111));
+                _write_escaped_code_point(file, ch);
+            }
+            else
+            {
+                fprintf(file, REPLACEMENT_CHARACTER);
+            }
+        }
+        else
+        {
+            fprintf(file, REPLACEMENT_CHARACTER);
+        }
+    }
+    fputc(STRING_QUOTE, file);
 }
 
 
@@ -182,36 +238,6 @@ enum BoltType BoltValue_type(const struct BoltValue* value)
     return (enum BoltType)(value->type);
 }
 
-int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
-{
-    switch (BoltValue_type(value))
-    {
-        case BOLT_NULL:
-            return BoltNull_write(value, file);
-        case BOLT_BOOLEAN:
-            return BoltBoolean_write(value, file);
-        case BOLT_INTEGER:
-            return BoltInteger_write(value, file);
-        case BOLT_FLOAT:
-            return BoltFloat_write(value, file);
-        case BOLT_STRING:
-            return BoltString_write(value, file);
-        case BOLT_DICTIONARY:
-            return BoltDictionary_write(value, file, protocol_version);
-        case BOLT_LIST:
-            return BoltList_write(value, file, protocol_version);
-        case BOLT_BYTES:
-            return BoltBytes_write(value, file);
-        case BOLT_STRUCTURE:
-            return BoltStructure_write(value, file, protocol_version);
-        case BOLT_MESSAGE:
-            return BoltMessage_write(value, file, protocol_version);
-        default:
-            fprintf(file, "?");
-            return -1;
-    }
-}
-
 
 
 void BoltValue_format_as_Null(struct BoltValue * value)
@@ -221,14 +247,6 @@ void BoltValue_format_as_Null(struct BoltValue * value)
         _format(value, BOLT_NULL, 0, 0, NULL, 0);
     }
 }
-
-int BoltNull_write(const struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_NULL);
-    fprintf(file, "null");
-    return 0;
-}
-
 
 
 void BoltValue_format_as_Boolean(struct BoltValue * value, char data)
@@ -242,14 +260,6 @@ char BoltBoolean_get(const struct BoltValue * value)
     return to_bit(value->data.as_char[0]);
 }
 
-int BoltBoolean_write(const struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_BOOLEAN);
-    fprintf(file, "%s", BoltBoolean_get(value) ? "true" : "false");
-    return 0;
-}
-
-
 
 void BoltValue_format_as_Integer(struct BoltValue * value, int64_t data)
 {
@@ -262,14 +272,6 @@ int64_t BoltInteger_get(const struct BoltValue * value)
     return value->data.as_int64[0];
 }
 
-int BoltInteger_write(struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_INTEGER);
-    fprintf(file, "%" PRIi64, BoltInteger_get(value));
-    return 0;
-}
-
-
 
 void BoltValue_format_as_Float(struct BoltValue * value, double data)
 {
@@ -281,14 +283,6 @@ double BoltFloat_get(const struct BoltValue * value)
 {
     return value->data.as_double[0];
 }
-
-int BoltFloat_write(struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_FLOAT);
-    fprintf(file, "%f", BoltFloat_get(value));
-    return 0;
-}
-
 
 
 void BoltValue_format_as_String(struct BoltValue * value, const char * data, int32_t length)
@@ -327,74 +321,6 @@ char * BoltString_get(struct BoltValue * value)
     return value->size <= sizeof(value->data) / sizeof(char) ?
            value->data.as_char : value->data.extended.as_char;
 }
-
-int BoltString_write(struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_STRING);
-    char * data = BoltString_get(value);
-    fputc(STRING_QUOTE, file);
-    for (int i = 0; i < value->size; i++)
-    {
-        char ch0 = data[i];
-        if (IS_PRINTABLE_ASCII(ch0) && ch0 != STRING_QUOTE)
-        {
-            fputc(ch0, file);
-        }
-        else if (ch0 >= 0)
-        {
-            _write_escaped_code_point(file, (uint32_t)(ch0));
-        }
-        else if ((ch0 & 0b11100000) == 0b11000000)
-        {
-            if (i + 1 < value->size)
-            {
-                char ch1 = data[++i];
-                uint32_t ch = ((ch0 & (uint32_t)(0b00011111)) << 6) | (ch1 & (uint32_t)(0b00111111));
-                _write_escaped_code_point(file, ch);
-            }
-            else
-            {
-                fprintf(file, REPLACEMENT_CHARACTER);
-            }
-        }
-        else if ((ch0 & 0b11110000) == 0b11100000)
-        {
-            if (i + 2 < value->size)
-            {
-                char ch1 = data[++i];
-                char ch2 = data[++i];
-                uint32_t ch = ((ch0 & (uint32_t)(0b00001111)) << 12) | ((ch1 & (uint32_t)(0b00111111)) << 6) | (ch2 & (uint32_t)(0b00111111));
-                _write_escaped_code_point(file, ch);
-            }
-            else
-            {
-                fprintf(file, REPLACEMENT_CHARACTER);
-            }
-        }
-        else if ((ch0 & 0b11111000) == 0b11110000)
-        {
-            if (i + 3 < value->size)
-            {
-                char ch1 = data[++i];
-                char ch2 = data[++i];
-                char ch3 = data[++i];
-                uint32_t ch = ((ch0 & (uint32_t)(0b00000111)) << 18) | ((ch1 & (uint32_t)(0b00111111)) << 12) | ((ch2 & (uint32_t)(0b00111111)) << 6) | (ch3 & (uint32_t)(0b00111111));
-                _write_escaped_code_point(file, ch);
-            }
-            else
-            {
-                fprintf(file, REPLACEMENT_CHARACTER);
-            }
-        }
-        else
-        {
-            fprintf(file, REPLACEMENT_CHARACTER);
-        }
-    }
-    fputc(STRING_QUOTE, file);
-    return 0;
-}
-
 
 
 void BoltValue_format_as_Dictionary(struct BoltValue * value, int32_t length)
@@ -457,28 +383,6 @@ struct BoltValue* BoltDictionary_value(struct BoltValue * value, int32_t index)
     return &value->data.extended.as_value[2 * index + 1];
 }
 
-int BoltDictionary_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
-{
-    assert(BoltValue_type(value) == BOLT_DICTIONARY);
-    fprintf(file, "{");
-    int comma = 0;
-    for (int i = 0; i < value->size; i++)
-    {
-        const char * key = BoltDictionary_get_key(value, i);
-        if (key != NULL)
-        {
-            if (comma) fprintf(file, ", ");
-            _write_string(file, key, (size_t)(BoltDictionary_get_key_size(value, i)));
-            fprintf(file, ": ");
-            BoltValue_write(BoltDictionary_value(value, i), file, protocol_version);
-            comma = 1;
-        }
-    }
-    fprintf(file, "}");
-    return 0;
-}
-
-
 
 void BoltValue_format_as_List(struct BoltValue * value, int32_t length)
 {
@@ -508,20 +412,6 @@ struct BoltValue* BoltList_value(const struct BoltValue* value, int32_t index)
     assert(BoltValue_type(value) == BOLT_LIST);
     return &value->data.extended.as_value[index];
 }
-
-int BoltList_write(const struct BoltValue * value, FILE * file, int32_t protocol_version)
-{
-    assert(BoltValue_type(value) == BOLT_LIST);
-    fprintf(file, "[");
-    for (int i = 0; i < value->size; i++)
-    {
-        if (i > 0) fprintf(file, ", ");
-        BoltValue_write(BoltList_value(value, i), file, protocol_version);
-    }
-    fprintf(file, "]");
-    return 0;
-}
-
 
 
 void BoltValue_format_as_Bytes(struct BoltValue * value, char * data, int32_t length)
@@ -553,19 +443,6 @@ char* BoltBytes_get_all(struct BoltValue * value)
            value->data.as_char : value->data.extended.as_char;
 }
 
-int BoltBytes_write(const struct BoltValue * value, FILE * file)
-{
-    assert(BoltValue_type(value) == BOLT_BYTES);
-    fprintf(file, "#[");
-    for (int i = 0; i < value->size; i++)
-    {
-        char b = BoltBytes_get(value, i);
-        fprintf(file, "%c%c", hex1(&b, 0), hex0(&b, 0));
-    }
-    fprintf(file, "]");
-    return 0;
-}
-
 void BoltValue_format_as_Structure(struct BoltValue * value, int16_t code, int32_t length)
 {
     _format_as_structure(value, BOLT_STRUCTURE, code, length);
@@ -582,32 +459,6 @@ struct BoltValue* BoltStructure_value(const struct BoltValue* value, int32_t ind
     assert(BoltValue_type(value) == BOLT_STRUCTURE);
     return &value->data.extended.as_value[index];
 }
-
-int BoltStructure_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
-{
-    assert(BoltValue_type(value) == BOLT_STRUCTURE);
-    int16_t code = BoltStructure_code(value);
-    switch (protocol_version)
-    {
-        case 1:
-        {
-            const char* name = BoltProtocolV1_structure_name(code);
-            fprintf(file, "&%s", name);
-            break;
-        }
-        default:
-            fprintf(file, "&#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
-    }
-    fprintf(file, "(");
-    for (int i = 0; i < value->size; i++)
-    {
-        if (i > 0) fprintf(file, " ");
-        BoltValue_write(BoltStructure_value(value, i), file, protocol_version);
-    }
-    fprintf(file, ")");
-    return 0;
-}
-
 
 
 void BoltValue_format_as_Message(struct BoltValue * value, int16_t code, int32_t length)
@@ -627,32 +478,138 @@ struct BoltValue* BoltMessage_value(const struct BoltValue * value, int32_t inde
     return &value->data.extended.as_value[index];
 }
 
-int BoltMessage_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
+
+int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
 {
-    assert(BoltValue_type(value) == BOLT_MESSAGE);
-    int16_t code = BoltMessage_code(value);
-    switch (protocol_version)
+    switch (BoltValue_type(value))
     {
-        case 1:
+        case BOLT_NULL:
         {
-            const char* name = BoltProtocolV1_message_name(code);
-            if (name == NULL)
+            fprintf(file, "null");
+            return 0;
+        }
+        case BOLT_BOOLEAN:
+        {
+            fprintf(file, "%s", BoltBoolean_get(value) ? "true" : "false");
+            return 0;
+        }
+        case BOLT_INTEGER:
+        {
+            fprintf(file, "%" PRIi64, BoltInteger_get(value));
+            return 0;
+        }
+        case BOLT_FLOAT:
+        {
+            fprintf(file, "%f", BoltFloat_get(value));
+            return 0;
+        }
+        case BOLT_STRING:
+        {
+            char * data = BoltString_get(value);
+            if (value->size >= 0)
             {
-                fprintf(file, "msg<#%c%c>", hex1(&code, 0), hex0(&code, 0));
+                _write_string(file, data, (size_t)(value->size));
+                return 0;
             }
             else
             {
-                fprintf(file, "%s", name);
+                return -1;
             }
-            break;
+        }
+        case BOLT_DICTIONARY:
+        {
+            fprintf(file, "{");
+            int comma = 0;
+            for (int i = 0; i < value->size; i++)
+            {
+                const char * key = BoltDictionary_get_key(value, i);
+                if (key != NULL)
+                {
+                    if (comma) fprintf(file, ", ");
+                    _write_string(file, key, (size_t)(BoltDictionary_get_key_size(value, i)));
+                    fprintf(file, ": ");
+                    BoltValue_write(BoltDictionary_value(value, i), file, protocol_version);
+                    comma = 1;
+                }
+            }
+            fprintf(file, "}");
+            return 0;
+        }
+        case BOLT_LIST:
+        {
+            fprintf(file, "[");
+            for (int i = 0; i < value->size; i++)
+            {
+                if (i > 0) fprintf(file, ", ");
+                BoltValue_write(BoltList_value(value, i), file, protocol_version);
+            }
+            fprintf(file, "]");
+            return 0;
+        }
+        case BOLT_BYTES:
+        {
+            fprintf(file, "#[");
+            for (int i = 0; i < value->size; i++)
+            {
+                char b = BoltBytes_get(value, i);
+                fprintf(file, "%c%c", hex1(&b, 0), hex0(&b, 0));
+            }
+            fprintf(file, "]");
+            return 0;
+        }
+        case BOLT_STRUCTURE:
+        {
+            int16_t code = BoltStructure_code(value);
+            switch (protocol_version)
+            {
+                case 1:
+                {
+                    const char* name = BoltProtocolV1_structure_name(code);
+                    fprintf(file, "$%s", name);
+                    break;
+                }
+                default:
+                    fprintf(file, "$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+            }
+            fprintf(file, "(");
+            for (int i = 0; i < value->size; i++)
+            {
+                if (i > 0) fprintf(file, " ");
+                BoltValue_write(BoltStructure_value(value, i), file, protocol_version);
+            }
+            fprintf(file, ")");
+            return 0;
+        }
+        case BOLT_MESSAGE:
+        {
+            int16_t code = BoltMessage_code(value);
+            switch (protocol_version)
+            {
+                case 1:
+                {
+                    const char* name = BoltProtocolV1_message_name(code);
+                    if (name == NULL)
+                    {
+                        fprintf(file, "MESSAGE#%c%c", hex1(&code, 0), hex0(&code, 0));
+                    }
+                    else
+                    {
+                        fprintf(file, "%s", name);
+                    }
+                    break;
+                }
+                default:
+                    fprintf(file, "MESSAGE#%c%c", hex1(&code, 0), hex0(&code, 0));
+            }
+            for (int i = 0; i < value->size; i++)
+            {
+                fprintf(file, " ");
+                BoltValue_write(BoltMessage_value(value, i), file, protocol_version);
+            }
+            return 0;
         }
         default:
-            fprintf(file, "msg<#%c%c>", hex1(&code, 0), hex0(&code, 0));
+            fprintf(file, "?");
+            return -1;
     }
-    for (int i = 0; i < value->size; i++)
-    {
-        fprintf(file, " ");
-        BoltValue_write(BoltMessage_value(value, i), file, protocol_version);
-    }
-    return 0;
 }
