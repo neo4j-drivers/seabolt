@@ -26,7 +26,7 @@ extern "C" {
 }
 
 int main(int argc, char* argv[]) {
-	Bolt_startup();
+	Bolt_startup(stderr);
 
 	int result = Catch::Session().run(argc, argv);
 

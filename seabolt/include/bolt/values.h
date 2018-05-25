@@ -60,6 +60,9 @@ struct array_t;
 
 struct BoltValue;
 
+/**
+ * Enumeration of the types available in the Bolt type system.
+ */
 enum BoltType
 {
     BOLT_NULL,
@@ -67,8 +70,8 @@ enum BoltType
     BOLT_INTEGER,
     BOLT_FLOAT,
     BOLT_STRING,
-    BOLT_LIST,
     BOLT_DICTIONARY,
+    BOLT_LIST,
     BOLT_BYTES,
     BOLT_STRUCTURE,
     BOLT_MESSAGE,
@@ -76,9 +79,9 @@ enum BoltType
 
 union data_t
 {
-    void* as_ptr;
-    char* as_char;
-    struct BoltValue* as_value;
+    void * as_ptr;
+    char * as_char;
+    struct BoltValue * as_value;
 };
 
 struct array_t
@@ -87,18 +90,20 @@ struct array_t
     union data_t data;
 };
 
-// A BoltValue consists of a 128-bit header followed by a 128-byte data block. For
-// values that require more space than 128 bits, external memory is allocated and
-// a pointer to this is held in the inline data field.
-//
-// +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-// |  type   | subtype |  (logical) size   |         (physical) data size          |
-// |[16 bits]|[16 bits]|     [32 bits]     |               [64 bits]               |
-// +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-// |                      inline data or pointer to external data                  |
-// |                                  [128 bits]                                   |
-// +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-//
+/**
+ * A BoltValue consists of a 128-bit header followed by a 128-byte data block. For
+ * values that require more space than 128 bits, external memory is allocated and
+ * a pointer to this is held in the inline data field.
+ * ```
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * |  type   | subtype |  (logical) size   |         (physical) data size          |
+ * |[16 bits]|[16 bits]|     [32 bits]     |               [64 bits]               |
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * |                      inline data or pointer to external data                  |
+ * |                                  [128 bits]                                   |
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * ```
+ */
 struct BoltValue
 {
     int16_t type;
@@ -185,7 +190,7 @@ PUBLIC int BoltString_write(struct BoltValue * value, FILE * file);
 
 PUBLIC void BoltValue_format_as_Dictionary(struct BoltValue * value, int32_t length);
 
-PUBLIC struct BoltValue* BoltDictionary_key(struct BoltValue * value, int32_t index);
+PUBLIC struct BoltValue * BoltDictionary_key(struct BoltValue * value, int32_t index);
 
 PUBLIC const char * BoltDictionary_get_key(struct BoltValue * value, int32_t index);
 
@@ -193,7 +198,7 @@ PUBLIC int32_t BoltDictionary_get_key_size(struct BoltValue * value, int32_t ind
 
 PUBLIC int BoltDictionary_set_key(struct BoltValue * value, int32_t index, const char * key, size_t key_size);
 
-PUBLIC struct BoltValue* BoltDictionary_value(struct BoltValue * value, int32_t index);
+PUBLIC struct BoltValue * BoltDictionary_value(struct BoltValue * value, int32_t index);
 
 PUBLIC int BoltDictionary_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
 
@@ -209,7 +214,7 @@ PUBLIC void BoltValue_format_as_List(struct BoltValue * value, int32_t length);
 
 PUBLIC void BoltList_resize(struct BoltValue* value, int32_t size);
 
-PUBLIC struct BoltValue* BoltList_value(const struct BoltValue* value, int32_t index);
+PUBLIC struct BoltValue * BoltList_value(const struct BoltValue* value, int32_t index);
 
 PUBLIC int BoltList_write(const struct BoltValue * value, FILE * file, int32_t protocol_version);
 
@@ -219,7 +224,7 @@ PUBLIC void BoltValue_format_as_Bytes(struct BoltValue * value, char * data, int
 
 PUBLIC char BoltBytes_get(const struct BoltValue * value, int32_t index);
 
-PUBLIC char* BoltBytes_get_all(struct BoltValue * value);
+PUBLIC char * BoltBytes_get_all(struct BoltValue * value);
 
 PUBLIC int BoltBytes_write(const struct BoltValue * value, FILE * file);
 
@@ -229,7 +234,7 @@ PUBLIC void BoltValue_format_as_Structure(struct BoltValue * value, int16_t code
 
 PUBLIC int16_t BoltStructure_code(const struct BoltValue* value);
 
-PUBLIC struct BoltValue* BoltStructure_value(const struct BoltValue* value, int32_t index);
+PUBLIC struct BoltValue * BoltStructure_value(const struct BoltValue* value, int32_t index);
 
 PUBLIC int BoltStructure_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
 
@@ -239,7 +244,7 @@ PUBLIC void BoltValue_format_as_Message(struct BoltValue * value, int16_t code, 
 
 PUBLIC int16_t BoltMessage_code(const struct BoltValue * value);
 
-PUBLIC struct BoltValue* BoltMessage_value(const struct BoltValue * value, int32_t index);
+PUBLIC struct BoltValue * BoltMessage_value(const struct BoltValue * value, int32_t index);
 
 PUBLIC int BoltMessage_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
 

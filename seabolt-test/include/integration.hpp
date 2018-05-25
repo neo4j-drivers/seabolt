@@ -26,7 +26,7 @@
 #include <cstdlib>
 
 extern "C" {
-    #include "bolt/direct.h"
+    #include "bolt/connections.h"
     #include "bolt/logging.h"
     #include "bolt/pooling.h"
     #include "bolt/values.h"

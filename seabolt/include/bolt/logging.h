@@ -25,11 +25,11 @@
 #include <stdio.h>
 
 #include "config.h"
-#include "direct.h"
+#include "connections.h"
 #include "values.h"
 
 
-PUBLIC void BoltLog_set_file(FILE* log_file);
+void BoltLog_set_file(FILE * log_file);
 
 void BoltLog_info(const char* message, ...);
 

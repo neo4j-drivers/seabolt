@@ -35,7 +35,7 @@
 #define RUN_PULL_SEND(connection, result)\
     BoltConnection_load_run_request(connection);\
     BoltConnection_load_pull_request(connection, -1);\
-    BoltConnection_send_b(connection);\
+    BoltConnection_send(connection);\
     bolt_request_t (result) = BoltConnection_last_request(connection);
 
 
@@ -46,12 +46,13 @@ SCENARIO("Test null parameter", "[integration][ipv6][secure]")
         struct BoltConnection * connection = NEW_BOLT_CONNECTION();
         WHEN("successfully executed Cypher")
         {
-            BoltConnection_cypher(connection, "RETURN $x", 1);
-            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x");
+            const char * cypher = "RETURN $x";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
             BoltValue_format_as_Null(x);
             RUN_PULL_SEND(connection, result);
             struct BoltValue * data = BoltConnection_data(connection);
-            while (BoltConnection_fetch_b(connection, result))
+            while (BoltConnection_fetch(connection, result))
             {
                 REQUIRE_BOLT_LIST(data, 1);
                 REQUIRE_BOLT_NULL(BoltList_value(data, 0));
@@ -69,12 +70,13 @@ SCENARIO("Test boolean in, boolean out", "[integration][ipv6][secure]")
         struct BoltConnection * connection = NEW_BOLT_CONNECTION();
         WHEN("successfully executed Cypher")
         {
-            BoltConnection_cypher(connection, "RETURN $x", 1);
-            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x");
+            const char * cypher = "RETURN $x";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
             BoltValue_format_as_Boolean(x, 1);
             RUN_PULL_SEND(connection, result);
             struct BoltValue * data = BoltConnection_data(connection);
-            while (BoltConnection_fetch_b(connection, result))
+            while (BoltConnection_fetch(connection, result))
             {
                 REQUIRE_BOLT_LIST(data, 1);
                 REQUIRE_BOLT_BOOLEAN(BoltList_value(data, 0), 1);
@@ -92,13 +94,14 @@ SCENARIO("Test bytes in, bytes out", "[integration][ipv6][secure]")
         struct BoltConnection * connection = NEW_BOLT_CONNECTION();
         WHEN("successfully executed Cypher")
         {
-            BoltConnection_cypher(connection, "RETURN $x", 1);
-            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x");
+            const char * cypher = "RETURN $x";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
             char array[5] = {33, 44, 55, 66, 77};
             BoltValue_format_as_Bytes(x, &array[0], sizeof(array));
             RUN_PULL_SEND(connection, result);
             struct BoltValue * data = BoltConnection_data(connection);
-            while (BoltConnection_fetch_b(connection, result))
+            while (BoltConnection_fetch(connection, result))
             {
                 REQUIRE_BOLT_LIST(data, 1);
                 REQUIRE_BOLT_BYTES(BoltList_value(data, 0), 5);
@@ -116,12 +119,13 @@ SCENARIO("Test string in, string out", "[integration][ipv6][secure]")
         struct BoltConnection * connection = NEW_BOLT_CONNECTION();
         WHEN("successfully executed Cypher")
         {
-            BoltConnection_cypher(connection, "RETURN $x", 1);
-            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x");
+            const char * cypher = "RETURN $x";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
             BoltValue_format_as_String(x, "hello, world", 12);
             RUN_PULL_SEND(connection, result);
             struct BoltValue * data = BoltConnection_data(connection);
-            while (BoltConnection_fetch_b(connection, result))
+            while (BoltConnection_fetch(connection, result))
             {
                 REQUIRE_BOLT_LIST(data, 1);
                 REQUIRE_BOLT_STRING(BoltList_value(data, 0), "hello, world", 12);
@@ -139,8 +143,9 @@ SCENARIO("Test dictionary in, dictionary out", "[integration][ipv6][secure]")
         struct BoltConnection * connection = NEW_BOLT_CONNECTION();
         WHEN("successfully executed Cypher")
         {
-            BoltConnection_cypher(connection, "RETURN $x", 1);
-            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x");
+            const char * cypher = "RETURN $x";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
             BoltValue_format_as_Dictionary(x, 2);
             BoltDictionary_set_key(x, 0, "name", 4);
             BoltValue_format_as_String(BoltDictionary_value(x, 0), "Alice", 5);
@@ -148,7 +153,7 @@ SCENARIO("Test dictionary in, dictionary out", "[integration][ipv6][secure]")
             BoltValue_format_as_Integer(BoltDictionary_value(x, 1), 33);
             RUN_PULL_SEND(connection, result);
             struct BoltValue * data = BoltConnection_data(connection);
-            while (BoltConnection_fetch_b(connection, result))
+            while (BoltConnection_fetch(connection, result))
             {
                 REQUIRE_BOLT_LIST(data, 1);
                 struct BoltValue * dict = BoltList_value(data, 0);
@@ -187,12 +192,13 @@ SCENARIO("Test integer in, integer out", "[integration][ipv6][secure]")
         struct BoltConnection * connection = NEW_BOLT_CONNECTION();
         WHEN("successfully executed Cypher")
         {
-            BoltConnection_cypher(connection, "RETURN $x", 1);
-            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x");
+            const char * cypher = "RETURN $x";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
             BoltValue_format_as_Integer(x, 123456789);
             RUN_PULL_SEND(connection, result);
             struct BoltValue * data = BoltConnection_data(connection);
-            while (BoltConnection_fetch_b(connection, result))
+            while (BoltConnection_fetch(connection, result))
             {
                 REQUIRE_BOLT_LIST(data, 1);
                 struct BoltValue * list = BoltList_value(data, 0);
@@ -211,12 +217,13 @@ SCENARIO("Test float in, float out", "[integration][ipv6][secure]")
         struct BoltConnection * connection = NEW_BOLT_CONNECTION();
         WHEN("successfully executed Cypher")
         {
-            BoltConnection_cypher(connection, "RETURN $x", 1);
-            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x");
+            const char * cypher = "RETURN $x";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue * x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
             BoltValue_format_as_Float(x, 6.283185307179);
             RUN_PULL_SEND(connection, result);
             struct BoltValue * data = BoltConnection_data(connection);
-            while (BoltConnection_fetch_b(connection, result))
+            while (BoltConnection_fetch(connection, result))
             {
                 REQUIRE_BOLT_LIST(data, 1);
                 struct BoltValue * n = BoltList_value(data, 0);
@@ -236,15 +243,16 @@ SCENARIO("Test structure in result", "[integration][ipv6][secure]")
         WHEN("successfully executed Cypher")
         {
             BoltConnection_load_begin_request(connection);
-            BoltConnection_cypher(connection, "CREATE (a:Person {name:'Alice'}) RETURN a", 0);
+            const char * cypher = "CREATE (a:Person {name:'Alice'}) RETURN a";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 0);
             BoltConnection_load_run_request(connection);
             BoltConnection_load_pull_request(connection, -1);
             bolt_request_t result = BoltConnection_last_request(connection);
             BoltConnection_load_rollback_request(connection);
-            BoltConnection_send_b(connection);
+            BoltConnection_send(connection);
             bolt_request_t last = BoltConnection_last_request(connection);
             struct BoltValue * data = BoltConnection_data(connection);
-            while (BoltConnection_fetch_b(connection, result))
+            while (BoltConnection_fetch(connection, result))
             {
                 REQUIRE_BOLT_LIST(data, 1);
                 struct BoltValue * node = BoltList_value(data, 0);
@@ -259,7 +267,7 @@ SCENARIO("Test structure in result", "[integration][ipv6][secure]")
                 REQUIRE(strcmp(BoltDictionary_get_key(properties, 0), "name") == 0);
                 REQUIRE_BOLT_STRING(BoltDictionary_value(properties, 0), "Alice", 5);
             }
-            BoltConnection_fetch_summary_b(connection, last);
+            BoltConnection_fetch_summary(connection, last);
             REQUIRE_BOLT_SUCCESS(data);
         }
         bolt_close_and_destroy_b(connection);

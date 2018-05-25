@@ -78,9 +78,10 @@ SCENARIO("Test reusing a pooled connection that was abandoned", "[integration][i
         WHEN("a connection is acquired, released and acquired again")
         {
             struct BoltConnection * connection1 = BoltConnectionPool_acquire(pool, "test");
-            BoltConnection_cypher(connection1, "RETURN 1", 0);
+            const char * cypher = "RETURN 1";
+            BoltConnection_cypher(connection1, cypher, strlen(cypher), 0);
             BoltConnection_load_run_request(connection1);
-            BoltConnection_send_b(connection1);
+            BoltConnection_send(connection1);
             BoltConnectionPool_release(pool, connection1);
             struct BoltConnection * connection2 = BoltConnectionPool_acquire(pool, "test");
             THEN("the connection should be connected")

@@ -34,6 +34,7 @@ extensions = ["breathe"]
 
 breathe_projects = {"seabolt": "../doxygen/xml/"}
 breathe_default_project = "seabolt"
+cpp_id_attributes = ["PUBLIC"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

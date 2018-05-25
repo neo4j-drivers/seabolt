@@ -23,10 +23,10 @@
 #include <time.h>
 
 #include "bolt/buffering.h"
-#include "bolt/direct.h"
+#include "bolt/connections.h"
 #include "bolt/lifecycle.h"
 #include "bolt/mem.h"
-#include "bolt/logging.h"
+#include "bolt/values.h"
 
 
 #ifdef WIN32
@@ -113,7 +113,7 @@ struct Application* app_create(int argc, char ** argv)
     struct Application * app = BoltMem_allocate(sizeof(struct Application));
     app->transport = (strcmp(BOLT_SECURE, "1") == 0) ? BOLT_SECURE_SOCKET : BOLT_SOCKET;
     app->address = BoltAddress_create(BOLT_HOST, BOLT_PORT);
-    BoltAddress_resolve_b(app->address);
+    BoltAddress_resolve(app->address);
     app->user = BOLT_USER;
     app->password = BOLT_PASSWORD;
 
@@ -191,7 +191,7 @@ void app_connect(struct Application * app)
     struct timespec t[2];
     timespec_get(&t[0], TIME_UTC);
     app->connection = BoltConnection_create();
-    BoltConnection_open_b(app->connection, app->transport, app->address);
+    BoltConnection_open(app->connection, app->transport, app->address);
     if (app->connection->status != BOLT_CONNECTED)
     {
         fprintf(stderr, "FATAL: Failed to connect\n");
@@ -210,7 +210,7 @@ int app_init(struct Application * app)
     profile.user = app->user;
     profile.password = app->password;
     profile.user_agent = "seabolt/1.0.0a";
-    BoltConnection_init_b(app->connection, &profile);
+    BoltConnection_init(app->connection, &profile);
     if (app->connection->status != BOLT_READY)
     {
         fprintf(stderr, "FATAL: Failed to initialise connection\n");
@@ -223,7 +223,7 @@ int app_init(struct Application * app)
 
 int app_debug(struct Application * app, const char * cypher)
 {
-    BoltLog_set_file(stderr);
+    Bolt_startup(stderr);
 
     struct timespec t[7];
 
@@ -236,7 +236,7 @@ int app_debug(struct Application * app, const char * cypher)
 
     //BoltConnection_load_bookmark(bolt->connection, "tx:1234");
     BoltConnection_load_begin_request(app->connection);
-    BoltConnection_cypher(app->connection, cypher, 0);
+    BoltConnection_cypher(app->connection, cypher, strlen(cypher), 0);
     BoltConnection_load_run_request(app->connection);
     bolt_request_t run = BoltConnection_last_request(app->connection);
     BoltConnection_load_pull_request(app->connection, -1);
@@ -244,26 +244,26 @@ int app_debug(struct Application * app, const char * cypher)
     BoltConnection_load_commit_request(app->connection);
     bolt_request_t commit = BoltConnection_last_request(app->connection);
 
-    BoltConnection_send_b(app->connection);
+    BoltConnection_send(app->connection);
 
     timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission
 
     long record_count = 0;
 
-    BoltConnection_fetch_summary_b(app->connection, run);
+    BoltConnection_fetch_summary(app->connection, run);
 
     timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
 
-    while (BoltConnection_fetch_b(app->connection, pull))
+    while (BoltConnection_fetch(app->connection, pull))
     {
         record_count += 1;
     }
 
-    BoltConnection_fetch_summary_b(app->connection, commit);
+    BoltConnection_fetch_summary(app->connection, commit);
 
     timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
 
-    BoltConnection_close_b(app->connection);
+    BoltConnection_close(app->connection);
     BoltConnection_destroy(app->connection);
 
     timespec_get(&t[6], TIME_UTC);    // Checkpoint 6 - after close
@@ -293,23 +293,27 @@ int app_debug(struct Application * app, const char * cypher)
     fprintf(stderr, "=====================================\n");
     fprintf(stderr, "TOTAL                : %lds %09ldns\n", (long)t[0].tv_sec, t[0].tv_nsec);
 
+    Bolt_shutdown();
+
     return 0;
 }
 
 int app_run(struct Application * app, const char * cypher)
 {
+    Bolt_startup(NULL);
+
     app_connect(app);
     app_init(app);
 
-    BoltConnection_cypher(app->connection, cypher, 0);
+    BoltConnection_cypher(app->connection, cypher, strlen(cypher), 0);
     BoltConnection_load_run_request(app->connection);
     bolt_request_t run = BoltConnection_last_request(app->connection);
     BoltConnection_load_pull_request(app->connection, -1);
     bolt_request_t pull = BoltConnection_last_request(app->connection);
 
-    BoltConnection_send_b(app->connection);
+    BoltConnection_send(app->connection);
 
-    BoltConnection_fetch_summary_b(app->connection, run);
+    BoltConnection_fetch_summary(app->connection, run);
     if (app->with_header)
     {
         struct BoltValue * name = BoltValue_create();
@@ -327,7 +331,7 @@ int app_run(struct Application * app, const char * cypher)
         BoltValue_destroy(name);
     }
 
-    while (BoltConnection_fetch_b(app->connection, pull))
+    while (BoltConnection_fetch(app->connection, pull))
     {
         struct BoltValue * data = BoltConnection_data(app->connection);
         for (int i = 0; i < data->size; i++)
@@ -341,39 +345,43 @@ int app_run(struct Application * app, const char * cypher)
         putc('\n', stdout);
     }
 
-    BoltConnection_close_b(app->connection);
+    BoltConnection_close(app->connection);
     BoltConnection_destroy(app->connection);
+
+    Bolt_shutdown();
 
     return 0;
 }
 
 int app_export(struct Application * app, const char * cypher)
 {
+    Bolt_startup(NULL);
+
     struct BoltBuffer * buffer = BoltBuffer_create(8192);
 
     app_connect(app);
     app_init(app);
 
-    BoltConnection_cypher(app->connection, cypher, 0);
+    BoltConnection_cypher(app->connection, cypher, strlen(cypher), 0);
     BoltConnection_load_run_request(app->connection);
     bolt_request_t run = BoltConnection_last_request(app->connection);
     BoltConnection_load_pull_request(app->connection, -1);
     bolt_request_t pull = BoltConnection_last_request(app->connection);
 
-    BoltConnection_send_b(app->connection);
+    BoltConnection_send(app->connection);
 
-    BoltConnection_fetch_summary_b(app->connection, run);
+    BoltConnection_fetch_summary(app->connection, run);
     if (app->with_header)
     {
         BoltConnection_dump_field_names(app->connection, buffer);
     }
 
-    while (BoltConnection_fetch_b(app->connection, pull))
+    while (BoltConnection_fetch(app->connection, pull))
     {
         BoltConnection_dump_data(app->connection, buffer);
     }
 
-    BoltConnection_close_b(app->connection);
+    BoltConnection_close(app->connection);
     BoltConnection_destroy(app->connection);
 
     int size = BoltBuffer_unloadable(buffer);
@@ -384,6 +392,8 @@ int app_export(struct Application * app, const char * cypher)
     }
 
     BoltBuffer_destroy(buffer);
+
+    Bolt_shutdown();
 
     return 0;
 }
@@ -399,8 +409,6 @@ void app_help()
 
 int main(int argc, char * argv[])
 {
-	Bolt_startup();
-
     struct Application * app = app_create(argc, argv);
     switch (app->command)
     {
@@ -429,8 +437,6 @@ int main(int argc, char * argv[])
         fprintf(stderr, "allocation events    : %lld\n", BoltMem_allocation_events());
         fprintf(stderr, "=====================================\n");
     }
-
-	Bolt_shutdown();
 
     if (BoltMem_current_allocation() == 0)
     {

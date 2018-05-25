@@ -39,7 +39,7 @@ struct BoltAddress* BoltAddress_create(const char * host, const char * port)
     return address;
 }
 
-int BoltAddress_resolve_b(struct BoltAddress * address)
+int BoltAddress_resolve(struct BoltAddress * address)
 {
     if (strchr(address->host, ':') == NULL)
     {

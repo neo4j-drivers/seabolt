@@ -26,7 +26,7 @@
 
 #include <stdint.h>
 
-#include "bolt/direct.h"
+#include "bolt/connections.h"
 
 
 #define BOLT_V1_SUCCESS 0x70

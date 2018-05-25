@@ -27,7 +27,7 @@ extern "C" {
 }
 
 
-SCENARIO("Test memcpy_r against memcpy")
+SCENARIO("Test BoltMem_reverse_copy against memcpy")
 {
     GIVEN("a block of memory")
     {
@@ -49,7 +49,7 @@ SCENARIO("Test memcpy_r against memcpy")
         WHEN("reverse memcpy is used")
         {
             char* digits = new char[size];
-            memcpy_r(&digits[0], data, size);
+            BoltMem_reverse_copy(&digits[0], data, size);
             THEN("the data should be copied in reverse order")
             {
                 REQUIRE(digits[0] == 'D');

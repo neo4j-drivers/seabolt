@@ -19,9 +19,16 @@
 
 #ifndef SEABOLT_BOLT
 #define SEABOLT_BOLT
+
+
+#include <stdio.h>
+
 #include "config.h"
 
-PUBLIC void Bolt_startup();
+
+PUBLIC void Bolt_startup(FILE * log_file);
+
 PUBLIC void Bolt_shutdown();
+
 
 #endif // SEABOLT_BOLT

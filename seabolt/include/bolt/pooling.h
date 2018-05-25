@@ -24,9 +24,12 @@
 #ifndef SEABOLT_POOLING_H
 #define SEABOLT_POOLING_H
 
-#include "direct.h"
+#include "connections.h"
 #include "platform.h"
 
+/**
+ * Connection pool (experimental)
+ */
 struct BoltConnectionPool
 {
     mutex_t mutex;

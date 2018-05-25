@@ -17,16 +17,16 @@
  * limitations under the License.
  */
 
-/// This module....
-/// Logging, resource management, "try" and exception macros
-/// General flow management
 
 #ifndef SEABOLT_MEM
 #define SEABOLT_MEM
-#include "config.h"
-#include "stdio.h"
 
-PUBLIC void* memcpy_r(void* dest, const void* src, size_t n);
+#include <stdio.h>
+
+#include "config.h"
+
+
+PUBLIC void* BoltMem_reverse_copy(void * dest, const void * src, size_t n);
 
 #if IS_BIG_ENDIAN
     #define memcpy_be(target, src, n) memcpy(target, src, n)

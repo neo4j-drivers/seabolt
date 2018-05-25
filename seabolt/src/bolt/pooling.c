@@ -72,7 +72,7 @@ int find_connection(struct BoltConnectionPool * pool, struct BoltConnection * co
 int init(struct BoltConnectionPool * pool, int index)
 {
     struct BoltConnection * connection = &pool->connections[index];
-    switch (BoltConnection_init_b(connection, pool->profile))
+    switch (BoltConnection_init(connection, pool->profile))
     {
         case 0:
             return index;
@@ -86,7 +86,7 @@ int open_init(struct BoltConnectionPool * pool, int index)
     // Host name resolution is carried out every time a connection
     // is opened. Given that connections are pooled and reused,
     // this is not a huge overhead.
-    switch (BoltAddress_resolve_b(pool->address))
+    switch (BoltAddress_resolve(pool->address))
     {
         case 0:
             break;
@@ -94,7 +94,7 @@ int open_init(struct BoltConnectionPool * pool, int index)
             return -1;  // Could not resolve address
     }
     struct BoltConnection * connection = &pool->connections[index];
-    switch (BoltConnection_open_b(connection, pool->transport, pool->address))
+    switch (BoltConnection_open(connection, pool->transport, pool->address))
     {
         case 0:
             return init(pool, index);
@@ -113,14 +113,14 @@ void close_pool_entry(struct BoltConnectionPool * pool, int index)
         BoltUtil_get_time(&now);
         timespec_diff(&diff, &now, &connection->metrics.time_opened);
         BoltLog_info("bolt: Connection alive for %lds %09ldns", (long)(diff.tv_sec), diff.tv_nsec);
-        BoltConnection_close_b(connection);
+        BoltConnection_close(connection);
     }
 }
 
 int reset_or_open_init(struct BoltConnectionPool * pool, int index)
 {
     struct BoltConnection * connection = &pool->connections[index];
-    switch (BoltConnection_reset_b(connection))
+    switch (BoltConnection_reset(connection))
     {
         case 0:
             return index;
@@ -133,7 +133,7 @@ void reset_or_close(struct BoltConnectionPool * pool, int index)
 {
     struct BoltConnection * connection = &pool->connections[index];
     // TODO: disconnect if too old
-    switch (BoltConnection_reset_b(connection))
+    switch (BoltConnection_reset(connection))
     {
         case 0:
             break;

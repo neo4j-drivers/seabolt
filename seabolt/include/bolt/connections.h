@@ -78,6 +78,9 @@ enum BoltConnectionError
     BOLT_END_OF_TRANSMISSION,
 };
 
+/**
+ * Record of connection usage statistics.
+ */
 struct BoltConnectionMetrics
 {
     struct timespec time_opened;
@@ -145,14 +148,14 @@ struct BoltUserProfile
 
 
 /**
- *
+ * Create a new connection.
  *
  * @return
  */
 PUBLIC struct BoltConnection * BoltConnection_create();
 
 /**
- *
+ * Destroy a connection.
  */
 PUBLIC void BoltConnection_destroy(struct BoltConnection* connection);
 
@@ -192,14 +195,15 @@ PUBLIC void BoltConnection_destroy(struct BoltConnection* connection);
  * @param address descriptor of the remote Bolt server address
  * @return 0 if the connection was opened successfully, -1 otherwise
  */
-PUBLIC int BoltConnection_open_b(struct BoltConnection * connection, enum BoltTransport transport, struct BoltAddress * address);
+PUBLIC int BoltConnection_open(struct BoltConnection * connection, enum BoltTransport transport,
+                               struct BoltAddress * address);
 
 /**
  * Close a connection.
  *
  * @param connection
  */
-PUBLIC void BoltConnection_close_b(struct BoltConnection* connection);
+PUBLIC void BoltConnection_close(struct BoltConnection * connection);
 
 /**
  * Initialise the connection and authenticate using the basic
@@ -209,7 +213,7 @@ PUBLIC void BoltConnection_close_b(struct BoltConnection* connection);
  * @param profile credentials for a database user
  * @return
  */
-PUBLIC int BoltConnection_init_b(struct BoltConnection * connection, const struct BoltUserProfile * profile);
+PUBLIC int BoltConnection_init(struct BoltConnection * connection, const struct BoltUserProfile * profile);
 
 /**
  * Reset the connection to discard any outstanding results,
@@ -219,7 +223,7 @@ PUBLIC int BoltConnection_init_b(struct BoltConnection * connection, const struc
  * @param connection
  * @return
  */
-PUBLIC int BoltConnection_reset_b(struct BoltConnection * connection);
+PUBLIC int BoltConnection_reset(struct BoltConnection * connection);
 
 /**
  * Send all queued requests.
@@ -227,7 +231,7 @@ PUBLIC int BoltConnection_reset_b(struct BoltConnection * connection);
  * @param connection
  * @return the latest request ID
  */
-PUBLIC int BoltConnection_send_b(struct BoltConnection * connection);
+PUBLIC int BoltConnection_send(struct BoltConnection * connection);
 
 /**
  * Take an exact amount of data from the receive buffer, deferring to
@@ -238,7 +242,7 @@ PUBLIC int BoltConnection_send_b(struct BoltConnection * connection);
  * @param size
  * @return
  */
-PUBLIC int BoltConnection_receive_b(struct BoltConnection * connection, char * buffer, int size);
+int BoltConnection_receive(struct BoltConnection * connection, char * buffer, int size);
 
 /**
  * Fetch the next value from the result stream for a given request.
@@ -261,7 +265,7 @@ PUBLIC int BoltConnection_receive_b(struct BoltConnection * connection, char * b
  *         -1 if an error occurs
  *
  */
-PUBLIC int BoltConnection_fetch_b(struct BoltConnection * connection, bolt_request_t request);
+PUBLIC int BoltConnection_fetch(struct BoltConnection * connection, bolt_request_t request);
 
 /**
  * Fetch values from the result stream for a given request, up to and
@@ -281,7 +285,7 @@ PUBLIC int BoltConnection_fetch_b(struct BoltConnection * connection, bolt_reque
  * @return >=0 the number of records discarded from this result
  *         -1 if an error occurs
  */
-PUBLIC int BoltConnection_fetch_summary_b(struct BoltConnection * connection, bolt_request_t request);
+PUBLIC int BoltConnection_fetch_summary(struct BoltConnection * connection, bolt_request_t request);
 
 /**
  * Obtain a pointer to the last fetched data values or summary metadata.
@@ -302,19 +306,7 @@ PUBLIC int BoltConnection_fetch_summary_b(struct BoltConnection * connection, bo
 PUBLIC struct BoltValue * BoltConnection_data(struct BoltConnection * connection);
 
 /**
- * Set the next Cypher statement template to be run on this connection
- * from a null-terminated string.
- *
- * @param connection
- * @param cypher
- * @param n_parameters
- * @return
- */
-PUBLIC int BoltConnection_cypher(struct BoltConnection * connection, const char * cypher, int32_t n_parameters);
-
-/**
- * Set the next Cypher statement template to be run on this connection
- * from an explicitly-sized string.
+ * Set the next Cypher statement template to be run on this connection.
  *
  * @param connection
  * @param cypher
@@ -322,24 +314,78 @@ PUBLIC int BoltConnection_cypher(struct BoltConnection * connection, const char 
  * @param n_parameters
  * @return
  */
-PUBLIC int BoltConnection_cypher_x(struct BoltConnection * connection, const char * cypher, size_t cypher_size, int32_t n_parameters);
+PUBLIC int BoltConnection_cypher(struct BoltConnection * connection, const char * cypher, size_t cypher_size,
+                                 int32_t n_parameters);
 
-PUBLIC struct BoltValue * BoltConnection_cypher_parameter(struct BoltConnection * connection, int32_t index, const char * key);
+/**
+ * Return a pointer to a Cypher parameter.
+ *
+ * @param connection
+ * @param index
+ * @param key
+ * @param key_size
+ * @return
+ */
+PUBLIC struct BoltValue * BoltConnection_cypher_parameter(struct BoltConnection * connection, int32_t index,
+                                                          const char * key, size_t key_size);
 
-PUBLIC struct BoltValue * BoltConnection_cypher_parameter_x(struct BoltConnection * connection, int32_t index, const char * key, size_t key_size);
-
+/**
+ * Load a bookmark to be used when beginning the next transaction.
+ *
+ * @param connection
+ * @param bookmark
+ * @return
+ */
 PUBLIC int BoltConnection_load_bookmark(struct BoltConnection * connection, const char * bookmark);
 
+/**
+ * Load a transaction BEGIN request into the request queue.
+ *
+ * @param connection
+ * @return
+ */
 PUBLIC int BoltConnection_load_begin_request(struct BoltConnection * connection);
 
+/**
+ * Load a transaction COMMIT request into the request queue.
+ *
+ * @param connection
+ * @return
+ */
 PUBLIC int BoltConnection_load_commit_request(struct BoltConnection * connection);
 
+/**
+ * Load a transaction ROLLBACK request into the request queue.
+ *
+ * @param connection
+ * @return
+ */
 PUBLIC int BoltConnection_load_rollback_request(struct BoltConnection * connection);
 
+/**
+ * Load a RUN request into the request queue.
+ *
+ * @param connection
+ * @return
+ */
 PUBLIC int BoltConnection_load_run_request(struct BoltConnection * connection);
 
+/**
+ * Load a DISCARD_ALL request into the request queue.
+ *
+ * @param connection
+ * @param n should always be -1
+ * @return
+ */
 PUBLIC int BoltConnection_load_discard_request(struct BoltConnection * connection, int32_t n);
 
+/**
+ * Load a PULL_ALL request into the request queue.
+ *
+ * @param connection
+ * @param n should always be -1
+ * @return
+ */
 PUBLIC int BoltConnection_load_pull_request(struct BoltConnection * connection, int32_t n);
 
 /**
@@ -351,10 +397,30 @@ PUBLIC int BoltConnection_load_pull_request(struct BoltConnection * connection, 
  */
 PUBLIC bolt_request_t BoltConnection_last_request(struct BoltConnection * connection);
 
+/**
+ * Return the number of fields available in the current result.
+ *
+ * @param connection
+ * @return
+ */
 PUBLIC int32_t BoltConnection_n_fields(struct BoltConnection * connection);
 
+/**
+ * Return the name of a specific field in the current result.
+ *
+ * @param connection
+ * @param index
+ * @return
+ */
 PUBLIC const char * BoltConnection_field_name(struct BoltConnection * connection, int32_t index);
 
+/**
+ * Return the size of the name of a specific field in the current result.
+ *
+ * @param connection
+ * @param index
+ * @return
+ */
 PUBLIC int32_t BoltConnection_field_name_size(struct BoltConnection * connection, int32_t index);
 
 PUBLIC int BoltConnection_dump_field_names(struct BoltConnection * connection, struct BoltBuffer * buffer);

@@ -20,7 +20,7 @@
 #include "bolt/config-impl.h"
 
 #include "bolt/buffering.h"
-#include "bolt/direct.h"
+#include "bolt/connections.h"
 #include "bolt/logging.h"
 #include "bolt/mem.h"
 
@@ -414,11 +414,11 @@ void BoltConnection_destroy(struct BoltConnection* connection)
     BoltMem_deallocate(connection, sizeof(struct BoltConnection));
 }
 
-int BoltConnection_open_b(struct BoltConnection * connection, enum BoltTransport transport, struct BoltAddress * address)
+int BoltConnection_open(struct BoltConnection * connection, enum BoltTransport transport, struct BoltAddress * address)
 {
     if (connection->status != BOLT_DISCONNECTED)
     {
-        BoltConnection_close_b(connection);
+        BoltConnection_close(connection);
     }
     for (int i = 0; i < address->n_resolved_hosts; i++) {
         const int opened = open_b(connection, transport, &address->resolved_hosts[i]);
@@ -448,7 +448,7 @@ int BoltConnection_open_b(struct BoltConnection * connection, enum BoltTransport
     return 0;
 }
 
-void BoltConnection_close_b(struct BoltConnection* connection)
+void BoltConnection_close(struct BoltConnection * connection)
 {
     if (connection->rx_buffer != NULL)
     {
@@ -466,7 +466,7 @@ void BoltConnection_close_b(struct BoltConnection* connection)
     }
 }
 
-int BoltConnection_send_b(struct BoltConnection * connection)
+int BoltConnection_send(struct BoltConnection * connection)
 {
     int size = BoltBuffer_unloadable(connection->tx_buffer);
     TRY(send_b(connection, BoltBuffer_unload_target(connection->tx_buffer, size), size));
@@ -474,7 +474,7 @@ int BoltConnection_send_b(struct BoltConnection * connection)
     return 0;
 }
 
-int BoltConnection_receive_b(struct BoltConnection * connection, char * buffer, int size)
+int BoltConnection_receive(struct BoltConnection * connection, char * buffer, int size)
 {
     if (size == 0) return 0;
     int available = BoltBuffer_unloadable(connection->rx_buffer);
@@ -505,7 +505,7 @@ int BoltConnection_receive_b(struct BoltConnection * connection, char * buffer, 
     return size;
 }
 
-int BoltConnection_fetch_b(struct BoltConnection * connection, bolt_request_t request)
+int BoltConnection_fetch(struct BoltConnection * connection, bolt_request_t request)
 {
     switch (connection->protocol_version)
     {
@@ -544,13 +544,13 @@ int BoltConnection_fetch_b(struct BoltConnection * connection, bolt_request_t re
     }
 }
 
-int BoltConnection_fetch_summary_b(struct BoltConnection * connection, bolt_request_t request)
+int BoltConnection_fetch_summary(struct BoltConnection * connection, bolt_request_t request)
 {
     int records = 0;
     int data;
     do
     {
-        data = BoltConnection_fetch_b(connection, request);
+        data = BoltConnection_fetch(connection, request);
         if (data < 0)
         {
             return data;
@@ -575,7 +575,7 @@ struct BoltValue* BoltConnection_data(struct BoltConnection * connection)
     }
 }
 
-int BoltConnection_init_b(struct BoltConnection * connection, const struct BoltUserProfile * profile)
+int BoltConnection_init(struct BoltConnection * connection, const struct BoltUserProfile * profile)
 {
     BoltLog_info("bolt: Initialising connection for user '%s'", profile->user);
     switch (connection->protocol_version)
@@ -603,7 +603,7 @@ int BoltConnection_init_b(struct BoltConnection * connection, const struct BoltU
     }
 }
 
-int BoltConnection_reset_b(struct BoltConnection * connection)
+int BoltConnection_reset(struct BoltConnection * connection)
 {
     BoltLog_info("bolt: Resetting connection");
     switch (connection->protocol_version)
@@ -628,12 +628,7 @@ int BoltConnection_reset_b(struct BoltConnection * connection)
     }
 }
 
-int BoltConnection_cypher(struct BoltConnection * connection, const char * cypher, int32_t n_parameters)
-{
-    return BoltConnection_cypher_x(connection, cypher, strlen(cypher), n_parameters);
-}
-
-int BoltConnection_cypher_x(struct BoltConnection * connection, const char * cypher, size_t cypher_size, int32_t n_parameters)
+int BoltConnection_cypher(struct BoltConnection * connection, const char * cypher, size_t cypher_size, int32_t n_parameters)
 {
     switch (connection->protocol_version)
     {
@@ -650,12 +645,7 @@ int BoltConnection_cypher_x(struct BoltConnection * connection, const char * cyp
     }
 }
 
-struct BoltValue * BoltConnection_cypher_parameter(struct BoltConnection * connection, int32_t index, const char * key)
-{
-    return BoltConnection_cypher_parameter_x(connection, index, key, strlen(key));
-}
-
-struct BoltValue * BoltConnection_cypher_parameter_x(struct BoltConnection * connection, int32_t index, const char * key, size_t key_size)
+struct BoltValue * BoltConnection_cypher_parameter(struct BoltConnection * connection, int32_t index, const char * key, size_t key_size)
 {
     switch (connection->protocol_version)
     {

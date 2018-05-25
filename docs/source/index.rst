@@ -8,11 +8,14 @@ Welcome to Seabolt's documentation!
 ===================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+    :maxdepth: 2
+    :caption: Contents:
 
-   connections
-   values
+    addressing
+    connections
+    lifecycle
+    mem
+    values
 
 
 

@@ -25,7 +25,7 @@
 #include "bolt/mem.h"
 
 
-void* memcpy_r(void* dest, const void* src, size_t n)
+void* BoltMem_reverse_copy(void * dest, const void * src, size_t n)
 {
     char* dest_c = (char*)(dest);
     const char* src_c = (const char*)(src);

@@ -64,7 +64,7 @@ PUBLIC struct BoltAddress * BoltAddress_create(const char * host, const char * p
  * @param address pointer to a BoltAddress structure
  * @return status of the internal getaddrinfo call
  */
-PUBLIC int BoltAddress_resolve_b(struct BoltAddress * address);
+PUBLIC int BoltAddress_resolve(struct BoltAddress * address);
 
 /**
  * Copy the textual representation of a resolved host IP address into a buffer.
