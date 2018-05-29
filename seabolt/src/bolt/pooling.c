@@ -164,7 +164,7 @@ void free_profile(const struct BoltUserProfile * profile)
 		BoltMem_deallocate(profile->user, strlen(profile->user) + 1);
 		BoltMem_deallocate(profile->password, strlen(profile->password) + 1);
 		BoltMem_deallocate(profile->user_agent, strlen(profile->user_agent) + 1);
-		BoltMem_deallocate((void *)profile, sizeof(struct BoltUserProfile) + 1);
+		BoltMem_deallocate((void *)profile, sizeof(struct BoltUserProfile));
 	}
 }
 

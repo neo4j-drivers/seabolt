@@ -25,14 +25,13 @@
 void Bolt_startup(FILE * log_file)
 {
     if (log_file != NULL) {
-        BoltLog_set_file(log_file);
-    }
-#ifdef _DEBUG
-	else
-	{
+#ifdef _WIN32
+		// this is a temporary fix
 		BoltLog_set_file(stdout);
-	}
+#else
+        BoltLog_set_file(log_file);
 #endif
+    }
 
 #if USE_WINSOCK
 	WSADATA data;
