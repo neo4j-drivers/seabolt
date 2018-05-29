@@ -205,8 +205,7 @@ SCENARIO("Test init with valid credentials", "[integration][ipv6][secure]")
         struct BoltConnection * connection = bolt_open_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT);
         WHEN("successfully initialised")
         {
-            struct BoltUserProfile profile { BOLT_AUTH_BASIC, BOLT_USER, BOLT_PASSWORD, BOLT_USER_AGENT };
-            int rv = BoltConnection_init(connection, &profile);
+            int rv = BoltConnection_init(connection, &BOLT_PROFILE);
             THEN("return value should be 0")
             {
                 REQUIRE(rv == 0);
@@ -229,8 +228,7 @@ SCENARIO("Test init with invalid credentials", "[integration][ipv6][secure]")
         WHEN("unsuccessfully initialised")
         {
             REQUIRE(strcmp(BOLT_PASSWORD, "X") != 0);
-            struct BoltUserProfile profile { BOLT_AUTH_BASIC, BOLT_USER, "X", BOLT_USER_AGENT };
-            int rv = BoltConnection_init(connection, &profile);
+            int rv = BoltConnection_init(connection, &BOLT_PROFILE);
             THEN("return value should not be 0")
             {
                 REQUIRE(rv != 0);
@@ -249,8 +247,7 @@ SCENARIO("Test execution of simple Cypher statement", "[integration][ipv6][secur
 {
     GIVEN("an open and initialised connection")
     {
-        struct BoltUserProfile profile { BOLT_AUTH_BASIC, BOLT_USER, BOLT_PASSWORD, BOLT_USER_AGENT };
-        struct BoltConnection * connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &profile);
+        struct BoltConnection * connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &BOLT_PROFILE);
         WHEN("successfully executed Cypher")
         {
             const char * cypher = "RETURN 1";
@@ -273,8 +270,7 @@ SCENARIO("Test field names returned from Cypher execution", "[integration][ipv6]
 {
     GIVEN("an open and initialised connection")
     {
-        struct BoltUserProfile profile { BOLT_AUTH_BASIC, BOLT_USER, BOLT_PASSWORD, BOLT_USER_AGENT };
-        struct BoltConnection * connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &profile);
+        struct BoltConnection * connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &BOLT_PROFILE);
         WHEN("successfully executed Cypher")
         {
             const char * cypher = "RETURN 1 AS first, true AS second, 3.14 AS third";
@@ -307,8 +303,7 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection")
     {
-        struct BoltUserProfile profile { BOLT_AUTH_BASIC, BOLT_USER, BOLT_PASSWORD, BOLT_USER_AGENT };
-        struct BoltConnection * connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &profile);
+        struct BoltConnection * connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &BOLT_PROFILE);
         WHEN("successfully executed Cypher")
         {
             const char * cypher = "RETURN $x";
@@ -346,8 +341,7 @@ SCENARIO("Test execution of multiple Cypher statements transmitted together", "[
 {
     GIVEN("an open and initialised connection")
     {
-        struct BoltUserProfile profile { BOLT_AUTH_BASIC, BOLT_USER, BOLT_PASSWORD, BOLT_USER_AGENT };
-        struct BoltConnection * connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &profile);
+        struct BoltConnection * connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &BOLT_PROFILE);
         WHEN("successfully executed Cypher")
         {
             const char * cypher = "RETURN $x";
@@ -372,8 +366,7 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection")
     {
-        struct BoltUserProfile profile { BOLT_AUTH_BASIC, BOLT_USER, BOLT_PASSWORD, BOLT_USER_AGENT };
-        struct BoltConnection * connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &profile);
+        struct BoltConnection * connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &BOLT_PROFILE);
         WHEN("successfully executed Cypher")
         {
             BoltConnection_load_begin_request(connection);

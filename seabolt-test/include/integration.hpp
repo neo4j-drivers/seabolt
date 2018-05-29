@@ -47,8 +47,11 @@ extern "C" {
 
 #define VERBOSE() BoltLog_set_file(stderr)
 
-static const struct BoltUserProfile BOLT_PROFILE { BOLT_AUTH_BASIC, BOLT_USER, BOLT_PASSWORD, BOLT_USER_AGENT };
+static const struct BoltUserProfile BOLT_PROFILE { BOLT_AUTH_BASIC, (char *)BOLT_USER, (char *)BOLT_PASSWORD, (char *)BOLT_USER_AGENT };
 
+static struct BoltAddress BOLT_IPV6_ADDRESS { (char *)BOLT_IPV6_HOST, (char *)BOLT_PORT };
+
+static struct BoltAddress BOLT_IPV4_ADDRESS { (char *)BOLT_IPV4_HOST, (char *)BOLT_PORT };
 
 struct BoltAddress * bolt_get_address(const char * host, const char * port);
 
