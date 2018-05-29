@@ -99,13 +99,3 @@ Structure
 .. doxygenfunction:: BoltStructure_code
 
 .. doxygenfunction:: BoltStructure_value
-
-
-Message
-=======
-
-.. doxygenfunction:: BoltValue_format_as_Message
-
-.. doxygenfunction:: BoltMessage_code
-
-.. doxygenfunction:: BoltMessage_value

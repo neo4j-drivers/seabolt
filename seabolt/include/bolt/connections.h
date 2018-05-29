@@ -288,22 +288,40 @@ PUBLIC int BoltConnection_fetch(struct BoltConnection * connection, bolt_request
 PUBLIC int BoltConnection_fetch_summary(struct BoltConnection * connection, bolt_request_t request);
 
 /**
- * Obtain a pointer to the last fetched data values or summary metadata.
+ * Obtain a pointer to the last fetched data values.
  *
- * Every call to a receive function, such as `BoltConnection_fetch_b`,
- * will fetch one or more values from the remote data stream. Each value
- * is written into a fixed slot within the `BoltConnection` struct and it
- * is the pointer to this that is returned. Values will either be of type
- * `BOLT_SUMMARY` (for summary metadata) or `BOLT_LIST` (for a sequence
- * of record values).
- *
- * Since the storage slot is recycled for each value received, pointers
- * will become invalid after subsequent receive function calls.
+ * The storage slot is recycled for each value received, therefore the pointer
+ * returned from this function will reference a new record after a subsequent
+ * fetch, or may be NULL if a summary was fetched.
  *
  * @param connection
- * @return pointer to a `BoltValue` data structure
+ * @return pointer to a `BoltValue` data structure formatted as a BOLT_LIST
  */
 PUBLIC struct BoltValue * BoltConnection_data(struct BoltConnection * connection);
+
+/**
+ *
+ * @param connection
+ * @return
+ */
+PUBLIC int16_t BoltConnection_summary_code(struct BoltConnection * connection);
+
+/**
+ * Return the number of fields in the current summary metadata.
+ *
+ * @param connection
+ * @return
+ */
+PUBLIC int32_t BoltConnection_summary_n_fields(struct BoltConnection * connection);
+
+/**
+ * Return a field value from the current summary metadata.
+ *
+ * @param connection
+ * @param index
+ * @return
+ */
+PUBLIC struct BoltValue * BoltConnection_summary_field(struct BoltConnection * connection, int32_t index);
 
 /**
  * Set the next Cypher statement template to be run on this connection.

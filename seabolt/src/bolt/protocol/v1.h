@@ -81,8 +81,10 @@ struct BoltProtocolV1State
     struct BoltValue* pull_request;
     struct BoltValue* reset_request;
 
-    /// Holder for fetched data and metadata
+    /// Holders for fetched data and metadata
     struct BoltValue* data;
+    struct BoltValue* metadata;
+
 };
 
 struct BoltProtocolV1State* BoltProtocolV1_create_state();
@@ -97,7 +99,7 @@ int BoltProtocolV1_load_message_quietly(struct BoltConnection * connection, stru
 
 int BoltProtocolV1_compile_INIT(struct BoltValue* value, const struct BoltUserProfile * profile);
 
-int BoltProtocolV1_fetch_b(struct BoltConnection * connection, bolt_request_t request_id);
+int BoltProtocolV1_fetch(struct BoltConnection * connection, bolt_request_t request_id);
 
 /**
  * Top-level unload.
@@ -114,9 +116,9 @@ const char* BoltProtocolV1_structure_name(int16_t code);
 
 const char* BoltProtocolV1_message_name(int16_t code);
 
-int BoltProtocolV1_init_b(struct BoltConnection * connection, const struct BoltUserProfile * profile);
+int BoltProtocolV1_init(struct BoltConnection * connection, const struct BoltUserProfile * profile);
 
-int BoltProtocolV1_reset_b(struct BoltConnection * connection);
+int BoltProtocolV1_reset(struct BoltConnection * connection);
 
 void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct BoltValue * summary);
 

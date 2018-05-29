@@ -122,6 +122,7 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
     BoltValue_format_as_Message(state->reset_request, RESET, 0);
 
     state->data = BoltValue_create();
+    state->metadata = BoltValue_create();
     return state;
 }
 
@@ -147,6 +148,7 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state)
     BoltMem_deallocate(state->last_bookmark, MAX_BOOKMARK_SIZE);
 
     BoltValue_destroy(state->data);
+    BoltValue_destroy(state->metadata);
 
     BoltMem_deallocate(state, sizeof(struct BoltProtocolV1State));
 }
@@ -806,7 +808,7 @@ int unload(struct BoltConnection * connection, struct BoltValue * value)
     }
 }
 
-int BoltProtocolV1_fetch_b(struct BoltConnection * connection, bolt_request_t request_id)
+int BoltProtocolV1_fetch(struct BoltConnection * connection, bolt_request_t request_id)
 {
     struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
     bolt_request_t response_id;
@@ -840,14 +842,14 @@ int BoltProtocolV1_fetch_b(struct BoltConnection * connection, bolt_request_t re
         }
         response_id = state->response_counter;
         BoltProtocolV1_unload(connection);
-        if (BoltValue_type(state->data) == BOLT_MESSAGE)
+        if (BoltValue_type(state->metadata) == BOLT_MESSAGE)
         {
             state->response_counter += 1;
         }
     } while (response_id != request_id);
-    if (BoltValue_type(state->data) == BOLT_MESSAGE)
+    if (BoltValue_type(state->metadata) == BOLT_MESSAGE)
     {
-        BoltProtocolV1_extract_metadata(connection, state->data);
+        BoltProtocolV1_extract_metadata(connection, state->metadata);
         return 0;
     }
     return 1;
@@ -869,13 +871,15 @@ int BoltProtocolV1_unload(struct BoltConnection* connection)
         return -1;
     }
     size = marker & 0x0F;
-    struct BoltValue* received = ((struct BoltProtocolV1State*)(connection->protocol_state))->data;
+    struct BoltValue* received_data = ((struct BoltProtocolV1State*)(connection->protocol_state))->data;
+    struct BoltValue* received_metadata = ((struct BoltProtocolV1State*)(connection->protocol_state))->metadata;
     BoltBuffer_unload_u8(state->rx_buffer, &code);
     if (code == BOLT_V1_RECORD)
     {
+        BoltValue_format_as_Null(received_metadata);
         if (size >= 1)
         {
-            unload(connection, received);
+            unload(connection, received_data);
             if (size > 1)
             {
                 struct BoltValue* black_hole = BoltValue_create();
@@ -888,7 +892,7 @@ int BoltProtocolV1_unload(struct BoltConnection* connection)
         }
         else
         {
-            BoltValue_format_as_Null(received);
+            BoltValue_format_as_Null(received_data);
         }
         if (state->record_counter < MAX_LOGGED_RECORDS)
         {
@@ -898,17 +902,18 @@ int BoltProtocolV1_unload(struct BoltConnection* connection)
     }
     else /* Summary */
     {
-        BoltValue_format_as_Message(received, code, size);
+        BoltValue_format_as_Null(received_data);
+        BoltValue_format_as_Message(received_metadata, code, size);
         for (int i = 0; i < size; i++)
         {
-            unload(connection, BoltMessage_value(received, i));
+            unload(connection, BoltMessage_value(received_metadata, i));
         }
         if (state->record_counter > MAX_LOGGED_RECORDS)
         {
             BoltLog_info("bolt: S[%d]: Received %llu more records", state->response_counter, state->record_counter - MAX_LOGGED_RECORDS);
         }
         state->record_counter = 0;
-        BoltLog_message("S", state->response_counter, received, connection->protocol_version);
+        BoltLog_message("S", state->response_counter, received_metadata, connection->protocol_version);
     }
     return 1;
 }
@@ -957,7 +962,7 @@ const char * BoltProtocolV1_message_name(int16_t code)
     }
 }
 
-int BoltProtocolV1_init_b(struct BoltConnection * connection, const struct BoltUserProfile * profile)
+int BoltProtocolV1_init(struct BoltConnection * connection, const struct BoltUserProfile * profile)
 {
     struct BoltUserProfile masked_profile;
     memcpy(&masked_profile, profile, sizeof(struct BoltUserProfile));
@@ -972,17 +977,17 @@ int BoltProtocolV1_init_b(struct BoltConnection * connection, const struct BoltU
     BoltValue_destroy(init);
     TRY(BoltConnection_send(connection));
     TRY(BoltConnection_fetch_summary(connection, init_request));
-    return BoltMessage_code(BoltConnection_data(connection));
+    return BoltConnection_summary_code(connection);
 }
 
-int BoltProtocolV1_reset_b(struct BoltConnection * connection)
+int BoltProtocolV1_reset(struct BoltConnection * connection)
 {
     struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
     BoltProtocolV1_load_message(connection, state->reset_request);
     bolt_request_t reset_request = BoltConnection_last_request(connection);
     TRY(BoltConnection_send(connection));
     TRY(BoltConnection_fetch_summary(connection, reset_request));
-    return BoltMessage_code(BoltConnection_data(connection));
+    return BoltConnection_summary_code(connection);
 }
 
 void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct BoltValue * summary)
