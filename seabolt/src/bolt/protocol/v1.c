@@ -97,7 +97,7 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
 
     state->server = BoltMem_allocate(MAX_SERVER_SIZE);
     memset(state->server, 0, MAX_SERVER_SIZE);
-    state->fields = BoltValue_create();
+    state->result_field_names = BoltValue_create();
     state->last_bookmark = BoltMem_allocate(MAX_BOOKMARK_SIZE);
     memset(state->last_bookmark, 0, MAX_BOOKMARK_SIZE);
 
@@ -143,7 +143,7 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state)
     BoltValue_destroy(state->reset_request);
 
     BoltMem_deallocate(state->server, MAX_SERVER_SIZE);
-    BoltValue_destroy(state->fields);
+    BoltValue_destroy(state->result_field_names);
     BoltMem_deallocate(state->last_bookmark, MAX_BOOKMARK_SIZE);
 
     BoltValue_destroy(state->data);
@@ -1014,14 +1014,14 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct 
                                 break;
                         }
                     }
-                    else if (strcmp(key, "fields") == 0)
+                    else if (strcmp(key, "result_field_names") == 0)
                     {
                         struct BoltValue * value = BoltDictionary_value(metadata, i);
                         switch (BoltValue_type(value))
                         {
                             case BOLT_LIST:
                             {
-                                struct BoltValue * target_value = state->fields;
+                                struct BoltValue * target_value = state->result_field_names;
                                 BoltValue_format_as_List(target_value, value->size);
                                 for (int j = 0; j < value->size; j++)
                                 {
@@ -1036,7 +1036,7 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct 
                                             BoltValue_format_as_Null(BoltList_value(target_value, j));
                                     }
                                 }
-                                BoltLog_value(target_value, 1, "<SET fields=", ">");
+                                BoltLog_value(target_value, 1, "<SET result_field_names=", ">");
                                 break;
                             }
                             default:
@@ -1175,27 +1175,27 @@ int BoltProtocolV1_load_pull_request(struct BoltConnection * connection, int32_t
     }
 }
 
-int32_t BoltProtocolV1_n_fields(struct BoltConnection * connection)
+int32_t BoltProtocolV1_n_result_fields(struct BoltConnection * connection)
 {
     struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
-    switch (BoltValue_type(state->fields))
+    switch (BoltValue_type(state->result_field_names))
     {
         case BOLT_LIST:
-            return state->fields->size;
+            return state->result_field_names->size;
         default:
             return -1;
     }
 }
 
-const char * BoltProtocolV1_field_name(struct BoltConnection * connection, int32_t index)
+const char * BoltProtocolV1_result_field_name(struct BoltConnection * connection, int32_t index)
 {
     struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
-    switch (BoltValue_type(state->fields))
+    switch (BoltValue_type(state->result_field_names))
     {
         case BOLT_LIST:
-            if (index >= 0 && index < state->fields->size)
+            if (index >= 0 && index < state->result_field_names->size)
             {
-                struct BoltValue * value = BoltList_value(state->fields, index);
+                struct BoltValue * value = BoltList_value(state->result_field_names, index);
                 switch (BoltValue_type(value))
                 {
                     case BOLT_STRING:
@@ -1213,15 +1213,15 @@ const char * BoltProtocolV1_field_name(struct BoltConnection * connection, int32
     }
 }
 
-int32_t BoltProtocolV1_field_name_size(struct BoltConnection * connection, int32_t index)
+int32_t BoltProtocolV1_result_field_name_size(struct BoltConnection * connection, int32_t index)
 {
     struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
-    switch (BoltValue_type(state->fields))
+    switch (BoltValue_type(state->result_field_names))
     {
         case BOLT_LIST:
-            if (index >= 0 && index < state->fields->size)
+            if (index >= 0 && index < state->result_field_names->size)
             {
-                struct BoltValue * value = BoltList_value(state->fields, index);
+                struct BoltValue * value = BoltList_value(state->result_field_names, index);
                 switch (BoltValue_type(value))
                 {
                     case BOLT_STRING:

@@ -311,14 +311,14 @@ int app_run(struct Application * app, const char * cypher)
     if (app->with_header)
     {
         struct BoltValue * name = BoltValue_create();
-        for (int i = 0; i < BoltConnection_n_fields(app->connection); i++)
+        for (int i = 0; i < BoltConnection_n_result_fields(app->connection); i++)
         {
             if (i > 0)
             {
                 putc('\t', stdout);
             }
-            BoltValue_format_as_String(name, BoltConnection_field_name(app->connection, i),
-                                       BoltConnection_field_name_size(app->connection, i));
+            BoltValue_format_as_String(name, BoltConnection_result_field_name(app->connection, i),
+                                       BoltConnection_result_field_name_size(app->connection, i));
             BoltValue_write(name, stdout, app->connection->protocol_version);
         }
         putc('\n', stdout);

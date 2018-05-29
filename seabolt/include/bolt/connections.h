@@ -403,7 +403,7 @@ PUBLIC bolt_request_t BoltConnection_last_request(struct BoltConnection * connec
  * @param connection
  * @return
  */
-PUBLIC int32_t BoltConnection_n_fields(struct BoltConnection * connection);
+PUBLIC int32_t BoltConnection_n_result_fields(struct BoltConnection * connection);
 
 /**
  * Return the name of a specific field in the current result.
@@ -412,7 +412,7 @@ PUBLIC int32_t BoltConnection_n_fields(struct BoltConnection * connection);
  * @param index
  * @return
  */
-PUBLIC const char * BoltConnection_field_name(struct BoltConnection * connection, int32_t index);
+PUBLIC const char * BoltConnection_result_field_name(struct BoltConnection * connection, int32_t index);
 
 /**
  * Return the size of the name of a specific field in the current result.
@@ -421,7 +421,7 @@ PUBLIC const char * BoltConnection_field_name(struct BoltConnection * connection
  * @param index
  * @return
  */
-PUBLIC int32_t BoltConnection_field_name_size(struct BoltConnection * connection, int32_t index);
+PUBLIC int32_t BoltConnection_result_field_name_size(struct BoltConnection * connection, int32_t index);
 
 
 #endif // SEABOLT_CONNECT

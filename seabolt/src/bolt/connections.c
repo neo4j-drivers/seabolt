@@ -769,34 +769,34 @@ bolt_request_t BoltConnection_last_request(struct BoltConnection * connection)
     }
 }
 
-int32_t BoltConnection_n_fields(struct BoltConnection * connection)
+int32_t BoltConnection_n_result_fields(struct BoltConnection * connection)
 {
     switch (connection->protocol_version)
     {
         case 1:
-            return BoltProtocolV1_n_fields(connection);
+            return BoltProtocolV1_n_result_fields(connection);
         default:
             return -1;
     }
 }
 
-const char * BoltConnection_field_name(struct BoltConnection * connection, int32_t index)
+const char * BoltConnection_result_field_name(struct BoltConnection * connection, int32_t index)
 {
     switch (connection->protocol_version)
     {
         case 1:
-            return BoltProtocolV1_field_name(connection, index);
+            return BoltProtocolV1_result_field_name(connection, index);
         default:
             return NULL;
     }
 }
 
-int32_t BoltConnection_field_name_size(struct BoltConnection * connection, int32_t index)
+int32_t BoltConnection_result_field_name_size(struct BoltConnection * connection, int32_t index)
 {
     switch (connection->protocol_version)
     {
         case 1:
-            return BoltProtocolV1_field_name_size(connection, index);
+            return BoltProtocolV1_result_field_name_size(connection, index);
         default:
             return -1;
     }

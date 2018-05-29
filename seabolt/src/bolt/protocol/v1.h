@@ -64,8 +64,8 @@ struct BoltProtocolV1State
 
     /// The product name and version of the remote server
     char * server;
-    /// A BoltValue containing field names
-    struct BoltValue * fields;
+    /// A BoltValue containing field names for the active result
+    struct BoltValue * result_field_names;
     /// The last bookmark received from the server
     char * last_bookmark;
 
@@ -141,13 +141,11 @@ int BoltProtocolV1_load_run_request(struct BoltConnection * connection);
 
 int BoltProtocolV1_load_pull_request(struct BoltConnection * connection, int32_t n);
 
-int32_t BoltProtocolV1_n_fields(struct BoltConnection * connection);
+int32_t BoltProtocolV1_n_result_fields(struct BoltConnection * connection);
 
-const char * BoltProtocolV1_field_name(struct BoltConnection * connection, int32_t index);
+const char * BoltProtocolV1_result_field_name(struct BoltConnection * connection, int32_t index);
 
-int32_t BoltProtocolV1_field_name_size(struct BoltConnection * connection, int32_t index);
-
-int BoltProtocolV1_dump(struct BoltValue * value, struct BoltBuffer * buffer);
+int32_t BoltProtocolV1_result_field_name_size(struct BoltConnection * connection, int32_t index);
 
 
 #endif // SEABOLT_PROTOCOL_V1
