@@ -20,6 +20,7 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "bolt/logging.h"
 #include "bolt/mem.h"
@@ -35,8 +36,6 @@ void* BoltMem_reverse_copy(void * dest, const void * src, size_t n)
     }
     return dest;
 }
-
-
 
 
 static size_t __allocation = 0;
@@ -108,6 +107,13 @@ void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size)
     // efficient than a naïve deallocation followed by a
     // brand new allocation.
     return BoltMem_reallocate(ptr, old_size, new_size);
+}
+
+void* BoltMem_duplicate(const void *ptr, size_t ptr_size)
+{
+	void *p = BoltMem_allocate(ptr_size);
+	memcpy(p, ptr, ptr_size);
+	return p;
 }
 
 size_t BoltMem_current_allocation()

@@ -142,6 +142,32 @@ void reset_or_close(struct BoltConnectionPool * pool, int index)
     }
 }
 
+struct BoltUserProfile * copy_profile(const struct BoltUserProfile * profile)
+{
+	if (profile == NULL)
+	{
+		return NULL;
+	}
+
+	struct BoltUserProfile * new_profile = BoltMem_allocate(sizeof(struct BoltUserProfile));
+	new_profile->auth_scheme = profile->auth_scheme;
+	new_profile->user = BoltMem_duplicate(profile->user, strlen(profile->user) + 1);
+	new_profile->password = BoltMem_duplicate(profile->password, strlen(profile->password) + 1);
+	new_profile->user_agent = BoltMem_duplicate(profile->user_agent, strlen(profile->user_agent) + 1);
+	return new_profile;
+}
+
+void free_profile(const struct BoltUserProfile * profile)
+{
+	if (profile != NULL)
+	{
+		BoltMem_deallocate(profile->user, strlen(profile->user) + 1);
+		BoltMem_deallocate(profile->password, strlen(profile->password) + 1);
+		BoltMem_deallocate(profile->user_agent, strlen(profile->user_agent) + 1);
+		BoltMem_deallocate((void *)profile, sizeof(struct BoltUserProfile) + 1);
+	}
+}
+
 struct BoltConnectionPool * BoltConnectionPool_create(enum BoltTransport transport, struct BoltAddress * address,
                                                       const struct BoltUserProfile * profile, size_t size)
 {
@@ -149,7 +175,7 @@ struct BoltConnectionPool * BoltConnectionPool_create(enum BoltTransport transpo
     BoltUtil_mutex_create(&pool->mutex);
     pool->transport = transport;
     pool->address = address;
-    pool->profile = profile;
+	pool->profile = copy_profile(profile);
     pool->size = size;
     pool->connections = BoltMem_allocate(size * sizeof(struct BoltConnection));
     memset(pool->connections, 0, size * sizeof(struct BoltConnection));
@@ -165,6 +191,7 @@ void BoltConnectionPool_destroy(struct BoltConnectionPool * pool)
     pool->connections = BoltMem_deallocate(pool->connections, pool->size * sizeof(struct BoltConnection));
     BoltUtil_mutex_destroy(&pool->mutex);
     BoltMem_deallocate(pool, SIZE_OF_CONNECTION_POOL);
+	free_profile(pool->profile);
 }
 
 struct BoltConnection * BoltConnectionPool_acquire(struct BoltConnectionPool * pool, const void * agent)

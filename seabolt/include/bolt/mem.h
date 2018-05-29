@@ -75,6 +75,15 @@ PUBLIC void* BoltMem_deallocate(void* ptr, size_t old_size);
 PUBLIC void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
 
 /**
+* Duplicates the memory region specified by ptr and ptr_size.
+*
+* @param ptr
+* @param ptr_size
+* @return
+*/
+PUBLIC void* BoltMem_duplicate(const void *ptr, size_t ptr_size);
+
+/**
  * Retrieve the amount of memory currently allocated.
  *
  * @return

@@ -32,9 +32,9 @@
 struct BoltAddress
 {
     /// Original host name or IP address string
-    const char * host;
+    char * host;
     /// Original service name or port number string
-    const char * port;
+    char * port;
 
     /// Number of resolved IP addresses
     size_t n_resolved_hosts;

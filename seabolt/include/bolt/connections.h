@@ -141,9 +141,9 @@ enum BoltAuthScheme
 struct BoltUserProfile
 {
     enum BoltAuthScheme auth_scheme;
-    const char * user;
-    const char * password;
-    const char * user_agent;
+    char * user;
+    char * password;
+    char * user_agent;
 };
 
 

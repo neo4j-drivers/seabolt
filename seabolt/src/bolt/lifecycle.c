@@ -27,6 +27,13 @@ void Bolt_startup(FILE * log_file)
     if (log_file != NULL) {
         BoltLog_set_file(log_file);
     }
+#ifdef _DEBUG
+	else
+	{
+		BoltLog_set_file(stdout);
+	}
+#endif
+
 #if USE_WINSOCK
 	WSADATA data;
 	WSAStartup(MAKEWORD(2, 2), &data);

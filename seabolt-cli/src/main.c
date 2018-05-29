@@ -201,9 +201,9 @@ int app_init(struct Application * app)
     timespec_get(&t[0], TIME_UTC);
     struct BoltUserProfile profile;
     profile.auth_scheme = BOLT_AUTH_BASIC;
-    profile.user = app->user;
-    profile.password = app->password;
-    profile.user_agent = "seabolt/1.0.0-beta.1";
+    profile.user = (char *)app->user;
+    profile.password = (char *)app->password;
+    profile.user_agent = (char *)"seabolt/1.0.0a";
     BoltConnection_init(app->connection, &profile);
     if (app->connection->status != BOLT_READY)
     {
