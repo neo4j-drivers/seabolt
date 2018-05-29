@@ -1238,8 +1238,3 @@ int32_t BoltProtocolV1_field_name_size(struct BoltConnection * connection, int32
             return -1;
     }
 }
-
-int BoltProtocolV1_dump(struct BoltValue * value, struct BoltBuffer * buffer)
-{
-    return load(buffer, value);
-}

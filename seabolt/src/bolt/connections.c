@@ -801,25 +801,3 @@ int32_t BoltConnection_field_name_size(struct BoltConnection * connection, int32
             return -1;
     }
 }
-
-int BoltConnection_dump_field_names(struct BoltConnection * connection, struct BoltBuffer * buffer)
-{
-    switch (connection->protocol_version)
-    {
-        case 1:
-            return BoltProtocolV1_dump(BoltProtocolV1_state(connection)->fields, buffer);
-        default:
-            return -1;
-    }
-}
-
-int BoltConnection_dump_data(struct BoltConnection * connection, struct BoltBuffer * buffer)
-{
-    switch (connection->protocol_version)
-    {
-        case 1:
-            return BoltProtocolV1_dump(BoltProtocolV1_state(connection)->data, buffer);
-        default:
-            return -1;
-    }
-}
