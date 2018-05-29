@@ -548,13 +548,12 @@ int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_vers
         }
         case BOLT_BYTES:
         {
-            fprintf(file, "#[");
+            fprintf(file, "#");
             for (int i = 0; i < value->size; i++)
             {
                 char b = BoltBytes_get(value, i);
                 fprintf(file, "%c%c", hex1(&b, 0), hex0(&b, 0));
             }
-            fprintf(file, "]");
             return 0;
         }
         case BOLT_STRUCTURE:
