@@ -248,11 +248,11 @@ PUBLIC struct BoltValue * BoltStructure_value(const struct BoltValue* value, int
 
 // Message functions are not public as these are not intended to be consumed outside the connector.
 
-void BoltValue_format_as_Message(struct BoltValue * value, int16_t code, int32_t length);
+PUBLIC void BoltValue_format_as_Message(struct BoltValue * value, int16_t code, int32_t length);
 
-int16_t BoltMessage_code(const struct BoltValue * value);
+PUBLIC int16_t BoltMessage_code(const struct BoltValue * value);
 
-struct BoltValue * BoltMessage_value(const struct BoltValue * value, int32_t index);
+PUBLIC struct BoltValue * BoltMessage_value(const struct BoltValue * value, int32_t index);
 
 
 
