@@ -311,7 +311,7 @@ int app_run(struct Application * app, const char * cypher)
     if (app->with_header)
     {
         struct BoltValue * name = BoltValue_create();
-        for (int i = 0; i < BoltConnection_n_result_fields(app->connection); i++)
+        for (int i = 0; i < BoltConnection_result_n_fields(app->connection); i++)
         {
             if (i > 0)
             {

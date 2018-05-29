@@ -55,7 +55,7 @@ Connections provide the core means of communication to a Application server.
 
 .. doxygenfunction:: BoltConnection_last_request
 
-.. doxygenfunction:: BoltConnection_n_result_fields
+.. doxygenfunction:: BoltConnection_result_n_fields
 
 .. doxygenfunction:: BoltConnection_result_field_name
 

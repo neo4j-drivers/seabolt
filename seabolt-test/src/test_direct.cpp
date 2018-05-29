@@ -285,7 +285,7 @@ SCENARIO("Test field names returned from Cypher execution", "[integration][ipv6]
             BoltConnection_send(connection);
             bolt_request_t last = BoltConnection_last_request(connection);
             BoltConnection_fetch_summary(connection, run);
-            int n_fields = BoltConnection_n_result_fields(connection);
+            int n_fields = BoltConnection_result_n_fields(connection);
             REQUIRE(n_fields == 3);
             const char * field_name = BoltConnection_result_field_name(connection, 0);
             int field_name_size = BoltConnection_result_field_name_size(connection, 0);

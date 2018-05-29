@@ -827,7 +827,7 @@ bolt_request_t BoltConnection_last_request(struct BoltConnection * connection)
     }
 }
 
-int32_t BoltConnection_n_result_fields(struct BoltConnection * connection)
+int32_t BoltConnection_result_n_fields(struct BoltConnection * connection)
 {
     switch (connection->protocol_version)
     {

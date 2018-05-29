@@ -421,7 +421,7 @@ PUBLIC bolt_request_t BoltConnection_last_request(struct BoltConnection * connec
  * @param connection
  * @return
  */
-PUBLIC int32_t BoltConnection_n_result_fields(struct BoltConnection * connection);
+PUBLIC int32_t BoltConnection_result_n_fields(struct BoltConnection * connection);
 
 /**
  * Return the name of a specific field in the current result.
