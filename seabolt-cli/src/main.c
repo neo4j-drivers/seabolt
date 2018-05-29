@@ -203,7 +203,7 @@ int app_init(struct Application * app)
     profile.auth_scheme = BOLT_AUTH_BASIC;
     profile.user = app->user;
     profile.password = app->password;
-    profile.user_agent = "seabolt/1.0.0a";
+    profile.user_agent = "seabolt/1.0.0-beta.1";
     BoltConnection_init(app->connection, &profile);
     if (app->connection->status != BOLT_READY)
     {
