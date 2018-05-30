@@ -183,10 +183,16 @@ int _secure(struct BoltConnection * connection)
 {
     // TODO: investigate ways to provide a greater resolution of TLS errors
     BoltLog_info("bolt: Securing socket");
+    SSL_METHOD *ctx_init_method = NULL;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    ctx_init_method = TLSv1_2_client_method();
+#else
+    ctx_init_method = TLS_client_method();
+#endif
     SSL_library_init();
     SSL_load_error_strings();
     OpenSSL_add_all_algorithms();
-    connection->ssl_context = SSL_CTX_new(TLS_client_method());
+    connection->ssl_context = SSL_CTX_new(ctx_init_method);
     if (connection->ssl_context == NULL)
     {
         _set_status(connection, BOLT_DEFUNCT, BOLT_TLS_ERROR);
