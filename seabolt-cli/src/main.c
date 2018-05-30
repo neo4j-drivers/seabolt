@@ -111,7 +111,6 @@ struct Application* app_create(int argc, char ** argv)
     struct Application * app = BoltMem_allocate(sizeof(struct Application));
     app->transport = (strcmp(BOLT_SECURE, "1") == 0) ? BOLT_SECURE_SOCKET : BOLT_SOCKET;
     app->address = BoltAddress_create(BOLT_HOST, BOLT_PORT);
-    BoltAddress_resolve(app->address);
     app->user = BOLT_USER;
     app->password = BOLT_PASSWORD;
 
@@ -184,6 +183,7 @@ void app_connect(struct Application * app)
 {
     struct timespec t[2];
     timespec_get(&t[0], TIME_UTC);
+    BoltAddress_resolve(app->address);
     app->connection = BoltConnection_create();
     BoltConnection_open(app->connection, app->transport, app->address);
     if (app->connection->status != BOLT_CONNECTED)
