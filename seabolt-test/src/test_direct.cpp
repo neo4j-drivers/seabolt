@@ -318,8 +318,7 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
             int records = BoltConnection_fetch_summary(connection, run);
             REQUIRE(records == 0);
             struct BoltValue * last_received = BoltConnection_data(connection);
-            REQUIRE(BoltValue_type(last_received) == BOLT_MESSAGE);
-            REQUIRE(BoltMessage_code(last_received) == 0x70);
+            REQUIRE(BoltConnection_summary_success(connection) == 1);
             while (BoltConnection_fetch(connection, pull))
             {
                 REQUIRE(BoltValue_type(last_received) == BOLT_LIST);
@@ -329,8 +328,7 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
                 REQUIRE(BoltInteger_get(value) == 42);
                 records += 1;
             }
-            REQUIRE(BoltValue_type(last_received) == BOLT_MESSAGE);
-            REQUIRE(BoltMessage_code(last_received) == 0x70);
+            REQUIRE(BoltConnection_summary_success(connection) == 1);
             REQUIRE(records == 1);
         }
         BoltConnection_close(connection);
@@ -388,34 +386,25 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
 
             int records = BoltConnection_fetch_summary(connection, begin);
             REQUIRE(records == 0);
-            struct BoltValue * fetched = BoltConnection_data(connection);
-            REQUIRE(BoltValue_type(fetched) == BOLT_MESSAGE);
-            REQUIRE(BoltMessage_code(fetched) == 0x70);
+            REQUIRE(BoltConnection_summary_success(connection) == 1);
 
             records = BoltConnection_fetch_summary(connection, run);
             REQUIRE(records == 0);
-            fetched = BoltConnection_data(connection);
-            REQUIRE(BoltValue_type(fetched) == BOLT_MESSAGE);
-            REQUIRE(BoltMessage_code(fetched) == 0x70);
+            REQUIRE(BoltConnection_summary_success(connection) == 1);
 
             while (BoltConnection_fetch(connection, pull))
             {
-                REQUIRE(BoltValue_type(fetched) == BOLT_LIST);
-                REQUIRE(fetched->size == 1);
-                BoltValue * value = BoltList_value(fetched, 0);
+                BoltValue * value = BoltConnection_data(connection);
                 REQUIRE(BoltValue_type(value) == BOLT_INTEGER);
                 REQUIRE(BoltInteger_get(value) == 1);
                 records += 1;
             }
-            REQUIRE(BoltValue_type(fetched) == BOLT_MESSAGE);
-            REQUIRE(BoltMessage_code(fetched) == 0x70);
+            REQUIRE(BoltConnection_summary_success(connection) == 1);
             REQUIRE(records == 1);
 
             records = BoltConnection_fetch_summary(connection, commit);
             REQUIRE(records == 0);
-            fetched = BoltConnection_data(connection);
-            REQUIRE(BoltValue_type(fetched) == BOLT_MESSAGE);
-            REQUIRE(BoltMessage_code(fetched) == 0x70);
+            REQUIRE(BoltConnection_summary_success(connection) == 1);
 
         }
         BoltConnection_close(connection);

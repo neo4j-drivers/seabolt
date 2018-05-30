@@ -72,7 +72,6 @@ enum BoltType
     BOLT_LIST = 6,
     BOLT_BYTES = 7,
     BOLT_STRUCTURE = 8,
-    BOLT_MESSAGE = 9,
 };
 
 /**
@@ -243,16 +242,6 @@ PUBLIC void BoltValue_format_as_Structure(struct BoltValue * value, int16_t code
 PUBLIC int16_t BoltStructure_code(const struct BoltValue* value);
 
 PUBLIC struct BoltValue * BoltStructure_value(const struct BoltValue* value, int32_t index);
-
-
-
-// Message functions are not public as these are not intended to be consumed outside the connector.
-
-PUBLIC void BoltValue_format_as_Message(struct BoltValue * value, int16_t code, int32_t length);
-
-PUBLIC int16_t BoltMessage_code(const struct BoltValue * value);
-
-PUBLIC struct BoltValue * BoltMessage_value(const struct BoltValue * value, int32_t index);
 
 
 

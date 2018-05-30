@@ -46,7 +46,7 @@
 void _recycle(struct BoltValue* value)
 {
     enum BoltType type = BoltValue_type(value);
-    if (type == BOLT_LIST || type == BOLT_STRUCTURE || type == BOLT_MESSAGE)
+    if (type == BOLT_LIST || type == BOLT_STRUCTURE)
     {
         for (long i = 0; i < value->size; i++)
         {
@@ -461,24 +461,6 @@ struct BoltValue* BoltStructure_value(const struct BoltValue* value, int32_t ind
 }
 
 
-void BoltValue_format_as_Message(struct BoltValue * value, int16_t code, int32_t length)
-{
-    _format_as_structure(value, BOLT_MESSAGE, code, length);
-}
-
-int16_t BoltMessage_code(const struct BoltValue * value)
-{
-    assert(BoltValue_type(value) == BOLT_MESSAGE);
-    return value->subtype;
-}
-
-struct BoltValue* BoltMessage_value(const struct BoltValue * value, int32_t index)
-{
-    assert(BoltValue_type(value) == BOLT_MESSAGE);
-    return &value->data.extended.as_value[index];
-}
-
-
 int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_version)
 {
     switch (BoltValue_type(value))
@@ -577,34 +559,6 @@ int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_vers
                 BoltValue_write(BoltStructure_value(value, i), file, protocol_version);
             }
             fprintf(file, ")");
-            return 0;
-        }
-        case BOLT_MESSAGE:
-        {
-            int16_t code = BoltMessage_code(value);
-            switch (protocol_version)
-            {
-                case 1:
-                {
-                    const char* name = BoltProtocolV1_message_name(code);
-                    if (name == NULL)
-                    {
-                        fprintf(file, "MESSAGE#%c%c", hex1(&code, 0), hex0(&code, 0));
-                    }
-                    else
-                    {
-                        fprintf(file, "%s", name);
-                    }
-                    break;
-                }
-                default:
-                    fprintf(file, "MESSAGE#%c%c", hex1(&code, 0), hex0(&code, 0));
-            }
-            for (int i = 0; i < value->size; i++)
-            {
-                fprintf(file, " ");
-                BoltValue_write(BoltMessage_value(value, i), file, protocol_version);
-            }
             return 0;
         }
         default:

@@ -30,7 +30,7 @@
 #define REQUIRE_BOLT_LIST(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_LIST); REQUIRE((value)->size == (size_)); }
 #define REQUIRE_BOLT_BYTES(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_BYTES); REQUIRE((value)->size == (size_)); }
 #define REQUIRE_BOLT_STRUCTURE(value, code, size_) { REQUIRE(BoltValue_type(value) == BOLT_STRUCTURE); REQUIRE(BoltStructure_code(value) == (code)); REQUIRE((value)->size == (size_)); }
-#define REQUIRE_BOLT_SUCCESS(value) { REQUIRE(BoltValue_type(value) == BOLT_MESSAGE); REQUIRE(BoltMessage_code(value) == 0x70); }
+#define REQUIRE_BOLT_SUCCESS(connection) { REQUIRE(BoltConnection_summary_success(connection) == 1); }
 
 #define RUN_PULL_SEND(connection, result)\
     BoltConnection_load_run_request(connection);\
@@ -57,7 +57,7 @@ SCENARIO("Test null parameter", "[integration][ipv6][secure]")
                 REQUIRE_BOLT_LIST(data, 1);
                 REQUIRE_BOLT_NULL(BoltList_value(data, 0));
             }
-            REQUIRE_BOLT_SUCCESS(data);
+            REQUIRE_BOLT_SUCCESS(connection);
         }
         bolt_close_and_destroy_b(connection);
     }
@@ -81,7 +81,7 @@ SCENARIO("Test boolean in, boolean out", "[integration][ipv6][secure]")
                 REQUIRE_BOLT_LIST(data, 1);
                 REQUIRE_BOLT_BOOLEAN(BoltList_value(data, 0), 1);
             }
-            REQUIRE_BOLT_SUCCESS(data);
+            REQUIRE_BOLT_SUCCESS(connection);
         }
         bolt_close_and_destroy_b(connection);
     }
@@ -106,7 +106,7 @@ SCENARIO("Test bytes in, bytes out", "[integration][ipv6][secure]")
                 REQUIRE_BOLT_LIST(data, 1);
                 REQUIRE_BOLT_BYTES(BoltList_value(data, 0), 5);
             }
-            REQUIRE_BOLT_SUCCESS(data);
+            REQUIRE_BOLT_SUCCESS(connection);
         }
         bolt_close_and_destroy_b(connection);
     }
@@ -130,7 +130,7 @@ SCENARIO("Test string in, string out", "[integration][ipv6][secure]")
                 REQUIRE_BOLT_LIST(data, 1);
                 REQUIRE_BOLT_STRING(BoltList_value(data, 0), "hello, world", 12);
             }
-            REQUIRE_BOLT_SUCCESS(data);
+            REQUIRE_BOLT_SUCCESS(connection);
         }
         bolt_close_and_destroy_b(connection);
     }
@@ -179,7 +179,7 @@ SCENARIO("Test dictionary in, dictionary out", "[integration][ipv6][secure]")
                 }
                 REQUIRE(found == 2);
             }
-            REQUIRE_BOLT_SUCCESS(data);
+            REQUIRE_BOLT_SUCCESS(connection);
         }
         bolt_close_and_destroy_b(connection);
     }
@@ -204,7 +204,7 @@ SCENARIO("Test integer in, integer out", "[integration][ipv6][secure]")
                 struct BoltValue * list = BoltList_value(data, 0);
                 REQUIRE_BOLT_INTEGER(list, 123456789);
             }
-            REQUIRE_BOLT_SUCCESS(data);
+            REQUIRE_BOLT_SUCCESS(connection);
         }
         bolt_close_and_destroy_b(connection);
     }
@@ -229,7 +229,7 @@ SCENARIO("Test float in, float out", "[integration][ipv6][secure]")
                 struct BoltValue * n = BoltList_value(data, 0);
                 REQUIRE_BOLT_FLOAT(n, 6.283185307179);
             }
-            REQUIRE_BOLT_SUCCESS(data);
+            REQUIRE_BOLT_SUCCESS(connection);
         }
         bolt_close_and_destroy_b(connection);
     }
@@ -268,7 +268,7 @@ SCENARIO("Test structure in result", "[integration][ipv6][secure]")
                 REQUIRE_BOLT_STRING(BoltDictionary_value(properties, 0), "Alice", 5);
             }
             BoltConnection_fetch_summary(connection, last);
-            REQUIRE_BOLT_SUCCESS(data);
+            REQUIRE_BOLT_SUCCESS(connection);
         }
         bolt_close_and_destroy_b(connection);
     }

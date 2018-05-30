@@ -23,6 +23,8 @@
 
 #include "bolt/logging.h"
 
+#include "protocol/v1.h"
+
 
 static FILE* __bolt_log_file;
 
@@ -60,10 +62,32 @@ void BoltLog_value(struct BoltValue * value, int32_t protocol_version, const cha
     fprintf(__bolt_log_file, "%s\n", suffix);
 }
 
-void BoltLog_message(const char * peer, bolt_request_t request_id, struct BoltValue * value, int32_t protocol_version)
+void BoltLog_message(const char * peer, bolt_request_t request_id, int16_t code, struct BoltValue * fields, int32_t protocol_version)
 {
     if (__bolt_log_file == NULL) return;
     fprintf(__bolt_log_file, "bolt: %s[%llu]: ", peer, request_id);
-    BoltValue_write(value, __bolt_log_file, protocol_version);
+    switch (protocol_version)
+    {
+        case 1:
+        {
+            const char* name = BoltProtocolV1_message_name(code);
+            if (name == NULL)
+            {
+                fprintf(__bolt_log_file, "?");
+            }
+            else
+            {
+                fprintf(__bolt_log_file, "%s", name);
+            }
+            break;
+        }
+        default:
+            fprintf(__bolt_log_file, "?");
+    }
+    for (int i = 0; i < fields->size; i++)
+    {
+        fprintf(__bolt_log_file, " ");
+        BoltValue_write(BoltList_value(fields, i), __bolt_log_file, protocol_version);
+    }
     fprintf(__bolt_log_file, "\n");
 }

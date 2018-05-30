@@ -51,16 +51,22 @@ enum BoltProtocolV1Type
 
 struct _run_request
 {
-    struct BoltValue* request;
-    struct BoltValue* statement;
-    struct BoltValue* parameters;
+    struct BoltMessage * request;
+    struct BoltValue * statement;
+    struct BoltValue * parameters;
+};
+
+struct BoltMessage
+{
+    int8_t code;
+    struct BoltValue * fields;
 };
 
 struct BoltProtocolV1State
 {
     // These buffers exclude chunk headers.
-    struct BoltBuffer* tx_buffer;
-    struct BoltBuffer* rx_buffer;
+    struct BoltBuffer * tx_buffer;
+    struct BoltBuffer * rx_buffer;
 
     /// The product name and version of the remote server
     char * server;
@@ -77,13 +83,13 @@ struct BoltProtocolV1State
     struct _run_request begin;
     struct _run_request commit;
     struct _run_request rollback;
-    struct BoltValue* discard_request;
-    struct BoltValue* pull_request;
-    struct BoltValue* reset_request;
+    struct BoltMessage * discard_request;
+    struct BoltMessage * pull_request;
+    struct BoltMessage * reset_request;
 
-    /// Holders for fetched data and metadata
-    struct BoltValue* data;
-    struct BoltValue* metadata;
+    /// Holder for fetched data and metadata
+    int16_t data_type;
+    struct BoltValue * data;
 
 };
 
@@ -93,11 +99,11 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state);
 
 struct BoltProtocolV1State* BoltProtocolV1_state(struct BoltConnection* connection);
 
-int BoltProtocolV1_load_message(struct BoltConnection * connection, struct BoltValue * value);
+int BoltProtocolV1_load_message(struct BoltConnection * connection, struct BoltMessage * message);
 
-int BoltProtocolV1_load_message_quietly(struct BoltConnection * connection, struct BoltValue * value);
+int BoltProtocolV1_load_message_quietly(struct BoltConnection * connection, struct BoltMessage * message);
 
-int BoltProtocolV1_compile_INIT(struct BoltValue* value, const struct BoltUserProfile * profile);
+int BoltProtocolV1_compile_INIT(struct BoltMessage * message, const struct BoltUserProfile * profile);
 
 int BoltProtocolV1_fetch(struct BoltConnection * connection, bolt_request_t request_id);
 

@@ -517,8 +517,7 @@ int BoltConnection_fetch(struct BoltConnection * connection, bolt_request_t requ
             {
                 // Summary received
                 struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-                int16_t code = BoltMessage_code(state->metadata);
-                switch (code)
+                switch (state->data_type)
                 {
                     case BOLT_V1_SUCCESS:
                         _set_status(connection, BOLT_READY, BOLT_NO_ERROR);
@@ -530,7 +529,7 @@ int BoltConnection_fetch(struct BoltConnection * connection, bolt_request_t requ
                         _set_status(connection, BOLT_FAILED, BOLT_UNKNOWN_ERROR);   // TODO more specific error
                         return 0;
                     default:
-                        BoltLog_error("bolt: Protocol violation (received summary code %d)", code);
+                        BoltLog_error("bolt: Protocol violation (received summary code %d)", state->data_type);
                         _set_status(connection, BOLT_DEFUNCT, BOLT_PROTOCOL_VIOLATION);
                         return -1;
                 }
@@ -568,68 +567,45 @@ struct BoltValue* BoltConnection_data(struct BoltConnection * connection)
     {
         case 1:
         {
-            struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-            return state->data;
+            struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+            switch (state->data_type)
+            {
+                case BOLT_V1_RECORD:
+                    return state->data;
+                default:
+                    return NULL;
+            }
         }
         default:
             return NULL;
     }
 }
 
-int16_t BoltConnection_summary_code(struct BoltConnection * connection)
+int BoltConnection_summary_success(struct BoltConnection * connection)
 {
     switch (connection->protocol_version)
     {
         case 1:
         {
             struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-            if (state->metadata->type == BOLT_MESSAGE) {
-                return BoltMessage_code(state->metadata);
-            }
-            else {
-                return -1;
-            }
+            return state->data_type == BOLT_V1_SUCCESS;
         }
         default:
             return -1;
     }
 }
 
-int32_t BoltConnection_summary_n_fields(struct BoltConnection * connection)
+int BoltConnection_summary_failure(struct BoltConnection * connection)
 {
     switch (connection->protocol_version)
     {
         case 1:
         {
             struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-            if (state->metadata->type == BOLT_MESSAGE) {
-                return state->metadata->size;
-            }
-            else {
-                return -1;
-            }
+            return state->data_type == BOLT_V1_FAILURE;
         }
         default:
             return -1;
-    }
-}
-
-struct BoltValue * BoltConnection_summary_field(struct BoltConnection * connection, int32_t index)
-{
-    switch (connection->protocol_version)
-    {
-        case 1:
-        {
-            struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-            if (state->metadata->type == BOLT_MESSAGE) {
-                return BoltMessage_value(state->metadata, index);
-            }
-            else {
-                return NULL;
-            }
-        }
-        default:
-            return NULL;
     }
 }
 

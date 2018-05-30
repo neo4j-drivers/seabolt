@@ -304,24 +304,21 @@ PUBLIC struct BoltValue * BoltConnection_data(struct BoltConnection * connection
  * @param connection
  * @return
  */
-PUBLIC int16_t BoltConnection_summary_code(struct BoltConnection * connection);
+PUBLIC
 
 /**
- * Return the number of fields in the current summary metadata.
  *
  * @param connection
  * @return
  */
-PUBLIC int32_t BoltConnection_summary_n_fields(struct BoltConnection * connection);
+PUBLIC int BoltConnection_summary_success(struct BoltConnection * connection);
 
 /**
- * Return a field value from the current summary metadata.
  *
  * @param connection
- * @param index
  * @return
  */
-PUBLIC struct BoltValue * BoltConnection_summary_field(struct BoltConnection * connection, int32_t index);
+PUBLIC
 
 /**
  * Set the next Cypher statement template to be run on this connection.
