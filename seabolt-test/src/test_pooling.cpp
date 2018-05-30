@@ -26,8 +26,7 @@ SCENARIO("Test using a pooled connection", "[integration][ipv6][secure][pooling]
 {
     GIVEN("a new connection pool")
     {
-        struct BoltAddress address { (char *)BOLT_IPV6_HOST, (char *)BOLT_PORT };
-        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &address, &BOLT_PROFILE, 10);
+        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &BOLT_IPV6_ADDRESS, &BOLT_PROFILE, 10);
         WHEN("a connection is acquired")
         {
             struct BoltConnection * connection = BoltConnectionPool_acquire(pool, "test");
