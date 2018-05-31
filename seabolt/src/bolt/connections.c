@@ -183,7 +183,7 @@ int _secure(struct BoltConnection * connection)
 {
     // TODO: investigate ways to provide a greater resolution of TLS errors
     BoltLog_info("bolt: Securing socket");
-    SSL_METHOD *ctx_init_method = NULL;
+    const SSL_METHOD *ctx_init_method = NULL;
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     ctx_init_method = TLSv1_2_client_method();
 #else
@@ -567,7 +567,7 @@ int BoltConnection_fetch_summary(struct BoltConnection * connection, bolt_reques
     return records;
 }
 
-struct BoltValue* BoltConnection_data(struct BoltConnection * connection)
+struct BoltValue* BoltConnection_record_field(struct BoltConnection * connection, int32_t field)
 {
     switch (connection->protocol_version)
     {
@@ -577,13 +577,51 @@ struct BoltValue* BoltConnection_data(struct BoltConnection * connection)
             switch (state->data_type)
             {
                 case BOLT_V1_RECORD:
-                    return state->data;
+                    switch (BoltValue_type(state->data))
+                    {
+                        case BOLT_LIST:
+                        {
+                            struct BoltValue * values = BoltList_value(state->data, 0);
+                            return BoltList_value(values, field);
+                        }
+                        default:
+                            return NULL;
+                    }
                 default:
                     return NULL;
             }
         }
         default:
             return NULL;
+    }
+}
+
+int32_t BoltConnection_record_size(struct BoltConnection * connection)
+{
+    switch (connection->protocol_version)
+    {
+        case 1:
+        {
+            struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+            switch (state->data_type)
+            {
+                case BOLT_V1_RECORD:
+                    switch (BoltValue_type(state->data))
+                    {
+                        case BOLT_LIST:
+                        {
+                            struct BoltValue * values = BoltList_value(state->data, 0);
+                            return values->size;
+                        }
+                        default:
+                            return -1;
+                    }
+                default:
+                    return -1;
+            }
+        }
+        default:
+            return -1;
     }
 }
 

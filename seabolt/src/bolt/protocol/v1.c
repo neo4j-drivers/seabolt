@@ -1005,7 +1005,7 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct 
                             break;
                     }
                 }
-                else if (strcmp(key, "result_field_names") == 0)
+                else if (strcmp(key, "fields") == 0)
                 {
                     struct BoltValue * value = BoltDictionary_value(metadata, i);
                     switch (BoltValue_type(value))

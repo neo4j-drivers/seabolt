@@ -228,7 +228,8 @@ SCENARIO("Test init with invalid credentials", "[integration][ipv6][secure]")
         WHEN("unsuccessfully initialised")
         {
             REQUIRE(strcmp(BOLT_PASSWORD, "X") != 0);
-            int rv = BoltConnection_init(connection, &BOLT_PROFILE);
+            struct BoltUserProfile profile { BOLT_AUTH_BASIC, (char *)BOLT_USER, (char *)"X", (char *)BOLT_USER_AGENT };
+            int rv = BoltConnection_init(connection, &profile);
             THEN("return value should not be 0")
             {
                 REQUIRE(rv != 0);
@@ -317,13 +318,10 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
             BoltConnection_send(connection);
             int records = BoltConnection_fetch_summary(connection, run);
             REQUIRE(records == 0);
-            struct BoltValue * last_received = BoltConnection_data(connection);
             REQUIRE(BoltConnection_summary_success(connection) == 1);
             while (BoltConnection_fetch(connection, pull))
             {
-                REQUIRE(BoltValue_type(last_received) == BOLT_LIST);
-                REQUIRE(last_received->size == 1);
-                BoltValue * value = BoltList_value(last_received, 0);
+                struct BoltValue * value = BoltConnection_record_field(connection, 0);
                 REQUIRE(BoltValue_type(value) == BOLT_INTEGER);
                 REQUIRE(BoltInteger_get(value) == 42);
                 records += 1;
@@ -394,7 +392,7 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
 
             while (BoltConnection_fetch(connection, pull))
             {
-                BoltValue * value = BoltConnection_data(connection);
+                BoltValue * value = BoltConnection_record_field(connection, 0);
                 REQUIRE(BoltValue_type(value) == BOLT_INTEGER);
                 REQUIRE(BoltInteger_get(value) == 1);
                 records += 1;

@@ -288,23 +288,21 @@ PUBLIC int BoltConnection_fetch(struct BoltConnection * connection, bolt_request
 PUBLIC int BoltConnection_fetch_summary(struct BoltConnection * connection, bolt_request_t request);
 
 /**
- * Obtain a pointer to the last fetched data values.
- *
- * The storage slot is recycled for each value received, therefore the pointer
- * returned from this function will reference a new record after a subsequent
- * fetch, or may be NULL if a summary was fetched.
+ * Obtain a value from the current record.
  *
  * @param connection
+ * @param field
  * @return pointer to a `BoltValue` data structure formatted as a BOLT_LIST
  */
-PUBLIC struct BoltValue * BoltConnection_data(struct BoltConnection * connection);
+PUBLIC struct BoltValue * BoltConnection_record_field(struct BoltConnection * connection, int32_t field);
 
 /**
+ *
  *
  * @param connection
  * @return
  */
-PUBLIC
+PUBLIC int32_t BoltConnection_record_size(struct BoltConnection * connection);
 
 /**
  *
@@ -312,13 +310,6 @@ PUBLIC
  * @return
  */
 PUBLIC int BoltConnection_summary_success(struct BoltConnection * connection);
-
-/**
- *
- * @param connection
- * @return
- */
-PUBLIC
 
 /**
  * Set the next Cypher statement template to be run on this connection.

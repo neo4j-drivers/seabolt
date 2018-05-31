@@ -27,7 +27,7 @@ Connections provide the core means of communication to a Application server.
 
 .. doxygenfunction:: BoltConnection_fetch
 
-.. doxygenfunction:: BoltConnection_data
+.. doxygenfunction:: BoltConnection_record_field
 
 .. doxygenfunction:: BoltConnection_summary_code
 

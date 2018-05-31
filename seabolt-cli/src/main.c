@@ -327,14 +327,14 @@ int app_run(struct Application * app, const char * cypher)
 
     while (BoltConnection_fetch(app->connection, pull))
     {
-        struct BoltValue * data = BoltConnection_data(app->connection);
-        for (int i = 0; i < data->size; i++)
+        for (int i = 0; i < BoltConnection_record_size(app->connection); i++)
         {
+            struct BoltValue * value = BoltConnection_record_field(app->connection, i);
             if (i > 0)
             {
                 putc('\t', stdout);
             }
-            BoltValue_write(BoltList_value(data, i), stdout, app->connection->protocol_version);
+            BoltValue_write(BoltList_value(value, i), stdout, app->connection->protocol_version);
         }
         putc('\n', stdout);
     }
