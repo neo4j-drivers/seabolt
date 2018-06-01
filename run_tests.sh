@@ -192,6 +192,11 @@ compile_debug
 for NEO4J_VERSION in $(grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" COMPATIBILITY)
 do
     run_tests "${NEO4J_VERSION}"
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Test execution failed."
+        exit ${TESTS_FAILED}
+    fi
     if [ "${OPT_QUICK}" != "0" ]
     then
         break
@@ -203,6 +208,11 @@ then
     for NEO4J_VERSION in $(grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" COMPATIBILITY)
     do
         run_tests "${NEO4J_VERSION}"
+        if [ "$?" -ne "0" ]
+        then
+            echo "FATAL: Test execution failed."
+            exit ${TESTS_FAILED}
+        fi
     done
 fi
 echo "Seabolt test run completed at $(date -Ins)"
