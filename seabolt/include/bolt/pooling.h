@@ -35,7 +35,7 @@ struct BoltConnectionPool
     mutex_t mutex;
     enum BoltTransport transport;
     struct BoltAddress * address;
-    const struct BoltUserProfile * profile;
+    struct BoltUserProfile * profile;
     size_t size;
     struct BoltConnection * connections;
 };

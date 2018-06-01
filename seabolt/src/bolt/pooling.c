@@ -157,7 +157,7 @@ struct BoltUserProfile * copy_profile(const struct BoltUserProfile * profile)
 	return new_profile;
 }
 
-void free_profile(const struct BoltUserProfile * profile)
+void free_profile(struct BoltUserProfile * profile)
 {
 	if (profile != NULL)
 	{
@@ -190,8 +190,8 @@ void BoltConnectionPool_destroy(struct BoltConnectionPool * pool)
     }
     pool->connections = BoltMem_deallocate(pool->connections, pool->size * sizeof(struct BoltConnection));
     BoltUtil_mutex_destroy(&pool->mutex);
+    free_profile(pool->profile);
     BoltMem_deallocate(pool, SIZE_OF_CONNECTION_POOL);
-	free_profile(pool->profile);
 }
 
 struct BoltConnection * BoltConnectionPool_acquire(struct BoltConnectionPool * pool, const void * agent)

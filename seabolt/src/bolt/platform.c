@@ -63,7 +63,7 @@ int BoltUtil_mutex_create(mutex_t *mutex)
 int BoltUtil_mutex_destroy(mutex_t *mutex)
 {
 #ifdef _WIN32
-	if (CloseHandle(*mutex))
+	if (!CloseHandle(*mutex))
 	{
 		return GetLastError();
 	}
