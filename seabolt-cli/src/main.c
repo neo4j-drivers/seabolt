@@ -55,6 +55,7 @@ enum Command
     CMD_NONE,
     CMD_HELP,
     CMD_DEBUG,
+    CMD_PERF,
     CMD_RUN,
 };
 
@@ -151,6 +152,10 @@ struct Application* app_create(int argc, char ** argv)
             else if (strcmp(arg, "debug") == 0)
             {
                 app->command = CMD_DEBUG;
+            }
+            else if (strcmp(arg, "perf") == 0)
+            {
+                app->command = CMD_PERF;
             }
             else if (strcmp(arg, "run") == 0)
             {
@@ -334,7 +339,7 @@ int app_run(struct Application * app, const char * cypher)
             {
                 putc('\t', stdout);
             }
-            BoltValue_write(BoltList_value(value, i), stdout, app->connection->protocol_version);
+            BoltValue_write(value, stdout, app->connection->protocol_version);
         }
         putc('\n', stdout);
     }
@@ -347,11 +352,77 @@ int app_run(struct Application * app, const char * cypher)
     return 0;
 }
 
+long run_fetch(const struct Application * app, const char * cypher)
+{
+    long record_count = 0;
+    //BoltConnection_load_bookmark(bolt->connection, "tx:1234");
+    BoltConnection_load_begin_request(app->connection);
+    BoltConnection_cypher(app->connection, cypher, strlen(cypher), 0);
+    BoltConnection_load_run_request(app->connection);
+    bolt_request_t run = BoltConnection_last_request(app->connection);
+    BoltConnection_load_pull_request(app->connection, -1);
+    bolt_request_t pull = BoltConnection_last_request(app->connection);
+    BoltConnection_load_commit_request(app->connection);
+    bolt_request_t commit = BoltConnection_last_request(app->connection);
+
+    BoltConnection_send(app->connection);
+
+    BoltConnection_fetch_summary(app->connection, run);
+
+    while (BoltConnection_fetch(app->connection, pull))
+    {
+        record_count += 1;
+    }
+
+    BoltConnection_fetch_summary(app->connection, commit);
+    return record_count;
+}
+
+int app_perf(struct Application * app, long warmup_times, long actual_times, const char * cypher)
+{
+    Bolt_startup(NULL);
+
+    struct timespec t[3];
+
+    app_connect(app);
+    app_init(app);
+
+    for (int i = 0; i < warmup_times; i++)
+    {
+        run_fetch(app, cypher);
+    }
+
+    timespec_get(&t[1], TIME_UTC);    // Checkpoint 1 - before run
+    long record_count = 0;
+    for (int i = 0; i < actual_times; i++)
+    {
+        record_count += run_fetch(app, cypher);
+    }
+    timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after run
+
+    BoltConnection_close(app->connection);
+    BoltConnection_destroy(app->connection);
+
+    ///////////////////////////////////////////////////////////////////
+
+    fprintf(stderr, "query                : %s\n", cypher);
+    fprintf(stderr, "record count         : %ld\n", record_count);
+
+    timespec_diff(&t[0], &t[2], &t[1]);
+    fprintf(stderr, "=====================================\n");
+    fprintf(stderr, "TOTAL TIME           : %lds %09ldns\n", (long)t[0].tv_sec, t[0].tv_nsec);
+
+    Bolt_shutdown();
+
+    return 0;
+}
+
 void app_help()
 {
     fprintf(stderr, "seabolt help\n");
-    fprintf(stderr, "seabolt debug <statement>\n");
-    fprintf(stderr, "seabolt run <statement>\n");
+    fprintf(stderr, "seabolt debug <cypher>\n");
+    fprintf(stderr, "seabolt perf <warmup_times> <actual_times> <cypher>\n");
+    fprintf(stderr, "seabolt run <cypher>\n");
     exit(EXIT_SUCCESS);
 }
 
@@ -367,6 +438,14 @@ int main(int argc, char * argv[])
         case CMD_DEBUG:
             app_debug(app, argv[app->first_arg_index]);
             break;
+        case CMD_PERF:
+        {
+            char * end;
+            app_perf(app, strtol(argv[app->first_arg_index], &end, 10),      // warmup_times
+                          strtol(argv[app->first_arg_index + 1], &end, 10),  // actual_times
+                          argv[app->first_arg_index + 2]);                   // cypher
+            break;
+        }
         case CMD_RUN:
             app_run(app, argv[app->first_arg_index]);
             break;
@@ -385,11 +464,11 @@ int main(int argc, char * argv[])
 
     if (BoltMem_current_allocation() == 0)
     {
-        return 0;
+        return EXIT_SUCCESS;
     }
     else
     {
         fprintf(stderr, "MEMORY LEAK!\n");
-        return -1;
+        return EXIT_FAILURE;
     }
 }
