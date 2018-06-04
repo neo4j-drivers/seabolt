@@ -1,4 +1,4 @@
-# Seabolt
+# Seabolt !!! PLEASE DO NOT MERGE !!!
 
 Seabolt is a Neo4j connector library for C.
 The library will support multiple versions of the Bolt protocol through the new _Connector API_ and will provide a base layer for a number of language drivers.
