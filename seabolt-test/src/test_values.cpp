@@ -53,7 +53,8 @@ SCENARIO("Test null parameter", "[integration][ipv6][secure]")
             RUN_PULL_SEND(connection, result);
             while (BoltConnection_fetch(connection, result))
             {
-                struct BoltValue * value = BoltConnection_record_field(connection, 0);
+                const struct BoltValue * field_values = BoltConnection_record_fields(connection);
+                struct BoltValue * value = BoltList_value(field_values, 0);
                 REQUIRE_BOLT_NULL(value);
             }
             REQUIRE_BOLT_SUCCESS(connection);
@@ -76,7 +77,8 @@ SCENARIO("Test boolean in, boolean out", "[integration][ipv6][secure]")
             RUN_PULL_SEND(connection, result);
             while (BoltConnection_fetch(connection, result))
             {
-                struct BoltValue * value = BoltConnection_record_field(connection, 0);
+                const struct BoltValue * field_values = BoltConnection_record_fields(connection);
+                struct BoltValue * value = BoltList_value(field_values, 0);
                 REQUIRE_BOLT_BOOLEAN(value, 1);
             }
             REQUIRE_BOLT_SUCCESS(connection);
@@ -100,7 +102,8 @@ SCENARIO("Test bytes in, bytes out", "[integration][ipv6][secure]")
             RUN_PULL_SEND(connection, result);
             while (BoltConnection_fetch(connection, result))
             {
-                struct BoltValue * value = BoltConnection_record_field(connection, 0);
+                const struct BoltValue * field_values = BoltConnection_record_fields(connection);
+                struct BoltValue * value = BoltList_value(field_values, 0);
                 REQUIRE_BOLT_BYTES(value, 5);
             }
             REQUIRE_BOLT_SUCCESS(connection);
@@ -123,7 +126,8 @@ SCENARIO("Test string in, string out", "[integration][ipv6][secure]")
             RUN_PULL_SEND(connection, result);
             while (BoltConnection_fetch(connection, result))
             {
-                struct BoltValue * value = BoltConnection_record_field(connection, 0);
+                const struct BoltValue * field_values = BoltConnection_record_fields(connection);
+                struct BoltValue * value = BoltList_value(field_values, 0);
                 REQUIRE_BOLT_STRING(value, "hello, world", 12);
             }
             REQUIRE_BOLT_SUCCESS(connection);
@@ -150,7 +154,8 @@ SCENARIO("Test dictionary in, dictionary out", "[integration][ipv6][secure]")
             RUN_PULL_SEND(connection, result);
             while (BoltConnection_fetch(connection, result))
             {
-                struct BoltValue * dict = BoltConnection_record_field(connection, 0);
+                const struct BoltValue * field_values = BoltConnection_record_fields(connection);
+                struct BoltValue * dict = BoltList_value(field_values, 0);
                 REQUIRE_BOLT_DICTIONARY(dict, 2);
                 int found = 0;
                 for (int i = 0; i < dict->size; i++)
@@ -193,7 +198,8 @@ SCENARIO("Test integer in, integer out", "[integration][ipv6][secure]")
             RUN_PULL_SEND(connection, result);
             while (BoltConnection_fetch(connection, result))
             {
-                struct BoltValue * value = BoltConnection_record_field(connection, 0);
+                const struct BoltValue * field_values = BoltConnection_record_fields(connection);
+                struct BoltValue * value = BoltList_value(field_values, 0);
                 REQUIRE_BOLT_INTEGER(value, 123456789);
             }
             REQUIRE_BOLT_SUCCESS(connection);
@@ -216,7 +222,8 @@ SCENARIO("Test float in, float out", "[integration][ipv6][secure]")
             RUN_PULL_SEND(connection, result);
             while (BoltConnection_fetch(connection, result))
             {
-                struct BoltValue * value = BoltConnection_record_field(connection, 0);
+                const struct BoltValue * field_values = BoltConnection_record_fields(connection);
+                struct BoltValue * value = BoltList_value(field_values, 0);
                 REQUIRE_BOLT_FLOAT(value, 6.283185307179);
             }
             REQUIRE_BOLT_SUCCESS(connection);
@@ -243,7 +250,8 @@ SCENARIO("Test structure in result", "[integration][ipv6][secure]")
             bolt_request_t last = BoltConnection_last_request(connection);
             while (BoltConnection_fetch(connection, result))
             {
-                struct BoltValue * node = BoltConnection_record_field(connection, 0);
+                const struct BoltValue * field_values = BoltConnection_record_fields(connection);
+                struct BoltValue * node = BoltList_value(field_values, 0);
                 REQUIRE_BOLT_STRUCTURE(node, 'N', 3);
                 BoltValue * id = BoltStructure_value(node, 0);
                 BoltValue * labels = BoltStructure_value(node, 1);

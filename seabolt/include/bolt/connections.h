@@ -294,15 +294,7 @@ PUBLIC int BoltConnection_fetch_summary(struct BoltConnection * connection, bolt
  * @param field
  * @return pointer to a `BoltValue` data structure formatted as a BOLT_LIST
  */
-PUBLIC struct BoltValue * BoltConnection_record_field(struct BoltConnection * connection, int32_t field);
-
-/**
- *
- *
- * @param connection
- * @return
- */
-PUBLIC int32_t BoltConnection_record_size(struct BoltConnection * connection);
+PUBLIC const struct BoltValue * BoltConnection_record_fields(struct BoltConnection * connection);
 
 /**
  *
@@ -409,25 +401,7 @@ PUBLIC bolt_request_t BoltConnection_last_request(struct BoltConnection * connec
  * @param connection
  * @return
  */
-PUBLIC int32_t BoltConnection_result_n_fields(struct BoltConnection * connection);
-
-/**
- * Return the name of a specific field in the current result.
- *
- * @param connection
- * @param index
- * @return
- */
-PUBLIC const char * BoltConnection_result_field_name(struct BoltConnection * connection, int32_t index);
-
-/**
- * Return the size of the name of a specific field in the current result.
- *
- * @param connection
- * @param index
- * @return
- */
-PUBLIC int32_t BoltConnection_result_field_name_size(struct BoltConnection * connection, int32_t index);
+PUBLIC const struct BoltValue * BoltConnection_metadata_fields(struct BoltConnection * connection);
 
 
 #endif // SEABOLT_CONNECT

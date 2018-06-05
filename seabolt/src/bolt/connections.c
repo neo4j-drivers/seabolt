@@ -567,7 +567,7 @@ int BoltConnection_fetch_summary(struct BoltConnection * connection, bolt_reques
     return records;
 }
 
-struct BoltValue* BoltConnection_record_field(struct BoltConnection * connection, int32_t field)
+const struct BoltValue* BoltConnection_record_fields(struct BoltConnection * connection)
 {
     switch (connection->protocol_version)
     {
@@ -582,7 +582,7 @@ struct BoltValue* BoltConnection_record_field(struct BoltConnection * connection
                         case BOLT_LIST:
                         {
                             struct BoltValue * values = BoltList_value(state->data, 0);
-                            return BoltList_value(values, field);
+                            return values;
                         }
                         default:
                             return NULL;
@@ -593,35 +593,6 @@ struct BoltValue* BoltConnection_record_field(struct BoltConnection * connection
         }
         default:
             return NULL;
-    }
-}
-
-int32_t BoltConnection_record_size(struct BoltConnection * connection)
-{
-    switch (connection->protocol_version)
-    {
-        case 1:
-        {
-            struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
-            switch (state->data_type)
-            {
-                case BOLT_V1_RECORD:
-                    switch (BoltValue_type(state->data))
-                    {
-                        case BOLT_LIST:
-                        {
-                            struct BoltValue * values = BoltList_value(state->data, 0);
-                            return values->size;
-                        }
-                        default:
-                            return -1;
-                    }
-                default:
-                    return -1;
-            }
-        }
-        default:
-            return -1;
     }
 }
 
@@ -847,35 +818,13 @@ bolt_request_t BoltConnection_last_request(struct BoltConnection * connection)
     }
 }
 
-int32_t BoltConnection_result_n_fields(struct BoltConnection * connection)
+const struct BoltValue * BoltConnection_metadata_fields(struct BoltConnection * connection)
 {
     switch (connection->protocol_version)
     {
         case 1:
-            return BoltProtocolV1_n_result_fields(connection);
-        default:
-            return -1;
-    }
-}
-
-const char * BoltConnection_result_field_name(struct BoltConnection * connection, int32_t index)
-{
-    switch (connection->protocol_version)
-    {
-        case 1:
-            return BoltProtocolV1_result_field_name(connection, index);
+            return BoltProtocolV1_result_fields(connection);
         default:
             return NULL;
-    }
-}
-
-int32_t BoltConnection_result_field_name_size(struct BoltConnection * connection, int32_t index)
-{
-    switch (connection->protocol_version)
-    {
-        case 1:
-            return BoltProtocolV1_result_field_name_size(connection, index);
-        default:
-            return -1;
     }
 }

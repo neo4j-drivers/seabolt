@@ -149,11 +149,6 @@ int BoltProtocolV1_load_run_request(struct BoltConnection * connection);
 
 int BoltProtocolV1_load_pull_request(struct BoltConnection * connection, int32_t n);
 
-int32_t BoltProtocolV1_n_result_fields(struct BoltConnection * connection);
-
-const char * BoltProtocolV1_result_field_name(struct BoltConnection * connection, int32_t index);
-
-int32_t BoltProtocolV1_result_field_name_size(struct BoltConnection * connection, int32_t index);
-
+struct BoltValue * BoltProtocolV1_result_fields(struct BoltConnection * connection);
 
 #endif // SEABOLT_PROTOCOL_V1

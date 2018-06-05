@@ -1165,66 +1165,14 @@ int BoltProtocolV1_load_pull_request(struct BoltConnection * connection, int32_t
     }
 }
 
-int32_t BoltProtocolV1_n_result_fields(struct BoltConnection * connection)
+struct BoltValue * BoltProtocolV1_result_fields(struct BoltConnection * connection)
 {
     struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
     switch (BoltValue_type(state->result_field_names))
     {
         case BOLT_LIST:
-            return state->result_field_names->size;
-        default:
-            return -1;
-    }
-}
-
-const char * BoltProtocolV1_result_field_name(struct BoltConnection * connection, int32_t index)
-{
-    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
-    switch (BoltValue_type(state->result_field_names))
-    {
-        case BOLT_LIST:
-            if (index >= 0 && index < state->result_field_names->size)
-            {
-                struct BoltValue * value = BoltList_value(state->result_field_names, index);
-                switch (BoltValue_type(value))
-                {
-                    case BOLT_STRING:
-                        return BoltString_get(value);
-                    default:
-                        return NULL;
-                }
-            }
-            else
-            {
-                return NULL;
-            }
+            return state->result_field_names;
         default:
             return NULL;
-    }
-}
-
-int32_t BoltProtocolV1_result_field_name_size(struct BoltConnection * connection, int32_t index)
-{
-    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
-    switch (BoltValue_type(state->result_field_names))
-    {
-        case BOLT_LIST:
-            if (index >= 0 && index < state->result_field_names->size)
-            {
-                struct BoltValue * value = BoltList_value(state->result_field_names, index);
-                switch (BoltValue_type(value))
-                {
-                    case BOLT_STRING:
-                        return value->size;
-                    default:
-                        return -1;
-                }
-            }
-            else
-            {
-                return -1;
-            }
-        default:
-            return -1;
     }
 }
