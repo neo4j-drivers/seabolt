@@ -72,6 +72,8 @@ struct BoltProtocolV1State
     char * server;
     /// A BoltValue containing field names for the active result
     struct BoltValue * result_field_names;
+    /// A BoltValue containing error code and message
+    struct BoltValue * failure_data;
     /// The last bookmark received from the server
     char * last_bookmark;
 
@@ -83,6 +85,8 @@ struct BoltProtocolV1State
     struct _run_request begin;
     struct _run_request commit;
     struct _run_request rollback;
+
+    struct BoltMessage * ackfailure_request;
     struct BoltMessage * discard_request;
     struct BoltMessage * pull_request;
     struct BoltMessage * reset_request;
@@ -126,6 +130,8 @@ int BoltProtocolV1_init(struct BoltConnection * connection, const struct BoltUse
 
 int BoltProtocolV1_reset(struct BoltConnection * connection);
 
+void BoltProtocolV1_clear_failure(struct BoltConnection * connection);
+
 void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct BoltValue * summary);
 
 int BoltProtocolV1_set_cypher_template(struct BoltConnection * connection, const char * statement, size_t size);
@@ -149,11 +155,8 @@ int BoltProtocolV1_load_run_request(struct BoltConnection * connection);
 
 int BoltProtocolV1_load_pull_request(struct BoltConnection * connection, int32_t n);
 
-int32_t BoltProtocolV1_n_result_fields(struct BoltConnection * connection);
+int BoltProtocolV1_load_ack_failure(struct BoltConnection * connection);
 
-const char * BoltProtocolV1_result_field_name(struct BoltConnection * connection, int32_t index);
-
-int32_t BoltProtocolV1_result_field_name_size(struct BoltConnection * connection, int32_t index);
-
+struct BoltValue * BoltProtocolV1_result_fields(struct BoltConnection * connection);
 
 #endif // SEABOLT_PROTOCOL_V1

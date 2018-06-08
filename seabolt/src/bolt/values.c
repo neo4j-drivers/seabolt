@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <memory.h>
+#include <string.h>
 
 #include "bolt/mem.h"
 #include "bolt/values.h"
@@ -322,6 +323,27 @@ char * BoltString_get(struct BoltValue * value)
            value->data.as_char : value->data.extended.as_char;
 }
 
+int BoltString_equals(struct BoltValue * value, const char * data)
+{
+    if (BoltValue_type(value) == BOLT_STRING)
+    {
+        const int32_t length = strlen(data);
+        if (value->size != length)
+        {
+            return 0;
+        }
+
+        const char * value_data = BoltString_get(value);
+        if (strncmp(value_data, data, length) == 0)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
 
 void BoltValue_format_as_Dictionary(struct BoltValue * value, int32_t length)
 {
@@ -363,6 +385,24 @@ int32_t BoltDictionary_get_key_size(struct BoltValue * value, int32_t index)
     return key_value->size;
 }
 
+int32_t BoltDictionary_get_key_index(struct BoltValue * value, const char * key, size_t key_size, int32_t start_index)
+{
+    assert(BoltValue_type(value) == BOLT_DICTIONARY);
+    if (start_index >= value->size) return -1;
+    for (int32_t i = start_index; i < value->size; i++)
+    {
+        struct BoltValue * key_value = &value->data.extended.as_value[2 * i];
+        if (key_value->size == key_size)
+        {
+            if (strncmp(BoltString_get(key_value), key, key_size) == 0)
+            {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
 int BoltDictionary_set_key(struct BoltValue * value, int32_t index, const char * key, size_t key_size)
 {
     if (key_size <= INT32_MAX)
@@ -381,6 +421,17 @@ struct BoltValue* BoltDictionary_value(struct BoltValue * value, int32_t index)
 {
     assert(BoltValue_type(value) == BOLT_DICTIONARY);
     return &value->data.extended.as_value[2 * index + 1];
+}
+
+struct BoltValue * BoltDictionary_value_by_key(struct BoltValue * value, const char * key, size_t key_size)
+{
+    const int32_t index = BoltDictionary_get_key_index(value, key, key_size, 0);
+    if (index < 0)
+    {
+        return NULL;
+    }
+
+    return BoltDictionary_value(value, index);
 }
 
 

@@ -199,7 +199,7 @@ PUBLIC void BoltValue_format_as_String(struct BoltValue * value, const char * da
 
 PUBLIC char* BoltString_get(struct BoltValue * value);
 
-
+PUBLIC int BoltString_equals(struct BoltValue * value, const char * data);
 
 PUBLIC void BoltValue_format_as_Dictionary(struct BoltValue * value, int32_t length);
 
@@ -209,10 +209,13 @@ PUBLIC const char * BoltDictionary_get_key(struct BoltValue * value, int32_t ind
 
 PUBLIC int32_t BoltDictionary_get_key_size(struct BoltValue * value, int32_t index);
 
+PUBLIC int32_t BoltDictionary_get_key_index(struct BoltValue * value, const char * key, size_t key_size, int32_t start_index);
+
 PUBLIC int BoltDictionary_set_key(struct BoltValue * value, int32_t index, const char * key, size_t key_size);
 
 PUBLIC struct BoltValue * BoltDictionary_value(struct BoltValue * value, int32_t index);
 
+PUBLIC struct BoltValue * BoltDictionary_value_by_key(struct BoltValue * value, const char * key, size_t key_size);
 
 
 /**

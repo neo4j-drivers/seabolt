@@ -112,6 +112,7 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
     state->server = BoltMem_allocate(MAX_SERVER_SIZE);
     memset(state->server, 0, MAX_SERVER_SIZE);
     state->result_field_names = BoltValue_create();
+    state->failure_data = NULL;
     state->last_bookmark = BoltMem_allocate(MAX_BOOKMARK_SIZE);
     memset(state->last_bookmark, 0, MAX_BOOKMARK_SIZE);
 
@@ -125,6 +126,8 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
     BoltValue_format_as_String(state->commit.statement, "COMMIT", 6);
     compile_RUN(&state->rollback, 0);
     BoltValue_format_as_String(state->rollback.statement, "ROLLBACK", 8);
+
+    state->ackfailure_request = BoltMessage_create(ACK_FAILURE, 0);
 
     state->discard_request = BoltMessage_create(DISCARD_ALL, 0);
 
@@ -149,12 +152,17 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state)
     BoltMessage_destroy(state->commit.request);
     BoltMessage_destroy(state->rollback.request);
 
+    BoltMessage_destroy(state->ackfailure_request);
     BoltMessage_destroy(state->discard_request);
     BoltMessage_destroy(state->pull_request);
 
     BoltMessage_destroy(state->reset_request);
 
     BoltMem_deallocate(state->server, MAX_SERVER_SIZE);
+    if (state->failure_data != NULL)
+    {
+        BoltValue_destroy(state->failure_data);
+    }
     BoltValue_destroy(state->result_field_names);
     BoltMem_deallocate(state->last_bookmark, MAX_BOOKMARK_SIZE);
 
@@ -813,6 +821,26 @@ int unload(struct BoltConnection * connection, struct BoltValue * value)
     }
 }
 
+void ensure_failure_data(struct BoltProtocolV1State * state)
+{
+    if (state->failure_data == NULL)
+    {
+        state->failure_data = BoltValue_create();
+        BoltValue_format_as_Dictionary(state->failure_data, 2);
+        BoltDictionary_set_key(state->failure_data, 0, "code", strlen("code"));
+        BoltDictionary_set_key(state->failure_data, 1, "message", strlen("message"));
+    }
+}
+
+void clear_failure_data(struct BoltProtocolV1State * state)
+{
+    if (state->failure_data != NULL)
+    {
+        BoltValue_destroy(state->failure_data);
+        state->failure_data = NULL;
+    }
+}
+
 int BoltProtocolV1_fetch(struct BoltConnection * connection, bolt_request_t request_id)
 {
     struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
@@ -850,13 +878,19 @@ int BoltProtocolV1_fetch(struct BoltConnection * connection, bolt_request_t requ
         if (state->data_type != BOLT_V1_RECORD)
         {
             state->response_counter += 1;
+
+            if (state->data->size >= 1)
+            {
+                BoltProtocolV1_extract_metadata(connection, BoltList_value(state->data, 0));
+            }
         }
     } while (response_id != request_id);
-    if (state->data_type != BOLT_V1_RECORD && state->data->size >= 1)
+
+    if (state->data_type != BOLT_V1_RECORD)
     {
-        BoltProtocolV1_extract_metadata(connection, BoltList_value(state->data, 0));
         return 0;
     }
+
     return 1;
 }
 
@@ -979,6 +1013,12 @@ int BoltProtocolV1_reset(struct BoltConnection * connection)
     return state->data_type;
 }
 
+void BoltProtocolV1_clear_failure(struct BoltConnection * connection)
+{
+    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
+    clear_failure_data(state);
+}
+
 void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct BoltValue * metadata)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
@@ -988,8 +1028,9 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct 
         {
             for (int32_t i = 0; i < metadata->size; i++)
             {
-                const char * key = BoltDictionary_get_key(metadata, i);
-                if (strcmp(key, "bookmark") == 0)
+                struct BoltValue * key = BoltDictionary_key(metadata, i);
+
+                if (BoltString_equals(key, "bookmark"))
                 {
                     struct BoltValue * value = BoltDictionary_value(metadata, i);
                     switch (BoltValue_type(value))
@@ -1005,7 +1046,7 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct 
                             break;
                     }
                 }
-                else if (strcmp(key, "fields") == 0)
+                else if (BoltString_equals(key, "fields"))
                 {
                     struct BoltValue * value = BoltDictionary_value(metadata, i);
                     switch (BoltValue_type(value))
@@ -1034,7 +1075,7 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct 
                             break;
                     }
                 }
-                else if (strcmp(key, "server") == 0)
+                else if (BoltString_equals(key, "server"))
                 {
                     struct BoltValue * value = BoltDictionary_value(metadata, i);
                     switch (BoltValue_type(value))
@@ -1048,6 +1089,42 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct 
                         }
                         default:
                             break;
+                    }
+                }
+                else if (BoltString_equals(key, "code") && state->data_type == BOLT_V1_FAILURE)
+                {
+                    struct BoltValue * value = BoltDictionary_value(metadata, i);
+                    switch (BoltValue_type(value))
+                    {
+                    case BOLT_STRING:
+                    {
+                        ensure_failure_data(state);
+
+                        struct BoltValue * target_value = BoltDictionary_value(state->failure_data, 0);
+                        BoltValue_format_as_String(target_value, BoltString_get(value), value->size);
+                        BoltLog_value(target_value, 1, "bolt: <FAILURE code=\"", "\">");
+                        break;
+                    }
+                    default:
+                        break;
+                    }
+                }
+                else if (BoltString_equals(key, "message") && state->data_type == BOLT_V1_FAILURE)
+                {
+                    struct BoltValue * value = BoltDictionary_value(metadata, i);
+                    switch (BoltValue_type(value))
+                    {
+                    case BOLT_STRING:
+                    {
+                        ensure_failure_data(state);
+
+                        struct BoltValue * target_value = BoltDictionary_value(state->failure_data, 1);
+                        BoltValue_format_as_String(target_value, BoltString_get(value), value->size);
+                        BoltLog_value(target_value, 1, "bolt: <FAILURE message=\"", "\">");
+                        break;
+                    }
+                    default:
+                        break;
                     }
                 }
             }
@@ -1165,66 +1242,21 @@ int BoltProtocolV1_load_pull_request(struct BoltConnection * connection, int32_t
     }
 }
 
-int32_t BoltProtocolV1_n_result_fields(struct BoltConnection * connection)
-{
+int BoltProtocolV1_load_ack_failure(struct BoltConnection* connection)
+{    
     struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
-    switch (BoltValue_type(state->result_field_names))
-    {
-        case BOLT_LIST:
-            return state->result_field_names->size;
-        default:
-            return -1;
-    }
+    BoltProtocolV1_load_message(connection, state->ackfailure_request);
+    return 0;
 }
 
-const char * BoltProtocolV1_result_field_name(struct BoltConnection * connection, int32_t index)
+struct BoltValue * BoltProtocolV1_result_fields(struct BoltConnection * connection)
 {
     struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
     switch (BoltValue_type(state->result_field_names))
     {
         case BOLT_LIST:
-            if (index >= 0 && index < state->result_field_names->size)
-            {
-                struct BoltValue * value = BoltList_value(state->result_field_names, index);
-                switch (BoltValue_type(value))
-                {
-                    case BOLT_STRING:
-                        return BoltString_get(value);
-                    default:
-                        return NULL;
-                }
-            }
-            else
-            {
-                return NULL;
-            }
+            return state->result_field_names;
         default:
             return NULL;
-    }
-}
-
-int32_t BoltProtocolV1_result_field_name_size(struct BoltConnection * connection, int32_t index)
-{
-    struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
-    switch (BoltValue_type(state->result_field_names))
-    {
-        case BOLT_LIST:
-            if (index >= 0 && index < state->result_field_names->size)
-            {
-                struct BoltValue * value = BoltList_value(state->result_field_names, index);
-                switch (BoltValue_type(value))
-                {
-                    case BOLT_STRING:
-                        return value->size;
-                    default:
-                        return -1;
-                }
-            }
-            else
-            {
-                return -1;
-            }
-        default:
-            return -1;
     }
 }

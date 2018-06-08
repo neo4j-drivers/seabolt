@@ -76,6 +76,7 @@ enum BoltConnectionError
     BOLT_TLS_ERROR,             // general catch-all for OpenSSL errors :/
     BOLT_PROTOCOL_VIOLATION,
     BOLT_END_OF_TRANSMISSION,
+    BOLT_SERVER_FAILURE,
 };
 
 /**
@@ -288,30 +289,6 @@ PUBLIC int BoltConnection_fetch(struct BoltConnection * connection, bolt_request
 PUBLIC int BoltConnection_fetch_summary(struct BoltConnection * connection, bolt_request_t request);
 
 /**
- * Obtain a value from the current record.
- *
- * @param connection
- * @param field
- * @return pointer to a `BoltValue` data structure formatted as a BOLT_LIST
- */
-PUBLIC struct BoltValue * BoltConnection_record_field(struct BoltConnection * connection, int32_t field);
-
-/**
- *
- *
- * @param connection
- * @return
- */
-PUBLIC int32_t BoltConnection_record_size(struct BoltConnection * connection);
-
-/**
- *
- * @param connection
- * @return
- */
-PUBLIC int BoltConnection_summary_success(struct BoltConnection * connection);
-
-/**
  * Set the next Cypher statement template to be run on this connection.
  *
  * @param connection
@@ -334,6 +311,9 @@ PUBLIC int BoltConnection_cypher(struct BoltConnection * connection, const char 
  */
 PUBLIC struct BoltValue * BoltConnection_cypher_parameter(struct BoltConnection * connection, int32_t index,
                                                           const char * key, size_t key_size);
+
+
+PUBLIC int BoltConnection_ack_failure(struct BoltConnection * connection);
 
 /**
  * Load a bookmark to be used when beginning the next transaction.
@@ -404,30 +384,36 @@ PUBLIC int BoltConnection_load_pull_request(struct BoltConnection * connection, 
 PUBLIC bolt_request_t BoltConnection_last_request(struct BoltConnection * connection);
 
 /**
+* Obtain a value from the current record.
+*
+* @param connection
+* @param field
+* @return pointer to a `BoltValue` data structure formatted as a BOLT_LIST
+*/
+PUBLIC struct BoltValue * BoltConnection_record_fields(struct BoltConnection * connection);
+
+/**
+*
+* @param connection
+* @return
+*/
+PUBLIC int BoltConnection_summary_success(struct BoltConnection * connection);
+
+/**
+ * Obtain the details of the latest server generated FAILURE message
+ *
+ * @param connection
+ * @return
+ */
+PUBLIC struct BoltValue * BoltConnection_failure(struct BoltConnection * connection);
+
+/**
  * Return the number of fields available in the current result.
  *
  * @param connection
  * @return
  */
-PUBLIC int32_t BoltConnection_result_n_fields(struct BoltConnection * connection);
-
-/**
- * Return the name of a specific field in the current result.
- *
- * @param connection
- * @param index
- * @return
- */
-PUBLIC const char * BoltConnection_result_field_name(struct BoltConnection * connection, int32_t index);
-
-/**
- * Return the size of the name of a specific field in the current result.
- *
- * @param connection
- * @param index
- * @return
- */
-PUBLIC int32_t BoltConnection_result_field_name_size(struct BoltConnection * connection, int32_t index);
+PUBLIC struct BoltValue * BoltConnection_metadata_fields(struct BoltConnection * connection);
 
 
 #endif // SEABOLT_CONNECT

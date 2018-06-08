@@ -26,6 +26,7 @@
 
 #include "protocol/v1.h"
 #include "bolt/platform.h"
+#include <assert.h>
 
 
 #define INITIAL_TX_BUFFER_SIZE 8192
@@ -518,7 +519,7 @@ int BoltConnection_fetch(struct BoltConnection * connection, bolt_request_t requ
     {
         case 1:
         {
-            int fetched = BoltProtocolV1_fetch(connection, request);
+            const int fetched = BoltProtocolV1_fetch(connection, request);
             if (fetched == 0)
             {
                 // Summary received
@@ -529,10 +530,16 @@ int BoltConnection_fetch(struct BoltConnection * connection, bolt_request_t requ
                         _set_status(connection, BOLT_READY, BOLT_NO_ERROR);
                         return 0;
                     case BOLT_V1_IGNORED:
-                        // Leave status as-is
+                        // we may need to update status based on an earlier reported FAILURE
+                        // which our consumer did not care its result
+                        if (state->failure_data != NULL)
+                        {
+                            _set_status(connection, BOLT_FAILED, BOLT_SERVER_FAILURE);
+                        }
+
                         return 0;
                     case BOLT_V1_FAILURE:
-                        _set_status(connection, BOLT_FAILED, BOLT_UNKNOWN_ERROR);   // TODO more specific error
+                        _set_status(connection, BOLT_FAILED, BOLT_SERVER_FAILURE);
                         return 0;
                     default:
                         BoltLog_error("bolt: Protocol violation (received summary code %d)", state->data_type);
@@ -567,7 +574,7 @@ int BoltConnection_fetch_summary(struct BoltConnection * connection, bolt_reques
     return records;
 }
 
-struct BoltValue* BoltConnection_record_field(struct BoltConnection * connection, int32_t field)
+struct BoltValue* BoltConnection_record_fields(struct BoltConnection * connection)
 {
     switch (connection->protocol_version)
     {
@@ -582,7 +589,7 @@ struct BoltValue* BoltConnection_record_field(struct BoltConnection * connection
                         case BOLT_LIST:
                         {
                             struct BoltValue * values = BoltList_value(state->data, 0);
-                            return BoltList_value(values, field);
+                            return values;
                         }
                         default:
                             return NULL;
@@ -593,35 +600,6 @@ struct BoltValue* BoltConnection_record_field(struct BoltConnection * connection
         }
         default:
             return NULL;
-    }
-}
-
-int32_t BoltConnection_record_size(struct BoltConnection * connection)
-{
-    switch (connection->protocol_version)
-    {
-        case 1:
-        {
-            struct BoltProtocolV1State * state = BoltProtocolV1_state(connection);
-            switch (state->data_type)
-            {
-                case BOLT_V1_RECORD:
-                    switch (BoltValue_type(state->data))
-                    {
-                        case BOLT_LIST:
-                        {
-                            struct BoltValue * values = BoltList_value(state->data, 0);
-                            return values->size;
-                        }
-                        default:
-                            return -1;
-                    }
-                default:
-                    return -1;
-            }
-        }
-        default:
-            return -1;
     }
 }
 
@@ -740,6 +718,37 @@ struct BoltValue * BoltConnection_cypher_parameter(struct BoltConnection * conne
     }
 }
 
+int BoltConnection_ack_failure(struct BoltConnection* connection)
+{
+    assert(BoltConnection_failure(connection) != NULL);
+
+    switch (connection->protocol_version)
+    {
+    case 1:
+        BoltProtocolV1_load_ack_failure(connection);
+        BoltProtocolV1_clear_failure(connection);
+        break;
+    default:
+        return -1;
+    }
+
+    const bolt_request_t ack_failure = BoltConnection_last_request(connection);
+    TRY(BoltConnection_send(connection));
+    const int status = BoltConnection_fetch_summary(connection, ack_failure);
+    if (status < 0)
+    {
+        return -1;
+    }
+
+    if (!BoltConnection_summary_success(connection))
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+
 int BoltConnection_load_bookmark(struct BoltConnection * connection, const char * bookmark)
 {
     switch (connection->protocol_version)
@@ -847,35 +856,32 @@ bolt_request_t BoltConnection_last_request(struct BoltConnection * connection)
     }
 }
 
-int32_t BoltConnection_result_n_fields(struct BoltConnection * connection)
+struct BoltValue * BoltConnection_metadata_fields(struct BoltConnection * connection)
 {
     switch (connection->protocol_version)
     {
         case 1:
-            return BoltProtocolV1_n_result_fields(connection);
-        default:
-            return -1;
-    }
-}
-
-const char * BoltConnection_result_field_name(struct BoltConnection * connection, int32_t index)
-{
-    switch (connection->protocol_version)
-    {
-        case 1:
-            return BoltProtocolV1_result_field_name(connection, index);
+            return BoltProtocolV1_result_fields(connection);
         default:
             return NULL;
     }
 }
 
-int32_t BoltConnection_result_field_name_size(struct BoltConnection * connection, int32_t index)
+struct BoltValue * BoltConnection_failure(struct BoltConnection * connection)
 {
     switch (connection->protocol_version)
     {
-        case 1:
-            return BoltProtocolV1_result_field_name_size(connection, index);
-        default:
-            return -1;
+    case 1:
+    {
+        struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+        if (state == NULL)
+        {
+            return NULL;
+        }
+
+        return state->failure_data;
+    }
+    default:
+        return NULL;
     }
 }

@@ -282,16 +282,19 @@ SCENARIO("Test field names returned from Cypher execution", "[integration][ipv6]
             BoltConnection_send(connection);
             bolt_request_t last = BoltConnection_last_request(connection);
             BoltConnection_fetch_summary(connection, run);
-            int n_fields = BoltConnection_result_n_fields(connection);
-            REQUIRE(n_fields == 3);
-            const char * field_name = BoltConnection_result_field_name(connection, 0);
-            int field_name_size = BoltConnection_result_field_name_size(connection, 0);
+            const struct BoltValue * fields = BoltConnection_metadata_fields(connection);
+            REQUIRE(fields->size == 3);
+            struct BoltValue * field_name_value = BoltList_value(fields, 0);
+            const char * field_name =  BoltString_get(field_name_value);
+            int field_name_size = field_name_value->size;
             REQUIRE(strncmp(field_name, "first", field_name_size) == 0);
-            field_name = BoltConnection_result_field_name(connection, 1);
-            field_name_size = BoltConnection_result_field_name_size(connection, 1);
+            field_name_value = BoltList_value(fields, 1);
+            field_name = BoltString_get(field_name_value);
+            field_name_size = field_name_value->size;
             REQUIRE(strncmp(field_name, "second", field_name_size) == 0);
-            field_name = BoltConnection_result_field_name(connection, 2);
-            field_name_size = BoltConnection_result_field_name_size(connection, 2);
+            field_name_value = BoltList_value(fields, 2);
+            field_name = BoltString_get(field_name_value);
+            field_name_size = field_name_value->size;
             REQUIRE(strncmp(field_name, "third", field_name_size) == 0);
             REQUIRE(field_name_size == 5);
             BoltConnection_fetch_summary(connection, last);
@@ -321,7 +324,8 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
             REQUIRE(BoltConnection_summary_success(connection) == 1);
             while (BoltConnection_fetch(connection, pull))
             {
-                struct BoltValue * value = BoltConnection_record_field(connection, 0);
+                const struct BoltValue * field_values = BoltConnection_record_fields(connection);
+                struct BoltValue * value = BoltList_value(field_values, 0);
                 REQUIRE(BoltValue_type(value) == BOLT_INTEGER);
                 REQUIRE(BoltInteger_get(value) == 42);
                 records += 1;
@@ -392,7 +396,8 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
 
             while (BoltConnection_fetch(connection, pull))
             {
-                BoltValue * value = BoltConnection_record_field(connection, 0);
+                const struct BoltValue * field_values = BoltConnection_record_fields(connection);
+                struct BoltValue * value = BoltList_value(field_values, 0);
                 REQUIRE(BoltValue_type(value) == BOLT_INTEGER);
                 REQUIRE(BoltInteger_get(value) == 1);
                 records += 1;
@@ -405,6 +410,111 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
             REQUIRE(BoltConnection_summary_success(connection) == 1);
 
         }
+        BoltConnection_close(connection);
+    }
+}
+
+SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
+{
+    GIVEN("an open and initialised connection")
+    {
+        auto connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &BOLT_PROFILE);
+        WHEN("an invalid cypher statement is sent")
+        {
+            const auto cypher = "some invalid statement";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 0);
+            BoltConnection_load_run_request(connection);
+            const auto run = BoltConnection_last_request(connection);
+            BoltConnection_load_pull_request(connection, -1);
+            const auto pull = BoltConnection_last_request(connection);
+
+            BoltConnection_send(connection);
+            THEN("connector should be in FAILED state")
+            {
+                const auto records = BoltConnection_fetch_summary(connection, run);
+                REQUIRE(records == 0);
+                REQUIRE(BoltConnection_summary_success(connection) == 0);
+                REQUIRE(connection->status == BOLT_FAILED);
+                REQUIRE(connection->error == BOLT_SERVER_FAILURE);
+
+                auto failure_data = BoltConnection_failure(connection);
+                REQUIRE(failure_data != NULL);
+
+                struct BoltValue * code = BoltDictionary_value_by_key(failure_data, "code", strlen("code"));
+                struct BoltValue * message = BoltDictionary_value_by_key(failure_data, "message", strlen("message"));
+                REQUIRE(code != NULL);
+                REQUIRE(BoltValue_type(code) == BOLT_STRING);
+                REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError"));
+                REQUIRE(message != NULL);
+                REQUIRE(BoltValue_type(message) == BOLT_STRING);
+            }
+
+            THEN("already sent requests should be IGNORED after FAILURE")
+            {
+                const auto records = BoltConnection_fetch_summary(connection, pull);
+
+                REQUIRE(records == 0);
+                REQUIRE(BoltConnection_summary_success(connection) == 0);
+                REQUIRE(connection->status == BOLT_FAILED);
+                REQUIRE(connection->error == BOLT_SERVER_FAILURE);
+
+                struct BoltValue * failure_data = BoltConnection_failure(connection);
+                REQUIRE(failure_data != NULL);
+
+                struct BoltValue * code = BoltDictionary_value_by_key(failure_data, "code", strlen("code"));
+                struct BoltValue * message = BoltDictionary_value_by_key(failure_data, "message", strlen("message"));
+                REQUIRE(code != NULL);
+                REQUIRE(BoltValue_type(code) == BOLT_STRING);
+                REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError"));
+                REQUIRE(message != NULL);
+                REQUIRE(BoltValue_type(message) == BOLT_STRING);
+            }
+
+            THEN("upcoming requests should be IGNORED after FAILURE")
+            {
+                const auto cypher1 = "RETURN 1";
+                BoltConnection_cypher(connection, cypher1, strlen(cypher1), 0);
+                BoltConnection_load_run_request(connection);
+                const auto run1 = BoltConnection_last_request(connection);
+
+                BoltConnection_send(connection);
+
+                const auto records = BoltConnection_fetch_summary(connection, run1);
+                REQUIRE(records == 0);
+                REQUIRE(BoltConnection_summary_success(connection) == 0);
+                REQUIRE(connection->status == BOLT_FAILED);
+                REQUIRE(connection->error == BOLT_SERVER_FAILURE);
+
+                auto failure_data = BoltConnection_failure(connection);
+                REQUIRE(failure_data != NULL);
+
+                struct BoltValue * code = BoltDictionary_value_by_key(failure_data, "code", strlen("code"));
+                struct BoltValue * message = BoltDictionary_value_by_key(failure_data, "message", strlen("message"));
+                REQUIRE(code != NULL);
+                REQUIRE(BoltValue_type(code) == BOLT_STRING);
+                REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError"));
+                REQUIRE(message != NULL);
+                REQUIRE(BoltValue_type(message) == BOLT_STRING);
+            }
+
+            THEN("ack_failure should clear failure state")
+            {
+                const auto records = BoltConnection_fetch_summary(connection, run);
+                REQUIRE(records == 0);
+                REQUIRE(BoltConnection_summary_success(connection) == 0);
+                REQUIRE(connection->status == BOLT_FAILED);
+                REQUIRE(connection->error == BOLT_SERVER_FAILURE);
+
+                auto status = BoltConnection_ack_failure(connection);
+
+                REQUIRE(status == 0);
+                REQUIRE(BoltConnection_summary_success(connection) == 1);
+                REQUIRE(connection->status == BOLT_READY);
+                REQUIRE(connection->error == BOLT_NO_ERROR);
+                REQUIRE(BoltConnection_failure(connection) == NULL);
+            }
+        }
+
         BoltConnection_close(connection);
     }
 }

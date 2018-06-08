@@ -315,26 +315,24 @@ int app_run(struct Application * app, const char * cypher)
     BoltConnection_fetch_summary(app->connection, run);
     if (app->with_header)
     {
-        struct BoltValue * name = BoltValue_create();
-        for (int i = 0; i < BoltConnection_result_n_fields(app->connection); i++)
+        const struct BoltValue * fields = BoltConnection_metadata_fields(app->connection);
+        for (int i = 0; i < fields->size; i++)
         {
             if (i > 0)
             {
                 putc('\t', stdout);
             }
-            BoltValue_format_as_String(name, BoltConnection_result_field_name(app->connection, i),
-                                       BoltConnection_result_field_name_size(app->connection, i));
-            BoltValue_write(name, stdout, app->connection->protocol_version);
+            BoltValue_write(BoltList_value(fields, i), stdout, app->connection->protocol_version);
         }
         putc('\n', stdout);
-        BoltValue_destroy(name);
     }
 
     while (BoltConnection_fetch(app->connection, pull))
     {
-        for (int i = 0; i < BoltConnection_record_size(app->connection); i++)
+        const struct BoltValue * field_values = BoltConnection_record_fields(app->connection);
+        for (int i = 0; i < field_values->size; i++)
         {
-            struct BoltValue * value = BoltConnection_record_field(app->connection, i);
+            struct BoltValue * value = BoltList_value(field_values, i);
             if (i > 0)
             {
                 putc('\t', stdout);
