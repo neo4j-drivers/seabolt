@@ -10,6 +10,7 @@
 *.sln
 *.dir
 Win32
+vs
 
 # Vi - Backups
 *.*~
