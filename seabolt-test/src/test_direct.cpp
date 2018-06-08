@@ -413,3 +413,108 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
         BoltConnection_close(connection);
     }
 }
+
+SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
+{
+    GIVEN("an open and initialised connection")
+    {
+        auto connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &BOLT_PROFILE);
+        WHEN("an invalid cypher statement is sent")
+        {
+            const auto cypher = "some invalid statement";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 0);
+            BoltConnection_load_run_request(connection);
+            const auto run = BoltConnection_last_request(connection);
+            BoltConnection_load_pull_request(connection, -1);
+            const auto pull = BoltConnection_last_request(connection);
+
+            BoltConnection_send(connection);
+            THEN("connector should be in FAILED state")
+            {
+                const auto records = BoltConnection_fetch_summary(connection, run);
+                REQUIRE(records == 0);
+                REQUIRE(BoltConnection_summary_success(connection) == 0);
+                REQUIRE(connection->status == BOLT_FAILED);
+                REQUIRE(connection->error == BOLT_SERVER_FAILURE);
+
+                auto failure_data = BoltConnection_failure(connection);
+                REQUIRE(failure_data != NULL);
+
+                struct BoltValue * code = BoltDictionary_value_by_key(failure_data, "code", strlen("code"));
+                struct BoltValue * message = BoltDictionary_value_by_key(failure_data, "message", strlen("message"));
+                REQUIRE(code != NULL);
+                REQUIRE(BoltValue_type(code) == BOLT_STRING);
+                REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError"));
+                REQUIRE(message != NULL);
+                REQUIRE(BoltValue_type(message) == BOLT_STRING);
+            }
+
+            THEN("already sent requests should be IGNORED after FAILURE")
+            {
+                const auto records = BoltConnection_fetch_summary(connection, pull);
+
+                REQUIRE(records == 0);
+                REQUIRE(BoltConnection_summary_success(connection) == 0);
+                REQUIRE(connection->status == BOLT_FAILED);
+                REQUIRE(connection->error == BOLT_SERVER_FAILURE);
+
+                struct BoltValue * failure_data = BoltConnection_failure(connection);
+                REQUIRE(failure_data != NULL);
+
+                struct BoltValue * code = BoltDictionary_value_by_key(failure_data, "code", strlen("code"));
+                struct BoltValue * message = BoltDictionary_value_by_key(failure_data, "message", strlen("message"));
+                REQUIRE(code != NULL);
+                REQUIRE(BoltValue_type(code) == BOLT_STRING);
+                REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError"));
+                REQUIRE(message != NULL);
+                REQUIRE(BoltValue_type(message) == BOLT_STRING);
+            }
+
+            THEN("upcoming requests should be IGNORED after FAILURE")
+            {
+                const auto cypher1 = "RETURN 1";
+                BoltConnection_cypher(connection, cypher1, strlen(cypher1), 0);
+                BoltConnection_load_run_request(connection);
+                const auto run1 = BoltConnection_last_request(connection);
+
+                BoltConnection_send(connection);
+
+                const auto records = BoltConnection_fetch_summary(connection, run1);
+                REQUIRE(records == 0);
+                REQUIRE(BoltConnection_summary_success(connection) == 0);
+                REQUIRE(connection->status == BOLT_FAILED);
+                REQUIRE(connection->error == BOLT_SERVER_FAILURE);
+
+                auto failure_data = BoltConnection_failure(connection);
+                REQUIRE(failure_data != NULL);
+
+                struct BoltValue * code = BoltDictionary_value_by_key(failure_data, "code", strlen("code"));
+                struct BoltValue * message = BoltDictionary_value_by_key(failure_data, "message", strlen("message"));
+                REQUIRE(code != NULL);
+                REQUIRE(BoltValue_type(code) == BOLT_STRING);
+                REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError"));
+                REQUIRE(message != NULL);
+                REQUIRE(BoltValue_type(message) == BOLT_STRING);
+            }
+
+            THEN("ack_failure should clear failure state")
+            {
+                const auto records = BoltConnection_fetch_summary(connection, run);
+                REQUIRE(records == 0);
+                REQUIRE(BoltConnection_summary_success(connection) == 0);
+                REQUIRE(connection->status == BOLT_FAILED);
+                REQUIRE(connection->error == BOLT_SERVER_FAILURE);
+
+                auto status = BoltConnection_ack_failure(connection);
+
+                REQUIRE(status == 0);
+                REQUIRE(BoltConnection_summary_success(connection) == 1);
+                REQUIRE(connection->status == BOLT_READY);
+                REQUIRE(connection->error == BOLT_NO_ERROR);
+                REQUIRE(BoltConnection_failure(connection) == NULL);
+            }
+        }
+
+        BoltConnection_close(connection);
+    }
+}
