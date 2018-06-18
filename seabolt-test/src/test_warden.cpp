@@ -23,58 +23,49 @@
 #include "catch.hpp"
 
 extern "C" {
-    #include "bolt/mem.h"
+#include "bolt/mem.h"
 }
-
 
 SCENARIO("Test BoltMem_reverse_copy against memcpy")
 {
-    GIVEN("a block of memory")
-    {
+    GIVEN("a block of memory") {
         const char* data = "ABCD";
         size_t size = strlen(data);
-        WHEN("regular memcpy is used")
-        {
+        WHEN("regular memcpy is used") {
             char* digits = new char[size];
             memcpy(&digits[0], data, size);
-            THEN("the data should be copied in order")
-            {
-                REQUIRE(digits[0] == 'A');
-                REQUIRE(digits[1] == 'B');
-                REQUIRE(digits[2] == 'C');
-                REQUIRE(digits[3] == 'D');
+            THEN("the data should be copied in order") {
+                REQUIRE(digits[0]=='A');
+                REQUIRE(digits[1]=='B');
+                REQUIRE(digits[2]=='C');
+                REQUIRE(digits[3]=='D');
             }
-			delete[] digits;
+            delete[] digits;
         }
-        WHEN("reverse memcpy is used")
-        {
+        WHEN("reverse memcpy is used") {
             char* digits = new char[size];
             BoltMem_reverse_copy(&digits[0], data, size);
-            THEN("the data should be copied in reverse order")
-            {
-                REQUIRE(digits[0] == 'D');
-                REQUIRE(digits[1] == 'C');
-                REQUIRE(digits[2] == 'B');
-                REQUIRE(digits[3] == 'A');
+            THEN("the data should be copied in reverse order") {
+                REQUIRE(digits[0]=='D');
+                REQUIRE(digits[1]=='C');
+                REQUIRE(digits[2]=='B');
+                REQUIRE(digits[3]=='A');
             }
-			delete[] digits;
+            delete[] digits;
         }
     }
 }
 
 SCENARIO("Test memcpy_be macro")
 {
-    GIVEN("a byte pair")
-    {
+    GIVEN("a byte pair") {
         const char* sh_digits = "\xAB\xCD";
-        WHEN("the data is copied into an unsigned 16-bit integer in big-endian order")
-        {
+        WHEN("the data is copied into an unsigned 16-bit integer in big-endian order") {
             uint16_t sh;
             uint16_t* sh_p = &sh;
             memcpy_be(sh_p, &sh_digits[0], 2);
-            THEN("the first byte should be most significant and the second byte least significant")
-            {
-                REQUIRE(sh == 0xABCD);
+            THEN("the first byte should be most significant and the second byte least significant") {
+                REQUIRE(sh==0xABCD);
             }
         }
     }

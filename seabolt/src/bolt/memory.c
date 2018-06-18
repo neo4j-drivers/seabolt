@@ -25,29 +25,25 @@
 #include "bolt/logging.h"
 #include "bolt/mem.h"
 
-
-void* BoltMem_reverse_copy(void * dest, const void * src, size_t n)
+void* BoltMem_reverse_copy(void* dest, const void* src, size_t n)
 {
-    char* dest_c = (char*)(dest);
-    const char* src_c = (const char*)(src);
-    for (size_t i = 0; i < n; i++)
-    {
-        dest_c[i] = src_c[n - i - 1];
+    char* dest_c = (char*) (dest);
+    const char* src_c = (const char*) (src);
+    for (size_t i = 0; i<n; i++) {
+        dest_c[i] = src_c[n-i-1];
     }
     return dest;
 }
-
 
 static size_t __allocation = 0;
 static size_t __peak_allocation = 0;
 static long long __allocation_events = 0;
 
-
 void* BoltMem_allocate(size_t new_size)
 {
     void* p = malloc(new_size);
     __allocation += new_size;
-    if (__allocation > __peak_allocation) __peak_allocation = __allocation;
+    if (__allocation>__peak_allocation) __peak_allocation = __allocation;
 //    BoltLog_info("bolt: (Allocated %ld bytes (balance: %lu))", new_size, __allocation);
     __allocation_events += 1;
     return p;
@@ -56,8 +52,8 @@ void* BoltMem_allocate(size_t new_size)
 void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size)
 {
     void* p = realloc(ptr, new_size);
-    __allocation = __allocation - old_size + new_size;
-    if (__allocation > __peak_allocation) __peak_allocation = __allocation;
+    __allocation = __allocation-old_size+new_size;
+    if (__allocation>__peak_allocation) __peak_allocation = __allocation;
 //    BoltLog_info("bolt: (Reallocated %ld bytes as %ld bytes (balance: %lu))", old_size, new_size, __allocation);
     __allocation_events += 1;
     return p;
@@ -74,8 +70,7 @@ void* BoltMem_deallocate(void* ptr, size_t old_size)
 
 void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size)
 {
-    if (new_size == old_size)
-    {
+    if (new_size==old_size) {
         // In this case, the physical data storage requirement
         // hasn't changed, whether zero or some positive value.
         // This means that we can reuse the storage exactly
@@ -86,15 +81,13 @@ void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size)
         // reallocation.
         return ptr;
     }
-    if (old_size == 0)
-    {
+    if (old_size==0) {
         // In this case we need to allocate new storage space
         // where previously none was allocated. This means
         // that a full allocation is required.
         return BoltMem_allocate(new_size);
     }
-    if (new_size == 0)
-    {
+    if (new_size==0) {
         // In this case, we are moving from previously having
         // data to no longer requiring any storage space. This
         // means that we can free up the previously-allocated
@@ -109,11 +102,11 @@ void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size)
     return BoltMem_reallocate(ptr, old_size, new_size);
 }
 
-void* BoltMem_duplicate(const void *ptr, size_t ptr_size)
+void* BoltMem_duplicate(const void* ptr, size_t ptr_size)
 {
-	void *p = BoltMem_allocate(ptr_size);
-	memcpy(p, ptr, ptr_size);
-	return p;
+    void* p = BoltMem_allocate(ptr_size);
+    memcpy(p, ptr, ptr_size);
+    return p;
 }
 
 size_t BoltMem_current_allocation()

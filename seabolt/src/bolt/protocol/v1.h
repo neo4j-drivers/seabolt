@@ -28,15 +28,12 @@
 
 #include "bolt/connections.h"
 
-
 #define BOLT_V1_SUCCESS 0x70
 #define BOLT_V1_RECORD  0x71
 #define BOLT_V1_IGNORED 0x7E
 #define BOLT_V1_FAILURE 0x7F
 
-
-enum BoltProtocolV1Type
-{
+enum BoltProtocolV1Type {
     BOLT_V1_NULL,
     BOLT_V1_BOOLEAN,
     BOLT_V1_INTEGER,
@@ -49,33 +46,30 @@ enum BoltProtocolV1Type
     BOLT_V1_RESERVED,
 };
 
-struct _run_request
-{
-    struct BoltMessage * request;
-    struct BoltValue * statement;
-    struct BoltValue * parameters;
+struct _run_request {
+    struct BoltMessage* request;
+    struct BoltValue* statement;
+    struct BoltValue* parameters;
 };
 
-struct BoltMessage
-{
+struct BoltMessage {
     int8_t code;
-    struct BoltValue * fields;
+    struct BoltValue* fields;
 };
 
-struct BoltProtocolV1State
-{
+struct BoltProtocolV1State {
     // These buffers exclude chunk headers.
-    struct BoltBuffer * tx_buffer;
-    struct BoltBuffer * rx_buffer;
+    struct BoltBuffer* tx_buffer;
+    struct BoltBuffer* rx_buffer;
 
     /// The product name and version of the remote server
-    char * server;
+    char* server;
     /// A BoltValue containing field names for the active result
-    struct BoltValue * result_field_names;
+    struct BoltValue* result_field_names;
     /// A BoltValue containing error code and message
-    struct BoltValue * failure_data;
+    struct BoltValue* failure_data;
     /// The last bookmark received from the server
-    char * last_bookmark;
+    char* last_bookmark;
 
     bolt_request_t next_request_id;
     bolt_request_t response_counter;
@@ -86,14 +80,14 @@ struct BoltProtocolV1State
     struct _run_request commit;
     struct _run_request rollback;
 
-    struct BoltMessage * ackfailure_request;
-    struct BoltMessage * discard_request;
-    struct BoltMessage * pull_request;
-    struct BoltMessage * reset_request;
+    struct BoltMessage* ackfailure_request;
+    struct BoltMessage* discard_request;
+    struct BoltMessage* pull_request;
+    struct BoltMessage* reset_request;
 
     /// Holder for fetched data and metadata
     int16_t data_type;
-    struct BoltValue * data;
+    struct BoltValue* data;
 
 };
 
@@ -103,13 +97,13 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state);
 
 struct BoltProtocolV1State* BoltProtocolV1_state(struct BoltConnection* connection);
 
-int BoltProtocolV1_load_message(struct BoltConnection * connection, struct BoltMessage * message);
+int BoltProtocolV1_load_message(struct BoltConnection* connection, struct BoltMessage* message);
 
-int BoltProtocolV1_load_message_quietly(struct BoltConnection * connection, struct BoltMessage * message);
+int BoltProtocolV1_load_message_quietly(struct BoltConnection* connection, struct BoltMessage* message);
 
-int BoltProtocolV1_compile_INIT(struct BoltMessage * message, const struct BoltUserProfile * profile);
+int BoltProtocolV1_compile_INIT(struct BoltMessage* message, const struct BoltUserProfile* profile);
 
-int BoltProtocolV1_fetch(struct BoltConnection * connection, bolt_request_t request_id);
+int BoltProtocolV1_fetch(struct BoltConnection* connection, bolt_request_t request_id);
 
 /**
  * Top-level unload.
@@ -126,37 +120,37 @@ const char* BoltProtocolV1_structure_name(int16_t code);
 
 const char* BoltProtocolV1_message_name(int16_t code);
 
-int BoltProtocolV1_init(struct BoltConnection * connection, const struct BoltUserProfile * profile);
+int BoltProtocolV1_init(struct BoltConnection* connection, const struct BoltUserProfile* profile);
 
-int BoltProtocolV1_reset(struct BoltConnection * connection);
+int BoltProtocolV1_reset(struct BoltConnection* connection);
 
-void BoltProtocolV1_clear_failure(struct BoltConnection * connection);
+void BoltProtocolV1_clear_failure(struct BoltConnection* connection);
 
-void BoltProtocolV1_extract_metadata(struct BoltConnection * connection, struct BoltValue * summary);
+void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct BoltValue* summary);
 
-int BoltProtocolV1_set_cypher_template(struct BoltConnection * connection, const char * statement, size_t size);
+int BoltProtocolV1_set_cypher_template(struct BoltConnection* connection, const char* statement, size_t size);
 
-int BoltProtocolV1_set_n_cypher_parameters(struct BoltConnection * connection, int32_t size);
+int BoltProtocolV1_set_n_cypher_parameters(struct BoltConnection* connection, int32_t size);
 
-int BoltProtocolV1_set_cypher_parameter_key(struct BoltConnection * connection, int32_t index, const char * key,
-                                            size_t key_size);
+int BoltProtocolV1_set_cypher_parameter_key(struct BoltConnection* connection, int32_t index, const char* key,
+        size_t key_size);
 
-struct BoltValue * BoltProtocolV1_cypher_parameter_value(struct BoltConnection * connection, int32_t index);
+struct BoltValue* BoltProtocolV1_cypher_parameter_value(struct BoltConnection* connection, int32_t index);
 
-int BoltProtocolV1_load_bookmark(struct BoltConnection * connection, const char * bookmark);
+int BoltProtocolV1_load_bookmark(struct BoltConnection* connection, const char* bookmark);
 
-int BoltProtocolV1_load_begin_request(struct BoltConnection * connection);
+int BoltProtocolV1_load_begin_request(struct BoltConnection* connection);
 
-int BoltProtocolV1_load_commit_request(struct BoltConnection * connection);
+int BoltProtocolV1_load_commit_request(struct BoltConnection* connection);
 
-int BoltProtocolV1_load_rollback_request(struct BoltConnection * connection);
+int BoltProtocolV1_load_rollback_request(struct BoltConnection* connection);
 
-int BoltProtocolV1_load_run_request(struct BoltConnection * connection);
+int BoltProtocolV1_load_run_request(struct BoltConnection* connection);
 
-int BoltProtocolV1_load_pull_request(struct BoltConnection * connection, int32_t n);
+int BoltProtocolV1_load_pull_request(struct BoltConnection* connection, int32_t n);
 
-int BoltProtocolV1_load_ack_failure(struct BoltConnection * connection);
+int BoltProtocolV1_load_ack_failure(struct BoltConnection* connection);
 
-struct BoltValue * BoltProtocolV1_result_fields(struct BoltConnection * connection);
+struct BoltValue* BoltProtocolV1_result_fields(struct BoltConnection* connection);
 
 #endif // SEABOLT_PROTOCOL_V1

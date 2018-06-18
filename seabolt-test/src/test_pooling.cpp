@@ -21,18 +21,15 @@
 #include "integration.hpp"
 #include "catch.hpp"
 
-
 SCENARIO("Test using a pooled connection", "[integration][ipv6][secure][pooling]")
 {
-    GIVEN("a new connection pool")
-    {
-        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &BOLT_IPV6_ADDRESS, &BOLT_PROFILE, 10);
-        WHEN("a connection is acquired")
-        {
-            struct BoltConnection * connection = BoltConnectionPool_acquire(pool, "test");
-            THEN("the connection should be connected")
-            {
-                REQUIRE(connection->status == BOLT_READY);
+    GIVEN("a new connection pool") {
+        struct BoltConnectionPool* pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &BOLT_IPV6_ADDRESS,
+                &BOLT_PROFILE, 10);
+        WHEN("a connection is acquired") {
+            struct BoltConnection* connection = BoltConnectionPool_acquire(pool, "test");
+            THEN("the connection should be connected") {
+                REQUIRE(connection->status==BOLT_READY);
             }
             BoltConnectionPool_release(pool, connection);
         }
@@ -42,21 +39,18 @@ SCENARIO("Test using a pooled connection", "[integration][ipv6][secure][pooling]
 
 SCENARIO("Test reusing a pooled connection", "[integration][ipv6][secure][pooling]")
 {
-    GIVEN("a new connection pool with one entry")
-    {
-        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &BOLT_IPV6_ADDRESS, &BOLT_PROFILE, 1);
-        WHEN("a connection is acquired, released and acquired again")
-        {
-            struct BoltConnection * connection1 = BoltConnectionPool_acquire(pool, "test");
+    GIVEN("a new connection pool with one entry") {
+        struct BoltConnectionPool* pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &BOLT_IPV6_ADDRESS,
+                &BOLT_PROFILE, 1);
+        WHEN("a connection is acquired, released and acquired again") {
+            struct BoltConnection* connection1 = BoltConnectionPool_acquire(pool, "test");
             BoltConnectionPool_release(pool, connection1);
-            struct BoltConnection * connection2 = BoltConnectionPool_acquire(pool, "test");
-            THEN("the connection should be connected")
-            {
-                REQUIRE(connection2->status == BOLT_READY);
+            struct BoltConnection* connection2 = BoltConnectionPool_acquire(pool, "test");
+            THEN("the connection should be connected") {
+                REQUIRE(connection2->status==BOLT_READY);
             }
-            AND_THEN("the same connection should have been reused")
-            {
-                REQUIRE(connection1 == connection2);
+            AND_THEN("the same connection should have been reused") {
+                REQUIRE(connection1==connection2);
             }
             BoltConnectionPool_release(pool, connection2);
         }
@@ -66,25 +60,22 @@ SCENARIO("Test reusing a pooled connection", "[integration][ipv6][secure][poolin
 
 SCENARIO("Test reusing a pooled connection that was abandoned", "[integration][ipv6][secure][pooling]")
 {
-    GIVEN("a new connection pool with one entry")
-    {
-        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &BOLT_IPV6_ADDRESS, &BOLT_PROFILE, 1);
-        WHEN("a connection is acquired, released and acquired again")
-        {
-            struct BoltConnection * connection1 = BoltConnectionPool_acquire(pool, "test");
-            const char * cypher = "RETURN 1";
+    GIVEN("a new connection pool with one entry") {
+        struct BoltConnectionPool* pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &BOLT_IPV6_ADDRESS,
+                &BOLT_PROFILE, 1);
+        WHEN("a connection is acquired, released and acquired again") {
+            struct BoltConnection* connection1 = BoltConnectionPool_acquire(pool, "test");
+            const char* cypher = "RETURN 1";
             BoltConnection_cypher(connection1, cypher, strlen(cypher), 0);
             BoltConnection_load_run_request(connection1);
             BoltConnection_send(connection1);
             BoltConnectionPool_release(pool, connection1);
-            struct BoltConnection * connection2 = BoltConnectionPool_acquire(pool, "test");
-            THEN("the connection should be connected")
-            {
-                REQUIRE(connection2->status == BOLT_READY);
+            struct BoltConnection* connection2 = BoltConnectionPool_acquire(pool, "test");
+            THEN("the connection should be connected") {
+                REQUIRE(connection2->status==BOLT_READY);
             }
-            AND_THEN("the same connection should have been reused")
-            {
-                REQUIRE(connection1 == connection2);
+            AND_THEN("the same connection should have been reused") {
+                REQUIRE(connection1==connection2);
             }
             BoltConnectionPool_release(pool, connection2);
         }
@@ -94,20 +85,17 @@ SCENARIO("Test reusing a pooled connection that was abandoned", "[integration][i
 
 SCENARIO("Test running out of connections", "[integration][ipv6][secure][pooling]")
 {
-    GIVEN("a new connection pool with one entry")
-    {
-        struct BoltConnectionPool * pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &BOLT_IPV6_ADDRESS, &BOLT_PROFILE, 1);
-        WHEN("two connections are acquired in turn")
-        {
-            struct BoltConnection * connection1 = BoltConnectionPool_acquire(pool, "test");
-            struct BoltConnection * connection2 = BoltConnectionPool_acquire(pool, "test");
-            THEN("the first connection should be connected")
-            {
-                REQUIRE(connection1->status == BOLT_READY);
+    GIVEN("a new connection pool with one entry") {
+        struct BoltConnectionPool* pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &BOLT_IPV6_ADDRESS,
+                &BOLT_PROFILE, 1);
+        WHEN("two connections are acquired in turn") {
+            struct BoltConnection* connection1 = BoltConnectionPool_acquire(pool, "test");
+            struct BoltConnection* connection2 = BoltConnectionPool_acquire(pool, "test");
+            THEN("the first connection should be connected") {
+                REQUIRE(connection1->status==BOLT_READY);
             }
-            AND_THEN("the second connection should be invalid")
-            {
-                REQUIRE(connection2 == NULL);
+            AND_THEN("the second connection should be invalid") {
+                REQUIRE(connection2==NULL);
             }
             BoltConnectionPool_release(pool, connection2);
             BoltConnectionPool_release(pool, connection1);

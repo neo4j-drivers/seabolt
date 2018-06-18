@@ -19,18 +19,20 @@
 
 
 #define CATCH_CONFIG_RUNNER  // This tells Catch to provide a main()
+
 #include "catch.hpp"
 
 extern "C" {
-	#include "bolt/lifecycle.h"
+#include "bolt/lifecycle.h"
 }
 
-int main(int argc, char* argv[]) {
-	Bolt_startup(stderr);
+int main(int argc, char* argv[])
+{
+    Bolt_startup(stderr);
 
-	int result = Catch::Session().run(argc, argv);
+    int result = Catch::Session().run(argc, argv);
 
-	Bolt_shutdown();
+    Bolt_shutdown();
 
-	return result;
+    return result;
 }

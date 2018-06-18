@@ -24,29 +24,25 @@
 #include "memory.h"
 #include "bolt/config-impl.h"
 
-
 #define SOCKADDR_STORAGE_SIZE sizeof(struct sockaddr_storage)
 
-
-struct BoltAddress* BoltAddress_create(const char * host, const char * port)
+struct BoltAddress* BoltAddress_create(const char* host, const char* port)
 {
     struct BoltAddress* address = BoltMem_allocate(sizeof(struct BoltAddress));
-    address->host = BoltMem_duplicate(host, strlen(host) + 1);
-    address->port = BoltMem_duplicate(port, strlen(port) + 1);
+    address->host = BoltMem_duplicate(host, strlen(host)+1);
+    address->port = BoltMem_duplicate(port, strlen(port)+1);
     address->n_resolved_hosts = 0;
     address->resolved_hosts = NULL;
     address->resolved_port = 0;
     return address;
 }
 
-int BoltAddress_resolve(struct BoltAddress * address)
+int BoltAddress_resolve(struct BoltAddress* address)
 {
-    if (strchr(address->host, ':') == NULL)
-    {
+    if (strchr(address->host, ':')==NULL) {
         BoltLog_info("bolt: Resolving address %s:%s", address->host, address->port);
     }
-    else
-    {
+    else {
         BoltLog_info("bolt: Resolving address [%s]:%s", address->host, address->port);
     }
     static struct addrinfo hints;
@@ -56,102 +52,90 @@ int BoltAddress_resolve(struct BoltAddress * address)
     hints.ai_flags = (AI_V4MAPPED | AI_ADDRCONFIG);
     struct addrinfo* ai;
     const int gai_status = getaddrinfo(address->host, address->port, &hints, &ai);
-    if (gai_status == 0)
-    {
+    if (gai_status==0) {
         unsigned short n_resolved = 0;
-        for (struct addrinfo* ai_node = ai; ai_node != NULL; ai_node = ai_node->ai_next)
-        {
-            switch (ai_node->ai_family)
-            {
-                case AF_INET:
-                case AF_INET6:
-                {
-                    n_resolved += 1;
-                    break;
-                }
-                default:
-                    // We only care about IPv4 and IPv6
-                    continue;
+        for (struct addrinfo* ai_node = ai; ai_node!=NULL; ai_node = ai_node->ai_next) {
+            switch (ai_node->ai_family) {
+            case AF_INET:
+            case AF_INET6: {
+                n_resolved += 1;
+                break;
+            }
+            default:
+                // We only care about IPv4 and IPv6
+                continue;
             }
         }
-        if (address->resolved_hosts == NULL)
-        {
-            address->resolved_hosts = BoltMem_allocate(n_resolved * SOCKADDR_STORAGE_SIZE);
+        if (address->resolved_hosts==NULL) {
+            address->resolved_hosts = BoltMem_allocate(n_resolved*SOCKADDR_STORAGE_SIZE);
         }
-        else
-        {
+        else {
             address->resolved_hosts = BoltMem_reallocate(address->resolved_hosts,
-                                                         address->n_resolved_hosts * SOCKADDR_STORAGE_SIZE,
-                                                         n_resolved * SOCKADDR_STORAGE_SIZE);
+                    address->n_resolved_hosts*SOCKADDR_STORAGE_SIZE,
+                    n_resolved*SOCKADDR_STORAGE_SIZE);
         }
         address->n_resolved_hosts = n_resolved;
         size_t p = 0;
-        for (struct addrinfo* ai_node = ai; ai_node != NULL; ai_node = ai_node->ai_next)
-        {
-            switch (ai_node->ai_family)
-            {
-                case AF_INET:
-                case AF_INET6:
-                {
-                    struct sockaddr_storage * target = &address->resolved_hosts[p];
-                    memcpy(target, ai_node->ai_addr, ai_node->ai_addrlen);
-                    break;
-                }
-                default:
-                    // We only care about IPv4 and IPv6
-                    continue;
+        for (struct addrinfo* ai_node = ai; ai_node!=NULL; ai_node = ai_node->ai_next) {
+            switch (ai_node->ai_family) {
+            case AF_INET:
+            case AF_INET6: {
+                struct sockaddr_storage* target = &address->resolved_hosts[p];
+                memcpy(target, ai_node->ai_addr, ai_node->ai_addrlen);
+                break;
+            }
+            default:
+                // We only care about IPv4 and IPv6
+                continue;
             }
             p += 1;
         }
         freeaddrinfo(ai);
-        if (address->n_resolved_hosts == 1)
-        {
+        if (address->n_resolved_hosts==1) {
             BoltLog_info("bolt: Host resolved to 1 IP address");
         }
-        else
-        {
+        else {
             BoltLog_info("bolt: Host resolved to %d IP addresses", address->n_resolved_hosts);
         }
     }
-    else
-    {
+    else {
         BoltLog_info("bolt: Host resolution failed (status %d)", gai_status);
     }
 
-    if (address->n_resolved_hosts > 0)
-    {
-        struct sockaddr_storage *resolved = &address->resolved_hosts[0];
-        const in_port_t resolved_port = resolved->ss_family == AF_INET ?
-                                  ((struct sockaddr_in *)(resolved))->sin_port : ((struct sockaddr_in6 *)(resolved))->sin6_port;
+    if (address->n_resolved_hosts>0) {
+        struct sockaddr_storage* resolved = &address->resolved_hosts[0];
+        const in_port_t resolved_port = resolved->ss_family==AF_INET ?
+                                        ((struct sockaddr_in*) (resolved))->sin_port
+                                                                     : ((struct sockaddr_in6*) (resolved))->sin6_port;
         address->resolved_port = ntohs(resolved_port);
     }
 
     return gai_status;
 }
 
-int BoltAddress_copy_resolved_host(struct BoltAddress * address, size_t index, char * buffer,
-                                   socklen_t buffer_size)
+int BoltAddress_copy_resolved_host(struct BoltAddress* address, size_t index, char* buffer,
+        socklen_t buffer_size)
 {
-    struct sockaddr_storage * resolved_host = &address->resolved_hosts[index];
-    const int status = getnameinfo((const struct sockaddr *)(resolved_host), SOCKADDR_STORAGE_SIZE, buffer, buffer_size, NULL, 0, NI_NUMERICHOST);
-    switch (status)
-    {
-        case 0:
-            return resolved_host->ss_family;
-        default:
-            return -1;
+    struct sockaddr_storage* resolved_host = &address->resolved_hosts[index];
+    const int status = getnameinfo((const struct sockaddr*) (resolved_host), SOCKADDR_STORAGE_SIZE, buffer, buffer_size,
+            NULL, 0, NI_NUMERICHOST);
+    switch (status) {
+    case 0:
+        return resolved_host->ss_family;
+    default:
+        return -1;
     }
 }
 
-void BoltAddress_destroy(struct BoltAddress * address)
+void BoltAddress_destroy(struct BoltAddress* address)
 {
-    if (address->resolved_hosts != NULL)
-    {
-        address->resolved_hosts = BoltMem_deallocate(address->resolved_hosts, address->n_resolved_hosts * SOCKADDR_STORAGE_SIZE);
+    if (address->resolved_hosts!=NULL) {
+        address->resolved_hosts = BoltMem_deallocate(address->resolved_hosts,
+                address->n_resolved_hosts*SOCKADDR_STORAGE_SIZE);
         address->n_resolved_hosts = 0;
     }
 
-	BoltMem_deallocate(address->host, strlen(address->host) + 1);
-	BoltMem_deallocate(address->port, strlen(address->port) + 1);
+    BoltMem_deallocate(address->host, strlen(address->host)+1);
+    BoltMem_deallocate(address->port, strlen(address->port)+1);
     BoltMem_deallocate(address, sizeof(struct BoltAddress));
 }

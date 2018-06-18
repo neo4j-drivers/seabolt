@@ -30,87 +30,82 @@
 #include <pthread.h>
 #endif
 
-int BoltUtil_get_time(struct timespec *tp)
+int BoltUtil_get_time(struct timespec* tp)
 {
 #ifdef __APPLE__
-	clock_serv_t cclock;
-	mach_timespec_t mts;
-	host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
-	clock_get_time(cclock, &mts);
-	mach_port_deallocate(mach_task_self(), cclock);
-	tp->tv_sec = mts.tv_sec;
-	tp->tv_nsec = mts.tv_nsec;
-	return 0;
+    clock_serv_t cclock;
+    mach_timespec_t mts;
+    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+    clock_get_time(cclock, &mts);
+    mach_port_deallocate(mach_task_self(), cclock);
+    tp->tv_sec = mts.tv_sec;
+    tp->tv_nsec = mts.tv_nsec;
+    return 0;
 #else
-	return timespec_get(tp, TIME_UTC);
+    return timespec_get(tp, TIME_UTC);
 #endif
 }
 
-int BoltUtil_mutex_create(mutex_t *mutex)
+int BoltUtil_mutex_create(mutex_t* mutex)
 {
 #ifdef _WIN32
-	*mutex = CreateMutex(NULL, FALSE, NULL);
-	if (*mutex == NULL)
-	{
-		return GetLastError();
-	}
-	return 0;
+    *mutex = CreateMutex(NULL, FALSE, NULL);
+    if (*mutex==NULL) {
+        return GetLastError();
+    }
+    return 0;
 #else
-	return pthread_mutex_init(mutex, NULL);
+    return pthread_mutex_init(mutex, NULL);
 #endif
 }
 
-int BoltUtil_mutex_destroy(mutex_t *mutex)
+int BoltUtil_mutex_destroy(mutex_t* mutex)
 {
 #ifdef _WIN32
-	if (!CloseHandle(*mutex))
-	{
-		return GetLastError();
-	}
-	return 0;
+    if (!CloseHandle(*mutex)) {
+        return GetLastError();
+    }
+    return 0;
 #else
-	return pthread_mutex_destroy(mutex);
+    return pthread_mutex_destroy(mutex);
 #endif
 }
 
-int BoltUtil_mutex_lock(mutex_t *mutex)
+int BoltUtil_mutex_lock(mutex_t* mutex)
 {
 #ifdef _WIN32
-	const DWORD result = WaitForSingleObject(*mutex, INFINITE);
-	if (result)
-	{
-		return result;
-	}
-	return 0;
+    const DWORD result = WaitForSingleObject(*mutex, INFINITE);
+    if (result) {
+        return result;
+    }
+    return 0;
 #else
-	return pthread_mutex_lock(mutex);
+    return pthread_mutex_lock(mutex);
 #endif
 }
 
-int BoltUtil_mutex_unlock(mutex_t *mutex)
+int BoltUtil_mutex_unlock(mutex_t* mutex)
 {
 #ifdef _WIN32
-	if (ReleaseMutex(*mutex))
-	{
-		return GetLastError();
-	}
+    if (ReleaseMutex(*mutex)) {
+        return GetLastError();
+    }
 
-	return 0;
+    return 0;
 #else
-	return pthread_mutex_unlock(mutex);
+    return pthread_mutex_unlock(mutex);
 #endif
 }
 
-int BoltUtil_mutex_trylock(mutex_t *mutex)
+int BoltUtil_mutex_trylock(mutex_t* mutex)
 {
 #ifdef _WIN32
-	const DWORD result = WaitForSingleObject(*mutex, 0);
-	if (result)
-	{
-		return result;
-	}
-	return 0;
+    const DWORD result = WaitForSingleObject(*mutex, 0);
+    if (result) {
+        return result;
+    }
+    return 0;
 #else
-	return pthread_mutex_trylock(mutex);
+    return pthread_mutex_trylock(mutex);
 #endif
 }

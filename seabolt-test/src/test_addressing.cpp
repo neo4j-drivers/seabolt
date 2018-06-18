@@ -21,49 +21,45 @@
 #include "integration.hpp"
 #include "catch.hpp"
 
-
 SCENARIO("Test address resolution (IPv4)", "[dns]")
 {
-    const char * host = "ipv4-only.bolt-test.net";
-    const char * port = "7687";
-    struct BoltAddress * address = BoltAddress_create(host, port);
-    REQUIRE(strcmp(address->host, host) == 0);
-    REQUIRE(strcmp(address->port, port) == 0);
-    REQUIRE(address->n_resolved_hosts == 0);
-    REQUIRE(address->resolved_port == 0);
-    for (int i = 0; i < 2; i++)
-    {
+    const char* host = "ipv4-only.bolt-test.net";
+    const char* port = "7687";
+    struct BoltAddress* address = BoltAddress_create(host, port);
+    REQUIRE(strcmp(address->host, host)==0);
+    REQUIRE(strcmp(address->port, port)==0);
+    REQUIRE(address->n_resolved_hosts==0);
+    REQUIRE(address->resolved_port==0);
+    for (int i = 0; i<2; i++) {
         BoltAddress_resolve(address);
-        REQUIRE(address->n_resolved_hosts == 1);
+        REQUIRE(address->n_resolved_hosts==1);
         char host_string[40];
         int af = BoltAddress_copy_resolved_host(address, 0, &host_string[0], sizeof(host_string));
-        REQUIRE(af == AF_INET);
-        REQUIRE(strcmp(host_string, "52.215.65.80") == 0);
-        REQUIRE(address->resolved_port == 7687);
+        REQUIRE(af==AF_INET);
+        REQUIRE(strcmp(host_string, "52.215.65.80")==0);
+        REQUIRE(address->resolved_port==7687);
     }
     BoltAddress_destroy(address);
 }
 
 SCENARIO("Test address resolution (IPv6)", "[dns]")
 {
-    const char * host = "ipv6-only.bolt-test.net";
-    const char * port = "7687";
-    struct BoltAddress * address = BoltAddress_create(host, port);
-    REQUIRE(strcmp(address->host, host) == 0);
-    REQUIRE(strcmp(address->port, port) == 0);
-    REQUIRE(address->n_resolved_hosts == 0);
-    REQUIRE(address->resolved_port == 0);
-    for (int i = 0; i < 2; i++)
-    {
+    const char* host = "ipv6-only.bolt-test.net";
+    const char* port = "7687";
+    struct BoltAddress* address = BoltAddress_create(host, port);
+    REQUIRE(strcmp(address->host, host)==0);
+    REQUIRE(strcmp(address->port, port)==0);
+    REQUIRE(address->n_resolved_hosts==0);
+    REQUIRE(address->resolved_port==0);
+    for (int i = 0; i<2; i++) {
         int status = BoltAddress_resolve(address);
-        if (status == 0)
-        {
-            REQUIRE(address->n_resolved_hosts == 1);
+        if (status==0) {
+            REQUIRE(address->n_resolved_hosts==1);
             char host_string[40];
             int af = BoltAddress_copy_resolved_host(address, 0, &host_string[0], sizeof(host_string));
-            REQUIRE(af == AF_INET6);
-            REQUIRE(strcmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7") == 0);
-            REQUIRE(address->resolved_port == 7687);
+            REQUIRE(af==AF_INET6);
+            REQUIRE(strcmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7")==0);
+            REQUIRE(address->resolved_port==7687);
         }
     }
     BoltAddress_destroy(address);
@@ -71,35 +67,31 @@ SCENARIO("Test address resolution (IPv6)", "[dns]")
 
 SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
 {
-    const char * host = "ipv4-and-ipv6.bolt-test.net";
-    const char * port = "7687";
-    struct BoltAddress * address = BoltAddress_create(host, port);
-    REQUIRE(strcmp(address->host, host) == 0);
-    REQUIRE(strcmp(address->port, port) == 0);
-    REQUIRE(address->n_resolved_hosts == 0);
-    REQUIRE(address->resolved_port == 0);
-    for (int i = 0; i < 2; i++)
-    {
+    const char* host = "ipv4-and-ipv6.bolt-test.net";
+    const char* port = "7687";
+    struct BoltAddress* address = BoltAddress_create(host, port);
+    REQUIRE(strcmp(address->host, host)==0);
+    REQUIRE(strcmp(address->port, port)==0);
+    REQUIRE(address->n_resolved_hosts==0);
+    REQUIRE(address->resolved_port==0);
+    for (int i = 0; i<2; i++) {
         int status = BoltAddress_resolve(address);
-        if (status == 0)
-        {
-            for (size_t j = 0; j < address->n_resolved_hosts; j++)
-            {
+        if (status==0) {
+            for (size_t j = 0; j<address->n_resolved_hosts; j++) {
                 char host_string[40];
                 int af = BoltAddress_copy_resolved_host(address, j, &host_string[0], sizeof(host_string));
-                switch (af)
-                {
-                    case AF_INET:
-                        REQUIRE(strcmp(host_string, "52.215.65.80") == 0);
-                        break;
-                    case AF_INET6:
-                        REQUIRE(strcmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7") == 0);
-                        break;
-                    default:
-                        FAIL();
+                switch (af) {
+                case AF_INET:
+                    REQUIRE(strcmp(host_string, "52.215.65.80")==0);
+                    break;
+                case AF_INET6:
+                    REQUIRE(strcmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7")==0);
+                    break;
+                default:
+                    FAIL();
                 }
             }
-            REQUIRE(address->resolved_port == 7687);
+            REQUIRE(address->resolved_port==7687);
         }
     }
     BoltAddress_destroy(address);
