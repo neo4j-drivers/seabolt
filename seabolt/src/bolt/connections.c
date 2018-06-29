@@ -39,7 +39,7 @@
 #define RECEIVE(socket, buffer, size, flags) (int)(recv(socket, buffer, (size_t)(size), flags))
 #define RECEIVE_S(socket, buffer, size, flags) SSL_read(socket, buffer, size)
 #define ADDR_SIZE(address) address->ss_family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6)
-#ifdef USE_WINSOCK
+#if USE_WINSOCK
 #define SETSOCKETOPT(socket, level, optname, optval, optlen) setsockopt(socket, level, optname, (const char *)(optval), optlen)
 #define CLOSE(socket) closesocket(socket)
 #else
@@ -86,7 +86,7 @@ enum BoltConnectionError _last_error()
         return BOLT_UNKNOWN_ERROR;
     }
 #else
-    int error_code = WSAGetLastError();
+    int error_code = errno;
     BoltLog_error("bolt: socket error code: %d", error_code);
     switch (error_code)
     {
