@@ -64,13 +64,21 @@ void BoltMessage_destroy(struct BoltMessage* message)
     BoltMem_deallocate(message, sizeof(struct BoltMessage));
 }
 
-int BoltProtocolV1_compile_INIT(struct BoltMessage* message, const char* user_agent, const struct BoltValue* auth_token)
+int BoltProtocolV1_compile_INIT(struct BoltMessage* message, const char* user_agent, const struct BoltValue* auth_token,
+        int mask_secure_fields)
 {
     struct BoltValue* user_agent_field = BoltList_value(message->fields, 0);
     struct BoltValue* auth_token_field = BoltList_value(message->fields, 1);
 
     BoltValue_format_as_String(user_agent_field, user_agent, (int32_t) (strlen(user_agent)));
     BoltValue_copy(auth_token_field, auth_token);
+
+    if (mask_secure_fields) {
+        struct BoltValue* secure_value = BoltDictionary_value_by_key(auth_token_field, "credentials", 11);
+        if (secure_value != NULL) {
+            BoltValue_format_as_String(secure_value, "********", 8);
+        }
+    }
 
     return 0;
 }
@@ -874,8 +882,9 @@ int BoltProtocolV1_init(struct BoltConnection* connection, const char* user_agen
 {
     struct BoltMessage* init = BoltMessage_create(INIT, 2);
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    BoltProtocolV1_compile_INIT(init, user_agent, auth_token);
+    BoltProtocolV1_compile_INIT(init, user_agent, auth_token, 1);
     BoltLog_message("C", state->next_request_id, init->code, init->fields, connection->protocol_version);
+    BoltProtocolV1_compile_INIT(init, user_agent, auth_token, 0);
     BoltProtocolV1_load_message_quietly(connection, init);
     bolt_request_t init_request = BoltConnection_last_request(connection);
     BoltMessage_destroy(init);

@@ -34,6 +34,7 @@
 #include <time.h>
 
 #if USE_POSIXSOCK
+#include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
