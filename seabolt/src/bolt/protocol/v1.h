@@ -101,7 +101,7 @@ int BoltProtocolV1_load_message(struct BoltConnection* connection, struct BoltMe
 
 int BoltProtocolV1_load_message_quietly(struct BoltConnection* connection, struct BoltMessage* message);
 
-int BoltProtocolV1_compile_INIT(struct BoltMessage* message, const struct BoltUserProfile* profile);
+int BoltProtocolV1_compile_INIT(struct BoltMessage* message, const char* user_agent, const struct BoltValue* auth_token);
 
 int BoltProtocolV1_fetch(struct BoltConnection* connection, bolt_request_t request_id);
 
@@ -120,7 +120,7 @@ const char* BoltProtocolV1_structure_name(int16_t code);
 
 const char* BoltProtocolV1_message_name(int16_t code);
 
-int BoltProtocolV1_init(struct BoltConnection* connection, const struct BoltUserProfile* profile);
+int BoltProtocolV1_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token);
 
 int BoltProtocolV1_reset(struct BoltConnection* connection);
 

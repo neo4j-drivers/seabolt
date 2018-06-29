@@ -41,7 +41,7 @@
 SCENARIO("Test null parameter", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        struct BoltConnection* connection = NEW_BOLT_CONNECTION();
+        struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN $x";
             BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
@@ -62,7 +62,7 @@ SCENARIO("Test null parameter", "[integration][ipv6][secure]")
 SCENARIO("Test boolean in, boolean out", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        struct BoltConnection* connection = NEW_BOLT_CONNECTION();
+        struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN $x";
             BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
@@ -83,7 +83,7 @@ SCENARIO("Test boolean in, boolean out", "[integration][ipv6][secure]")
 SCENARIO("Test bytes in, bytes out", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        struct BoltConnection* connection = NEW_BOLT_CONNECTION();
+        struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN $x";
             BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
@@ -105,7 +105,7 @@ SCENARIO("Test bytes in, bytes out", "[integration][ipv6][secure]")
 SCENARIO("Test string in, string out", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        struct BoltConnection* connection = NEW_BOLT_CONNECTION();
+        struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN $x";
             BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
@@ -126,7 +126,7 @@ SCENARIO("Test string in, string out", "[integration][ipv6][secure]")
 SCENARIO("Test dictionary in, dictionary out", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        struct BoltConnection* connection = NEW_BOLT_CONNECTION();
+        struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN $x";
             BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
@@ -167,7 +167,7 @@ SCENARIO("Test dictionary in, dictionary out", "[integration][ipv6][secure]")
 SCENARIO("Test integer in, integer out", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        struct BoltConnection* connection = NEW_BOLT_CONNECTION();
+        struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN $x";
             BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
@@ -188,7 +188,7 @@ SCENARIO("Test integer in, integer out", "[integration][ipv6][secure]")
 SCENARIO("Test float in, float out", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        struct BoltConnection* connection = NEW_BOLT_CONNECTION();
+        struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN $x";
             BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
@@ -209,7 +209,7 @@ SCENARIO("Test float in, float out", "[integration][ipv6][secure]")
 SCENARIO("Test structure in result", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        struct BoltConnection* connection = NEW_BOLT_CONNECTION();
+        struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             BoltConnection_load_begin_request(connection);
             const char* cypher = "CREATE (a:Person {name:'Alice'}) RETURN a";

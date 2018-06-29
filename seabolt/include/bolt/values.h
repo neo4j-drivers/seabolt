@@ -30,7 +30,7 @@
 
 #include "config.h"
 
-#if CHAR_BIT != 8
+#if CHAR_BIT!=8
 #error "Cannot compile if `char` is not 8-bit"
 #endif
 
@@ -49,20 +49,16 @@ static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
 
 #define hex0(mem, offset) HEX_DIGITS[(mem)[offset] & 0x0F]
 
-
 #define sizeof_n(type, n) (size_t)((n) >= 0 ? sizeof(type) * (n) : 0)
 
-
 #define to_bit(x) (char)((x) == 0 ? 0 : 1);
-
 
 struct BoltValue;
 
 /**
  * Enumeration of the types available in the Bolt type system.
  */
-enum BoltType
-{
+enum BoltType {
     BOLT_NULL = 0,
     BOLT_BOOLEAN = 1,
     BOLT_INTEGER = 2,
@@ -77,11 +73,10 @@ enum BoltType
 /**
  * For holding extended values that exceed the size of a single BoltValue.
  */
-union BoltExtendedValue
-{
-    void * as_ptr;
-    char * as_char;
-    struct BoltValue * as_value;
+union BoltExtendedValue {
+    void* as_ptr;
+    char* as_char;
+    struct BoltValue* as_value;
 };
 
 /**
@@ -98,8 +93,7 @@ union BoltExtendedValue
  * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
  * ```
  */
-struct BoltValue
-{
+struct BoltValue {
     /// Type of this value, as defined in BoltType.
     int16_t type;
 
@@ -118,8 +112,7 @@ struct BoltValue
 
     /// Data content of the value, or a pointer to
     /// extended content.
-    union
-    {
+    union {
         char as_char[16];
         uint32_t as_uint32[4];
         int8_t as_int8[16];
@@ -149,12 +142,29 @@ PUBLIC struct BoltValue* BoltValue_create();
 PUBLIC void BoltValue_destroy(struct BoltValue* value);
 
 /**
+ * Duplicates a BoltValue instance
+ *
+ * @param value
+ * @return
+ */
+PUBLIC struct BoltValue* BoltValue_duplicate(const struct BoltValue* value);
+
+/**
+ * Deep copy a BoltValue instance to another one
+ *
+ * @param src
+ * @param dest
+ * @return
+ */
+PUBLIC void BoltValue_copy(struct BoltValue* dest, const struct BoltValue *src);
+
+/**
  * Return the type of a BoltValue.
  *
  * @param value
  * @return
  */
-PUBLIC enum BoltType BoltValue_type(const struct BoltValue * value);
+PUBLIC enum BoltType BoltValue_type(const struct BoltValue* value);
 
 /**
  * Write a textual representation of a BoltValue to a FILE.
@@ -164,7 +174,7 @@ PUBLIC enum BoltType BoltValue_type(const struct BoltValue * value);
  * @param protocol_version
  * @return
  */
-PUBLIC int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protocol_version);
+PUBLIC int BoltValue_write(struct BoltValue* value, FILE* file, int32_t protocol_version);
 
 
 
@@ -173,49 +183,42 @@ PUBLIC int BoltValue_write(struct BoltValue * value, FILE * file, int32_t protoc
  *
  * @param value
  */
-PUBLIC void BoltValue_format_as_Null(struct BoltValue * value);
+PUBLIC void BoltValue_format_as_Null(struct BoltValue* value);
 
+PUBLIC void BoltValue_format_as_Boolean(struct BoltValue* value, char data);
 
+PUBLIC char BoltBoolean_get(const struct BoltValue* value);
 
-PUBLIC void BoltValue_format_as_Boolean(struct BoltValue * value, char data);
+PUBLIC void BoltValue_format_as_Integer(struct BoltValue* value, int64_t data);
 
-PUBLIC char BoltBoolean_get(const struct BoltValue * value);
+PUBLIC int64_t BoltInteger_get(const struct BoltValue* value);
 
+PUBLIC void BoltValue_format_as_Float(struct BoltValue* value, double data);
 
+PUBLIC double BoltFloat_get(const struct BoltValue* value);
 
-PUBLIC void BoltValue_format_as_Integer(struct BoltValue * value, int64_t data);
+PUBLIC void BoltValue_format_as_String(struct BoltValue* value, const char* data, int32_t length);
 
-PUBLIC int64_t BoltInteger_get(const struct BoltValue * value);
+PUBLIC char* BoltString_get(const struct BoltValue* value);
 
+PUBLIC int BoltString_equals(struct BoltValue* value, const char* data);
 
+PUBLIC void BoltValue_format_as_Dictionary(struct BoltValue* value, int32_t length);
 
-PUBLIC void BoltValue_format_as_Float(struct BoltValue * value, double data);
+PUBLIC struct BoltValue* BoltDictionary_key(const struct BoltValue* value, int32_t index);
 
-PUBLIC double BoltFloat_get(const struct BoltValue * value);
+PUBLIC const char* BoltDictionary_get_key(const struct BoltValue* value, int32_t index);
 
+PUBLIC int32_t BoltDictionary_get_key_size(const struct BoltValue* value, int32_t index);
 
+PUBLIC int32_t
+BoltDictionary_get_key_index(const struct BoltValue* value, const char* key, size_t key_size, int32_t start_index);
 
-PUBLIC void BoltValue_format_as_String(struct BoltValue * value, const char * data, int32_t length);
+PUBLIC int BoltDictionary_set_key(struct BoltValue* value, int32_t index, const char* key, size_t key_size);
 
-PUBLIC char* BoltString_get(struct BoltValue * value);
+PUBLIC struct BoltValue* BoltDictionary_value(const struct BoltValue* value, int32_t index);
 
-PUBLIC int BoltString_equals(struct BoltValue * value, const char * data);
-
-PUBLIC void BoltValue_format_as_Dictionary(struct BoltValue * value, int32_t length);
-
-PUBLIC struct BoltValue * BoltDictionary_key(struct BoltValue * value, int32_t index);
-
-PUBLIC const char * BoltDictionary_get_key(struct BoltValue * value, int32_t index);
-
-PUBLIC int32_t BoltDictionary_get_key_size(struct BoltValue * value, int32_t index);
-
-PUBLIC int32_t BoltDictionary_get_key_index(struct BoltValue * value, const char * key, size_t key_size, int32_t start_index);
-
-PUBLIC int BoltDictionary_set_key(struct BoltValue * value, int32_t index, const char * key, size_t key_size);
-
-PUBLIC struct BoltValue * BoltDictionary_value(struct BoltValue * value, int32_t index);
-
-PUBLIC struct BoltValue * BoltDictionary_value_by_key(struct BoltValue * value, const char * key, size_t key_size);
+PUBLIC struct BoltValue* BoltDictionary_value_by_key(const struct BoltValue* value, const char* key, size_t key_size);
 
 
 /**
@@ -224,28 +227,22 @@ PUBLIC struct BoltValue * BoltDictionary_value_by_key(struct BoltValue * value, 
  * @param value
  * @param length
  */
-PUBLIC void BoltValue_format_as_List(struct BoltValue * value, int32_t length);
+PUBLIC void BoltValue_format_as_List(struct BoltValue* value, int32_t length);
 
 PUBLIC void BoltList_resize(struct BoltValue* value, int32_t size);
 
-PUBLIC struct BoltValue * BoltList_value(const struct BoltValue* value, int32_t index);
+PUBLIC struct BoltValue* BoltList_value(const struct BoltValue* value, int32_t index);
 
+PUBLIC void BoltValue_format_as_Bytes(struct BoltValue* value, char* data, int32_t length);
 
+PUBLIC char BoltBytes_get(const struct BoltValue* value, int32_t index);
 
-PUBLIC void BoltValue_format_as_Bytes(struct BoltValue * value, char * data, int32_t length);
+PUBLIC char* BoltBytes_get_all(const struct BoltValue* value);
 
-PUBLIC char BoltBytes_get(const struct BoltValue * value, int32_t index);
-
-PUBLIC char * BoltBytes_get_all(struct BoltValue * value);
-
-
-
-PUBLIC void BoltValue_format_as_Structure(struct BoltValue * value, int16_t code, int32_t length);
+PUBLIC void BoltValue_format_as_Structure(struct BoltValue* value, int16_t code, int32_t length);
 
 PUBLIC int16_t BoltStructure_code(const struct BoltValue* value);
 
-PUBLIC struct BoltValue * BoltStructure_value(const struct BoltValue* value, int32_t index);
-
-
+PUBLIC struct BoltValue* BoltStructure_value(const struct BoltValue* value, int32_t index);
 
 #endif // SEABOLT_VALUES

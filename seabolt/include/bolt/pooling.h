@@ -30,26 +30,25 @@
 /**
  * Connection pool (experimental)
  */
-struct BoltConnectionPool
-{
+struct BoltConnectionPool {
     mutex_t mutex;
     enum BoltTransport transport;
-    struct BoltAddress * address;
-    struct BoltUserProfile * profile;
+    struct BoltAddress* address;
+    char* user_agent;
+    struct BoltValue* auth_token;
     size_t size;
-    struct BoltConnection * connections;
+    struct BoltConnection* connections;
 };
 
-
 PUBLIC
-struct BoltConnectionPool *
-BoltConnectionPool_create(enum BoltTransport transport, struct BoltAddress * address, const struct BoltUserProfile * profile, size_t size);
+struct BoltConnectionPool*
+BoltConnectionPool_create(enum BoltTransport transport, struct BoltAddress* address,
+        const char* user_agent, const struct BoltValue* auth_token, size_t size);
 
-PUBLIC void BoltConnectionPool_destroy(struct BoltConnectionPool * pool);
+PUBLIC void BoltConnectionPool_destroy(struct BoltConnectionPool* pool);
 
-PUBLIC struct BoltConnection * BoltConnectionPool_acquire(struct BoltConnectionPool * pool, const void * agent);
+PUBLIC struct BoltConnection* BoltConnectionPool_acquire(struct BoltConnectionPool* pool, const void* agent);
 
-PUBLIC int BoltConnectionPool_release(struct BoltConnectionPool * pool, struct BoltConnection * connection);
-
+PUBLIC int BoltConnectionPool_release(struct BoltConnectionPool* pool, struct BoltConnection* connection);
 
 #endif //SEABOLT_POOLING_H

@@ -43,11 +43,19 @@ struct BoltConnection* bolt_open_b(enum BoltTransport transport, const char* hos
 }
 
 struct BoltConnection* bolt_open_init_b(enum BoltTransport transport, const char* host, const char* port,
-        const struct BoltUserProfile* profile)
+        const char* user_agent, const struct BoltValue* auth_token)
 {
     struct BoltConnection* connection = bolt_open_b(transport, host, port);
-    BoltConnection_init(connection, profile);
+    BoltConnection_init(connection, user_agent, auth_token);
     REQUIRE(connection->status==BOLT_READY);
+    return connection;
+}
+
+struct BoltConnection* bolt_open_init_default()
+{
+    struct BoltValue* auth_token = BoltAuth_basic(BOLT_USER, BOLT_PASSWORD, NULL);
+    struct BoltConnection* connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, BOLT_USER_AGENT, auth_token);
+    BoltValue_destroy(auth_token);
     return connection;
 }
 

@@ -22,6 +22,7 @@
 #include <memory.h>
 #include <string.h>
 #include <stdlib.h>
+#include <bolt/connections.h>
 
 #include "bolt/buffering.h"
 #include "bolt/logging.h"
@@ -63,29 +64,14 @@ void BoltMessage_destroy(struct BoltMessage* message)
     BoltMem_deallocate(message, sizeof(struct BoltMessage));
 }
 
-int BoltProtocolV1_compile_INIT(struct BoltMessage* message, const struct BoltUserProfile* profile)
+int BoltProtocolV1_compile_INIT(struct BoltMessage* message, const char* user_agent, const struct BoltValue* auth_token)
 {
-    switch (profile->auth_scheme) {
-    case BOLT_AUTH_BASIC: {
-        struct BoltValue* user_agent = BoltList_value(message->fields, 0);
-        struct BoltValue* auth = BoltList_value(message->fields, 1);
-        BoltValue_format_as_String(user_agent, profile->user_agent, (int32_t) (strlen(profile->user_agent)));
-        if (profile->user==NULL || profile->password==NULL) {
-            BoltValue_format_as_Dictionary(auth, 0);
-        }
-        else {
-            BoltValue_format_as_Dictionary(auth, 3);
-            BoltDictionary_set_key(auth, 0, "scheme", 6);
-            BoltDictionary_set_key(auth, 1, "principal", 9);
-            BoltDictionary_set_key(auth, 2, "credentials", 11);
-            BoltValue_format_as_String(BoltDictionary_value(auth, 0), "basic", 5);
-            BoltValue_format_as_String(BoltDictionary_value(auth, 1), profile->user, (int32_t) strlen(profile->user));
-            BoltValue_format_as_String(BoltDictionary_value(auth, 2), profile->password,
-                    (int32_t) strlen(profile->password));
-        }
-    }
-        break;
-    }
+    struct BoltValue* user_agent_field = BoltList_value(message->fields, 0);
+    struct BoltValue* auth_token_field = BoltList_value(message->fields, 1);
+
+    BoltValue_format_as_String(user_agent_field, user_agent, (int32_t) (strlen(user_agent)));
+    BoltValue_copy(auth_token_field, auth_token);
+
     return 0;
 }
 
@@ -884,16 +870,12 @@ const char* BoltProtocolV1_message_name(int16_t code)
     }
 }
 
-int BoltProtocolV1_init(struct BoltConnection* connection, const struct BoltUserProfile* profile)
+int BoltProtocolV1_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token)
 {
-    struct BoltUserProfile masked_profile;
-    memcpy(&masked_profile, profile, sizeof(struct BoltUserProfile));
-    masked_profile.password = "*******";
     struct BoltMessage* init = BoltMessage_create(INIT, 2);
-    BoltProtocolV1_compile_INIT(init, &masked_profile);
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+    BoltProtocolV1_compile_INIT(init, user_agent, auth_token);
     BoltLog_message("C", state->next_request_id, init->code, init->fields, connection->protocol_version);
-    BoltProtocolV1_compile_INIT(init, profile);
     BoltProtocolV1_load_message_quietly(connection, init);
     bolt_request_t init_request = BoltConnection_last_request(connection);
     BoltMessage_destroy(init);

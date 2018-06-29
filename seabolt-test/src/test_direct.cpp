@@ -173,9 +173,10 @@ SCENARIO("Test connection reuse after graceless shutdown", "[integration][ipv6][
 SCENARIO("Test init with valid credentials", "[integration][ipv6][secure]")
 {
     GIVEN("an open connection") {
+        const auto auth_token = BoltAuth_basic(BOLT_USER, BOLT_PASSWORD, NULL);
         struct BoltConnection* connection = bolt_open_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT);
         WHEN("successfully initialised") {
-            int rv = BoltConnection_init(connection, &BOLT_PROFILE);
+            int rv = BoltConnection_init(connection, BOLT_USER_AGENT, auth_token);
             THEN("return value should be 0") {
                 REQUIRE(rv==0);
             }
@@ -185,6 +186,7 @@ SCENARIO("Test init with valid credentials", "[integration][ipv6][secure]")
         }
         BoltConnection_close(connection);
         BoltConnection_destroy(connection);
+        BoltValue_destroy(auth_token);
     }
 }
 
@@ -194,14 +196,18 @@ SCENARIO("Test init with invalid credentials", "[integration][ipv6][secure]")
         struct BoltConnection* connection = bolt_open_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT);
         WHEN("unsuccessfully initialised") {
             REQUIRE(strcmp(BOLT_PASSWORD, "X")!=0);
-            struct BoltUserProfile profile{BOLT_AUTH_BASIC, (char*) BOLT_USER, (char*) "X", (char*) BOLT_USER_AGENT};
-            int rv = BoltConnection_init(connection, &profile);
+
+            const auto auth_token = BoltAuth_basic(BOLT_USER, "X", NULL);
+
+            int rv = BoltConnection_init(connection, BOLT_USER_AGENT, auth_token);
             THEN("return value should not be 0") {
                 REQUIRE(rv!=0);
             }
             THEN("status should change to DEFUNCT") {
                 REQUIRE(connection->status==BOLT_DEFUNCT);
             }
+
+            BoltValue_destroy(auth_token);
         }
         BoltConnection_close(connection);
         BoltConnection_destroy(connection);
@@ -211,8 +217,7 @@ SCENARIO("Test init with invalid credentials", "[integration][ipv6][secure]")
 SCENARIO("Test execution of simple Cypher statement", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        struct BoltConnection* connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
-                &BOLT_PROFILE);
+        struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN 1";
             BoltConnection_cypher(connection, cypher, strlen(cypher), 0);
@@ -233,8 +238,7 @@ SCENARIO("Test execution of simple Cypher statement", "[integration][ipv6][secur
 SCENARIO("Test field names returned from Cypher execution", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        struct BoltConnection* connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
-                &BOLT_PROFILE);
+        struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN 1 AS first, true AS second, 3.14 AS third";
             BoltConnection_cypher(connection, cypher, strlen(cypher), 0);
@@ -268,8 +272,7 @@ SCENARIO("Test field names returned from Cypher execution", "[integration][ipv6]
 SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        struct BoltConnection* connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
-                &BOLT_PROFILE);
+        struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN $x";
             BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
@@ -300,8 +303,7 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
 SCENARIO("Test execution of multiple Cypher statements transmitted together", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        struct BoltConnection* connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
-                &BOLT_PROFILE);
+        struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN $x";
             BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
@@ -324,8 +326,7 @@ SCENARIO("Test execution of multiple Cypher statements transmitted together", "[
 SCENARIO("Test transactions", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        struct BoltConnection* connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT,
-                &BOLT_PROFILE);
+        struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             BoltConnection_load_begin_request(connection);
             bolt_request_t begin = BoltConnection_last_request(connection);
@@ -374,7 +375,7 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
 SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
-        auto connection = bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &BOLT_PROFILE);
+        auto connection = bolt_open_init_default();
         WHEN("an invalid cypher statement is sent") {
             const auto cypher = "some invalid statement";
             BoltConnection_cypher(connection, cypher, strlen(cypher), 0);
@@ -470,7 +471,6 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 REQUIRE(connection->error==BOLT_NO_ERROR);
             }
         }
-
         BoltConnection_close(connection);
     }
 }

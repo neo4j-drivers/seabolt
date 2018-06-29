@@ -41,8 +41,10 @@
 #define ADDR_SIZE(address) address->ss_family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6)
 #ifdef USE_WINSOCK
 #define SETSOCKETOPT(socket, level, optname, optval, optlen) setsockopt(socket, level, optname, (const char *)(optval), optlen)
+#define CLOSE(socket) closesocket(socket)
 #else
 #define SETSOCKETOPT(socket, level, optname, optval, optlen) setsockopt(socket, level, optname, (const void *)optval, optlen)
+#define CLOSE(socket) close(socket)
 #endif
 
 #define TRY(code) { int status = (code); if (status == -1) { _set_status(connection, BOLT_DEFUNCT, _last_error()); return status; } }
@@ -54,7 +56,9 @@
 enum BoltConnectionError _last_error()
 {
 #if USE_WINSOCK
-    switch (WSAGetLastError()) {
+    int error_code = WSAGetLastError();
+    BoltLog_error("bolt: Winsock error code: %d", error_code);
+    switch (error_code) {
     case WSAEACCES:
         return BOLT_PERMISSION_DENIED;
     case WSAEAFNOSUPPORT:
@@ -70,6 +74,8 @@ enum BoltConnectionError _last_error()
         return BOLT_CONNECTION_REFUSED;
     case WSAEINTR:
         return BOLT_INTERRUPTED;
+    case WSAECONNRESET:
+        return BOLT_CONNECTION_RESET;
     case WSAENETUNREACH:
     case WSAENETRESET:
     case WSAENETDOWN:
@@ -80,7 +86,9 @@ enum BoltConnectionError _last_error()
         return BOLT_UNKNOWN_ERROR;
     }
 #else
-    switch (errno)
+    int error_code = WSAGetLastError();
+    BoltLog_error("bolt: socket error code: %d", error_code);
+    switch (error_code)
     {
         case EACCES:
         case EPERM:
@@ -99,6 +107,8 @@ enum BoltConnectionError _last_error()
             return BOLT_OUT_OF_PORTS;
         case ECONNREFUSED:
             return BOLT_CONNECTION_REFUSED;
+        case ECONNRESET:
+            return BOLT_CONNECTION_RESET;
         case EINTR:
             return BOLT_INTERRUPTED;
         case ENETUNREACH:
@@ -157,7 +167,7 @@ int _open(struct BoltConnection* connection, enum BoltTransport transport, const
         _set_status(connection, BOLT_DEFUNCT, BOLT_UNSUPPORTED);
         return -1;
     }
-    connection->socket = SOCKET(address->ss_family, SOCK_STREAM, IPPROTO_TCP);
+    connection->socket = (int)SOCKET(address->ss_family, SOCK_STREAM, IPPROTO_TCP);
     if (connection->socket==-1) {
         _set_status(connection, BOLT_DEFUNCT, _last_error());
         return -1;
@@ -224,6 +234,7 @@ void _close(struct BoltConnection* connection)
     switch (connection->transport) {
     case BOLT_SOCKET: {
         SHUTDOWN(connection->socket, SHUT_RDWR);
+        CLOSE(connection->socket);
         break;
     }
     case BOLT_SECURE_SOCKET: {
@@ -237,6 +248,7 @@ void _close(struct BoltConnection* connection)
             connection->ssl_context = NULL;
         }
         SHUTDOWN(connection->socket, SHUT_RDWR);
+        CLOSE(connection->socket);
         break;
     }
     }
@@ -324,7 +336,7 @@ int _receive(struct BoltConnection* connection, char* buffer, int min_size, int 
         else if (received==0) {
             BoltLog_info("bolt: Detected end of transmission");
             _set_status(connection, BOLT_DISCONNECTED, BOLT_END_OF_TRANSMISSION);
-            break;
+            return -1;
         }
         else {
             switch (connection->transport) {
@@ -496,7 +508,7 @@ int BoltConnection_fetch(struct BoltConnection* connection, bolt_request_t reque
                 return -1;
             }
         }
-        return 1;
+        return fetched;
     }
     default: {
         // TODO
@@ -568,12 +580,12 @@ int BoltConnection_summary_failure(struct BoltConnection* connection)
     }
 }
 
-int BoltConnection_init(struct BoltConnection* connection, const struct BoltUserProfile* profile)
+int BoltConnection_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token)
 {
-    BoltLog_info("bolt: Initialising connection for user '%s'", profile->user);
+    BoltLog_info("bolt: Initialising connection");
     switch (connection->protocol_version) {
     case 1: {
-        int code = BoltProtocolV1_init(connection, profile);
+        int code = BoltProtocolV1_init(connection, user_agent, auth_token);
         switch (code) {
         case BOLT_V1_SUCCESS:
             _set_status(connection, BOLT_READY, BOLT_NO_ERROR);
@@ -748,6 +760,23 @@ bolt_request_t BoltConnection_last_request(struct BoltConnection* connection)
             return 0;
         }
         return state->next_request_id-1;
+    }
+    default: {
+        // TODO
+        return 0;
+    }
+    }
+}
+
+char * BoltConnection_last_bookmark(struct BoltConnection* connection)
+{
+    switch (connection->protocol_version) {
+    case 1: {
+        struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+        if (state==NULL) {
+            return 0;
+        }
+        return state->last_bookmark;
     }
     default: {
         // TODO
