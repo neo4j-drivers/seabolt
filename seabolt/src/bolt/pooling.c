@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 
+#include <bolt/connections.h>
 #include "bolt/config-impl.h"
 #include "bolt/logging.h"
 #include "bolt/mem.h"
@@ -64,7 +65,7 @@ int find_connection(struct BoltConnectionPool* pool, struct BoltConnection* conn
 int init(struct BoltConnectionPool* pool, int index)
 {
     struct BoltConnection* connection = &pool->connections[index];
-    switch (BoltConnection_init(connection, pool->profile)) {
+    switch (BoltConnection_init(connection, pool->user_agent, pool->auth_token)) {
     case 0:
         return index;
     default:
@@ -128,38 +129,16 @@ void reset_or_close(struct BoltConnectionPool* pool, int index)
     }
 }
 
-struct BoltUserProfile* copy_profile(const struct BoltUserProfile* profile)
-{
-    if (profile==NULL) {
-        return NULL;
-    }
-
-    struct BoltUserProfile* new_profile = BoltMem_allocate(sizeof(struct BoltUserProfile));
-    new_profile->auth_scheme = profile->auth_scheme;
-    new_profile->user = BoltMem_duplicate(profile->user, strlen(profile->user)+1);
-    new_profile->password = BoltMem_duplicate(profile->password, strlen(profile->password)+1);
-    new_profile->user_agent = BoltMem_duplicate(profile->user_agent, strlen(profile->user_agent)+1);
-    return new_profile;
-}
-
-void free_profile(struct BoltUserProfile* profile)
-{
-    if (profile!=NULL) {
-        BoltMem_deallocate(profile->user, strlen(profile->user)+1);
-        BoltMem_deallocate(profile->password, strlen(profile->password)+1);
-        BoltMem_deallocate(profile->user_agent, strlen(profile->user_agent)+1);
-        BoltMem_deallocate((void*) profile, sizeof(struct BoltUserProfile));
-    }
-}
-
 struct BoltConnectionPool* BoltConnectionPool_create(enum BoltTransport transport, struct BoltAddress* address,
-        const struct BoltUserProfile* profile, size_t size)
+        const char* user_agent, const struct BoltValue* auth_token, size_t size)
 {
+    BoltLog_info("bolt: creating pool");
     struct BoltConnectionPool* pool = BoltMem_allocate(SIZE_OF_CONNECTION_POOL);
     BoltUtil_mutex_create(&pool->mutex);
     pool->transport = transport;
     pool->address = address;
-    pool->profile = copy_profile(profile);
+    pool->user_agent = BoltMem_duplicate(user_agent, strlen(user_agent)+1);
+    pool->auth_token = BoltValue_duplicate(auth_token);
     pool->size = size;
     pool->connections = BoltMem_allocate(size*sizeof(struct BoltConnection));
     memset(pool->connections, 0, size*sizeof(struct BoltConnection));
@@ -168,17 +147,20 @@ struct BoltConnectionPool* BoltConnectionPool_create(enum BoltTransport transpor
 
 void BoltConnectionPool_destroy(struct BoltConnectionPool* pool)
 {
+    BoltLog_info("bolt: destroying pool");
     for (size_t index = 0; index<pool->size; index++) {
         close_pool_entry(pool, (int) index);
     }
-    pool->connections = BoltMem_deallocate(pool->connections, pool->size*sizeof(struct BoltConnection));
+    BoltMem_deallocate(pool->connections, pool->size*sizeof(struct BoltConnection));
     BoltUtil_mutex_destroy(&pool->mutex);
-    free_profile(pool->profile);
+    BoltMem_deallocate(pool->user_agent, strlen(pool->user_agent)+1);
+    BoltValue_destroy(pool->auth_token);
     BoltMem_deallocate(pool, SIZE_OF_CONNECTION_POOL);
 }
 
 struct BoltConnection* BoltConnectionPool_acquire(struct BoltConnectionPool* pool, const void* agent)
 {
+    BoltLog_info("bolt: acquiring connection from the pool");
     BoltUtil_mutex_lock(&pool->mutex);
     int index = find_unused_connection(pool);
     if (index>=0) {
@@ -226,6 +208,7 @@ struct BoltConnection* BoltConnectionPool_acquire(struct BoltConnectionPool* poo
 
 int BoltConnectionPool_release(struct BoltConnectionPool* pool, struct BoltConnection* connection)
 {
+    BoltLog_info("bolt: releasing connection to pool");
     BoltUtil_mutex_lock(&pool->mutex);
     int index = find_connection(pool, connection);
     if (index>=0) {

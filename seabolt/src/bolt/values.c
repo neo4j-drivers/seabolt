@@ -206,6 +206,70 @@ void BoltValue_destroy(struct BoltValue* value)
     BoltMem_deallocate(value, sizeof(struct BoltValue));
 }
 
+struct BoltValue* BoltValue_duplicate(const struct BoltValue* value)
+{
+    struct BoltValue* duplicate = BoltValue_create();
+    BoltValue_copy(duplicate, value);
+    return duplicate;
+}
+
+void BoltValue_copy(struct BoltValue* dest, const struct BoltValue* src)
+{
+    assert(src!=NULL);
+    assert(dest!=NULL);
+
+    _recycle(dest);
+
+    switch (src->type) {
+    case BOLT_NULL:
+        BoltValue_format_as_Null(dest);
+        break;
+    case BOLT_BOOLEAN:
+        BoltValue_format_as_Boolean(dest, BoltBoolean_get(src));
+        break;
+    case BOLT_INTEGER:
+        BoltValue_format_as_Integer(dest, BoltInteger_get(src));
+        break;
+    case BOLT_FLOAT:
+        BoltValue_format_as_Float(dest, BoltFloat_get(src));
+        break;
+    case BOLT_STRING:
+        BoltValue_format_as_String(dest, BoltString_get(src), src->size);
+        break;
+    case BOLT_DICTIONARY:
+        BoltValue_format_as_Dictionary(dest, src->size);
+        for (int i = 0; i<src->size; i++) {
+            struct BoltValue* dest_key = BoltDictionary_key(dest, i);
+            struct BoltValue* dest_value = BoltDictionary_value(dest, i);
+
+            BoltValue_copy(dest_key, BoltDictionary_key(src, i));
+            BoltValue_copy(dest_value, BoltDictionary_value(src, i));
+        }
+        break;
+    case BOLT_LIST:
+        BoltValue_format_as_List(dest, src->size);
+        for (int i = 0; i<src->size; i++) {
+            struct BoltValue* dest_element = BoltList_value(dest, i);
+
+            BoltValue_copy(dest_element, BoltList_value(src, i));
+        }
+        break;
+    case BOLT_BYTES:
+        BoltValue_format_as_Bytes(dest, BoltBytes_get_all(src), src->size);
+        break;
+    case BOLT_STRUCTURE:
+        BoltValue_format_as_Structure(dest, src->subtype, src->size);
+        for (int i = 0; i<src->size; i++) {
+            struct BoltValue* dest_element = BoltStructure_value(dest, i);
+
+            BoltValue_copy(dest_element, BoltStructure_value(src, i));
+        }
+        break;
+    default:
+        assert(0);
+    }
+}
+
 enum BoltType BoltValue_type(const struct BoltValue* value)
 {
     return (enum BoltType) (value->type);
@@ -277,16 +341,16 @@ void BoltValue_format_as_String(struct BoltValue* value, const char* data, int32
     }
 }
 
-char* BoltString_get(struct BoltValue* value)
+char* BoltString_get(const struct BoltValue* value)
 {
     return value->size<=sizeof(value->data)/sizeof(char) ?
-           value->data.as_char : value->data.extended.as_char;
+           (char*)value->data.as_char : value->data.extended.as_char;
 }
 
 int BoltString_equals(struct BoltValue* value, const char* data)
 {
     if (BoltValue_type(value)==BOLT_STRING) {
-        const int32_t length = strlen(data);
+        const int32_t length = (int32_t)strlen(data);
         if (value->size!=length) {
             return 0;
         }
@@ -316,13 +380,13 @@ void BoltValue_format_as_Dictionary(struct BoltValue* value, int32_t length)
     }
 }
 
-struct BoltValue* BoltDictionary_key(struct BoltValue* value, int32_t index)
+struct BoltValue* BoltDictionary_key(const struct BoltValue* value, int32_t index)
 {
     assert(BoltValue_type(value)==BOLT_DICTIONARY);
     return &value->data.extended.as_value[2*index];
 }
 
-const char* BoltDictionary_get_key(struct BoltValue* value, int32_t index)
+const char* BoltDictionary_get_key(const struct BoltValue* value, int32_t index)
 {
     assert(BoltValue_type(value)==BOLT_DICTIONARY);
     struct BoltValue* key_value = &value->data.extended.as_value[2*index];
@@ -330,7 +394,7 @@ const char* BoltDictionary_get_key(struct BoltValue* value, int32_t index)
     return BoltString_get(key_value);
 }
 
-int32_t BoltDictionary_get_key_size(struct BoltValue* value, int32_t index)
+int32_t BoltDictionary_get_key_size(const struct BoltValue* value, int32_t index)
 {
     assert(BoltValue_type(value)==BOLT_DICTIONARY);
     struct BoltValue* key_value = &value->data.extended.as_value[2*index];
@@ -338,7 +402,7 @@ int32_t BoltDictionary_get_key_size(struct BoltValue* value, int32_t index)
     return key_value->size;
 }
 
-int32_t BoltDictionary_get_key_index(struct BoltValue* value, const char* key, size_t key_size, int32_t start_index)
+int32_t BoltDictionary_get_key_index(const struct BoltValue* value, const char* key, size_t key_size, int32_t start_index)
 {
     assert(BoltValue_type(value)==BOLT_DICTIONARY);
     if (start_index>=value->size) return -1;
@@ -365,13 +429,13 @@ int BoltDictionary_set_key(struct BoltValue* value, int32_t index, const char* k
     }
 }
 
-struct BoltValue* BoltDictionary_value(struct BoltValue* value, int32_t index)
+struct BoltValue* BoltDictionary_value(const struct BoltValue* value, int32_t index)
 {
     assert(BoltValue_type(value)==BOLT_DICTIONARY);
     return &value->data.extended.as_value[2*index+1];
 }
 
-struct BoltValue* BoltDictionary_value_by_key(struct BoltValue* value, const char* key, size_t key_size)
+struct BoltValue* BoltDictionary_value_by_key(const struct BoltValue* value, const char* key, size_t key_size)
 {
     const int32_t index = BoltDictionary_get_key_index(value, key, key_size, 0);
     if (index<0) {
@@ -428,10 +492,10 @@ char BoltBytes_get(const struct BoltValue* value, int32_t index)
     return data[index];
 }
 
-char* BoltBytes_get_all(struct BoltValue* value)
+char* BoltBytes_get_all(const struct BoltValue* value)
 {
     return value->size<=sizeof(value->data)/sizeof(char) ?
-           value->data.as_char : value->data.extended.as_char;
+           (char*)value->data.as_char : value->data.extended.as_char;
 }
 
 void BoltValue_format_as_Structure(struct BoltValue* value, int16_t code, int32_t length)

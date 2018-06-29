@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "bolt/auth.h"
 #include "bolt/connections.h"
 #include "bolt/lifecycle.h"
 #include "bolt/mem.h"
@@ -187,12 +188,10 @@ int app_init(struct Application* app)
 {
     struct timespec t[2];
     timespec_get(&t[0], TIME_UTC);
-    struct BoltUserProfile profile;
-    profile.auth_scheme = BOLT_AUTH_BASIC;
-    profile.user = (char*) app->user;
-    profile.password = (char*) app->password;
-    profile.user_agent = (char*) "seabolt/1.0.0a";
-    BoltConnection_init(app->connection, &profile);
+
+    struct BoltValue* auth_token = BoltAuth_basic(app->user, app->password, NULL);
+    BoltConnection_init(app->connection, "seabolt/1.0.0a", auth_token);
+    BoltValue_destroy(auth_token);
     if (app->connection->status!=BOLT_READY) {
         fprintf(stderr, "FATAL: Failed to initialise connection\n");
         exit(EXIT_FAILURE);

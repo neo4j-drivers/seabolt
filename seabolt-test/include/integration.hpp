@@ -21,19 +21,21 @@
 #ifndef SEABOLT_TEST_INTEGRATION
 #define SEABOLT_TEST_INTEGRATION
 
-
 #include <cstring>
 #include <cstdlib>
 
 extern "C" {
-    #include "bolt/connections.h"
-    #include "bolt/logging.h"
-    #include "bolt/pooling.h"
-    #include "bolt/values.h"
+#include "bolt/auth.h"
+#include "bolt/connections.h"
+#include "bolt/logging.h"
+#include "bolt/pooling.h"
+#include "bolt/values.h"
 }
 
 #if USE_WINSOCK
+
 #include <winsock2.h>
+
 #endif
 
 #define SETTING(name, default_value) ((getenv(name) == nullptr) ? (default_value) : getenv(name))
@@ -47,23 +49,21 @@ extern "C" {
 
 #define VERBOSE() BoltLog_set_file(stderr)
 
-static const struct BoltUserProfile BOLT_PROFILE { BOLT_AUTH_BASIC, (char *)BOLT_USER, (char *)BOLT_PASSWORD, (char *)BOLT_USER_AGENT };
+static struct BoltAddress BOLT_IPV6_ADDRESS{(char*) BOLT_IPV6_HOST, (char*) BOLT_PORT};
 
-static struct BoltAddress BOLT_IPV6_ADDRESS { (char *)BOLT_IPV6_HOST, (char *)BOLT_PORT };
+static struct BoltAddress BOLT_IPV4_ADDRESS{(char*) BOLT_IPV4_HOST, (char*) BOLT_PORT};
 
-static struct BoltAddress BOLT_IPV4_ADDRESS { (char *)BOLT_IPV4_HOST, (char *)BOLT_PORT };
+struct BoltAddress* bolt_get_address(const char* host, const char* port);
 
-struct BoltAddress * bolt_get_address(const char * host, const char * port);
+struct BoltConnection* bolt_open_b(enum BoltTransport transport, const char* host, const char* port);
 
-struct BoltConnection * bolt_open_b(enum BoltTransport transport, const char * host, const char * port);
+struct BoltConnection* bolt_open_init_b(enum BoltTransport transport, const char* host, const char* port,
+        const char* user_agent, const struct BoltValue* auth_token);
 
-struct BoltConnection * bolt_open_init_b(enum BoltTransport transport, const char * host, const char * port,
-                                         const struct BoltUserProfile * profile);
+struct BoltConnection* bolt_open_init_default();
 
-void bolt_close_and_destroy_b(struct BoltConnection * connection);
+struct BoltValue* bolt_basic_auth(const char* username, const char* password);
 
-#define NEW_BOLT_CONNECTION() bolt_open_init_b(BOLT_SECURE_SOCKET, BOLT_IPV6_HOST, BOLT_PORT, &BOLT_PROFILE)
-
-
+void bolt_close_and_destroy_b(struct BoltConnection* connection);
 
 #endif // SEABOLT_TEST_INTEGRATION
