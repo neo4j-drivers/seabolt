@@ -1,0 +1,12 @@
+prefix=@DEST_DIR@
+exec_prefix=${prefix}/build/bin
+libdir=${prefix}/build/lib
+includedir=${prefix}/seabolt/include
+
+Name: seabolt
+Description: Neo4j Bolt Connector Library for C.
+Version: 0.1
+
+Requires:
+Libs: -L${libdir} -lseabolt @PRIVATE_LIBS@
+Cflags: -I${includedir}

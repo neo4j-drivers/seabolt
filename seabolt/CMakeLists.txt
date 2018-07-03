@@ -53,7 +53,6 @@ configure_file (
   "${PROJECT_SOURCE_DIR}/include/bolt/config-options.h"
   )
 
-
 file(GLOB H_FILES include/bolt/*.h)
 file(GLOB C_FILES src/bolt/*.c src/bolt/**/*.c)
 add_library(${PROJECT_NAME} SHARED ${H_FILES} ${C_FILES})
@@ -66,10 +65,12 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 if ( ${WINSOCK} )
 	target_link_libraries(${PROJECT_NAME} "ws2_32.lib")
+	set(PRIVATE_LIBS "${PRIVATE_LIBS} -lws2_32")
 endif ()
 
 if ( ${WINSSPI} )
 	target_link_libraries(${PROJECT_NAME} "fwpuclnt.lib")
+	set(PRIVATE_LIBS "${PRIVATE_LIBS} -lfwpuclnt")
 endif ()
 
 if ( ${OPENSSL} )
@@ -87,14 +88,24 @@ if ( ${OPENSSL} )
 
 	target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIRS})
 	target_link_libraries(${PROJECT_NAME} ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
+	set(PRIVATE_LIBS "${PRIVATE_LIBS} -lssl -lcrypto")
 endif ()
 
 if ( ${PTHREAD} )
 	target_link_libraries(${PROJECT_NAME} "pthread")
+	set(PRIVATE_LIBS "${PRIVATE_LIBS} -lpthread")
 endif ()
 
 set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include
         CACHE INTERNAL "${PROJECT_NAME}: Include Directories" FORCE)
+
+set(DEST_DIR "${CMAKE_SOURCE_DIR}")
+# configure pkg-config file
+configure_file(
+		"${PROJECT_SOURCE_DIR}/seabolt-dev.pc.in"
+		"${CMAKE_CURRENT_SOURCE_DIR}/../build/seabolt.pc"
+		@ONLY
+)
 
 # build a CPack driven installer package
 include (InstallRequiredSystemLibraries)
@@ -111,3 +122,4 @@ include (CPack)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/bolt" DESTINATION include FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/lib/pkgconfig" DESTINATION lib)
