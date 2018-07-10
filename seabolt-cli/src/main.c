@@ -294,7 +294,7 @@ int app_run(struct Application* app, const char* cypher)
 
     BoltConnection_fetch_summary(app->connection, run);
     if (app->with_header) {
-        const struct BoltValue* fields = BoltConnection_metadata_fields(app->connection);
+        const struct BoltValue* fields = BoltConnection_fields(app->connection);
         for (int i = 0; i<fields->size; i++) {
             if (i>0) {
                 putc('\t', stdout);

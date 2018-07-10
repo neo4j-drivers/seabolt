@@ -66,6 +66,8 @@ struct BoltProtocolV1State {
     char* server;
     /// A BoltValue containing field names for the active result
     struct BoltValue* result_field_names;
+    /// A BoltValue containing metadata fields
+    struct BoltValue* result_metadata;
     /// A BoltValue containing error code and message
     struct BoltValue* failure_data;
     /// The last bookmark received from the server
@@ -153,5 +155,7 @@ int BoltProtocolV1_load_pull_request(struct BoltConnection* connection, int32_t 
 int BoltProtocolV1_load_ack_failure(struct BoltConnection* connection);
 
 struct BoltValue* BoltProtocolV1_result_fields(struct BoltConnection* connection);
+
+struct BoltValue* BoltProtocolV1_result_metadata(struct BoltConnection* connection);
 
 #endif // SEABOLT_PROTOCOL_V1

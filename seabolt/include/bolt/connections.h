@@ -399,11 +399,19 @@ PUBLIC int BoltConnection_summary_success(struct BoltConnection* connection);
 PUBLIC struct BoltValue* BoltConnection_failure(struct BoltConnection* connection);
 
 /**
- * Return the number of fields available in the current result.
+ * Return the fields available in the current result.
  *
  * @param connection
  * @return
  */
-PUBLIC struct BoltValue* BoltConnection_metadata_fields(struct BoltConnection* connection);
+PUBLIC struct BoltValue* BoltConnection_fields(struct BoltConnection* connection);
+
+/**
+ * Returns the metadata sent by the server.
+ *
+ * @param connection
+ * @return
+ */
+PUBLIC struct BoltValue* BoltConnection_metadata(struct BoltConnection* connection);
 
 #endif // SEABOLT_CONNECT

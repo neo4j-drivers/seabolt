@@ -785,11 +785,21 @@ char * BoltConnection_last_bookmark(struct BoltConnection* connection)
     }
 }
 
-struct BoltValue* BoltConnection_metadata_fields(struct BoltConnection* connection)
+struct BoltValue* BoltConnection_fields(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
     case 1:
         return BoltProtocolV1_result_fields(connection);
+    default:
+        return NULL;
+    }
+}
+
+struct BoltValue* BoltConnection_metadata(struct BoltConnection* connection)
+{
+    switch (connection->protocol_version) {
+    case 1:
+        return BoltProtocolV1_result_metadata(connection);
     default:
         return NULL;
     }
