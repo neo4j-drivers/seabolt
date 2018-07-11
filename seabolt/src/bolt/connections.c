@@ -456,13 +456,17 @@ void BoltConnection_close(struct BoltConnection* connection)
     }
     if (connection->host != NULL) {
         BoltMem_deallocate(connection->host, strlen(connection->host)+1);
+        connection->host = NULL;
     }
     if (connection->port != NULL) {
         BoltMem_deallocate(connection->port, strlen(connection->port)+1);
+        connection->port = NULL;
     }
     if (connection->resolvedHost != NULL) {
         BoltMem_deallocate(connection->resolvedHost, MAX_IPADDR_LEN);
+        connection->resolvedHost = NULL;
     }
+    connection->resolvedPort = 0;
 }
 
 int BoltConnection_send(struct BoltConnection* connection)
