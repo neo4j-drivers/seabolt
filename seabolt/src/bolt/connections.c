@@ -31,6 +31,8 @@
 #define INITIAL_TX_BUFFER_SIZE 8192
 #define INITIAL_RX_BUFFER_SIZE 8192
 
+#define MAX_IPADDR_LEN 64
+
 #define SOCKET(domain, type, protocol) socket(domain, type, protocol)
 #define CONNECT(socket, address, address_size) connect(socket, address, address_size)
 #define SHUTDOWN(socket, how) shutdown(socket, how)
@@ -418,6 +420,16 @@ int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport tr
             else {
                 handshake_b(connection, 1, 0, 0, 0);
             }
+
+            // Store connection info
+            connection->host = BoltMem_duplicate(address->host, strlen(address->host)+1);
+            connection->port = BoltMem_duplicate(address->port, strlen(address->port)+1);
+            if (connection->resolvedHost == NULL) {
+                connection->resolvedHost = BoltMem_allocate(MAX_IPADDR_LEN);
+            }
+            BoltAddress_copy_resolved_host(address, i, connection->resolvedHost, MAX_IPADDR_LEN);
+            connection->resolvedPort = address->resolved_port;
+
             _set_status(connection, BOLT_CONNECTED, BOLT_NO_ERROR);
             break;
         }
@@ -441,6 +453,15 @@ void BoltConnection_close(struct BoltConnection* connection)
     }
     if (connection->status!=BOLT_DISCONNECTED) {
         _close(connection);
+    }
+    if (connection->host != NULL) {
+        BoltMem_deallocate(connection->host, strlen(connection->host)+1);
+    }
+    if (connection->port != NULL) {
+        BoltMem_deallocate(connection->port, strlen(connection->port)+1);
+    }
+    if (connection->resolvedHost != NULL) {
+        BoltMem_deallocate(connection->resolvedHost, MAX_IPADDR_LEN);
     }
 }
 
@@ -815,6 +836,22 @@ struct BoltValue* BoltConnection_failure(struct BoltConnection* connection)
         }
 
         return state->failure_data;
+    }
+    default:
+        return NULL;
+    }
+}
+
+char* BoltConnection_server(struct BoltConnection* connection)
+{
+    switch (connection->protocol_version) {
+    case 1: {
+        struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+        if (state==NULL) {
+            return NULL;
+        }
+
+        return state->server;
     }
     default:
         return NULL;

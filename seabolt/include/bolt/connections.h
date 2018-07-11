@@ -97,6 +97,11 @@ struct BoltConnection {
     /// Transport type for this connection
     enum BoltTransport transport;
 
+    char *host;
+    char *port;
+    char *resolvedHost;
+    in_port_t resolvedPort;
+
     /// The security context (secure connections only)
     struct ssl_ctx_st* ssl_context;
     /// A secure socket wrapper (secure connections only)
@@ -413,5 +418,7 @@ PUBLIC struct BoltValue* BoltConnection_fields(struct BoltConnection* connection
  * @return
  */
 PUBLIC struct BoltValue* BoltConnection_metadata(struct BoltConnection* connection);
+
+PUBLIC char* BoltConnection_server(struct BoltConnection* connection);
 
 #endif // SEABOLT_CONNECT
