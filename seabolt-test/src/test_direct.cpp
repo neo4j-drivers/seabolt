@@ -248,7 +248,7 @@ SCENARIO("Test field names returned from Cypher execution", "[integration][ipv6]
             BoltConnection_send(connection);
             bolt_request_t last = BoltConnection_last_request(connection);
             BoltConnection_fetch_summary(connection, run);
-            const struct BoltValue* fields = BoltConnection_metadata_fields(connection);
+            const struct BoltValue* fields = BoltConnection_fields(connection);
             REQUIRE(fields->size==3);
             struct BoltValue* field_name_value = BoltList_value(fields, 0);
             const char* field_name = BoltString_get(field_name_value);

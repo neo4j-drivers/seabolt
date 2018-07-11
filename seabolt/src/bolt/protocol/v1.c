@@ -75,7 +75,7 @@ int BoltProtocolV1_compile_INIT(struct BoltMessage* message, const char* user_ag
 
     if (mask_secure_fields) {
         struct BoltValue* secure_value = BoltDictionary_value_by_key(auth_token_field, "credentials", 11);
-        if (secure_value != NULL) {
+        if (secure_value!=NULL) {
             BoltValue_format_as_String(secure_value, "********", 8);
         }
     }
@@ -101,6 +101,8 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
     state->server = BoltMem_allocate(MAX_SERVER_SIZE);
     memset(state->server, 0, MAX_SERVER_SIZE);
     state->result_field_names = BoltValue_create();
+    state->result_metadata = BoltValue_create();
+    BoltValue_format_as_Dictionary(state->result_metadata, 0);
     state->failure_data = NULL;
     state->last_bookmark = BoltMem_allocate(MAX_BOOKMARK_SIZE);
     memset(state->last_bookmark, 0, MAX_BOOKMARK_SIZE);
@@ -152,6 +154,7 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state)
         BoltValue_destroy(state->failure_data);
     }
     BoltValue_destroy(state->result_field_names);
+    BoltValue_destroy(state->result_metadata);
     BoltMem_deallocate(state->last_bookmark, MAX_BOOKMARK_SIZE);
 
     BoltValue_destroy(state->data);
@@ -781,6 +784,9 @@ int BoltProtocolV1_fetch(struct BoltConnection* connection, bolt_request_t reque
         if (state->data_type!=BOLT_V1_RECORD) {
             state->response_counter += 1;
 
+            // Clean existing metadata
+            BoltValue_format_as_Dictionary(state->result_metadata, 0);
+
             if (state->data->size>=1) {
                 BoltProtocolV1_extract_metadata(connection, BoltList_value(state->data, 0));
             }
@@ -912,6 +918,7 @@ void BoltProtocolV1_clear_failure(struct BoltConnection* connection)
 void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct BoltValue* metadata)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+
     switch (BoltValue_type(metadata)) {
     case BOLT_DICTIONARY: {
         for (int32_t i = 0; i<metadata->size; i++) {
@@ -996,6 +1003,20 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
                 default:
                     break;
                 }
+            }
+            else {
+                struct BoltValue* source_key = BoltDictionary_key(metadata, i);
+                struct BoltValue* source_value = BoltDictionary_value(metadata, i);
+
+                // increase length
+                int32_t index = state->result_metadata->size;
+                BoltValue_format_as_Dictionary(state->result_metadata, index+1);
+
+                struct BoltValue* dest_key = BoltDictionary_key(state->result_metadata, index);
+                struct BoltValue* dest_value = BoltDictionary_value(state->result_metadata, index);
+
+                BoltValue_copy(dest_key, source_key);
+                BoltValue_copy(dest_value, source_value);
             }
         }
         break;
@@ -1118,6 +1139,17 @@ struct BoltValue* BoltProtocolV1_result_fields(struct BoltConnection* connection
     switch (BoltValue_type(state->result_field_names)) {
     case BOLT_LIST:
         return state->result_field_names;
+    default:
+        return NULL;
+    }
+}
+
+struct BoltValue* BoltProtocolV1_result_metadata(struct BoltConnection* connection)
+{
+    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+    switch (BoltValue_type(state->result_metadata)) {
+    case BOLT_DICTIONARY:
+        return state->result_metadata;
     default:
         return NULL;
     }
