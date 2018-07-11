@@ -116,12 +116,14 @@ int BoltAddress_resolve(struct BoltAddress* address)
 int BoltAddress_copy_resolved_host(struct BoltAddress* address, size_t index, char* buffer,
         socklen_t buffer_size)
 {
-    struct sockaddr_storage* resolved_host = &address->resolved_hosts[index];
-    const int status = getnameinfo((const struct sockaddr*) (resolved_host), SOCKADDR_STORAGE_SIZE, buffer, buffer_size,
+    struct sockaddr_storage* resolved_host_storage = &address->resolved_hosts[index];
+    const struct sockaddr* resolved_host = (const struct sockaddr*)resolved_host_storage;
+    const socklen_t resolved_host_size = resolved_host_storage->ss_family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
+    const int status = getnameinfo(resolved_host, resolved_host_size, buffer, buffer_size,
             NULL, 0, NI_NUMERICHOST);
     switch (status) {
     case 0:
-        return resolved_host->ss_family;
+        return resolved_host_storage->ss_family;
     default:
         return -1;
     }
