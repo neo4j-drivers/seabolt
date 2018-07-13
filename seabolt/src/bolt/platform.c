@@ -32,7 +32,7 @@
 
 int BoltUtil_get_time(struct timespec* tp)
 {
-#ifdef __APPLE__
+#if defined(__APPLE__)
     clock_serv_t cclock;
     mach_timespec_t mts;
     host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
@@ -40,6 +40,13 @@ int BoltUtil_get_time(struct timespec* tp)
     mach_port_deallocate(mach_task_self(), cclock);
     tp->tv_sec = mts.tv_sec;
     tp->tv_nsec = mts.tv_nsec;
+    return 0;
+#elif defined(_WIN32)
+    __int64 wintime;
+    GetSystemTimeAsFileTime((FILETIME*) &wintime);
+    wintime -= 116444736000000000L;  //1jan1601 to 1jan1970
+    tp->tv_sec = wintime/10000000L;           //seconds
+    tp->tv_nsec = wintime%10000000L*100;      //nano-seconds
     return 0;
 #else
     return timespec_get(tp, TIME_UTC);

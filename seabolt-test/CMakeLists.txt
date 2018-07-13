@@ -11,8 +11,8 @@ if (MSVC)
 	set(CMAKE_CXX_FLAGS_DEBUG "/W4 /Zi /D_CRT_SECURE_NO_WARNINGS")
 	set(CMAKE_CXX_FLAGS_RELEASE "/Ox /W4 /D_CRT_SECURE_NO_WARNINGS")
 else()
-	set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
-	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wall")
+	set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -fpermissive")
+	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wall -fpermissive")
 endif()
 
 

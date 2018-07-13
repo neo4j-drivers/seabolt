@@ -17,12 +17,12 @@
  * limitations under the License.
  */
 
-#include <memory.h>
-#include <stdint.h>
-
 #include "catch.hpp"
 
 extern "C" {
+#include <string.h>
+#include <memory.h>
+#include <stdint.h>
 #include "bolt/mem.h"
 }
 

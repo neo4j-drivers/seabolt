@@ -27,6 +27,7 @@
 #include "bolt/lifecycle.h"
 #include "bolt/mem.h"
 #include "bolt/values.h"
+#include "bolt/platform.h"
 
 #ifdef WIN32
 
@@ -172,7 +173,7 @@ void app_destroy(struct Application* app)
 void app_connect(struct Application* app)
 {
     struct timespec t[2];
-    timespec_get(&t[0], TIME_UTC);
+    BoltUtil_get_time(&t[0]);
     BoltAddress_resolve(app->address);
     app->connection = BoltConnection_create();
     BoltConnection_open(app->connection, app->transport, app->address);
@@ -180,14 +181,14 @@ void app_connect(struct Application* app)
         fprintf(stderr, "FATAL: Failed to connect\n");
         exit(EXIT_FAILURE);
     }
-    timespec_get(&t[1], TIME_UTC);
+    BoltUtil_get_time(&t[1]);
     timespec_diff(&app->stats.connect_time, &t[1], &t[0]);
 }
 
 int app_init(struct Application* app)
 {
     struct timespec t[2];
-    timespec_get(&t[0], TIME_UTC);
+    BoltUtil_get_time(&t[0]);
 
     struct BoltValue* auth_token = BoltAuth_basic(app->user, app->password, NULL);
     BoltConnection_init(app->connection, "seabolt/1.0.0a", auth_token);
@@ -196,7 +197,7 @@ int app_init(struct Application* app)
         fprintf(stderr, "FATAL: Failed to initialise connection\n");
         exit(EXIT_FAILURE);
     }
-    timespec_get(&t[1], TIME_UTC);
+    BoltUtil_get_time(&t[1]);
     timespec_diff(&app->stats.init_time, &t[1], &t[0]);
     return 0;
 }
@@ -207,12 +208,12 @@ int app_debug(struct Application* app, const char* cypher)
 
     struct timespec t[7];
 
-    timespec_get(&t[1], TIME_UTC);    // Checkpoint 1 - right at the start
+    BoltUtil_get_time(&t[1]);    // Checkpoint 1 - right at the start
 
     app_connect(app);
     app_init(app);
 
-    timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after handshake and initialisation
+    BoltUtil_get_time(&t[2]);    // Checkpoint 2 - after handshake and initialisation
 
     //BoltConnection_load_bookmark(bolt->connection, "tx:1234");
     BoltConnection_load_begin_request(app->connection);
@@ -226,13 +227,13 @@ int app_debug(struct Application* app, const char* cypher)
 
     BoltConnection_send(app->connection);
 
-    timespec_get(&t[3], TIME_UTC);    // Checkpoint 3 - after query transmission
+    BoltUtil_get_time(&t[3]);    // Checkpoint 3 - after query transmission
 
     long record_count = 0;
 
     BoltConnection_fetch_summary(app->connection, run);
 
-    timespec_get(&t[4], TIME_UTC);    // Checkpoint 4 - receipt of header
+    BoltUtil_get_time(&t[4]);    // Checkpoint 4 - receipt of header
 
     while (BoltConnection_fetch(app->connection, pull)) {
         record_count += 1;
@@ -240,12 +241,12 @@ int app_debug(struct Application* app, const char* cypher)
 
     BoltConnection_fetch_summary(app->connection, commit);
 
-    timespec_get(&t[5], TIME_UTC);    // Checkpoint 5 - receipt of footer
+    BoltUtil_get_time(&t[5]);    // Checkpoint 5 - receipt of footer
 
     BoltConnection_close(app->connection);
     BoltConnection_destroy(app->connection);
 
-    timespec_get(&t[6], TIME_UTC);    // Checkpoint 6 - after close
+    BoltUtil_get_time(&t[6]);    // Checkpoint 6 - after close
 
     ///////////////////////////////////////////////////////////////////
 
@@ -362,12 +363,12 @@ int app_perf(struct Application* app, long warmup_times, long actual_times, cons
         run_fetch(app, cypher);
     }
 
-    timespec_get(&t[1], TIME_UTC);    // Checkpoint 1 - before run
+    BoltUtil_get_time(&t[1]);    // Checkpoint 1 - before run
     long record_count = 0;
     for (int i = 0; i<actual_times; i++) {
         record_count += run_fetch(app, cypher);
     }
-    timespec_get(&t[2], TIME_UTC);    // Checkpoint 2 - after run
+    BoltUtil_get_time(&t[2]);    // Checkpoint 2 - after run
 
     BoltConnection_close(app->connection);
     BoltConnection_destroy(app->connection);

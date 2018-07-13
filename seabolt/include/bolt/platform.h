@@ -28,7 +28,7 @@ typedef void * mutex_t;
 typedef pthread_mutex_t mutex_t;
 #endif
 
-int BoltUtil_get_time(struct timespec *tp);
+PUBLIC int BoltUtil_get_time(struct timespec *tp);
 
 int BoltUtil_mutex_create(mutex_t *mutex);
 
