@@ -20,7 +20,12 @@
 #define SEABOLT_CONFIG_IMPL
 #include "config.h"
 
-#ifdef _WIN32
+#if defined(_WIN32) && _WIN32_WINNT < 0x0600
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+#endif
+
+#if defined(_WIN32) && _MSC_VER
 #pragma  warning(push)
 #pragma  warning(disable:4255)
 #pragma  warning(disable:4265)
@@ -42,6 +47,7 @@
 
 #if USE_WINSOCK
 #include <winsock2.h>
+#include <windows.h>
 #include <Ws2tcpip.h>
 #endif // USE_WINSOCK
 
@@ -55,7 +61,7 @@
 #include <openssl/ssl.h>
 #endif // USE_OPENSSL
 
-#ifdef _WIN32
+#if defined(_WIN32) && _MSC_VER
 #pragma  warning(pop)
 #endif
 
