@@ -32,7 +32,7 @@
 #include "config.h"
 #include "values.h"
 
-typedef unsigned long long bolt_request_t;
+typedef uint64_t bolt_request_t;
 
 /**
  *

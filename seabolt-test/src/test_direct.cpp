@@ -393,14 +393,14 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 REQUIRE(connection->error==BOLT_SERVER_FAILURE);
 
                 auto failure_data = BoltConnection_failure(connection);
-                REQUIRE(failure_data!=NULL);
+                REQUIRE(failure_data!=nullptr);
 
                 struct BoltValue* code = BoltDictionary_value_by_key(failure_data, "code", strlen("code"));
                 struct BoltValue* message = BoltDictionary_value_by_key(failure_data, "message", strlen("message"));
-                REQUIRE(code!=NULL);
+                REQUIRE(code!=nullptr);
                 REQUIRE(BoltValue_type(code)==BOLT_STRING);
                 REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError"));
-                REQUIRE(message!=NULL);
+                REQUIRE(message!=nullptr);
                 REQUIRE(BoltValue_type(message)==BOLT_STRING);
             }
 
@@ -413,14 +413,14 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 REQUIRE(connection->error==BOLT_SERVER_FAILURE);
 
                 struct BoltValue* failure_data = BoltConnection_failure(connection);
-                REQUIRE(failure_data!=NULL);
+                REQUIRE(failure_data!=nullptr);
 
                 struct BoltValue* code = BoltDictionary_value_by_key(failure_data, "code", strlen("code"));
                 struct BoltValue* message = BoltDictionary_value_by_key(failure_data, "message", strlen("message"));
-                REQUIRE(code!=NULL);
+                REQUIRE(code!=nullptr);
                 REQUIRE(BoltValue_type(code)==BOLT_STRING);
                 REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError"));
-                REQUIRE(message!=NULL);
+                REQUIRE(message!=nullptr);
                 REQUIRE(BoltValue_type(message)==BOLT_STRING);
             }
 
@@ -439,14 +439,14 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 REQUIRE(connection->error==BOLT_SERVER_FAILURE);
 
                 auto failure_data = BoltConnection_failure(connection);
-                REQUIRE(failure_data!=NULL);
+                REQUIRE(failure_data!=nullptr);
 
                 struct BoltValue* code = BoltDictionary_value_by_key(failure_data, "code", strlen("code"));
                 struct BoltValue* message = BoltDictionary_value_by_key(failure_data, "message", strlen("message"));
-                REQUIRE(code!=NULL);
+                REQUIRE(code!=nullptr);
                 REQUIRE(BoltValue_type(code)==BOLT_STRING);
                 REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError"));
-                REQUIRE(message!=NULL);
+                REQUIRE(message!=nullptr);
                 REQUIRE(BoltValue_type(message)==BOLT_STRING);
             }
 
@@ -460,7 +460,7 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 auto status = BoltConnection_ack_failure(connection);
 
                 REQUIRE(status==0);
-                REQUIRE(BoltConnection_failure(connection)==NULL);
+                REQUIRE(BoltConnection_failure(connection)==nullptr);
 
                 const auto ack_failure = BoltConnection_last_request(connection);
                 BoltConnection_send(connection);

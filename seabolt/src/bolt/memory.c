@@ -119,7 +119,7 @@ size_t BoltMem_peak_allocation()
     return __peak_allocation;
 }
 
-long long BoltMem_allocation_events()
+int64_t BoltMem_allocation_events()
 {
     return __allocation_events;
 }

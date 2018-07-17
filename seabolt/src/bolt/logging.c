@@ -20,6 +20,7 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include "bolt/logging.h"
 
@@ -64,7 +65,7 @@ void BoltLog_message(const char* peer, bolt_request_t request_id, int16_t code, 
         int32_t protocol_version)
 {
     if (__bolt_log_file==NULL) return;
-    fprintf(__bolt_log_file, "bolt: %s[%llu]: ", peer, request_id);
+    fprintf(__bolt_log_file, "bolt: %s[%" PRIu64 "]: ", peer, request_id);
     switch (protocol_version) {
     case 1: {
         const char* name = BoltProtocolV1_message_name(code);

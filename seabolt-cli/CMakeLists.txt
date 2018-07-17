@@ -14,6 +14,11 @@ else()
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/bin")
+# To have MSVC generate its outputs independent of the configuration
+foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
+    string( TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG )
+    set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${CMAKE_CURRENT_SOURCE_DIR}/../build/bin" )
+endforeach( OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES )
 
 file(GLOB C_FILES src/main.c)
 include_directories(${seabolt_INCLUDE_DIRS})

@@ -102,7 +102,7 @@ SCENARIO("Test running out of connections", "[integration][ipv6][secure][pooling
                 REQUIRE(connection1->status==BOLT_READY);
             }
             AND_THEN("the second connection should be invalid") {
-                REQUIRE(connection2==NULL);
+                REQUIRE(connection2==nullptr);
             }
             BoltConnectionPool_release(pool, connection2);
             BoltConnectionPool_release(pool, connection1);

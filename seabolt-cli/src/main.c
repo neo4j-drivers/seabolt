@@ -21,6 +21,7 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <time.h>
+#include <inttypes.h>
 
 #include "bolt/auth.h"
 #include "bolt/connections.h"
@@ -423,9 +424,9 @@ int main(int argc, char* argv[])
 
     if (with_allocation_report) {
         fprintf(stderr, "=====================================\n");
-        fprintf(stderr, "current allocation   : %zu bytes\n", BoltMem_current_allocation());
-        fprintf(stderr, "peak allocation      : %zu bytes\n", BoltMem_peak_allocation());
-        fprintf(stderr, "allocation events    : %lld\n", BoltMem_allocation_events());
+        fprintf(stderr, "current allocation   : %" PRId64 " bytes\n", (int64_t)BoltMem_current_allocation());
+        fprintf(stderr, "peak allocation      : %" PRId64 " bytes\n", (int64_t)BoltMem_peak_allocation());
+        fprintf(stderr, "allocation events    : %" PRId64 "\n", BoltMem_allocation_events());
         fprintf(stderr, "=====================================\n");
     }
 

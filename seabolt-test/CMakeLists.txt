@@ -6,13 +6,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include_directories(include)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../build/bin")
+# To have MSVC generate its outputs independent of the configuration
+foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
+    string( TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG )
+    set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${CMAKE_CURRENT_SOURCE_DIR}/../build/bin" )
+endforeach( OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES )
 
 if (MSVC)
 	set(CMAKE_CXX_FLAGS_DEBUG "/W4 /Zi /D_CRT_SECURE_NO_WARNINGS")
 	set(CMAKE_CXX_FLAGS_RELEASE "/Ox /W4 /D_CRT_SECURE_NO_WARNINGS")
 else()
-	set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -fpermissive")
-	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wall -fpermissive")
+	set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
+	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wall")
 endif()
 
 

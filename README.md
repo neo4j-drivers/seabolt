@@ -28,11 +28,21 @@ This project requires the following tools/libraries to be installed in order to 
 
 Currently windows builds also depend on OpenSSL, however support for windows secure sockets is in our roadmap.
 
-1. Install Visual Studio 2017 with VC++ support,
+#### MSVC
+
+1. Install Visual Studio 2017 with VC++ support
 2. Install CMake via `choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'`
 3. Install OpenSSL Win32 using `https://slproweb.com/download/Win32OpenSSL-1_1_0g.exe` 
 4. Install OpenSSL Win64 using `https://slproweb.com/download/Win64OpenSSL-1_1_0g.exe`
 5. Create an environment variable named `OPENSSL_LIB_ROOT` that points to the openssl library installation path (default is `C:/OpenSSL-Win64`).
+
+#### MINGW
+
+1. Install MSYS2 from `https://www.msys2.org/`
+    * Be sure to install a mingw toolchain into MSYS2 (you can use the following command `pacman -S --needed base-devel mingw-w64-i686-toolchain mingw-w64-x86_64-toolchain git subversion mercurial mingw-w64-i686-cmake mingw-w64-x86_64-cmake`)
+2. Install OpenSSL Win32 using `https://slproweb.com/download/Win32OpenSSL-1_1_0g.exe` 
+3. Install OpenSSL Win64 using `https://slproweb.com/download/Win64OpenSSL-1_1_0g.exe`
+4. Create an environment variable named `OPENSSL_LIB_ROOT` that points to the openssl library installation path (default is `C:/OpenSSL-Win64`).
 
 ## Building
 
@@ -44,7 +54,14 @@ To create distributable packages, use `make_packages.sh` instead.
 
 ### Windows
 
-To build the project, run either the `make_debug.cmd` or the `make_release.cmd` script from the project root directory.
+#### MINGW
+
+To build the project, run either the `make_debug.cmd` or the `make_release.cmd` script from the project root directory with `MINGW` as its first argument.
+This will compile and deposit project artifacts in the `build/bin` and `build/lib` directories.
+
+#### MSVC
+
+To build the project, run either the `make_debug.cmd` or the `make_release.cmd` script from the project root directory with `MSVC` as its first argument.
 This will compile and deposit project artifacts in the `build/bin` and `build/lib` directories.
 
 ## Docs 
