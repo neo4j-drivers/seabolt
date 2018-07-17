@@ -37,7 +37,7 @@ void* BoltMem_reverse_copy(void* dest, const void* src, size_t n)
 
 static size_t __allocation = 0;
 static size_t __peak_allocation = 0;
-static long long __allocation_events = 0;
+static int64_t __allocation_events = 0;
 
 void* BoltMem_allocate(size_t new_size)
 {
@@ -119,7 +119,7 @@ size_t BoltMem_peak_allocation()
     return __peak_allocation;
 }
 
-long long BoltMem_allocation_events()
+int64_t BoltMem_allocation_events()
 {
     return __allocation_events;
 }

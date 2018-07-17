@@ -101,7 +101,7 @@ PUBLIC size_t BoltMem_peak_allocation();
  *
  * @return
  */
-PUBLIC long long BoltMem_allocation_events();
+PUBLIC int64_t BoltMem_allocation_events();
 
 
 #endif // SEABOLT_MEM

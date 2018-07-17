@@ -35,7 +35,7 @@ Function CheckBoltKit()
 Function Compile()
 {
     Write-Host "Compiling..."
-    & cmd.exe /c "$BaseDir\make_debug.cmd"
+    & cmd.exe /c "$BaseDir\make_debug.cmd" $env:SEABOLT_TOOLCHAIN
     if ( $LASTEXITCODE -ne 0 )
     {
         throw @{ 
@@ -150,7 +150,7 @@ Function RunTests($Version)
         Write-Host "-- Checking server"
         $env:BOLT_PASSWORD=$Password
         $env:BOLT_PORT=$Port
-        & $BaseDir\build\bin\debug\bolt.exe debug "UNWIND range(1, 10000) AS n RETURN n"
+        & $BaseDir\build\bin\bolt.exe debug "UNWIND range(1, 10000) AS n RETURN n"
         if ( $LASTEXITCODE -ne 0 )
         {
             throw @{ 
@@ -160,7 +160,7 @@ Function RunTests($Version)
         }
 
         Write-Host "-- Running tests"
-        & $BaseDir\build\bin\debug\seabolt-test.exe $TestArgs
+        & $BaseDir\build\bin\seabolt-test.exe $TestArgs
         if ( $LASTEXITCODE -ne 0 )
         {
             throw @{ 

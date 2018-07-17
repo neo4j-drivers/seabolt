@@ -799,13 +799,13 @@ char * BoltConnection_last_bookmark(struct BoltConnection* connection)
     case 1: {
         struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
         if (state==NULL) {
-            return 0;
+            return NULL;
         }
         return state->last_bookmark;
     }
     default: {
         // TODO
-        return 0;
+        return NULL;
     }
     }
 }
