@@ -130,7 +130,7 @@ void reset_or_close(struct BoltConnectionPool* pool, int index)
 }
 
 struct BoltConnectionPool* BoltConnectionPool_create(enum BoltTransport transport, struct BoltAddress* address,
-        const char* user_agent, const struct BoltValue* auth_token, size_t size)
+        const char* user_agent, const struct BoltValue* auth_token, uint32_t size)
 {
     BoltLog_info("bolt: creating pool");
     struct BoltConnectionPool* pool = BoltMem_allocate(SIZE_OF_CONNECTION_POOL);

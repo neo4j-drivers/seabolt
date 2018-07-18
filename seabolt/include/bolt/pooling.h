@@ -36,14 +36,14 @@ struct BoltConnectionPool {
     struct BoltAddress* address;
     char* user_agent;
     struct BoltValue* auth_token;
-    size_t size;
+    uint32_t size;
     struct BoltConnection* connections;
 };
 
 PUBLIC
 struct BoltConnectionPool*
 BoltConnectionPool_create(enum BoltTransport transport, struct BoltAddress* address,
-        const char* user_agent, const struct BoltValue* auth_token, size_t size);
+        const char* user_agent, const struct BoltValue* auth_token, uint32_t size);
 
 PUBLIC void BoltConnectionPool_destroy(struct BoltConnectionPool* pool);
 
