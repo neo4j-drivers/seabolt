@@ -28,11 +28,13 @@ SCENARIO("Test using a pooled connection", "[integration][ipv6][secure][pooling]
         struct BoltConnectionPool* pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &BOLT_IPV6_ADDRESS,
                 BOLT_USER_AGENT, auth_token, 10);
         WHEN("a connection is acquired") {
-            struct BoltConnection* connection = BoltConnectionPool_acquire(pool, "test");
+            struct BoltConnectionPoolAcquireResult result = BoltConnectionPool_acquire(pool, "test");
             THEN("the connection should be connected") {
-                REQUIRE(connection->status==BOLT_READY);
+                REQUIRE(result.status==POOL_NO_ERROR);
+                REQUIRE(result.connection!=nullptr);
+                REQUIRE(result.connection->status==BOLT_READY);
             }
-            BoltConnectionPool_release(pool, connection);
+            BoltConnectionPool_release(pool, result.connection);
         }
         BoltConnectionPool_destroy(pool);
         BoltValue_destroy(auth_token);
@@ -46,16 +48,18 @@ SCENARIO("Test reusing a pooled connection", "[integration][ipv6][secure][poolin
         struct BoltConnectionPool* pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &BOLT_IPV6_ADDRESS,
                 BOLT_USER_AGENT, auth_token, 1);
         WHEN("a connection is acquired, released and acquired again") {
-            struct BoltConnection* connection1 = BoltConnectionPool_acquire(pool, "test");
-            BoltConnectionPool_release(pool, connection1);
-            struct BoltConnection* connection2 = BoltConnectionPool_acquire(pool, "test");
+            struct BoltConnectionPoolAcquireResult result1 = BoltConnectionPool_acquire(pool, "test");
+            BoltConnectionPool_release(pool, result1.connection);
+            struct BoltConnectionPoolAcquireResult result2 = BoltConnectionPool_acquire(pool, "test");
             THEN("the connection should be connected") {
-                REQUIRE(connection2->status==BOLT_READY);
+                REQUIRE(result2.status==POOL_NO_ERROR);
+                REQUIRE(result2.connection!=nullptr);
+                REQUIRE(result2.connection->status==BOLT_READY);
             }
             AND_THEN("the same connection should have been reused") {
-                REQUIRE(connection1==connection2);
+                REQUIRE(result1.connection==result2.connection);
             }
-            BoltConnectionPool_release(pool, connection2);
+            BoltConnectionPool_release(pool, result2.connection);
         }
         BoltConnectionPool_destroy(pool);
         BoltValue_destroy(auth_token);
@@ -69,20 +73,28 @@ SCENARIO("Test reusing a pooled connection that was abandoned", "[integration][i
         struct BoltConnectionPool* pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &BOLT_IPV6_ADDRESS,
                 BOLT_USER_AGENT, auth_token, 1);
         WHEN("a connection is acquired, released and acquired again") {
-            struct BoltConnection* connection1 = BoltConnectionPool_acquire(pool, "test");
+            struct BoltConnectionPoolAcquireResult result1 = BoltConnectionPool_acquire(pool, "test");
+            THEN("handle should include a valid connection") {
+                REQUIRE(result1.status==POOL_NO_ERROR);
+                REQUIRE(result1.connection!=nullptr);
+            }
             const char* cypher = "RETURN 1";
-            BoltConnection_cypher(connection1, cypher, strlen(cypher), 0);
-            BoltConnection_load_run_request(connection1);
-            BoltConnection_send(connection1);
-            BoltConnectionPool_release(pool, connection1);
-            struct BoltConnection* connection2 = BoltConnectionPool_acquire(pool, "test");
+            BoltConnection_cypher(result1.connection, cypher, strlen(cypher), 0);
+            BoltConnection_load_run_request(result1.connection);
+            BoltConnection_send(result1.connection);
+            BoltConnectionPool_release(pool, result1.connection);
+            struct BoltConnectionPoolAcquireResult result2 = BoltConnectionPool_acquire(pool, "test");
+            THEN("handle should include a valid connection") {
+                REQUIRE(result2.status==POOL_NO_ERROR);
+                REQUIRE(result2.connection!=nullptr);
+            }
             THEN("the connection should be connected") {
-                REQUIRE(connection2->status==BOLT_READY);
+                REQUIRE(result2.connection->status==BOLT_READY);
             }
             AND_THEN("the same connection should have been reused") {
-                REQUIRE(connection1==connection2);
+                REQUIRE(result1.connection==result2.connection);
             }
-            BoltConnectionPool_release(pool, connection2);
+            BoltConnectionPool_release(pool, result2.connection);
         }
         BoltConnectionPool_destroy(pool);
         BoltValue_destroy(auth_token);
@@ -96,16 +108,19 @@ SCENARIO("Test running out of connections", "[integration][ipv6][secure][pooling
         struct BoltConnectionPool* pool = BoltConnectionPool_create(BOLT_SECURE_SOCKET, &BOLT_IPV6_ADDRESS,
                 BOLT_USER_AGENT, auth_token, 1);
         WHEN("two connections are acquired in turn") {
-            struct BoltConnection* connection1 = BoltConnectionPool_acquire(pool, "test");
-            struct BoltConnection* connection2 = BoltConnectionPool_acquire(pool, "test");
+            struct BoltConnectionPoolAcquireResult result1 = BoltConnectionPool_acquire(pool, "test");
+            struct BoltConnectionPoolAcquireResult result2 = BoltConnectionPool_acquire(pool, "test");
             THEN("the first connection should be connected") {
-                REQUIRE(connection1->status==BOLT_READY);
+                REQUIRE(result1.status==POOL_NO_ERROR);
+                REQUIRE(result1.connection!=nullptr);
+                REQUIRE(result1.connection->status==BOLT_READY);
             }
             AND_THEN("the second connection should be invalid") {
-                REQUIRE(connection2==nullptr);
+                REQUIRE(result2.status==POOL_FULL);
+                REQUIRE(result2.connection==nullptr);
             }
-            BoltConnectionPool_release(pool, connection2);
-            BoltConnectionPool_release(pool, connection1);
+            BoltConnectionPool_release(pool, result2.connection);
+            BoltConnectionPool_release(pool, result1.connection);
         }
         BoltConnectionPool_destroy(pool);
         BoltValue_destroy(auth_token);

@@ -24,29 +24,19 @@
 void Bolt_startup(FILE* log_file)
 {
     if (log_file!=NULL) {
-#ifdef _WIN32
-        // this is a temporary fix
-        BoltLog_set_file(stdout);
-#else
         BoltLog_set_file(log_file);
-#endif
     }
 
 #if USE_WINSOCK
     WSADATA data;
     WSAStartup(MAKEWORD(2, 2), &data);
 #endif
-
-#if USE_OPENSSL
-
-#endif
 }
 
 void Bolt_shutdown()
 {
 #if USE_WINSOCK
-    // TODO: Do we need an argument whether to clean-up winsocks? It will probably terminate all winsock related in the process, not only seabolt related
-    //WSACleanup();
+    WSACleanup();
 #endif
 
 }

@@ -40,6 +40,20 @@ struct BoltConnectionPool {
     struct BoltConnection* connections;
 };
 
+enum BoltConnectionPoolAcquireStatus {
+    POOL_NO_ERROR = 0,
+    POOL_FULL = 1,
+    POOL_ADDRESS_NOT_RESOLVED = 2,
+    POOL_CONNECTION_ERROR = 3,
+};
+
+struct BoltConnectionPoolAcquireResult {
+    enum BoltConnectionPoolAcquireStatus status;
+    struct BoltConnection* connection;
+    enum BoltConnectionStatus connection_status;
+    enum BoltConnectionError connection_error;
+};
+
 PUBLIC
 struct BoltConnectionPool*
 BoltConnectionPool_create(enum BoltTransport transport, struct BoltAddress* address,
@@ -47,7 +61,8 @@ BoltConnectionPool_create(enum BoltTransport transport, struct BoltAddress* addr
 
 PUBLIC void BoltConnectionPool_destroy(struct BoltConnectionPool* pool);
 
-PUBLIC struct BoltConnection* BoltConnectionPool_acquire(struct BoltConnectionPool* pool, const void* agent);
+PUBLIC struct BoltConnectionPoolAcquireResult
+BoltConnectionPool_acquire(struct BoltConnectionPool* pool, const void* agent);
 
 PUBLIC int BoltConnectionPool_release(struct BoltConnectionPool* pool, struct BoltConnection* connection);
 

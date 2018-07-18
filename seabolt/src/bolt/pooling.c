@@ -62,18 +62,18 @@ int find_connection(struct BoltConnectionPool* pool, struct BoltConnection* conn
     return -1;
 }
 
-int init(struct BoltConnectionPool* pool, int index)
+enum BoltConnectionPoolAcquireStatus init(struct BoltConnectionPool* pool, int index)
 {
     struct BoltConnection* connection = &pool->connections[index];
     switch (BoltConnection_init(connection, pool->user_agent, pool->auth_token)) {
     case 0:
-        return index;
+        return POOL_NO_ERROR;
     default:
-        return -1;
+        return POOL_CONNECTION_ERROR;
     }
 }
 
-int open_init(struct BoltConnectionPool* pool, int index)
+enum BoltConnectionPoolAcquireStatus open_init(struct BoltConnectionPool* pool, int index)
 {
     // Host name resolution is carried out every time a connection
     // is opened. Given that connections are pooled and reused,
@@ -82,14 +82,14 @@ int open_init(struct BoltConnectionPool* pool, int index)
     case 0:
         break;
     default:
-        return -1;  // Could not resolve address
+        return POOL_ADDRESS_NOT_RESOLVED;  // Could not resolve address
     }
     struct BoltConnection* connection = &pool->connections[index];
     switch (BoltConnection_open(connection, pool->transport, pool->address)) {
     case 0:
         return init(pool, index);
     default:
-        return -1;  // Could not open socket
+        return POOL_CONNECTION_ERROR;  // Could not open socket
     }
 }
 
@@ -106,12 +106,12 @@ void close_pool_entry(struct BoltConnectionPool* pool, int index)
     }
 }
 
-int reset_or_open_init(struct BoltConnectionPool* pool, int index)
+enum BoltConnectionPoolAcquireStatus reset_or_open_init(struct BoltConnectionPool* pool, int index)
 {
     struct BoltConnection* connection = &pool->connections[index];
     switch (BoltConnection_reset(connection)) {
     case 0:
-        return index;
+        return POOL_NO_ERROR;
     default:
         return open_init(pool, index);
     }
@@ -158,31 +158,32 @@ void BoltConnectionPool_destroy(struct BoltConnectionPool* pool)
     BoltMem_deallocate(pool, SIZE_OF_CONNECTION_POOL);
 }
 
-struct BoltConnection* BoltConnectionPool_acquire(struct BoltConnectionPool* pool, const void* agent)
+struct BoltConnectionPoolAcquireResult BoltConnectionPool_acquire(struct BoltConnectionPool* pool, const void* agent)
 {
     BoltLog_info("bolt: acquiring connection from the pool");
     BoltUtil_mutex_lock(&pool->mutex);
     int index = find_unused_connection(pool);
+    enum BoltConnectionPoolAcquireStatus pool_status = index>=0 ? POOL_NO_ERROR : POOL_FULL;
     if (index>=0) {
         switch (pool->connections[index].status) {
         case BOLT_DISCONNECTED:
         case BOLT_DEFUNCT:
             // if the connection is DISCONNECTED or DEFUNCT then try
             // to open and initialise it before handing it out.
-            index = open_init(pool, index);
+            pool_status = open_init(pool, index);
             break;
         case BOLT_CONNECTED:
             // If CONNECTED, the connection will need to be initialised.
             // This state should rarely, if ever, be encountered here.
             // TODO: disconnect if too old
-            index = init(pool, index);
+            pool_status = init(pool, index);
             break;
         case BOLT_FAILED:
             // If FAILED, attempt to RESET the connection, reopening
             // from scratch if that fails. This state should rarely,
             // if ever, be encountered here.
             // TODO: disconnect if too old
-            index = reset_or_open_init(pool, index);
+            pool_status = reset_or_open_init(pool, index);
             break;
         case BOLT_READY:
             // If the connection is already in the READY state then
@@ -194,16 +195,30 @@ struct BoltConnection* BoltConnectionPool_acquire(struct BoltConnectionPool* poo
             break;
         }
     }
-    struct BoltConnection* connection;
-    if (index>=0) {
-        connection = &pool->connections[index];
-        connection->agent = agent;
+
+    struct BoltConnectionPoolAcquireResult handle;
+    handle.status = pool_status;
+    handle.connection_error = BOLT_NO_ERROR;
+    handle.connection_status = BOLT_DISCONNECTED;
+    handle.connection = NULL;
+
+    switch (pool_status) {
+    case POOL_NO_ERROR:
+        handle.connection = &pool->connections[index];
+        handle.connection->agent = agent;
+        break;
+    case POOL_CONNECTION_ERROR:
+        handle.connection_status = pool->connections[index].status;
+        handle.connection_error = pool->connections[index].error;
+        break;
+    case POOL_FULL:
+    case POOL_ADDRESS_NOT_RESOLVED:
+        break;
     }
-    else {
-        connection = NULL;
-    }
+
     BoltUtil_mutex_unlock(&pool->mutex);
-    return connection;
+
+    return handle;
 }
 
 int BoltConnectionPool_release(struct BoltConnectionPool* pool, struct BoltConnection* connection)
