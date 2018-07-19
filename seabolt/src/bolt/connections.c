@@ -324,10 +324,10 @@ int _receive(struct BoltConnection* connection, char* buffer, int min_size, int 
         int received = 0;
         switch (connection->transport) {
         case BOLT_SOCKET:
-            received = RECEIVE(connection->socket, buffer, max_remaining, 0);
+            received = RECEIVE(connection->socket, buffer + total_received, max_remaining, 0);
             break;
         case BOLT_SECURE_SOCKET:
-            received = RECEIVE_S(connection->ssl, buffer, max_remaining, 0);
+            received = RECEIVE_S(connection->ssl, buffer + total_received, max_remaining, 0);
             break;
         }
         if (received>0) {
