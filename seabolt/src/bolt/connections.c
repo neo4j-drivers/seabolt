@@ -273,11 +273,11 @@ int _send(struct BoltConnection* connection, const char* data, int size)
         int sent = 0;
         switch (connection->transport) {
         case BOLT_SOCKET: {
-            sent = TRANSMIT(connection->socket, data, size, 0);
+            sent = TRANSMIT(connection->socket, data + total_sent, remaining, 0);
             break;
         }
         case BOLT_SECURE_SOCKET: {
-            sent = TRANSMIT_S(connection->ssl, data, size, 0);
+            sent = TRANSMIT_S(connection->ssl, data + total_sent, remaining, 0);
             break;
         }
         }
