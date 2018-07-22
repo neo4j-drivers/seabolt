@@ -531,7 +531,7 @@ int BoltValue_write(struct BoltValue* value, FILE* file, int32_t protocol_versio
         return 0;
     }
     case BOLT_FLOAT: {
-        fprintf(file, "%f", BoltFloat_get(value));
+        fprintf(file, "%E", BoltFloat_get(value));
         return 0;
     }
     case BOLT_STRING: {
