@@ -441,14 +441,21 @@ int load(struct BoltBuffer* buffer, struct BoltValue* value)
  */
 void enqueue(struct BoltConnection* connection)
 {
-    // TODO: more chunks if size is too big
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    int size = BoltBuffer_unloadable(state->tx_buffer);
+
+    // loop through data, generate several chunks if it's larger than max chunk size
+    int total_size = BoltBuffer_unloadable(state->tx_buffer);
+    int total_remaining = total_size;
     char header[2];
-    header[0] = (char) (size >> 8);
-    header[1] = (char) (size);
-    BoltBuffer_load(connection->tx_buffer, &header[0], sizeof(header));
-    BoltBuffer_load(connection->tx_buffer, BoltBuffer_unload_pointer(state->tx_buffer, size), size);
+    while (total_remaining > 0) {
+        int current_size = total_remaining>BOLT_MAX_CHUNK_SIZE?BOLT_MAX_CHUNK_SIZE:total_remaining;
+        header[0] = (char) (current_size >> 8);
+        header[1] = (char) (current_size);
+        BoltBuffer_load(connection->tx_buffer, &header[0], sizeof(header));
+        BoltBuffer_load(connection->tx_buffer, BoltBuffer_unload_pointer(state->tx_buffer, current_size), current_size);
+        total_remaining -= current_size;
+    }
+
     header[0] = (char) (0);
     header[1] = (char) (0);
     BoltBuffer_load(connection->tx_buffer, &header[0], sizeof(header));
