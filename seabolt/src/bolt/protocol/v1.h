@@ -33,6 +33,8 @@
 #define BOLT_V1_IGNORED 0x7E
 #define BOLT_V1_FAILURE 0x7F
 
+#define BOLT_MAX_CHUNK_SIZE 65535
+
 enum BoltProtocolV1Type {
     BOLT_V1_NULL,
     BOLT_V1_BOOLEAN,
