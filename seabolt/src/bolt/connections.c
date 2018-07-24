@@ -273,11 +273,11 @@ int _send(struct BoltConnection* connection, const char* data, int size)
         int sent = 0;
         switch (connection->transport) {
         case BOLT_SOCKET: {
-            sent = TRANSMIT(connection->socket, data, size, 0);
+            sent = TRANSMIT(connection->socket, data + total_sent, remaining, 0);
             break;
         }
         case BOLT_SECURE_SOCKET: {
-            sent = TRANSMIT_S(connection->ssl, data, size, 0);
+            sent = TRANSMIT_S(connection->ssl, data + total_sent, remaining, 0);
             break;
         }
         }
@@ -324,10 +324,10 @@ int _receive(struct BoltConnection* connection, char* buffer, int min_size, int 
         int received = 0;
         switch (connection->transport) {
         case BOLT_SOCKET:
-            received = RECEIVE(connection->socket, buffer, max_remaining, 0);
+            received = RECEIVE(connection->socket, buffer + total_received, max_remaining, 0);
             break;
         case BOLT_SECURE_SOCKET:
-            received = RECEIVE_S(connection->ssl, buffer, max_remaining, 0);
+            received = RECEIVE_S(connection->ssl, buffer + total_received, max_remaining, 0);
             break;
         }
         if (received>0) {
