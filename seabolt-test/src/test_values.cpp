@@ -21,6 +21,8 @@
 #include "integration.hpp"
 #include "catch.hpp"
 
+using Catch::Matchers::Equals;
+
 #define REQUIRE_BOLT_NULL(value) { REQUIRE(BoltValue_type(value) == BOLT_NULL); }
 #define REQUIRE_BOLT_BOOLEAN(value, x) { REQUIRE(BoltValue_type(value) == BOLT_BOOLEAN); REQUIRE(BoltBoolean_get(value) == (x)); }
 #define REQUIRE_BOLT_INTEGER(value, x) { REQUIRE(BoltValue_type(value) == BOLT_INTEGER); REQUIRE(BoltInteger_get(value) == (x)); }
@@ -123,6 +125,97 @@ SCENARIO("Test string in, string out", "[integration][ipv6][secure]")
     }
 }
 
+SCENARIO("Test list in, list out", "[integration][ipv6][secure]")
+{
+    GIVEN("an open and initialised connection") {
+        struct BoltConnection* connection = bolt_open_init_default();
+        WHEN("successfully executed Cypher") {
+            const char* cypher = "RETURN $x";
+            REQUIRE(BoltConnection_cypher(connection, cypher, strlen(cypher), 1)==0);
+            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+            BoltValue_format_as_List(x, 3);
+            BoltValue_format_as_Integer(BoltList_value(x, 0), 0);
+            BoltValue_format_as_Integer(BoltList_value(x, 1), 1);
+            BoltValue_format_as_Integer(BoltList_value(x, 2), 2);
+            RUN_PULL_SEND(connection, result);
+            while (BoltConnection_fetch(connection, result)) {
+                BoltValue* field_values = BoltConnection_record_fields(connection);
+                BoltValue* value = BoltList_value(field_values, 0);
+                REQUIRE_BOLT_LIST(value, 3);
+                REQUIRE(BoltInteger_get(BoltList_value(value, 0))==0);
+                REQUIRE(BoltInteger_get(BoltList_value(value, 1))==1);
+                REQUIRE(BoltInteger_get(BoltList_value(value, 2))==2);
+            }
+            REQUIRE_BOLT_SUCCESS(connection);
+        }
+        bolt_close_and_destroy_b(connection);
+    }
+}
+
+SCENARIO("Test empty list in, empty list out", "[integration][ipv6][secure]")
+{
+    GIVEN("an open and initialised connection") {
+        struct BoltConnection* connection = bolt_open_init_default();
+        WHEN("successfully executed Cypher") {
+            const char* cypher = "RETURN $x";
+            REQUIRE(BoltConnection_cypher(connection, cypher, strlen(cypher), 1)==0);
+            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+            BoltValue_format_as_List(x, 0);
+            RUN_PULL_SEND(connection, result);
+            while (BoltConnection_fetch(connection, result)) {
+                BoltValue* field_values = BoltConnection_record_fields(connection);
+                BoltValue* value = BoltList_value(field_values, 0);
+                REQUIRE_BOLT_LIST(value, 0);
+            }
+            REQUIRE_BOLT_SUCCESS(connection);
+        }
+        bolt_close_and_destroy_b(connection);
+    }
+}
+
+SCENARIO("Test mixed list in, mixed list out", "[integration][ipv6][secure]")
+{
+    GIVEN("an open and initialised connection") {
+        struct BoltConnection* connection = bolt_open_init_default();
+        WHEN("successfully executed Cypher") {
+            const char* cypher = "RETURN $x";
+            REQUIRE(BoltConnection_cypher(connection, cypher, strlen(cypher), 1)==0);
+            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+
+            // list [42, "hello", false, 42.4242, {key1: "value1", key2: -424242}]
+            BoltValue_format_as_List(x, 5);
+            BoltValue_format_as_Integer(BoltList_value(x, 0), 42);
+            BoltValue_format_as_String(BoltList_value(x, 1), "hello", 5);
+            BoltValue_format_as_Boolean(BoltList_value(x, 2), 0);
+            BoltValue_format_as_Float(BoltList_value(x, 3), 42.4242);
+
+            BoltValue_format_as_Dictionary(BoltList_value(x, 4), 2);
+            BoltDictionary_set_key(BoltList_value(x, 4), 0, "key1", 4);
+            BoltValue_format_as_String(BoltDictionary_value(BoltList_value(x, 4), 0), "value1", 6);
+            BoltDictionary_set_key(BoltList_value(x, 4), 1, "key2", 4);
+            BoltValue_format_as_Integer(BoltDictionary_value(BoltList_value(x, 4), 1), -424242);
+
+            RUN_PULL_SEND(connection, result);
+            while (BoltConnection_fetch(connection, result)) {
+                BoltValue* field_values = BoltConnection_record_fields(connection);
+                BoltValue* value = BoltList_value(field_values, 0);
+                REQUIRE_BOLT_LIST(value, 5);
+                REQUIRE(BoltInteger_get(BoltList_value(value, 0))==42);
+                CHECK_THAT(BoltString_get(BoltList_value(value, 1)), Equals("hello"));
+                REQUIRE(BoltBoolean_get(BoltList_value(value, 2))==0);
+                REQUIRE(BoltFloat_get(BoltList_value(value, 3))==42.4242);
+
+                BoltValue* dictionary = BoltList_value(value, 4);
+                REQUIRE_BOLT_DICTIONARY(dictionary, 2);
+                CHECK_THAT(BoltString_get(BoltDictionary_value_by_key(dictionary, "key1", 4)), Equals("value1"));
+                REQUIRE(BoltInteger_get(BoltDictionary_value_by_key(dictionary, "key2", 4))==-424242);
+            }
+            REQUIRE_BOLT_SUCCESS(connection);
+        }
+        bolt_close_and_destroy_b(connection);
+    }
+}
+
 SCENARIO("Test dictionary in, dictionary out", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
@@ -164,6 +257,70 @@ SCENARIO("Test dictionary in, dictionary out", "[integration][ipv6][secure]")
     }
 }
 
+SCENARIO("Test empty dictionary in, empty dictionary out", "[integration][ipv6][secure]")
+{
+    GIVEN("an open and initialised connection") {
+        struct BoltConnection* connection = bolt_open_init_default();
+        WHEN("successfully executed Cypher") {
+            const char* cypher = "RETURN $x";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+            BoltValue_format_as_Dictionary(x, 0);
+            RUN_PULL_SEND(connection, result);
+            while (BoltConnection_fetch(connection, result)) {
+                const struct BoltValue* field_values = BoltConnection_record_fields(connection);
+                struct BoltValue* value = BoltList_value(field_values, 0);
+                REQUIRE_BOLT_DICTIONARY(value, 0);
+            }
+            REQUIRE_BOLT_SUCCESS(connection);
+        }
+        bolt_close_and_destroy_b(connection);
+    }
+}
+
+SCENARIO("Test mixed dictionary in, mixed dictionary out", "[integration][ipv6][secure]")
+{
+    GIVEN("an open and initialised connection") {
+        struct BoltConnection* connection = bolt_open_init_default();
+        WHEN("successfully executed Cypher") {
+            const char* cypher = "RETURN $x";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+
+            // dictionary {k1: "apa", key2: [1.9283, "hello world!"], TheKey3: true}
+            BoltValue_format_as_Dictionary(x, 3);
+
+            BoltDictionary_set_key(x, 0, "k1", 2);
+            BoltValue_format_as_String(BoltDictionary_value(x, 0), "apa", 3);
+
+            BoltDictionary_set_key(x, 1, "key2", 4);
+            BoltValue_format_as_List(BoltDictionary_value(x, 1), 2);
+            BoltValue_format_as_Float(BoltList_value(BoltDictionary_value(x, 1), 0), 1.9283);
+            BoltValue_format_as_String(BoltList_value(BoltDictionary_value(x, 1), 1), "hello world!", 12);
+
+            BoltDictionary_set_key(x, 2, "TheKey3", 7);
+            BoltValue_format_as_Boolean(BoltDictionary_value(x, 2), 1);
+
+            RUN_PULL_SEND(connection, result);
+            while (BoltConnection_fetch(connection, result)) {
+                const struct BoltValue* field_values = BoltConnection_record_fields(connection);
+                struct BoltValue* value = BoltList_value(field_values, 0);
+                REQUIRE_BOLT_DICTIONARY(value, 3);
+                CHECK_THAT(BoltString_get(BoltDictionary_value_by_key(value, "k1", 2)), Equals("apa"));
+
+                BoltValue* list = BoltDictionary_value_by_key(value, "key2", 4);
+                REQUIRE_BOLT_LIST(list, 2);
+                REQUIRE(BoltFloat_get(BoltList_value(list, 0))==1.9283);
+                CHECK_THAT(BoltString_get(BoltList_value(list, 1)), Equals("hello world!"));
+
+                REQUIRE_BOLT_BOOLEAN(BoltDictionary_value_by_key(value, "TheKey3", 7), 1);
+            }
+            REQUIRE_BOLT_SUCCESS(connection);
+        }
+        bolt_close_and_destroy_b(connection);
+    }
+}
+
 SCENARIO("Test integer in, integer out", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
@@ -185,6 +342,37 @@ SCENARIO("Test integer in, integer out", "[integration][ipv6][secure]")
     }
 }
 
+SCENARIO("Test max & min integer in, max & min integer out", "[integration][ipv6][secure]")
+{
+    GIVEN("an open and initialised connection") {
+        struct BoltConnection* connection = bolt_open_init_default();
+        WHEN("successfully executed Cypher") {
+            const char* cypher = "RETURN $x";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+
+            BoltValue_format_as_Integer(x, INT64_MAX);
+            RUN_PULL_SEND(connection, result1);
+            while (BoltConnection_fetch(connection, result1)) {
+                const struct BoltValue* field_values = BoltConnection_record_fields(connection);
+                struct BoltValue* value = BoltList_value(field_values, 0);
+                REQUIRE_BOLT_INTEGER(value, INT64_MAX);
+            }
+
+            BoltValue_format_as_Integer(x, INT64_MIN);
+            RUN_PULL_SEND(connection, result2);
+            while (BoltConnection_fetch(connection, result2)) {
+                const struct BoltValue* field_values = BoltConnection_record_fields(connection);
+                struct BoltValue* value = BoltList_value(field_values, 0);
+                REQUIRE_BOLT_INTEGER(value, INT64_MIN);
+            }
+
+            REQUIRE_BOLT_SUCCESS(connection);
+        }
+        bolt_close_and_destroy_b(connection);
+    }
+}
+
 SCENARIO("Test float in, float out", "[integration][ipv6][secure]")
 {
     GIVEN("an open and initialised connection") {
@@ -200,6 +388,37 @@ SCENARIO("Test float in, float out", "[integration][ipv6][secure]")
                 struct BoltValue* value = BoltList_value(field_values, 0);
                 REQUIRE_BOLT_FLOAT(value, 6.283185307179);
             }
+            REQUIRE_BOLT_SUCCESS(connection);
+        }
+        bolt_close_and_destroy_b(connection);
+    }
+}
+
+SCENARIO("Test max & min float in, max & min float out", "[integration][ipv6][secure]")
+{
+    GIVEN("an open and initialised connection") {
+        struct BoltConnection* connection = bolt_open_init_default();
+        WHEN("successfully executed Cypher") {
+            const char* cypher = "RETURN $x";
+            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+
+            BoltValue_format_as_Float(x, 1.7976931348623157E308);
+            RUN_PULL_SEND(connection, result1);
+            while (BoltConnection_fetch(connection, result1)) {
+                const struct BoltValue* field_values = BoltConnection_record_fields(connection);
+                struct BoltValue* value = BoltList_value(field_values, 0);
+                REQUIRE_BOLT_FLOAT(value, 1.7976931348623157E308);
+            }
+
+            BoltValue_format_as_Float(x, 4.9E-324);
+            RUN_PULL_SEND(connection, result2);
+            while (BoltConnection_fetch(connection, result2)) {
+                const struct BoltValue* field_values = BoltConnection_record_fields(connection);
+                struct BoltValue* value = BoltList_value(field_values, 0);
+                REQUIRE_BOLT_FLOAT(value, 4.9E-324);
+            }
+
             REQUIRE_BOLT_SUCCESS(connection);
         }
         bolt_close_and_destroy_b(connection);

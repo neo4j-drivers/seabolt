@@ -85,7 +85,7 @@ $ pip install --user sphinx breathe
 
 To run a query, use the following...
 ```
-BOLT_PASSWORD=password build/bin/bolt "UNWIND range(1, 1000000) AS n RETURN n"
+BOLT_PASSWORD=password build/bin/bolt run "UNWIND range(1, 1000000) AS n RETURN n"
 ```
 
 By default, this will simply display stats for the query execution.
@@ -104,7 +104,7 @@ BOLT_LOG=0|1|2
 To run a query, use the following...
 ```
 $env:BOLT_PASSWORD=password
-build/bin/bolt.exe "UNWIND range(1, 1000000) AS n RETURN n"
+build/bin/bolt.exe run "UNWIND range(1, 1000000) AS n RETURN n"
 ```
 
 By default, this will simply display stats for the query execution.
