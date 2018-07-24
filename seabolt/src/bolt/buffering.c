@@ -44,11 +44,11 @@ void BoltBuffer_compact(struct BoltBuffer* buffer)
 {
     if (buffer->cursor>0) {
         int available = buffer->extent-buffer->cursor;
-        if (available>0) {
+        if (available<buffer->cursor) {
             memcpy(&buffer->data[0], &buffer->data[buffer->cursor], (size_t) (available));
+            buffer->cursor = 0;
+            buffer->extent = available;
         }
-        buffer->cursor = 0;
-        buffer->extent = available;
     }
 }
 
@@ -141,12 +141,11 @@ int BoltBuffer_unload(struct BoltBuffer* buffer, char* data, int size)
 {
     int available = BoltBuffer_unloadable(buffer);
     if (size>available) return -1;
-    int cursor = buffer->cursor;
+    memcpy(data, &buffer->data[buffer->cursor], (size_t) (size));
     buffer->cursor += size;
     if (buffer->cursor==buffer->extent) {
         BoltBuffer_compact(buffer);
     }
-    memcpy(data, &buffer->data[cursor], (size_t) (size));
     return size;
 }
 
