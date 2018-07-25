@@ -201,16 +201,6 @@ PUBLIC void BoltConnection_close(struct BoltConnection* connection);
 PUBLIC int BoltConnection_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token);
 
 /**
- * Reset the connection to discard any outstanding results,
- * rollback the current transaction and clear any unacknowledged
- * failures.
- *
- * @param connection
- * @return
- */
-PUBLIC int BoltConnection_reset(struct BoltConnection* connection);
-
-/**
  * Send all queued requests.
  *
  * @param connection
@@ -296,8 +286,6 @@ PUBLIC int BoltConnection_cypher(struct BoltConnection* connection, const char* 
 PUBLIC struct BoltValue* BoltConnection_cypher_parameter(struct BoltConnection* connection, int32_t index,
         const char* key, size_t key_size);
 
-PUBLIC int BoltConnection_ack_failure(struct BoltConnection* connection);
-
 /**
  * Load a bookmark to be used when beginning the next transaction.
  *
@@ -356,6 +344,18 @@ PUBLIC int BoltConnection_load_discard_request(struct BoltConnection* connection
  * @return
  */
 PUBLIC int BoltConnection_load_pull_request(struct BoltConnection* connection, int32_t n);
+
+/**
+ * Load a RESET request into the request queue.
+ *
+ * RESET message resets the connection to discard any outstanding results,
+ * rollback the current transaction and clear any unacknowledged
+ * failures.
+ *
+ * @param connection
+ * @return
+ */
+PUBLIC int BoltConnection_load_reset_request(struct BoltConnection* connection);
 
 /**
  * Obtain a handle to the last request sent to the server. This handle

@@ -73,6 +73,31 @@ enum BoltConnectionPoolAcquireStatus init(struct BoltConnectionPool* pool, int i
     }
 }
 
+int reset(struct BoltConnectionPool* pool, int index)
+{
+    struct BoltConnection* connection = &pool->connections[index];
+    switch (BoltConnection_load_reset_request(connection)) {
+    case 0: {
+        bolt_request_t request_id = BoltConnection_last_request(connection);
+        if (BoltConnection_send(connection) < 0) {
+            return -1;
+        }
+
+        if (BoltConnection_fetch_summary(connection, request_id) < 0) {
+            return -1;
+        }
+
+        if (BoltConnection_summary_success(connection)) {
+            return 0;
+        }
+
+        return -1;
+    }
+    default:
+        return -1;
+    }
+}
+
 enum BoltConnectionPoolAcquireStatus open_init(struct BoltConnectionPool* pool, int index)
 {
     // Host name resolution is carried out every time a connection
@@ -108,8 +133,7 @@ void close_pool_entry(struct BoltConnectionPool* pool, int index)
 
 enum BoltConnectionPoolAcquireStatus reset_or_open_init(struct BoltConnectionPool* pool, int index)
 {
-    struct BoltConnection* connection = &pool->connections[index];
-    switch (BoltConnection_reset(connection)) {
+    switch (reset(pool, index)) {
     case 0:
         return POOL_NO_ERROR;
     default:
@@ -119,9 +143,8 @@ enum BoltConnectionPoolAcquireStatus reset_or_open_init(struct BoltConnectionPoo
 
 void reset_or_close(struct BoltConnectionPool* pool, int index)
 {
-    struct BoltConnection* connection = &pool->connections[index];
     // TODO: disconnect if too old
-    switch (BoltConnection_reset(connection)) {
+    switch (reset(pool, index)) {
     case 0:
         break;
     default:

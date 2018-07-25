@@ -36,6 +36,11 @@
 #define DISCARD_ALL 0x2F
 #define PULL_ALL    0x3F
 
+#define NODE    'N'
+#define RELATIONSHIP 'R'
+#define UNBOUND_RELATIONSHIP 'r'
+#define PATH 'P'
+
 #define INITIAL_TX_BUFFER_SIZE 8192
 #define INITIAL_RX_BUFFER_SIZE 8192
 
@@ -91,9 +96,44 @@ void compile_RUN(struct _run_request* run, int32_t n_parameters)
     BoltValue_format_as_Dictionary(run->parameters, n_parameters);
 }
 
+int BoltProtocolV1_check_readable_struct_signature(int16_t signature)
+{
+    switch (signature) {
+    case BOLT_V1_SUCCESS:
+    case BOLT_V1_FAILURE:
+    case BOLT_V1_IGNORED:
+    case BOLT_V1_RECORD:
+    case NODE:
+    case RELATIONSHIP:
+    case UNBOUND_RELATIONSHIP:
+    case PATH:
+        return 1;
+    }
+
+    return 0;
+}
+
+int BoltProtocolV1_check_writable_struct_signature(int16_t signature)
+{
+    switch (signature) {
+    case INIT:
+    case ACK_FAILURE:
+    case RESET:
+    case RUN:
+    case DISCARD_ALL:
+    case PULL_ALL:
+        return 1;
+    }
+
+    return 0;
+}
+
 struct BoltProtocolV1State* BoltProtocolV1_create_state()
 {
     struct BoltProtocolV1State* state = BoltMem_allocate(sizeof(struct BoltProtocolV1State));
+
+    state->check_readable_struct = &BoltProtocolV1_check_readable_struct_signature;
+    state->check_writable_struct = &BoltProtocolV1_check_writable_struct_signature;
 
     state->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
     state->rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
@@ -118,8 +158,6 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
     compile_RUN(&state->rollback, 0);
     BoltValue_format_as_String(state->rollback.statement, "ROLLBACK", 8);
 
-    state->ackfailure_request = BoltMessage_create(ACK_FAILURE, 0);
-
     state->discard_request = BoltMessage_create(DISCARD_ALL, 0);
 
     state->pull_request = BoltMessage_create(PULL_ALL, 0);
@@ -143,7 +181,6 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state)
     BoltMessage_destroy(state->commit.request);
     BoltMessage_destroy(state->rollback.request);
 
-    BoltMessage_destroy(state->ackfailure_request);
     BoltMessage_destroy(state->discard_request);
     BoltMessage_destroy(state->pull_request);
 
@@ -201,7 +238,7 @@ enum BoltProtocolV1Type marker_type(uint8_t marker)
     }
 }
 
-int load(struct BoltBuffer* buffer, struct BoltValue* value);
+int load(check_struct_signature_func check_writable_struct, struct BoltBuffer* buffer, struct BoltValue* value);
 
 /**
  * Copy request data from buffer 1 to buffer 0, also adding chunks.
@@ -366,12 +403,15 @@ int load_structure_header(struct BoltBuffer* buffer, int16_t code, int8_t size)
 int load_message(struct BoltConnection* connection, struct BoltMessage* message)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    TRY(load_structure_header(state->tx_buffer, message->code, (int8_t) (message->fields->size)));
-    for (int32_t i = 0; i<message->fields->size; i++) {
-        TRY(load(state->tx_buffer, BoltList_value(message->fields, i)));
+    if (state->check_writable_struct(message->code)) {
+        TRY(load_structure_header(state->tx_buffer, message->code, (int8_t) (message->fields->size)));
+        for (int32_t i = 0; i<message->fields->size; i++) {
+            TRY(load(state->check_writable_struct, state->tx_buffer, BoltList_value(message->fields, i)));
+        }
+        enqueue(connection);
+        return 0;
     }
-    enqueue(connection);
-    return 0;
+    return -1;
 }
 
 int BoltProtocolV1_load_message(struct BoltConnection* connection, struct BoltMessage* message)
@@ -386,7 +426,7 @@ int BoltProtocolV1_load_message_quietly(struct BoltConnection* connection, struc
     return load_message(connection, message);
 }
 
-int load(struct BoltBuffer* buffer, struct BoltValue* value)
+int load(check_struct_signature_func check_struct_type, struct BoltBuffer* buffer, struct BoltValue* value)
 {
     switch (BoltValue_type(value)) {
     case BOLT_NULL:
@@ -394,7 +434,7 @@ int load(struct BoltBuffer* buffer, struct BoltValue* value)
     case BOLT_LIST: {
         TRY(load_list_header(buffer, value->size));
         for (int32_t i = 0; i<value->size; i++) {
-            TRY(load(buffer, BoltList_value(value, i)));
+            TRY(load(check_struct_type, buffer, BoltList_value(value, i)));
         }
         return 0;
     }
@@ -410,7 +450,7 @@ int load(struct BoltBuffer* buffer, struct BoltValue* value)
             const char* key = BoltDictionary_get_key(value, i);
             if (key!=NULL) {
                 TRY(load_string(buffer, key, BoltDictionary_get_key_size(value, i)));
-                TRY(load(buffer, BoltDictionary_value(value, i)));
+                TRY(load(check_struct_type, buffer, BoltDictionary_value(value, i)));
             }
         }
         return 0;
@@ -420,11 +460,13 @@ int load(struct BoltBuffer* buffer, struct BoltValue* value)
     case BOLT_FLOAT:
         return load_float(buffer, BoltFloat_get(value));
     case BOLT_STRUCTURE: {
-        TRY(load_structure_header(buffer, BoltStructure_code(value), (int8_t) value->size));
-        for (int32_t i = 0; i<value->size; i++) {
-            TRY(load(buffer, BoltStructure_value(value, i)));
+        if (check_struct_type(BoltStructure_code(value))) {
+            TRY(load_structure_header(buffer, BoltStructure_code(value), (int8_t) value->size));
+            for (int32_t i = 0; i<value->size; i++) {
+                TRY(load(check_struct_type, buffer, BoltStructure_value(value, i)));
+            }
+            return 0;
         }
-        return 0;
     }
     default:
         // TODO:  TYPE_NOT_SUPPORTED (vs TYPE_NOT_IMPLEMENTED)
@@ -447,8 +489,8 @@ void enqueue(struct BoltConnection* connection)
     int total_size = BoltBuffer_unloadable(state->tx_buffer);
     int total_remaining = total_size;
     char header[2];
-    while (total_remaining > 0) {
-        int current_size = total_remaining>BOLT_MAX_CHUNK_SIZE?BOLT_MAX_CHUNK_SIZE:total_remaining;
+    while (total_remaining>0) {
+        int current_size = total_remaining>BOLT_MAX_CHUNK_SIZE ? BOLT_MAX_CHUNK_SIZE : total_remaining;
         header[0] = (char) (current_size >> 8);
         header[1] = (char) (current_size);
         BoltBuffer_load(connection->tx_buffer, &header[0], sizeof(header));
@@ -701,11 +743,13 @@ int unload_structure(struct BoltConnection* connection, struct BoltValue* value)
     if (marker>=0xB0 && marker<=0xBF) {
         size = marker & 0x0F;
         BoltBuffer_unload_i8(state->rx_buffer, &code);
-        BoltValue_format_as_Structure(value, code, size);
-        for (int i = 0; i<size; i++) {
-            unload(connection, BoltStructure_value(value, i));
+        if (state->check_readable_struct(code)) {
+            BoltValue_format_as_Structure(value, code, size);
+            for (int i = 0; i<size; i++) {
+                unload(connection, BoltStructure_value(value, i));
+            }
+            return 0;
         }
-        return 0;
     }
     // TODO: bigger structures (that are never actually used)
     return -1;  // BOLT_ERROR_WRONG_TYPE
@@ -828,7 +872,7 @@ int BoltProtocolV1_unload(struct BoltConnection* connection)
     int32_t size = marker & 0x0F;
     BoltValue_format_as_List(state->data, size);
     for (int i = 0; i<size; i++) {
-        unload(connection, BoltList_value(state->data, i));
+        unload( connection, BoltList_value(state->data, i));
     }
     if (code==BOLT_V1_RECORD) {
         if (state->record_counter<MAX_LOGGED_RECORDS) {
@@ -903,16 +947,6 @@ int BoltProtocolV1_init(struct BoltConnection* connection, const char* user_agen
     BoltMessage_destroy(init);
     TRY(BoltConnection_send(connection));
     TRY(BoltConnection_fetch_summary(connection, init_request));
-    return state->data_type;
-}
-
-int BoltProtocolV1_reset(struct BoltConnection* connection)
-{
-    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    BoltProtocolV1_load_message(connection, state->reset_request);
-    bolt_request_t reset_request = BoltConnection_last_request(connection);
-    TRY(BoltConnection_send(connection));
-    TRY(BoltConnection_fetch_summary(connection, reset_request));
     return state->data_type;
 }
 
@@ -1133,10 +1167,11 @@ int BoltProtocolV1_load_pull_request(struct BoltConnection* connection, int32_t 
     }
 }
 
-int BoltProtocolV1_load_ack_failure(struct BoltConnection* connection)
+int BoltProtocolV1_load_reset_request(struct BoltConnection* connection)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    BoltProtocolV1_load_message(connection, state->ackfailure_request);
+    BoltProtocolV1_load_message(connection, state->reset_request);
+    BoltProtocolV1_clear_failure(connection);
     return 0;
 }
 
