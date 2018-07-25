@@ -25,6 +25,7 @@
 #include "bolt/mem.h"
 
 #include "protocol/v1.h"
+#include "protocol/v2.h"
 #include "bolt/platform.h"
 #include <assert.h>
 
@@ -226,6 +227,7 @@ void _close(struct BoltConnection* connection)
     BoltLog_info("bolt: Closing connection");
     switch (connection->protocol_version) {
     case 1:
+    case 2:
         BoltProtocolV1_destroy_state(connection->protocol_state);
         connection->protocol_state = NULL;
         break;
@@ -383,6 +385,9 @@ int handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int32
     case 1:
         connection->protocol_state = BoltProtocolV1_create_state();
         return 0;
+    case 2:
+        connection->protocol_state = BoltProtocolV2_create_state();
+        return 0;
     default:
         _close(connection);
         _set_status(connection, BOLT_DEFUNCT, BOLT_UNSUPPORTED);
@@ -414,11 +419,11 @@ int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport tr
             if (connection->transport==BOLT_SECURE_SOCKET) {
                 const int secured = _secure(connection);
                 if (secured==0) {
-                    handshake_b(connection, 1, 0, 0, 0);
+                    handshake_b(connection, 2, 1, 0, 0);
                 }
             }
             else {
-                handshake_b(connection, 1, 0, 0, 0);
+                handshake_b(connection, 2, 1, 0, 0);
             }
 
             // Store connection info
@@ -507,7 +512,8 @@ int BoltConnection_receive(struct BoltConnection* connection, char* buffer, int 
 int BoltConnection_fetch(struct BoltConnection* connection, bolt_request_t request)
 {
     switch (connection->protocol_version) {
-    case 1: {
+    case 1:
+    case 2: {
         const int fetched = BoltProtocolV1_fetch(connection, request);
         if (fetched==0) {
             // Summary received
@@ -560,7 +566,8 @@ int BoltConnection_fetch_summary(struct BoltConnection* connection, bolt_request
 struct BoltValue* BoltConnection_record_fields(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
-    case 1: {
+    case 1:
+    case 2: {
         struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
         switch (state->data_type) {
         case BOLT_V1_RECORD:
@@ -584,7 +591,8 @@ struct BoltValue* BoltConnection_record_fields(struct BoltConnection* connection
 int BoltConnection_summary_success(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
-    case 1: {
+    case 1:
+    case 2: {
         struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
         return state->data_type==BOLT_V1_SUCCESS;
     }
@@ -596,7 +604,8 @@ int BoltConnection_summary_success(struct BoltConnection* connection)
 int BoltConnection_summary_failure(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
-    case 1: {
+    case 1:
+    case 2: {
         struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
         return state->data_type==BOLT_V1_FAILURE;
     }
@@ -609,7 +618,8 @@ int BoltConnection_init(struct BoltConnection* connection, const char* user_agen
 {
     BoltLog_info("bolt: Initialising connection");
     switch (connection->protocol_version) {
-    case 1: {
+    case 1:
+    case 2: {
         int code = BoltProtocolV1_init(connection, user_agent, auth_token);
         switch (code) {
         case BOLT_V1_SUCCESS:
@@ -635,6 +645,7 @@ BoltConnection_cypher(struct BoltConnection* connection, const char* cypher, siz
 {
     switch (connection->protocol_version) {
     case 1:
+    case 2:
         switch (BoltProtocolV1_set_cypher_template(connection, cypher, cypher_size)) {
         case 0:
             return BoltProtocolV1_set_n_cypher_parameters(connection, n_parameters);
@@ -651,6 +662,7 @@ BoltConnection_cypher_parameter(struct BoltConnection* connection, int32_t index
 {
     switch (connection->protocol_version) {
     case 1:
+    case 2:
         switch (BoltProtocolV1_set_cypher_parameter_key(connection, index, key, key_size)) {
         case 0:
             return BoltProtocolV1_cypher_parameter_value(connection, index);
@@ -666,6 +678,7 @@ int BoltConnection_load_bookmark(struct BoltConnection* connection, const char* 
 {
     switch (connection->protocol_version) {
     case 1:
+    case 2:
         return BoltProtocolV1_load_bookmark(connection, bookmark);
     default:
         return -1;
@@ -676,6 +689,7 @@ int BoltConnection_load_begin_request(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
     case 1:
+    case 2:
         return BoltProtocolV1_load_begin_request(connection);
     default:
         return -1;
@@ -686,6 +700,7 @@ int BoltConnection_load_commit_request(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
     case 1:
+    case 2:
         return BoltProtocolV1_load_commit_request(connection);
     default:
         return -1;
@@ -696,6 +711,7 @@ int BoltConnection_load_rollback_request(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
     case 1:
+    case 2:
         return BoltProtocolV1_load_rollback_request(connection);
     default:
         return -1;
@@ -706,6 +722,7 @@ int BoltConnection_load_run_request(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
     case 1:
+    case 2:
         return BoltProtocolV1_load_run_request(connection);
     default:
         return -1;
@@ -716,6 +733,7 @@ int BoltConnection_load_discard_request(struct BoltConnection* connection, int32
 {
     switch (connection->protocol_version) {
     case 1:
+    case 2:
         if (n>=0) {
             return -1;
         }
@@ -733,6 +751,7 @@ int BoltConnection_load_pull_request(struct BoltConnection* connection, int32_t 
 {
     switch (connection->protocol_version) {
     case 1:
+    case 2:
         return BoltProtocolV1_load_pull_request(connection, n);
     default:
         return -1;
@@ -742,9 +761,10 @@ int BoltConnection_load_pull_request(struct BoltConnection* connection, int32_t 
 int BoltConnection_load_reset_request(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
-    case 1: {
+    case 1:
+    case 2:
+        // TODO: check return value and set status on connection (BOLT_TYPE_UNSUPPORTED, etc.)
         return BoltProtocolV1_load_reset_request(connection);
-    }
     default:
         return -1;
     }
@@ -753,7 +773,8 @@ int BoltConnection_load_reset_request(struct BoltConnection* connection)
 bolt_request_t BoltConnection_last_request(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
-    case 1: {
+    case 1:
+    case 2: {
         struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
         if (state==NULL) {
             return 0;
@@ -770,7 +791,8 @@ bolt_request_t BoltConnection_last_request(struct BoltConnection* connection)
 char* BoltConnection_last_bookmark(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
-    case 1: {
+    case 1:
+    case 2: {
         struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
         if (state==NULL) {
             return NULL;
@@ -788,6 +810,7 @@ struct BoltValue* BoltConnection_fields(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
     case 1:
+    case 2:
         return BoltProtocolV1_result_fields(connection);
     default:
         return NULL;
@@ -798,6 +821,7 @@ struct BoltValue* BoltConnection_metadata(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
     case 1:
+    case 2:
         return BoltProtocolV1_result_metadata(connection);
     default:
         return NULL;
@@ -807,7 +831,8 @@ struct BoltValue* BoltConnection_metadata(struct BoltConnection* connection)
 struct BoltValue* BoltConnection_failure(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
-    case 1: {
+    case 1:
+    case 2: {
         struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
         if (state==NULL) {
             return NULL;
@@ -823,7 +848,8 @@ struct BoltValue* BoltConnection_failure(struct BoltConnection* connection)
 char* BoltConnection_server(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
-    case 1: {
+    case 1:
+    case 2: {
         struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
         if (state==NULL) {
             return NULL;

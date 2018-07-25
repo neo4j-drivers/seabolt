@@ -27,6 +27,7 @@
 #include <stdint.h>
 
 #include "bolt/connections.h"
+#include "protocol.h"
 
 #define BOLT_V1_SUCCESS 0x70
 #define BOLT_V1_RECORD  0x71
@@ -60,6 +61,9 @@ struct BoltMessage {
 };
 
 struct BoltProtocolV1State {
+    check_struct_signature_func check_readable_struct;
+    check_struct_signature_func check_writable_struct;
+
     // These buffers exclude chunk headers.
     struct BoltBuffer* tx_buffer;
     struct BoltBuffer* rx_buffer;
@@ -93,6 +97,10 @@ struct BoltProtocolV1State {
     struct BoltValue* data;
 
 };
+
+int BoltProtocolV1_check_readable_struct_signature(int16_t signature);
+
+int BoltProtocolV1_check_writable_struct_signature(int16_t signature);
 
 struct BoltProtocolV1State* BoltProtocolV1_create_state();
 
