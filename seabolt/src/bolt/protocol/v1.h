@@ -84,7 +84,6 @@ struct BoltProtocolV1State {
     struct _run_request commit;
     struct _run_request rollback;
 
-    struct BoltMessage* ackfailure_request;
     struct BoltMessage* discard_request;
     struct BoltMessage* pull_request;
     struct BoltMessage* reset_request;
@@ -127,8 +126,6 @@ const char* BoltProtocolV1_message_name(int16_t code);
 
 int BoltProtocolV1_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token);
 
-int BoltProtocolV1_reset(struct BoltConnection* connection);
-
 void BoltProtocolV1_clear_failure(struct BoltConnection* connection);
 
 void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct BoltValue* summary);
@@ -154,7 +151,7 @@ int BoltProtocolV1_load_run_request(struct BoltConnection* connection);
 
 int BoltProtocolV1_load_pull_request(struct BoltConnection* connection, int32_t n);
 
-int BoltProtocolV1_load_ack_failure(struct BoltConnection* connection);
+int BoltProtocolV1_load_reset_request(struct BoltConnection* connection);
 
 struct BoltValue* BoltProtocolV1_result_fields(struct BoltConnection* connection);
 

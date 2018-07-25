@@ -169,7 +169,7 @@ int _open(struct BoltConnection* connection, enum BoltTransport transport, const
         _set_status(connection, BOLT_DEFUNCT, BOLT_UNSUPPORTED);
         return -1;
     }
-    connection->socket = (int)SOCKET(address->ss_family, SOCK_STREAM, IPPROTO_TCP);
+    connection->socket = (int) SOCKET(address->ss_family, SOCK_STREAM, IPPROTO_TCP);
     if (connection->socket==-1) {
         _set_status(connection, BOLT_DEFUNCT, _last_error());
         return -1;
@@ -273,11 +273,11 @@ int _send(struct BoltConnection* connection, const char* data, int size)
         int sent = 0;
         switch (connection->transport) {
         case BOLT_SOCKET: {
-            sent = TRANSMIT(connection->socket, data + total_sent, remaining, 0);
+            sent = TRANSMIT(connection->socket, data+total_sent, remaining, 0);
             break;
         }
         case BOLT_SECURE_SOCKET: {
-            sent = TRANSMIT_S(connection->ssl, data + total_sent, remaining, 0);
+            sent = TRANSMIT_S(connection->ssl, data+total_sent, remaining, 0);
             break;
         }
         }
@@ -324,10 +324,10 @@ int _receive(struct BoltConnection* connection, char* buffer, int min_size, int 
         int received = 0;
         switch (connection->transport) {
         case BOLT_SOCKET:
-            received = RECEIVE(connection->socket, buffer + total_received, max_remaining, 0);
+            received = RECEIVE(connection->socket, buffer+total_received, max_remaining, 0);
             break;
         case BOLT_SECURE_SOCKET:
-            received = RECEIVE_S(connection->ssl, buffer + total_received, max_remaining, 0);
+            received = RECEIVE_S(connection->ssl, buffer+total_received, max_remaining, 0);
             break;
         }
         if (received>0) {
@@ -424,7 +424,7 @@ int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport tr
             // Store connection info
             connection->host = BoltMem_duplicate(address->host, strlen(address->host)+1);
             connection->port = BoltMem_duplicate(address->port, strlen(address->port)+1);
-            if (connection->resolvedHost == NULL) {
+            if (connection->resolvedHost==NULL) {
                 connection->resolvedHost = BoltMem_allocate(MAX_IPADDR_LEN);
             }
             BoltAddress_copy_resolved_host(address, i, connection->resolvedHost, MAX_IPADDR_LEN);
@@ -454,15 +454,15 @@ void BoltConnection_close(struct BoltConnection* connection)
     if (connection->status!=BOLT_DISCONNECTED) {
         _close(connection);
     }
-    if (connection->host != NULL) {
+    if (connection->host!=NULL) {
         BoltMem_deallocate(connection->host, strlen(connection->host)+1);
         connection->host = NULL;
     }
-    if (connection->port != NULL) {
+    if (connection->port!=NULL) {
         BoltMem_deallocate(connection->port, strlen(connection->port)+1);
         connection->port = NULL;
     }
-    if (connection->resolvedHost != NULL) {
+    if (connection->resolvedHost!=NULL) {
         BoltMem_deallocate(connection->resolvedHost, MAX_IPADDR_LEN);
         connection->resolvedHost = NULL;
     }
@@ -630,28 +630,6 @@ int BoltConnection_init(struct BoltConnection* connection, const char* user_agen
     }
 }
 
-int BoltConnection_reset(struct BoltConnection* connection)
-{
-    BoltLog_info("bolt: Resetting connection");
-    switch (connection->protocol_version) {
-    case 1: {
-        int code = BoltProtocolV1_reset(connection);
-        switch (code) {
-        case BOLT_V1_SUCCESS:
-            _set_status(connection, BOLT_READY, BOLT_NO_ERROR);
-            return 0;
-        default:
-            BoltLog_error("bolt: Connection failed to reset");
-            _set_status(connection, BOLT_DEFUNCT, BOLT_UNKNOWN_ERROR);
-            return -1;
-        }
-    }
-    default:
-        _set_status(connection, BOLT_DEFUNCT, BOLT_UNSUPPORTED);
-        return -1;
-    }
-}
-
 int
 BoltConnection_cypher(struct BoltConnection* connection, const char* cypher, size_t cypher_size, int32_t n_parameters)
 {
@@ -681,21 +659,6 @@ BoltConnection_cypher_parameter(struct BoltConnection* connection, int32_t index
         }
     default:
         return NULL;
-    }
-}
-
-int BoltConnection_ack_failure(struct BoltConnection* connection)
-{
-    assert(BoltConnection_failure(connection)!=NULL);
-
-    switch (connection->protocol_version) {
-    case 1:
-        BoltProtocolV1_load_ack_failure(connection);
-        BoltProtocolV1_clear_failure(connection);
-
-        return 0;
-    default:
-        return -1;
     }
 }
 
@@ -776,6 +739,17 @@ int BoltConnection_load_pull_request(struct BoltConnection* connection, int32_t 
     }
 }
 
+int BoltConnection_load_reset_request(struct BoltConnection* connection)
+{
+    switch (connection->protocol_version) {
+    case 1: {
+        return BoltProtocolV1_load_reset_request(connection);
+    }
+    default:
+        return -1;
+    }
+}
+
 bolt_request_t BoltConnection_last_request(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
@@ -793,7 +767,7 @@ bolt_request_t BoltConnection_last_request(struct BoltConnection* connection)
     }
 }
 
-char * BoltConnection_last_bookmark(struct BoltConnection* connection)
+char* BoltConnection_last_bookmark(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
     case 1: {

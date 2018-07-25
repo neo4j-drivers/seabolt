@@ -118,8 +118,6 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
     compile_RUN(&state->rollback, 0);
     BoltValue_format_as_String(state->rollback.statement, "ROLLBACK", 8);
 
-    state->ackfailure_request = BoltMessage_create(ACK_FAILURE, 0);
-
     state->discard_request = BoltMessage_create(DISCARD_ALL, 0);
 
     state->pull_request = BoltMessage_create(PULL_ALL, 0);
@@ -143,7 +141,6 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state)
     BoltMessage_destroy(state->commit.request);
     BoltMessage_destroy(state->rollback.request);
 
-    BoltMessage_destroy(state->ackfailure_request);
     BoltMessage_destroy(state->discard_request);
     BoltMessage_destroy(state->pull_request);
 
@@ -906,16 +903,6 @@ int BoltProtocolV1_init(struct BoltConnection* connection, const char* user_agen
     return state->data_type;
 }
 
-int BoltProtocolV1_reset(struct BoltConnection* connection)
-{
-    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    BoltProtocolV1_load_message(connection, state->reset_request);
-    bolt_request_t reset_request = BoltConnection_last_request(connection);
-    TRY(BoltConnection_send(connection));
-    TRY(BoltConnection_fetch_summary(connection, reset_request));
-    return state->data_type;
-}
-
 void BoltProtocolV1_clear_failure(struct BoltConnection* connection)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
@@ -1133,10 +1120,11 @@ int BoltProtocolV1_load_pull_request(struct BoltConnection* connection, int32_t 
     }
 }
 
-int BoltProtocolV1_load_ack_failure(struct BoltConnection* connection)
+int BoltProtocolV1_load_reset_request(struct BoltConnection* connection)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    BoltProtocolV1_load_message(connection, state->ackfailure_request);
+    BoltProtocolV1_load_message(connection, state->reset_request);
+    BoltProtocolV1_clear_failure(connection);
     return 0;
 }
 
