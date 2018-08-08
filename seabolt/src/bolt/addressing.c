@@ -24,12 +24,23 @@
 #include "memory.h"
 #include "bolt/config-impl.h"
 
+#define DEFAULT_BOLT_PORT "7687"
+#define DEFAULT_BOLT_HOST "localhost"
+
 #define SOCKADDR_STORAGE_SIZE sizeof(struct sockaddr_storage)
 
 struct BoltAddress* BoltAddress_create(const char* host, const char* port)
 {
     struct BoltAddress* address = BoltMem_allocate(sizeof(struct BoltAddress));
+
+    if (host == NULL || strlen(host) == 0) {
+        host = DEFAULT_BOLT_HOST;
+    }
     address->host = BoltMem_duplicate(host, strlen(host)+1);
+
+    if (port == NULL || strlen(port) == 0) {
+        port = DEFAULT_BOLT_PORT;
+    }
     address->port = BoltMem_duplicate(port, strlen(port)+1);
     address->n_resolved_hosts = 0;
     address->resolved_hosts = NULL;
