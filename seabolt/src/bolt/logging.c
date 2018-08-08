@@ -67,7 +67,8 @@ void BoltLog_message(const char* peer, bolt_request_t request_id, int16_t code, 
     if (__bolt_log_file==NULL) return;
     fprintf(__bolt_log_file, "bolt: %s[%" PRIu64 "]: ", peer, request_id);
     switch (protocol_version) {
-    case 1: {
+    case 1:
+    case 2: {
         const char* name = BoltProtocolV1_message_name(code);
         if (name==NULL) {
             fprintf(__bolt_log_file, "?");
