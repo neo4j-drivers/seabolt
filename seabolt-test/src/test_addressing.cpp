@@ -21,6 +21,69 @@
 #include "integration.hpp"
 #include "catch.hpp"
 
+SCENARIO("Test address construction", "")
+{
+    WHEN("hostname is provided as NULL")
+    {
+        struct BoltAddress* address = BoltAddress_create(nullptr, "7687");
+
+        REQUIRE(address->host!=nullptr);
+        REQUIRE(strcmp(address->host, "localhost")==0);
+
+        BoltAddress_destroy(address);
+    }
+
+    WHEN("hostname is provided as empty string")
+    {
+        struct BoltAddress* address = BoltAddress_create("", "7687");
+
+        REQUIRE(address->host!=nullptr);
+        REQUIRE(strcmp(address->host, "localhost")==0);
+
+        BoltAddress_destroy(address);
+    }
+
+    WHEN("port is provided as NULL")
+    {
+        struct BoltAddress* address = BoltAddress_create("localhost", nullptr);
+
+        REQUIRE(address->port!=nullptr);
+        REQUIRE(strcmp(address->port, "7687")==0);
+
+        BoltAddress_destroy(address);
+    }
+
+    WHEN("port is provided as empty string")
+    {
+        struct BoltAddress* address = BoltAddress_create("localhost", "");
+
+        REQUIRE(address->port!=nullptr);
+        REQUIRE(strcmp(address->port, "7687")==0);
+
+        BoltAddress_destroy(address);
+    }
+
+    WHEN("hostname is provided")
+    {
+        struct BoltAddress* address = BoltAddress_create("some.host.name", "7687");
+
+        REQUIRE(address->host!=nullptr);
+        REQUIRE(strcmp(address->host, "some.host.name")==0);
+
+        BoltAddress_destroy(address);
+    }
+
+    WHEN("port is provided")
+    {
+        struct BoltAddress* address = BoltAddress_create("localhost", "1578");
+
+        REQUIRE(address->port!=nullptr);
+        REQUIRE(strcmp(address->port, "1578")==0);
+
+        BoltAddress_destroy(address);
+    }
+}
+
 SCENARIO("Test address resolution (IPv4)", "[dns]")
 {
     const char* host = "ipv4-only.bolt-test.net";
@@ -96,3 +159,4 @@ SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
     }
     BoltAddress_destroy(address);
 }
+

@@ -344,13 +344,13 @@ void BoltValue_format_as_String(struct BoltValue* value, const char* data, int32
 char* BoltString_get(const struct BoltValue* value)
 {
     return value->size<=sizeof(value->data)/sizeof(char) ?
-           (char*)value->data.as_char : value->data.extended.as_char;
+           (char*) value->data.as_char : value->data.extended.as_char;
 }
 
 int BoltString_equals(struct BoltValue* value, const char* data)
 {
     if (BoltValue_type(value)==BOLT_STRING) {
-        const int32_t length = (int32_t)strlen(data);
+        const int32_t length = (int32_t) strlen(data);
         if (value->size!=length) {
             return 0;
         }
@@ -402,7 +402,8 @@ int32_t BoltDictionary_get_key_size(const struct BoltValue* value, int32_t index
     return key_value->size;
 }
 
-int32_t BoltDictionary_get_key_index(const struct BoltValue* value, const char* key, size_t key_size, int32_t start_index)
+int32_t
+BoltDictionary_get_key_index(const struct BoltValue* value, const char* key, size_t key_size, int32_t start_index)
 {
     assert(BoltValue_type(value)==BOLT_DICTIONARY);
     if (start_index>=value->size) return -1;
@@ -495,7 +496,7 @@ char BoltBytes_get(const struct BoltValue* value, int32_t index)
 char* BoltBytes_get_all(const struct BoltValue* value)
 {
     return value->size<=sizeof(value->data)/sizeof(char) ?
-           (char*)value->data.as_char : value->data.extended.as_char;
+           (char*) value->data.as_char : value->data.extended.as_char;
 }
 
 void BoltValue_format_as_Structure(struct BoltValue* value, int16_t code, int32_t length)
@@ -531,7 +532,7 @@ int BoltValue_write(struct BoltValue* value, FILE* file, int32_t protocol_versio
         return 0;
     }
     case BOLT_FLOAT: {
-        fprintf(file, "%f", BoltFloat_get(value));
+        fprintf(file, "%E", BoltFloat_get(value));
         return 0;
     }
     case BOLT_STRING: {
@@ -580,7 +581,8 @@ int BoltValue_write(struct BoltValue* value, FILE* file, int32_t protocol_versio
     case BOLT_STRUCTURE: {
         int16_t code = BoltStructure_code(value);
         switch (protocol_version) {
-        case 1: {
+        case 1:
+        case 2: {
             const char* name = BoltProtocolV1_structure_name(code);
             fprintf(file, "$%s", name);
             break;

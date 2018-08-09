@@ -450,14 +450,14 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 REQUIRE(BoltValue_type(message)==BOLT_STRING);
             }
 
-            THEN("ack_failure should clear failure state") {
+            THEN("reset should clear failure state") {
                 const auto records = BoltConnection_fetch_summary(connection, run);
                 REQUIRE(records==0);
                 REQUIRE(BoltConnection_summary_success(connection)==0);
                 REQUIRE(connection->status==BOLT_FAILED);
                 REQUIRE(connection->error==BOLT_SERVER_FAILURE);
 
-                auto status = BoltConnection_ack_failure(connection);
+                auto status = BoltConnection_load_reset_request(connection);
 
                 REQUIRE(status==0);
                 REQUIRE(BoltConnection_failure(connection)==nullptr);
@@ -468,7 +468,7 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 REQUIRE(records_1==0);
                 REQUIRE(BoltConnection_summary_success(connection)==1);
                 REQUIRE(connection->status==BOLT_READY);
-                REQUIRE(connection->error==BOLT_NO_ERROR);
+                REQUIRE(connection->error==BOLT_SUCCESS);
             }
         }
         BoltConnection_close(connection);
