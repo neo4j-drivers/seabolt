@@ -57,7 +57,7 @@ enum BoltConnectionStatus {
  *
  */
 enum BoltConnectionError {
-    BOLT_NO_ERROR = 0,
+    BOLT_SUCCESS = 0,
     BOLT_UNKNOWN_ERROR = 1,
     BOLT_UNSUPPORTED = 2,
     BOLT_INTERRUPTED = 3,
@@ -71,9 +71,15 @@ enum BoltConnectionError {
     BOLT_CONNECTION_REFUSED = 11,
     BOLT_NETWORK_UNREACHABLE = 12,
     BOLT_TLS_ERROR = 13,             // general catch-all for OpenSSL errors :/
-    BOLT_PROTOCOL_VIOLATION = 14,
     BOLT_END_OF_TRANSMISSION = 15,
     BOLT_SERVER_FAILURE = 16,
+    BOLT_TRANSPORT_UNSUPPORTED = 0x400,
+    BOLT_PROTOCOL_VIOLATION = 0x500,
+    BOLT_PROTOCOL_UNSUPPORTED_TYPE = 0x501,
+    BOLT_PROTOCOL_NOT_IMPLEMENTED_TYPE = 0x502,
+    BOLT_PROTOCOL_UNEXPECTED_MARKER = 0x503,
+    BOLT_PROTOCOL_UNSUPPORTED = 0x504,
+    BOLT_STATUS_SET = 0x900,
 };
 
 /**
@@ -97,9 +103,9 @@ struct BoltConnection {
     /// Transport type for this connection
     enum BoltTransport transport;
 
-    char *host;
-    char *port;
-    char *resolvedHost;
+    char* host;
+    char* port;
+    char* resolvedHost;
     in_port_t resolvedPort;
 
     /// The security context (secure connections only)
@@ -198,7 +204,8 @@ PUBLIC void BoltConnection_close(struct BoltConnection* connection);
  * @param auth_token dictionary that contains user credentials
  * @return
  */
-PUBLIC int BoltConnection_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token);
+PUBLIC int
+BoltConnection_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token);
 
 /**
  * Send all queued requests.

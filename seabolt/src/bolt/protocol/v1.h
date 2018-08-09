@@ -108,9 +108,7 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state);
 
 struct BoltProtocolV1State* BoltProtocolV1_state(struct BoltConnection* connection);
 
-int BoltProtocolV1_load_message(struct BoltConnection* connection, struct BoltMessage* message);
-
-int BoltProtocolV1_load_message_quietly(struct BoltConnection* connection, struct BoltMessage* message);
+int BoltProtocolV1_load_message(struct BoltConnection* connection, struct BoltMessage* message, int quiet);
 
 int BoltProtocolV1_compile_INIT(struct BoltMessage* message, const char* user_agent, const struct BoltValue* auth_token,
         int mask_secure_fields);
