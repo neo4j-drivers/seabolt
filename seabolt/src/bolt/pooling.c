@@ -221,7 +221,7 @@ struct BoltConnectionPoolAcquireResult BoltConnectionPool_acquire(struct BoltCon
 
     struct BoltConnectionPoolAcquireResult handle;
     handle.status = pool_status;
-    handle.connection_error = BOLT_NO_ERROR;
+    handle.connection_error = BOLT_SUCCESS;
     handle.connection_status = BOLT_DISCONNECTED;
     handle.connection = NULL;
 

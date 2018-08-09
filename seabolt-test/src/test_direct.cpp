@@ -468,7 +468,7 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 REQUIRE(records_1==0);
                 REQUIRE(BoltConnection_summary_success(connection)==1);
                 REQUIRE(connection->status==BOLT_READY);
-                REQUIRE(connection->error==BOLT_NO_ERROR);
+                REQUIRE(connection->error==BOLT_SUCCESS);
             }
         }
         BoltConnection_close(connection);
