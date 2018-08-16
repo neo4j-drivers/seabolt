@@ -34,8 +34,10 @@ extern "C" {
 #include "src/bolt/values.c"
 #include "src/bolt/memory.c"
 #include "src/bolt/addressing.c"
-#include "src/bolt/pooling/direct_pool.c"
-#include "src/bolt/pooling/routing_pool.c"
+#include "src/bolt/utils/address-set.c"
+#include "src/bolt/pool/routing-table.c"
+#include "src/bolt/pool/direct-pool.c"
+#include "src/bolt/pool/routing-pool.c"
 }
 
 #endif // SEABOLT_TEST

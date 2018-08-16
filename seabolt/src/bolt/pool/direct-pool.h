@@ -30,7 +30,7 @@
 /**
  * Connection pool (experimental)
  */
-struct BoltConnectionPool {
+struct BoltDirectPool {
     mutex_t mutex;
     struct BoltAddress* address;
     struct BoltConfig* config;
@@ -38,16 +38,19 @@ struct BoltConnectionPool {
     struct BoltConnection* connections;
 };
 
-struct BoltConnectionPool*
-BoltConnectionPool_create(struct BoltAddress* address, struct BoltConfig* config);
+#define SIZE_OF_DIRECT_POOL sizeof(struct BoltDirectPool)
+#define SIZE_OF_DIRECT_POOL_PTR sizeof(struct BoltDirectPool*)
 
-void BoltConnectionPool_destroy(struct BoltConnectionPool* pool);
+struct BoltDirectPool*
+BoltDirectPool_create(struct BoltAddress* address, struct BoltConfig* config);
+
+void BoltDirectPool_destroy(struct BoltDirectPool* pool);
 
 struct BoltConnectionResult
-BoltConnectionPool_acquire(struct BoltConnectionPool* pool);
+BoltDirectPool_acquire(struct BoltDirectPool* pool);
 
-int BoltConnectionPool_release(struct BoltConnectionPool* pool, struct BoltConnection* connection);
+int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* connection);
 
-int BoltConnectionPool_connections_in_use(struct BoltConnectionPool* pool);
+int BoltDirectPool_connections_in_use(struct BoltDirectPool* pool);
 
 #endif //SEABOLT_POOLING_H

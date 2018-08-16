@@ -20,8 +20,8 @@
 #include "bolt/config-impl.h"
 #include "bolt/connector.h"
 #include "bolt/mem.h"
-#include "pooling/direct_pool.h"
-#include "pooling/routing_pool.h"
+#include "pool/direct-pool.h"
+#include "pool/routing-pool.h"
 
 #define SIZE_OF_CONNECTOR sizeof(struct BoltConnector)
 #define SIZE_OF_CONFIG sizeof(struct BoltConfig)
@@ -42,10 +42,10 @@ struct BoltConnector* BoltConnector_create(struct BoltAddress* address, struct B
 
     switch (config_clone->mode) {
     case BOLT_DIRECT:
-        connector->pool_state = BoltConnectionPool_create(address, config_clone);
+        connector->pool_state = BoltDirectPool_create(address, config_clone);
         break;
     case BOLT_ROUTING:
-        connector->pool_state = BoltRoutingConnectionPool_create(address, config_clone);
+        connector->pool_state = BoltRoutingPool_create(address, config_clone);
         break;
     default:
         // TODO: Set some status
@@ -59,10 +59,10 @@ void BoltConnector_destroy(struct BoltConnector* connector)
 {
     switch (connector->config->mode) {
     case BOLT_DIRECT:
-        BoltConnectionPool_destroy((struct BoltConnectionPool*) connector->pool_state);
+        BoltDirectPool_destroy((struct BoltDirectPool*) connector->pool_state);
         break;
     case BOLT_ROUTING:
-        BoltRoutingConnectionPool_destroy((struct BoltRoutingConnectionPool*) connector->pool_state);
+        BoltRoutingPool_destroy((struct BoltRoutingPool*) connector->pool_state);
         break;
     }
 
@@ -78,9 +78,9 @@ struct BoltConnectionResult BoltConnector_acquire(struct BoltConnector* connecto
 {
     switch (connector->config->mode) {
     case BOLT_DIRECT:
-        return BoltConnectionPool_acquire((struct BoltConnectionPool*) connector->pool_state);
+        return BoltDirectPool_acquire((struct BoltDirectPool*) connector->pool_state);
     case BOLT_ROUTING:
-        return BoltRoutingConnectionPool_acquire((struct BoltRoutingConnectionPool*) connector->pool_state, mode);
+        return BoltRoutingPool_acquire((struct BoltRoutingPool*) connector->pool_state, mode);
     }
 
     struct BoltConnectionResult result = {
@@ -93,10 +93,10 @@ void BoltConnector_release(struct BoltConnector* connector, struct BoltConnectio
 {
     switch (connector->config->mode) {
     case BOLT_DIRECT:
-        BoltConnectionPool_release((struct BoltConnectionPool*) connector->pool_state, connection);
+        BoltDirectPool_release((struct BoltDirectPool*) connector->pool_state, connection);
         break;
     case BOLT_ROUTING:
-        BoltRoutingConnectionPool_release((struct BoltRoutingConnectionPool*) connector->pool_state, connection);
+        BoltRoutingPool_release((struct BoltRoutingPool*) connector->pool_state, connection);
         break;
     }
 }

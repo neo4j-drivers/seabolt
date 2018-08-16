@@ -16,12 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef SEABOLT_ALL_ROUTING_DISCOVERY_H
+#define SEABOLT_ALL_ROUTING_DISCOVERY_H
 
-#ifndef SEABOLT_ALL_PROTOCOL_H
-#define SEABOLT_ALL_PROTOCOL_H
-
-#include <inttypes.h>
-
-typedef int (*check_struct_signature_func)(int16_t);
-
-#endif //SEABOLT_ALL_PROTOCOL_H
+#endif //SEABOLT_ALL_ROUTING_DISCOVERY_H

@@ -21,7 +21,7 @@
 #include "bolt/config-impl.h"
 #include "bolt/logging.h"
 #include "bolt/mem.h"
-#include "direct_pool.h"
+#include "direct-pool.h"
 
 #define SIZE_OF_CONNECTION_POOL sizeof(struct BoltConnectionPool)
 
@@ -40,7 +40,7 @@ void timespec_diff(struct timespec* t, struct timespec* t0, struct timespec* t1)
     }
 }
 
-int find_unused_connection(struct BoltConnectionPool* pool)
+int find_unused_connection(struct BoltDirectPool* pool)
 {
     for (size_t i = 0; i<pool->size; i++) {
         struct BoltConnection* connection = &pool->connections[i];
@@ -51,7 +51,7 @@ int find_unused_connection(struct BoltConnectionPool* pool)
     return -1;
 }
 
-int find_connection(struct BoltConnectionPool* pool, struct BoltConnection* connection)
+int find_connection(struct BoltDirectPool* pool, struct BoltConnection* connection)
 {
     for (size_t i = 0; i<pool->size; i++) {
         struct BoltConnection* candidate = &pool->connections[i];
@@ -62,7 +62,7 @@ int find_connection(struct BoltConnectionPool* pool, struct BoltConnection* conn
     return -1;
 }
 
-enum BoltConnectionError init(struct BoltConnectionPool* pool, int index)
+enum BoltConnectionError init(struct BoltDirectPool* pool, int index)
 {
     struct BoltConnection* connection = &pool->connections[index];
     switch (BoltConnection_init(connection, pool->config->user_agent, pool->config->auth_token)) {
@@ -73,7 +73,7 @@ enum BoltConnectionError init(struct BoltConnectionPool* pool, int index)
     }
 }
 
-int reset(struct BoltConnectionPool* pool, int index)
+int reset(struct BoltDirectPool* pool, int index)
 {
     struct BoltConnection* connection = &pool->connections[index];
     switch (BoltConnection_load_reset_request(connection)) {
@@ -98,7 +98,7 @@ int reset(struct BoltConnectionPool* pool, int index)
     }
 }
 
-enum BoltConnectionError open_init(struct BoltConnectionPool* pool, int index)
+enum BoltConnectionError open_init(struct BoltDirectPool* pool, int index)
 {
     // Host name resolution is carried out every time a connection
     // is opened. Given that connections are pooled and reused,
@@ -118,7 +118,7 @@ enum BoltConnectionError open_init(struct BoltConnectionPool* pool, int index)
     }
 }
 
-void close_pool_entry(struct BoltConnectionPool* pool, int index)
+void close_pool_entry(struct BoltDirectPool* pool, int index)
 {
     struct BoltConnection* connection = &pool->connections[index];
     if (connection->status!=BOLT_DISCONNECTED) {
@@ -131,7 +131,7 @@ void close_pool_entry(struct BoltConnectionPool* pool, int index)
     }
 }
 
-enum BoltConnectionError reset_or_open_init(struct BoltConnectionPool* pool, int index)
+enum BoltConnectionError reset_or_open_init(struct BoltDirectPool* pool, int index)
 {
     switch (reset(pool, index)) {
     case 0:
@@ -141,7 +141,7 @@ enum BoltConnectionError reset_or_open_init(struct BoltConnectionPool* pool, int
     }
 }
 
-void reset_or_close(struct BoltConnectionPool* pool, int index)
+void reset_or_close(struct BoltDirectPool* pool, int index)
 {
     // TODO: disconnect if too old
     switch (reset(pool, index)) {
@@ -152,10 +152,10 @@ void reset_or_close(struct BoltConnectionPool* pool, int index)
     }
 }
 
-struct BoltConnectionPool* BoltConnectionPool_create(struct BoltAddress* address, struct BoltConfig* config)
+struct BoltDirectPool* BoltDirectPool_create(struct BoltAddress* address, struct BoltConfig* config)
 {
     BoltLog_info("bolt: creating pool");
-    struct BoltConnectionPool* pool = (struct BoltConnectionPool*) BoltMem_allocate(SIZE_OF_CONNECTION_POOL);
+    struct BoltDirectPool* pool = (struct BoltDirectPool*) BoltMem_allocate(SIZE_OF_DIRECT_POOL);
     BoltUtil_mutex_create(&pool->mutex);
     pool->config = config;
     pool->address = BoltAddress_create(address->host, address->port);
@@ -165,7 +165,7 @@ struct BoltConnectionPool* BoltConnectionPool_create(struct BoltAddress* address
     return pool;
 }
 
-void BoltConnectionPool_destroy(struct BoltConnectionPool* pool)
+void BoltDirectPool_destroy(struct BoltDirectPool* pool)
 {
     BoltLog_info("bolt: destroying pool");
     for (size_t index = 0; index<pool->size; index++) {
@@ -174,10 +174,10 @@ void BoltConnectionPool_destroy(struct BoltConnectionPool* pool)
     BoltMem_deallocate(pool->connections, pool->size*sizeof(struct BoltConnection));
     BoltAddress_destroy(pool->address);
     BoltUtil_mutex_destroy(&pool->mutex);
-    BoltMem_deallocate(pool, SIZE_OF_CONNECTION_POOL);
+    BoltMem_deallocate(pool, SIZE_OF_DIRECT_POOL);
 }
 
-struct BoltConnectionResult BoltConnectionPool_acquire(struct BoltConnectionPool* pool)
+struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
 {
     BoltLog_info("bolt: acquiring connection from the pool");
     BoltUtil_mutex_lock(&pool->mutex);
@@ -244,7 +244,7 @@ struct BoltConnectionResult BoltConnectionPool_acquire(struct BoltConnectionPool
     return handle;
 }
 
-int BoltConnectionPool_release(struct BoltConnectionPool* pool, struct BoltConnection* connection)
+int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* connection)
 {
     BoltLog_info("bolt: releasing connection to pool");
     BoltUtil_mutex_lock(&pool->mutex);
@@ -257,7 +257,7 @@ int BoltConnectionPool_release(struct BoltConnectionPool* pool, struct BoltConne
     return index;
 }
 
-int BoltConnectionPool_connections_in_use(struct BoltConnectionPool* pool)
+int BoltDirectPool_connections_in_use(struct BoltDirectPool* pool)
 {
     int count = 0;
     for (int i = 0; i<pool->size; i++) {

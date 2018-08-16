@@ -28,7 +28,7 @@ extern "C" {
 #include "bolt/auth.h"
 #include "bolt/connections.h"
 #include "bolt/logging.h"
-#include "../../seabolt/src/bolt/pooling/direct_pool.h"
+#include "bolt/pool/direct-pool.h"
 #include "bolt/values.h"
 }
 

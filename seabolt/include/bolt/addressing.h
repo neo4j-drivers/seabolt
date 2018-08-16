@@ -45,6 +45,9 @@ struct BoltAddress {
     mutex_t lock;
 };
 
+#define SIZE_OF_ADDRESS sizeof(struct BoltAddress)
+#define SIZE_OF_ADDRESS_PTR sizeof(struct BoltAddress *)
+
 #define BoltAddress_of(host, port) (struct BoltAddress) { (const char *)host, (const char *)port }
 
 /**
@@ -58,6 +61,8 @@ struct BoltAddress {
  * @return pointer to a new BoltAddress structure
  */
 PUBLIC struct BoltAddress* BoltAddress_create(const char* host, const char* port);
+
+PUBLIC struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int endpoint_len);
 
 /**
  * Resolve the original host and port into one or more IP addresses and

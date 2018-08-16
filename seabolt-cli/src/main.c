@@ -185,7 +185,7 @@ void app_connect(struct Application* app)
 {
     struct timespec t[2];
     BoltUtil_get_time(&t[0]);
-    struct BoltConnectionResult result = BoltConnector_acquire(app->connector, BOLT_ACCESS_MODE_WRITE);
+    struct BoltConnectionResult result = BoltConnector_acquire(app->connector, app->access_mode);
     if (result.connection==NULL) {
         fprintf(stderr, "FATAL: Failed to connect\n");
         exit(EXIT_FAILURE);

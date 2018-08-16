@@ -49,6 +49,31 @@ struct BoltAddress* BoltAddress_create(const char* host, const char* port)
     return address;
 }
 
+struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int endpoint_len)
+{
+    if (endpoint_len<0) {
+        endpoint_len = strlen(endpoint_str);
+    }
+
+    // Create a copy of the string and add null character at the end to properly
+    // work with string functions
+    char* address_str = (char*) BoltMem_duplicate(endpoint_str, endpoint_len+1);
+    address_str[endpoint_len] = '\0';
+
+    // Find the last index of `:` which is our port separator
+    char* port_str = strrchr(address_str, ':');
+    if (port_str!=NULL) {
+        // If we found the separator, set it to null and advance the pointer by 1
+        // By this we have two null terminated strings pointed by address_str (hostname)
+        // port_str (port)
+        *port_str++ = '\0';
+    }
+
+    struct BoltAddress* result = BoltAddress_create(address_str, port_str);
+    BoltMem_deallocate(address_str, endpoint_len+1);
+    return result;
+}
+
 int BoltAddress_resolve(struct BoltAddress* address)
 {
     BoltUtil_mutex_lock(&address->lock);
@@ -155,7 +180,7 @@ void BoltAddress_destroy(struct BoltAddress* address)
     }
 
     BoltUtil_mutex_destroy(&address->lock);
-    BoltMem_deallocate((char *)address->host, strlen(address->host)+1);
-    BoltMem_deallocate((char *)address->port, strlen(address->port)+1);
+    BoltMem_deallocate((char*) address->host, strlen(address->host)+1);
+    BoltMem_deallocate((char*) address->port, strlen(address->port)+1);
     BoltMem_deallocate(address, sizeof(struct BoltAddress));
 }
