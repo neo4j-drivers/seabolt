@@ -30,6 +30,8 @@ typedef pthread_mutex_t mutex_t;
 
 PUBLIC int BoltUtil_get_time(struct timespec *tp);
 
+int64_t BoltUtil_get_time_ms();
+
 int BoltUtil_mutex_create(mutex_t *mutex);
 
 int BoltUtil_mutex_destroy(mutex_t *mutex);

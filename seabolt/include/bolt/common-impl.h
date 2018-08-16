@@ -16,8 +16,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef SEABOLT_ALL_COMMON_IMPL_H
+#define SEABOLT_ALL_COMMON_IMPL_H
 
+#define SIZE_OF_C_STRING(str) (sizeof(char)*(strlen(str)+1))
 
-#define CATCH_CONFIG_MAIN
-
-#include "catch.hpp"
+#endif //SEABOLT_ALL_COMMON_IMPL_H

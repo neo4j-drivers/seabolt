@@ -24,6 +24,7 @@
 #include <inttypes.h>
 
 #include "bolt/auth.h"
+#include "bolt/connector.h"
 #include "bolt/connections.h"
 #include "bolt/lifecycle.h"
 #include "bolt/mem.h"
@@ -63,11 +64,9 @@ enum Command {
 };
 
 struct Application {
+    struct BoltConnector* connector;
     struct BoltConnection* connection;
-    enum BoltTransport transport;
-    struct BoltAddress* address;
-    const char* user;
-    const char* password;
+    enum BoltAccessMode access_mode;
     struct {
         struct timespec connect_time;
         struct timespec init_time;
@@ -102,18 +101,28 @@ void timespec_diff(struct timespec* t, struct timespec* t0, struct timespec* t1)
 
 struct Application* app_create(int argc, char** argv)
 {
-    const char* BOLT_SECURE = getenv_or_default("BOLT_SECURE", "1");
-    const char* BOLT_HOST = getenv_or_default("BOLT_HOST", "localhost");
-    const char* BOLT_PORT = getenv_or_default("BOLT_PORT", "7687");
-    const char* BOLT_USER = getenv_or_default("BOLT_USER", "neo4j");
-    const char* BOLT_PASSWORD = getenv("BOLT_PASSWORD");
+    const char* BOLT_CONFIG_ROUTING = getenv_or_default("BOLT_ROUTING", "0");
+    const char* BOLT_CONFIG_ACCESS_MODE = getenv_or_default("BOLT_ACCESS_MODE", "WRITE");
+    const char* BOLT_CONFIG_SECURE = getenv_or_default("BOLT_SECURE", "1");
+    const char* BOLT_CONFIG_HOST = getenv_or_default("BOLT_HOST", "localhost");
+    const char* BOLT_CONFIG_PORT = getenv_or_default("BOLT_PORT", "7687");
+    const char* BOLT_CONFIG_USER = getenv_or_default("BOLT_USER", "neo4j");
+    const char* BOLT_CONFIG_PASSWORD = getenv("BOLT_PASSWORD");
 
     struct Application* app = BoltMem_allocate(sizeof(struct Application));
-    app->transport = (strcmp(BOLT_SECURE, "1")==0) ? BOLT_SECURE_SOCKET : BOLT_SOCKET;
-    app->address = BoltAddress_create(BOLT_HOST, BOLT_PORT);
-    app->user = BOLT_USER;
-    app->password = BOLT_PASSWORD;
+    struct BoltConfig config;
+    config.mode = (strcmp(BOLT_CONFIG_ROUTING, "1")==0 ? BOLT_ROUTING : BOLT_DIRECT);
+    config.transport = (strcmp(BOLT_CONFIG_SECURE, "1")==0) ? BOLT_SECURE_SOCKET : BOLT_SOCKET;
+    config.routing_context = NULL;
+    config.user_agent = "seabolt/1.0.0a";
+    config.max_pool_size = 10;
+    config.auth_token = BoltAuth_basic(BOLT_CONFIG_USER, BOLT_CONFIG_PASSWORD, NULL);
 
+    app->connector = BoltConnector_create(&BoltAddress_of((char*) BOLT_CONFIG_HOST, (char*) BOLT_CONFIG_PORT), &config);
+
+    BoltValue_destroy((struct BoltValue*) config.auth_token);
+
+    app->access_mode = (strcmp(BOLT_CONFIG_ACCESS_MODE, "WRITE")==0 ? BOLT_ACCESS_MODE_WRITE : BOLT_ACCESS_MODE_READ);
     app->with_allocation_report = 0;
     app->with_header = 0;
     app->command = CMD_NONE;
@@ -167,52 +176,32 @@ struct Application* app_create(int argc, char** argv)
 
 void app_destroy(struct Application* app)
 {
-    BoltAddress_destroy(app->address);
+    BoltConnector_destroy(app->connector);
     BoltMem_deallocate(app, sizeof(struct Application));
+    Bolt_shutdown();
 }
 
 void app_connect(struct Application* app)
 {
     struct timespec t[2];
     BoltUtil_get_time(&t[0]);
-    BoltAddress_resolve(app->address);
-    app->connection = BoltConnection_create();
-    BoltConnection_open(app->connection, app->transport, app->address);
-    if (app->connection->status!=BOLT_CONNECTED) {
+    struct BoltConnectionResult result = BoltConnector_acquire(app->connector, BOLT_ACCESS_MODE_WRITE);
+    if (result.connection==NULL) {
         fprintf(stderr, "FATAL: Failed to connect\n");
         exit(EXIT_FAILURE);
     }
+    app->connection = result.connection;
     BoltUtil_get_time(&t[1]);
     timespec_diff(&app->stats.connect_time, &t[1], &t[0]);
 }
 
-int app_init(struct Application* app)
-{
-    struct timespec t[2];
-    BoltUtil_get_time(&t[0]);
-
-    struct BoltValue* auth_token = BoltAuth_basic(app->user, app->password, NULL);
-    BoltConnection_init(app->connection, "seabolt/1.0.0a", auth_token);
-    BoltValue_destroy(auth_token);
-    if (app->connection->status!=BOLT_READY) {
-        fprintf(stderr, "FATAL: Failed to initialise connection\n");
-        exit(EXIT_FAILURE);
-    }
-    BoltUtil_get_time(&t[1]);
-    timespec_diff(&app->stats.init_time, &t[1], &t[0]);
-    return 0;
-}
-
 int app_debug(struct Application* app, const char* cypher)
 {
-    Bolt_startup(stderr);
-
     struct timespec t[7];
 
     BoltUtil_get_time(&t[1]);    // Checkpoint 1 - right at the start
 
     app_connect(app);
-    app_init(app);
 
     BoltUtil_get_time(&t[2]);    // Checkpoint 2 - after handshake and initialisation
 
@@ -244,8 +233,7 @@ int app_debug(struct Application* app, const char* cypher)
 
     BoltUtil_get_time(&t[5]);    // Checkpoint 5 - receipt of footer
 
-    BoltConnection_close(app->connection);
-    BoltConnection_destroy(app->connection);
+    BoltConnector_release(app->connector, app->connection);
 
     BoltUtil_get_time(&t[6]);    // Checkpoint 6 - after close
 
@@ -274,17 +262,14 @@ int app_debug(struct Application* app, const char* cypher)
     fprintf(stderr, "=====================================\n");
     fprintf(stderr, "TOTAL                : %lds %09ldns\n", (long) t[0].tv_sec, t[0].tv_nsec);
 
-    Bolt_shutdown();
+    BoltConnector_release(app->connector, app->connection);
 
     return 0;
 }
 
 int app_run(struct Application* app, const char* cypher)
 {
-    Bolt_startup(NULL);
-
     app_connect(app);
-    app_init(app);
 
     BoltConnection_cypher(app->connection, cypher, strlen(cypher), 0);
     BoltConnection_load_run_request(app->connection);
@@ -318,10 +303,7 @@ int app_run(struct Application* app, const char* cypher)
         putc('\n', stdout);
     }
 
-    BoltConnection_close(app->connection);
-    BoltConnection_destroy(app->connection);
-
-    Bolt_shutdown();
+    BoltConnector_release(app->connector, app->connection);
 
     return 0;
 }
@@ -353,12 +335,9 @@ long run_fetch(const struct Application* app, const char* cypher)
 
 int app_perf(struct Application* app, long warmup_times, long actual_times, const char* cypher)
 {
-    Bolt_startup(NULL);
-
     struct timespec t[3];
 
     app_connect(app);
-    app_init(app);
 
     for (int i = 0; i<warmup_times; i++) {
         run_fetch(app, cypher);
@@ -371,8 +350,7 @@ int app_perf(struct Application* app, long warmup_times, long actual_times, cons
     }
     BoltUtil_get_time(&t[2]);    // Checkpoint 2 - after run
 
-    BoltConnection_close(app->connection);
-    BoltConnection_destroy(app->connection);
+    BoltConnector_release(app->connector, app->connection);
 
     ///////////////////////////////////////////////////////////////////
 
@@ -382,8 +360,6 @@ int app_perf(struct Application* app, long warmup_times, long actual_times, cons
     timespec_diff(&t[0], &t[2], &t[1]);
     fprintf(stderr, "=====================================\n");
     fprintf(stderr, "TOTAL TIME           : %lds %09ldns\n", (long) t[0].tv_sec, t[0].tv_nsec);
-
-    Bolt_shutdown();
 
     return 0;
 }
@@ -400,6 +376,14 @@ void app_help()
 int main(int argc, char* argv[])
 {
     struct Application* app = app_create(argc, argv);
+
+    FILE* log_dest = NULL;
+    if (app->command==CMD_DEBUG) {
+        log_dest = stderr;
+    }
+
+    Bolt_startup(log_dest);
+
     switch (app->command) {
     case CMD_NONE:
     case CMD_HELP:
@@ -422,10 +406,12 @@ int main(int argc, char* argv[])
     int with_allocation_report = app->with_allocation_report;
     app_destroy(app);
 
+    Bolt_shutdown();
+
     if (with_allocation_report) {
         fprintf(stderr, "=====================================\n");
-        fprintf(stderr, "current allocation   : %" PRId64 " bytes\n", (int64_t)BoltMem_current_allocation());
-        fprintf(stderr, "peak allocation      : %" PRId64 " bytes\n", (int64_t)BoltMem_peak_allocation());
+        fprintf(stderr, "current allocation   : %" PRId64 " bytes\n", (int64_t) BoltMem_current_allocation());
+        fprintf(stderr, "peak allocation      : %" PRId64 " bytes\n", (int64_t) BoltMem_peak_allocation());
         fprintf(stderr, "allocation events    : %" PRId64 "\n", BoltMem_allocation_events());
         fprintf(stderr, "=====================================\n");
     }

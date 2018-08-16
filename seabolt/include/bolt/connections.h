@@ -79,7 +79,14 @@ enum BoltConnectionError {
     BOLT_PROTOCOL_NOT_IMPLEMENTED_TYPE = 0x502,
     BOLT_PROTOCOL_UNEXPECTED_MARKER = 0x503,
     BOLT_PROTOCOL_UNSUPPORTED = 0x504,
-    BOLT_STATUS_SET = 0x900,
+    BOLT_POOL_FULL = 0x600,
+    BOLT_ADDRESS_NOT_RESOLVED = 0x700,
+    BOLT_ROUTING_UNABLE_TO_RETRIEVE_ROUTING_TABLE = 0x800,
+    BOLT_ROUTING_NO_SERVERS_TO_SELECT = 0x801,
+    BOLT_ROUTING_UNABLE_TO_CONSTRUCT_POOL_FOR_SERVER = 0x802,
+    BOLT_ROUTING_UNABLE_TO_REFRESH_ROUTING_TABLE = 0x803,
+    BOLT_CONNECTION_HAS_MORE_INFO = 0xFFE,
+    BOLT_STATUS_SET = 0xFFF,
 };
 
 /**
@@ -135,6 +142,8 @@ struct BoltConnection {
     enum BoltConnectionStatus status;
     /// Current connection error code
     enum BoltConnectionError error;
+    /// Additional context info about error
+    char* error_ctx;
 };
 
 /**

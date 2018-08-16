@@ -18,6 +18,25 @@
  */
 
 
-#define CATCH_CONFIG_MAIN
+#ifndef SEABOLT_TEST
+#define SEABOLT_TEST
 
-#include "catch.hpp"
+#include <cstring>
+#include <cstdlib>
+
+extern "C" {
+#include "bolt/logging.h"
+#include "bolt/platform.h"
+#include "bolt/connections.h"
+
+#include "src/bolt/protocol/v1.h"
+
+#include "src/bolt/values.c"
+#include "src/bolt/memory.c"
+#include "src/bolt/addressing.c"
+#include "src/bolt/pooling/direct_pool.c"
+#include "src/bolt/pooling/routing_pool.c"
+}
+
+#endif // SEABOLT_TEST
+

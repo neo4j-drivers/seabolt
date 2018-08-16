@@ -19,6 +19,7 @@
 #ifndef SEABOLT_CONFIG_IMPL
 #define SEABOLT_CONFIG_IMPL
 #include "config.h"
+#include "common-impl.h"
 
 #if defined(_WIN32) && _WIN32_WINNT < 0x0600
 #undef _WIN32_WINNT

@@ -20,29 +20,32 @@
 #ifndef SEABOLT_ADDRESSING_H
 #define SEABOLT_ADDRESSING_H
 
-
 #include "config.h"
-
+#include "platform.h"
 
 /**
  * The address of a Bolt server. This can carry both the original host
  * and port details, as supplied by the application, as well as one or
  * more resolved IP addresses and port number.
  */
-struct BoltAddress
-{
+struct BoltAddress {
     /// Original host name or IP address string
-    char * host;
+    const char* host;
     /// Original service name or port number string
-    char * port;
+    const char* port;
 
     /// Number of resolved IP addresses
     size_t n_resolved_hosts;
     /// Resolved IP address data
-    struct sockaddr_storage * resolved_hosts;
+    struct sockaddr_storage* resolved_hosts;
     /// Resolved port number
     in_port_t resolved_port;
+
+    // Lock to protect DNS resolution process
+    mutex_t lock;
 };
+
+#define BoltAddress_of(host, port) (struct BoltAddress) { (const char *)host, (const char *)port }
 
 /**
  * Create a new address structure for a given host and port. No name
@@ -54,7 +57,7 @@ struct BoltAddress
  * @param port port name or numeric string, e.g. "7687" or "http"
  * @return pointer to a new BoltAddress structure
  */
-PUBLIC struct BoltAddress * BoltAddress_create(const char * host, const char * port);
+PUBLIC struct BoltAddress* BoltAddress_create(const char* host, const char* port);
 
 /**
  * Resolve the original host and port into one or more IP addresses and
@@ -64,7 +67,7 @@ PUBLIC struct BoltAddress * BoltAddress_create(const char * host, const char * p
  * @param address pointer to a BoltAddress structure
  * @return status of the internal getaddrinfo call
  */
-PUBLIC int BoltAddress_resolve(struct BoltAddress * address);
+PUBLIC int BoltAddress_resolve(struct BoltAddress* address);
 
 /**
  * Copy the textual representation of a resolved host IP address into a buffer.
@@ -79,14 +82,14 @@ PUBLIC int BoltAddress_resolve(struct BoltAddress * address);
  * @param buffer_size size of the buffer
  * @return address family (AF_INET or AF_INET6) or -1 on error
  */
-PUBLIC int BoltAddress_copy_resolved_host(struct BoltAddress * address, size_t index, char * buffer, socklen_t buffer_size);
+PUBLIC int
+BoltAddress_copy_resolved_host(struct BoltAddress* address, size_t index, char* buffer, socklen_t buffer_size);
 
 /**
  * Destroy an address structure and deallocate any associated memory.
  *
  * @param address pointer to a BoltAddress structure
  */
-PUBLIC void BoltAddress_destroy(struct BoltAddress * address);
-
+PUBLIC void BoltAddress_destroy(struct BoltAddress* address);
 
 #endif // SEABOLT_ADDRESSING_H

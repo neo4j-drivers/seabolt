@@ -191,7 +191,7 @@ void _write_string(FILE* file, const char* data, size_t size)
 struct BoltValue* BoltValue_create()
 {
     size_t size = sizeof(struct BoltValue);
-    struct BoltValue* value = BoltMem_allocate(size);
+    struct BoltValue* value = (struct BoltValue*) BoltMem_allocate(size);
     _set_type(value, BOLT_NULL, 0, 0);
     value->data_size = 0;
     value->data.as_int64[0] = 0;
@@ -202,12 +202,20 @@ struct BoltValue* BoltValue_create()
 
 void BoltValue_destroy(struct BoltValue* value)
 {
+    if (value==NULL) {
+        return;
+    }
+
     BoltValue_format_as_Null(value);
     BoltMem_deallocate(value, sizeof(struct BoltValue));
 }
 
 struct BoltValue* BoltValue_duplicate(const struct BoltValue* value)
 {
+    if (value==NULL) {
+        return NULL;
+    }
+
     struct BoltValue* duplicate = BoltValue_create();
     BoltValue_copy(duplicate, value);
     return duplicate;
