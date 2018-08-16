@@ -21,6 +21,7 @@
 #define SEABOLT_UTILS_H
 
 #include "config.h"
+#include <time.h>
 
 #if  _WIN32
 typedef void * mutex_t;

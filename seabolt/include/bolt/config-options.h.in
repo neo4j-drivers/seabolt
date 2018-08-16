@@ -17,8 +17,13 @@
  * limitations under the License.
  */
 
+#ifndef SEABOLT_CONFIG_OPTS
+#define SEABOLT_CONFIG_OPTS
+
 #define	USE_OPENSSL	@OPENSSL@
 #define	USE_WINSOCK	@WINSOCK@
 #define	USE_WINSSPI	@WINSSPI@
 #define USE_POSIXSOCK @POSIXSOCK@
 #define IS_BIG_ENDIAN @BIG_ENDIAN@
+
+#endif // SEABOLT_CONFIG_OPTS

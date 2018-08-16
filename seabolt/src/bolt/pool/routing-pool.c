@@ -163,7 +163,7 @@ void BoltRoutingPool_cleanup(struct BoltRoutingPool* pool)
     int old_size = old_servers->size;
 
     int cleanup_count = 0;
-    int cleanup_marker[old_size];
+    int* cleanup_marker = (int*) BoltMem_allocate(old_size*sizeof(int));
     for (int i = 0; i<old_size; i++) {
         cleanup_marker[i] = BoltAddressSet_index_of(active_servers, *old_servers->elements[i])<0
                 && BoltDirectPool_connections_in_use(old_server_pools[i])==0;
@@ -201,6 +201,7 @@ void BoltRoutingPool_cleanup(struct BoltRoutingPool* pool)
         BoltMem_deallocate(old_server_pools, old_size*SIZE_OF_DIRECT_POOL_PTR);
     }
 
+    BoltMem_deallocate(cleanup_marker, old_size*sizeof(int));
     BoltAddressSet_destroy(active_servers);
 }
 

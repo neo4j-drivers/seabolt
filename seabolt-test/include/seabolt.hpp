@@ -25,6 +25,14 @@
 #include <cstdlib>
 
 extern "C" {
+#include "bolt/config-options.h"
+
+// Override OPENSSL usage so that the related headers are not included
+#ifdef USE_OPENSSL
+#undef USE_OPENSSL
+#define USE_OPENSSL 0
+#endif
+
 #include "bolt/logging.h"
 #include "bolt/platform.h"
 #include "bolt/connections.h"

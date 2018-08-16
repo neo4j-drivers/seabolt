@@ -19,7 +19,6 @@
 
 #include "bolt/config-impl.h"
 #include "bolt/platform.h"
-#include <time.h>
 
 #ifdef __APPLE__
 #include <mach/clock.h>
