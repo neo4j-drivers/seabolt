@@ -42,4 +42,8 @@ int RoutingTable_update(struct RoutingTable* state, struct BoltValue* response);
 
 int RoutingTable_is_expired(struct RoutingTable* state, enum BoltAccessMode mode);
 
+void RoutingTable_forget_server(struct RoutingTable* state, struct BoltAddress address);
+
+void RoutingTable_forget_writer(struct RoutingTable* state, struct BoltAddress address);
+
 #endif //SEABOLT_ALL_ROUTING_TABLE_H

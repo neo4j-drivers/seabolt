@@ -152,7 +152,7 @@ void reset_or_close(struct BoltDirectPool* pool, int index)
     }
 }
 
-struct BoltDirectPool* BoltDirectPool_create(struct BoltAddress* address, const struct BoltValue* auth_token, const struct BoltConfig* config)
+struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, const struct BoltValue* auth_token, const struct BoltConfig* config)
 {
     BoltLog_info("bolt: creating pool");
     struct BoltDirectPool* pool = (struct BoltDirectPool*) BoltMem_allocate(SIZE_OF_DIRECT_POOL);

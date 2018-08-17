@@ -157,3 +157,15 @@ int RoutingTable_is_expired(struct RoutingTable* state, enum BoltAccessMode mode
             || (mode==BOLT_ACCESS_MODE_READ ? state->readers->size==0 : state->writers->size==0)
             || state->expires<=BoltUtil_get_time_ms();
 }
+
+void RoutingTable_forget_server(struct RoutingTable* state, struct BoltAddress address)
+{
+    BoltAddressSet_remove(state->routers, address);
+    BoltAddressSet_remove(state->readers, address);
+    BoltAddressSet_remove(state->writers, address);
+}
+
+void RoutingTable_forget_writer(struct RoutingTable* state, struct BoltAddress address)
+{
+    BoltAddressSet_remove(state->writers, address);
+}

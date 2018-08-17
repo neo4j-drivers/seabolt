@@ -159,6 +159,12 @@ void _set_status(struct BoltConnection* connection, enum BoltConnectionStatus st
             BoltLog_info("bolt: <DEFUNCT>");
             break;
         }
+
+        if (connection->status==BOLT_DEFUNCT || connection->status==BOLT_FAILED) {
+            if (connection->on_error_cb!=NULL) {
+                (*connection->on_error_cb)(connection, connection->on_error_cb_state);
+            }
+        }
     }
 }
 
@@ -440,13 +446,11 @@ int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport tr
             }
 
             // Store connection info
-            connection->host = BoltMem_duplicate(address->host, strlen(address->host)+1);
-            connection->port = BoltMem_duplicate(address->port, strlen(address->port)+1);
-            if (connection->resolvedHost==NULL) {
-                connection->resolvedHost = BoltMem_allocate(MAX_IPADDR_LEN);
-            }
-            BoltAddress_copy_resolved_host(address, i, connection->resolvedHost, MAX_IPADDR_LEN);
-            connection->resolvedPort = address->resolved_port;
+            connection->address = BoltAddress_create(address->host, address->port);
+            char resolved_host[MAX_IPADDR_LEN], resolved_port[6];
+            BoltAddress_copy_resolved_host(address, i, resolved_host, MAX_IPADDR_LEN);
+            sprintf(resolved_port, "%d", address->resolved_port);
+            connection->resolved_address = BoltAddress_create(resolved_host, resolved_port);
 
             _set_status(connection, BOLT_CONNECTED, BOLT_SUCCESS);
             break;
@@ -472,19 +476,14 @@ void BoltConnection_close(struct BoltConnection* connection)
     if (connection->status!=BOLT_DISCONNECTED) {
         _close(connection);
     }
-    if (connection->host!=NULL) {
-        BoltMem_deallocate(connection->host, strlen(connection->host)+1);
-        connection->host = NULL;
+    if (connection->address!=NULL) {
+        BoltAddress_destroy((struct BoltAddress*) connection->address);
+        connection->address = NULL;
     }
-    if (connection->port!=NULL) {
-        BoltMem_deallocate(connection->port, strlen(connection->port)+1);
-        connection->port = NULL;
+    if (connection->resolved_address!=NULL) {
+        BoltAddress_destroy((struct BoltAddress*) connection->resolved_address);
+        connection->resolved_address = NULL;
     }
-    if (connection->resolvedHost!=NULL) {
-        BoltMem_deallocate(connection->resolvedHost, MAX_IPADDR_LEN);
-        connection->resolvedHost = NULL;
-    }
-    connection->resolvedPort = 0;
 }
 
 int BoltConnection_send(struct BoltConnection* connection)
@@ -867,6 +866,24 @@ struct BoltValue* BoltConnection_failure(struct BoltConnection* connection)
     default:
         return NULL;
     }
+}
+
+int BoltConnection_failure_is_transient(struct BoltConnection* connection)
+{
+    if (connection->status!=BOLT_FAILED && connection->status!=BOLT_DEFUNCT) {
+        return 0;
+    }
+
+    if (connection->error==BOLT_SERVER_FAILURE) {
+        return 0;
+    }
+
+    switch (connection->error) {
+    default:
+        return 0;
+    }
+
+    return 0;
 }
 
 char* BoltConnection_server(struct BoltConnection* connection)

@@ -29,7 +29,7 @@
 #include "direct-pool.h"
 #include "../utils/address-set.h"
 
-int BoltRoutingPool_ensure_server(struct BoltRoutingPool* pool, struct BoltAddress* server)
+int BoltRoutingPool_ensure_server(struct BoltRoutingPool* pool, const struct BoltAddress* server)
 {
     int index = BoltAddressSet_index_of(pool->servers, *server);
 
@@ -130,9 +130,9 @@ int BoltRoutingPool_update_routing_table_from(struct BoltRoutingPool* pool, stru
     return status;
 }
 
-int BoltRoutingPool_update_routing_table(struct BoltRoutingPool* pool)
+enum BoltConnectionError BoltRoutingPool_update_routing_table(struct BoltRoutingPool* pool)
 {
-    int result = BOLT_ROUTING_UNABLE_TO_RETRIEVE_ROUTING_TABLE;
+    enum BoltConnectionError result = BOLT_ROUTING_UNABLE_TO_RETRIEVE_ROUTING_TABLE;
 
     // Create a set of servers to update the routing table from
     struct BoltAddressSet* routers = BoltAddressSet_create();
@@ -186,7 +186,7 @@ void BoltRoutingPool_cleanup(struct BoltRoutingPool* pool)
             }
 
             // TODO: Maybe try to keep the previous entry?
-            // With re-adding the address to a new set, we loose previous address resolution information
+            // With re-adding the address to a new set, are we loosing previous address resolution information?
             int index = BoltAddressSet_add(new_servers, *old_servers->elements[i]);
             new_server_pools[index] = old_server_pools[i];
         }
@@ -208,9 +208,9 @@ void BoltRoutingPool_cleanup(struct BoltRoutingPool* pool)
     BoltAddressSet_destroy(active_servers);
 }
 
-int BoltRoutingPool_ensure_routing_table(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
+enum BoltConnectionError BoltRoutingPool_ensure_routing_table(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
 {
-    int status = BOLT_SUCCESS;
+    enum BoltConnectionError status = BOLT_SUCCESS;
 
     // Is routing table refresh wrt the requested access mode?
     if (RoutingTable_is_expired(pool->routing_table, mode)) {
@@ -285,6 +285,108 @@ struct BoltAddress* BoltRoutingPool_select_least_connected_writer(struct BoltRou
     return server;
 }
 
+void BoltRoutingPool_forget_server(struct BoltRoutingPool* pool, const struct BoltAddress* server)
+{
+    // Lock
+    BoltUtil_mutex_lock(&pool->lock);
+
+    RoutingTable_forget_server(pool->routing_table, *server);
+    BoltRoutingPool_cleanup(pool);
+
+    // Unlock
+    BoltUtil_mutex_unlock(&pool->lock);
+}
+
+void BoltRoutingPool_forget_writer(struct BoltRoutingPool* pool, const struct BoltAddress* server)
+{
+    // Lock
+    BoltUtil_mutex_lock(&pool->lock);
+
+    RoutingTable_forget_writer(pool->routing_table, *server);
+    BoltRoutingPool_cleanup(pool);
+
+    // Unlock
+    BoltUtil_mutex_unlock(&pool->lock);
+}
+
+void BoltRoutingPool_handle_connection_error_by_code(struct BoltRoutingPool* pool, const struct BoltAddress* server,
+        enum BoltConnectionError code)
+{
+    switch (code) {
+    case BOLT_ROUTING_UNABLE_TO_RETRIEVE_ROUTING_TABLE:
+    case BOLT_ROUTING_NO_SERVERS_TO_SELECT:
+    case BOLT_ROUTING_UNABLE_TO_CONSTRUCT_POOL_FOR_SERVER:
+    case BOLT_ROUTING_UNABLE_TO_REFRESH_ROUTING_TABLE:
+    case BOLT_ROUTING_UNEXPECTED_DISCOVERY_RESPONSE:
+        BoltRoutingPool_forget_server(pool, server);
+        break;
+    case BOLT_INTERRUPTED:
+    case BOLT_CONNECTION_RESET:
+    case BOLT_NO_VALID_ADDRESS:
+    case BOLT_TIMED_OUT:
+    case BOLT_CONNECTION_REFUSED:
+    case BOLT_NETWORK_UNREACHABLE:
+    case BOLT_TLS_ERROR:
+    case BOLT_END_OF_TRANSMISSION:
+        BoltRoutingPool_forget_server(pool, server);
+        break;
+    case BOLT_ADDRESS_NOT_RESOLVED:
+        BoltRoutingPool_forget_server(pool, server);
+        break;
+    default:
+        break;
+    }
+}
+
+void BoltRoutingPool_handle_connection_error_by_failure(struct BoltRoutingPool* pool, const struct BoltAddress* server,
+        const struct BoltValue* failure)
+{
+    if (failure==NULL) {
+        return;
+    }
+
+    struct BoltValue* code = BoltDictionary_value_by_key(failure, "code", 4);
+    if (code==NULL) {
+        return;
+    }
+
+    char* code_str = (char*) BoltMem_allocate((code->size+1)*sizeof(char));
+    strncpy(code_str, BoltString_get(code), code->size);
+    code_str[code->size] = '\0';
+
+    if (strcmp(code_str, "Neo.ClientError.General.ForbiddenOnReadOnlyDatabase")==0) {
+        BoltRoutingPool_forget_writer(pool, server);
+    }
+    else if (strcmp(code_str, "Neo.ClientError.Cluster.NotALeader")==0) {
+        BoltRoutingPool_forget_writer(pool, server);
+    }
+    else if (strcmp(code_str, "Neo.TransientError.General.DatabaseUnavailable")==0) {
+        BoltRoutingPool_forget_server(pool, server);
+    }
+
+    BoltMem_deallocate(code_str, (code->size+1)*sizeof(char));
+}
+
+void BoltRoutingPool_handle_connection_error(struct BoltRoutingPool* pool, struct BoltConnection* connection)
+{
+    switch (connection->error) {
+    case BOLT_SUCCESS:
+        break;
+    case BOLT_SERVER_FAILURE:
+        BoltRoutingPool_handle_connection_error_by_failure(pool, connection->address,
+                BoltConnection_failure(connection));
+        break;
+    default:
+        BoltRoutingPool_handle_connection_error_by_code(pool, connection->address, connection->error);
+        break;
+    }
+}
+
+void BoltRoutingPool_connection_error_handler(struct BoltConnection* connection, void* state)
+{
+    BoltRoutingPool_handle_connection_error((struct BoltRoutingPool*) state, connection);
+}
+
 struct BoltRoutingPool*
 BoltRoutingPool_create(struct BoltAddress* address, const struct BoltValue* auth_token, const struct BoltConfig* config)
 {
@@ -326,33 +428,55 @@ void BoltRoutingPool_destroy(struct BoltRoutingPool* pool)
 struct BoltConnectionResult
 BoltRoutingPool_acquire(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
 {
-    int status = BoltRoutingPool_ensure_routing_table(pool, mode);
+    struct BoltAddress* server = NULL;
+
+    enum BoltConnectionError status = BoltRoutingPool_ensure_routing_table(pool, mode);
     if (status==BOLT_SUCCESS) {
-        struct BoltAddress* server = mode==BOLT_ACCESS_MODE_READ
-                                     ? BoltRoutingPool_select_least_connected_reader(pool)
-                                     : BoltRoutingPool_select_least_connected_writer(
+        server = mode==BOLT_ACCESS_MODE_READ
+                 ? BoltRoutingPool_select_least_connected_reader(pool)
+                 : BoltRoutingPool_select_least_connected_writer(
                         pool);
         if (server==NULL) {
-            return CONNECTION_RESULT_ERROR(BOLT_ROUTING_NO_SERVERS_TO_SELECT, NULL);
+            status = BOLT_ROUTING_NO_SERVERS_TO_SELECT;
         }
-
-        int server_pool_index = BoltRoutingPool_ensure_server(pool, server);
-        if (server_pool_index<0) {
-            return CONNECTION_RESULT_ERROR(BOLT_ROUTING_UNABLE_TO_CONSTRUCT_POOL_FOR_SERVER, NULL);
-        }
-
-        struct BoltConnectionResult inner_result = BoltDirectPool_acquire(pool->server_pools[server_pool_index]);
-        return inner_result;
     }
 
-    return CONNECTION_RESULT_ERROR(BOLT_ROUTING_UNABLE_TO_REFRESH_ROUTING_TABLE, NULL);
+    int server_pool_index = -1;
+    if (status==BOLT_SUCCESS) {
+        server_pool_index = BoltRoutingPool_ensure_server(pool, server);
+        if (server_pool_index<0) {
+            status = BOLT_ROUTING_UNABLE_TO_CONSTRUCT_POOL_FOR_SERVER;
+        }
+    }
+
+    struct BoltConnectionResult result;
+    if (status==BOLT_SUCCESS) {
+        result = BoltDirectPool_acquire(pool->server_pools[server_pool_index]);
+        if (result.connection!=NULL) {
+            status = BOLT_SUCCESS;
+            result.connection->on_error_cb_state = pool;
+            result.connection->on_error_cb = BoltRoutingPool_connection_error_handler;
+        }
+        else {
+            status = result.connection_error;
+        }
+    }
+
+    if (status==BOLT_SUCCESS) {
+        return result;
+    }
+
+    BoltRoutingPool_handle_connection_error_by_code(pool, server, status);
+
+    return CONNECTION_RESULT_ERROR(status, NULL);
 }
 
 int BoltRoutingPool_release(struct BoltRoutingPool* pool, struct BoltConnection* connection)
 {
-    struct BoltAddress server = BoltAddress_of(connection->host, connection->port);
+    connection->on_error_cb = NULL;
+    connection->on_error_cb_state = NULL;
 
-    int server_pool_index = BoltRoutingPool_ensure_server(pool, &server);
+    int server_pool_index = BoltRoutingPool_ensure_server(pool, connection->address);
     if (server_pool_index<0) {
         BoltConnection_close(connection);
         return -1;

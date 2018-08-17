@@ -90,6 +90,10 @@ enum BoltConnectionError {
     BOLT_STATUS_SET = 0xFFF,
 };
 
+struct BoltConnection;
+
+typedef void (* error_action_func)(struct BoltConnection*, void*);
+
 /**
  * Record of connection usage statistics.
  */
@@ -111,10 +115,8 @@ struct BoltConnection {
     /// Transport type for this connection
     enum BoltTransport transport;
 
-    char* host;
-    char* port;
-    char* resolvedHost;
-    in_port_t resolvedPort;
+    const struct BoltAddress *address;
+    const struct BoltAddress *resolved_address;
 
     /// The security context (secure connections only)
     struct ssl_ctx_st* ssl_context;
@@ -145,6 +147,9 @@ struct BoltConnection {
     enum BoltConnectionError error;
     /// Additional context info about error
     char* error_ctx;
+
+    error_action_func on_error_cb;
+    void* on_error_cb_state;
 };
 
 /**
@@ -419,6 +424,16 @@ PUBLIC int BoltConnection_summary_success(struct BoltConnection* connection);
  * @return
  */
 PUBLIC struct BoltValue* BoltConnection_failure(struct BoltConnection* connection);
+
+/**
+ * Check whether current failure is categorized as a transient error. The check applies
+ * both to database generated error codes and/or system generated ones (i.e. network level
+ * failures).
+ *
+ * @param connection
+ * @return 0 if failure is not transient, 1 if it is
+ */
+PUBLIC int BoltConnection_failure_is_transient(struct BoltConnection* connection);
 
 /**
  * Return the fields available in the current result.
