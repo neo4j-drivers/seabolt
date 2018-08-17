@@ -30,7 +30,7 @@ SCENARIO("BoltAddressSet")
         }
 
         THEN("it should have elements = NULL") {
-            REQUIRE(set->elements==NULL);
+            REQUIRE(set->elements==nullptr);
         }
 
         THEN("it should report size = 0") {

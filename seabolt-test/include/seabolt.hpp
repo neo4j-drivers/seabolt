@@ -24,6 +24,9 @@
 #include <cstring>
 #include <cstdlib>
 
+// This is to get PRIi64 type printf format specifiers get to work in C++
+#define __STDC_FORMAT_MACROS
+
 extern "C" {
 #include "bolt/config-options.h"
 
@@ -39,9 +42,9 @@ extern "C" {
 
 #include "src/bolt/protocol/v1.h"
 
+#include "src/bolt/addressing.c"
 #include "src/bolt/values.c"
 #include "src/bolt/memory.c"
-#include "src/bolt/addressing.c"
 #include "src/bolt/utils/address-set.c"
 #include "src/bolt/pool/routing-table.c"
 #include "src/bolt/pool/direct-pool.c"

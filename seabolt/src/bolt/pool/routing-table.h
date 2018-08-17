@@ -19,7 +19,6 @@
 #ifndef SEABOLT_ALL_ROUTING_TABLE_H
 #define SEABOLT_ALL_ROUTING_TABLE_H
 
-#include <inttypes.h>
 #include "bolt/connector.h"
 #include "bolt/values.h"
 
@@ -37,7 +36,7 @@ struct RoutingTable {
 
 struct RoutingTable* RoutingTable_create();
 
-struct RoutingTable* RoutingTable_destroy(struct RoutingTable* state);
+void RoutingTable_destroy(struct RoutingTable* state);
 
 int RoutingTable_update(struct RoutingTable* state, struct BoltValue* response);
 

@@ -51,7 +51,7 @@
 
 #define char_to_uint16be(array) ((uint8_t)(header[0]) << 8) | (uint8_t)(header[1]);
 
-#define TRY(code) { int status = (code); if (status != BOLT_SUCCESS) { return status; } }
+#define TRY(code) { int status_try = (code); if (status_try != BOLT_SUCCESS) { return status_try; } }
 
 struct BoltMessage* BoltMessage_create(int8_t code, int32_t n_fields)
 {
@@ -293,7 +293,7 @@ int load_float(struct BoltBuffer* buffer, double value)
 int load_bytes(struct BoltBuffer* buffer, const char* string, int32_t size)
 {
     if (size<0) {
-        return  BOLT_PROTOCOL_VIOLATION;
+        return BOLT_PROTOCOL_VIOLATION;
     }
     if (size<0x100) {
         BoltBuffer_load_u8(buffer, 0xCC);
@@ -425,7 +425,7 @@ int BoltProtocolV1_load_message(struct BoltConnection* connection, struct BoltMe
     int prev_cursor = state->tx_buffer->cursor;
     int prev_extent = state->tx_buffer->extent;
     int status = load_message(connection, message);
-    if (status != BOLT_SUCCESS) {
+    if (status!=BOLT_SUCCESS) {
         // Reset buffer to its previous state
         state->tx_buffer->cursor = prev_cursor;
         state->tx_buffer->extent = prev_extent;
@@ -877,7 +877,7 @@ int BoltProtocolV1_unload(struct BoltConnection* connection)
     int32_t size = marker & 0x0F;
     BoltValue_format_as_List(state->data, size);
     for (int i = 0; i<size; i++) {
-        TRY(unload( connection, BoltList_value(state->data, i)));
+        TRY(unload(connection, BoltList_value(state->data, i)));
     }
     if (code==BOLT_V1_RECORD) {
         if (state->record_counter<MAX_LOGGED_RECORDS) {

@@ -18,14 +18,17 @@
  */
 
 
-extern "C"
-{
+extern "C" {
 #include <bolt/connections.h>
 #include "bolt/platform.h"
 
+#if defined(_WIN32) && _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4100 )
+#endif
+
 void BoltLog_info(const char* message, ...)
 {
-
 }
 
 int BoltUtil_get_time(struct timespec* t)
@@ -71,7 +74,6 @@ int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport tr
 
 void BoltConnection_close(struct BoltConnection* connection)
 {
-
 }
 
 int
@@ -141,5 +143,9 @@ int BoltConnection_fetch(struct BoltConnection* connection, bolt_request_t reque
 {
     return 0;
 }
+
+#if defined(_WIN32) && _MSC_VER
+#pragma warning( pop )
+#endif
 
 }

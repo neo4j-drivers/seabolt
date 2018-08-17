@@ -20,6 +20,7 @@
 #define SEABOLT_CONFIG
 #include "config-options.h"
 #include <stddef.h>
+#include <inttypes.h>
 
 #define PUBLIC
 

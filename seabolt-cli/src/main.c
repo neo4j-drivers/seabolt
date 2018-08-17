@@ -21,7 +21,6 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <time.h>
-#include <inttypes.h>
 
 #include "bolt/auth.h"
 #include "bolt/connector.h"
@@ -36,6 +35,10 @@
 #include <winsock2.h>
 
 #endif // WIN32
+
+#if defined(_WIN32) && _MSC_VER
+#pragma  warning(disable:4204)
+#endif
 
 #ifdef __APPLE__
 #include <mach/clock.h>

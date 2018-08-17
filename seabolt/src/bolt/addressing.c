@@ -49,10 +49,10 @@ struct BoltAddress* BoltAddress_create(const char* host, const char* port)
     return address;
 }
 
-struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int endpoint_len)
+struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int32_t endpoint_len)
 {
     if (endpoint_len<0) {
-        endpoint_len = strlen(endpoint_str);
+        endpoint_len = (int32_t) strlen(endpoint_str);
     }
 
     // Create a copy of the string and add null character at the end to properly

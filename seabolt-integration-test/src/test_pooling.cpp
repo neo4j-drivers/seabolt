@@ -25,10 +25,10 @@ SCENARIO("Test using a pooled connection", "[integration][ipv6][secure][pooling]
 {
     GIVEN("a new connection pool") {
         const auto auth_token = BoltAuth_basic(BOLT_USER, BOLT_PASSWORD, NULL);
-        struct BoltConfig config { BOLT_DIRECT, BOLT_SECURE_SOCKET, BOLT_USER_AGENT, auth_token, NULL, 10 };
-        struct BoltDirectPool* pool = BoltDirectPool_create(&BOLT_IPV6_ADDRESS, &config);
+        struct BoltConfig config{BOLT_DIRECT, BOLT_SECURE_SOCKET, BOLT_USER_AGENT, auth_token, NULL, 10};
+        struct BoltConnector* connector = BoltConnector_create(&BOLT_IPV6_ADDRESS, &config);
         WHEN("a connection is acquired") {
-            struct BoltConnectionResult result = BoltDirectPool_acquire(pool);
+            struct BoltConnectionResult result = BoltConnector_acquire(connector, BOLT_ACCESS_MODE_READ);
             THEN("the connection should be connected") {
                 REQUIRE(result.connection_status==BOLT_READY);
                 REQUIRE(result.connection_error==BOLT_SUCCESS);
@@ -36,9 +36,9 @@ SCENARIO("Test using a pooled connection", "[integration][ipv6][secure][pooling]
                 REQUIRE(result.connection!=nullptr);
                 REQUIRE(result.connection->status==BOLT_READY);
             }
-            BoltDirectPool_release(pool, result.connection);
+            BoltConnector_release(connector, result.connection);
         }
-        BoltDirectPool_destroy(pool);
+        BoltConnector_destroy(connector);
         BoltValue_destroy(auth_token);
     }
 }
@@ -47,12 +47,12 @@ SCENARIO("Test reusing a pooled connection", "[integration][ipv6][secure][poolin
 {
     GIVEN("a new connection pool with one entry") {
         const auto auth_token = BoltAuth_basic(BOLT_USER, BOLT_PASSWORD, NULL);
-        struct BoltConfig config { BOLT_DIRECT, BOLT_SECURE_SOCKET, BOLT_USER_AGENT, auth_token, NULL, 1 };
-        struct BoltDirectPool* pool = BoltDirectPool_create(&BOLT_IPV6_ADDRESS, &config);
+        struct BoltConfig config{BOLT_DIRECT, BOLT_SECURE_SOCKET, BOLT_USER_AGENT, auth_token, NULL, 1};
+        struct BoltConnector* connector = BoltConnector_create(&BOLT_IPV6_ADDRESS, &config);
         WHEN("a connection is acquired, released and acquired again") {
-            struct BoltConnectionResult result1 = BoltDirectPool_acquire(pool);
-            BoltDirectPool_release(pool, result1.connection);
-            struct BoltConnectionResult result2 = BoltDirectPool_acquire(pool);
+            struct BoltConnectionResult result1 = BoltConnector_acquire(connector, BOLT_ACCESS_MODE_READ);
+            BoltConnector_release(connector, result1.connection);
+            struct BoltConnectionResult result2 = BoltConnector_acquire(connector, BOLT_ACCESS_MODE_READ);
             THEN("the connection should be connected") {
                 REQUIRE(result2.connection_status==BOLT_READY);
                 REQUIRE(result2.connection_error==BOLT_SUCCESS);
@@ -63,9 +63,9 @@ SCENARIO("Test reusing a pooled connection", "[integration][ipv6][secure][poolin
             AND_THEN("the same connection should have been reused") {
                 REQUIRE(result1.connection==result2.connection);
             }
-            BoltDirectPool_release(pool, result2.connection);
+            BoltConnector_release(connector, result2.connection);
         }
-        BoltDirectPool_destroy(pool);
+        BoltConnector_destroy(connector);
         BoltValue_destroy(auth_token);
     }
 }
@@ -74,10 +74,10 @@ SCENARIO("Test reusing a pooled connection that was abandoned", "[integration][i
 {
     GIVEN("a new connection pool with one entry") {
         const auto auth_token = BoltAuth_basic(BOLT_USER, BOLT_PASSWORD, NULL);
-        struct BoltConfig config { BOLT_DIRECT, BOLT_SECURE_SOCKET, BOLT_USER_AGENT, auth_token, NULL, 1 };
-        struct BoltDirectPool* pool = BoltDirectPool_create(&BOLT_IPV6_ADDRESS, &config);
+        struct BoltConfig config{BOLT_DIRECT, BOLT_SECURE_SOCKET, BOLT_USER_AGENT, auth_token, NULL, 1};
+        struct BoltConnector* connector = BoltConnector_create(&BOLT_IPV6_ADDRESS, &config);
         WHEN("a connection is acquired, released and acquired again") {
-            struct BoltConnectionResult result1 = BoltDirectPool_acquire(pool);
+            struct BoltConnectionResult result1 = BoltConnector_acquire(connector, BOLT_ACCESS_MODE_READ);
             THEN("handle should include a valid connection") {
                 REQUIRE(result1.connection_status==BOLT_READY);
                 REQUIRE(result1.connection_error==BOLT_SUCCESS);
@@ -88,8 +88,8 @@ SCENARIO("Test reusing a pooled connection that was abandoned", "[integration][i
             BoltConnection_cypher(result1.connection, cypher, strlen(cypher), 0);
             BoltConnection_load_run_request(result1.connection);
             BoltConnection_send(result1.connection);
-            BoltDirectPool_release(pool, result1.connection);
-            struct BoltConnectionResult result2 = BoltDirectPool_acquire(pool);
+            BoltConnector_release(connector, result1.connection);
+            struct BoltConnectionResult result2 = BoltConnector_acquire(connector, BOLT_ACCESS_MODE_READ);
             THEN("handle should include a valid connection") {
                 REQUIRE(result2.connection_status==BOLT_READY);
                 REQUIRE(result2.connection_error==BOLT_SUCCESS);
@@ -102,9 +102,9 @@ SCENARIO("Test reusing a pooled connection that was abandoned", "[integration][i
             AND_THEN("the same connection should have been reused") {
                 REQUIRE(result1.connection==result2.connection);
             }
-            BoltDirectPool_release(pool, result2.connection);
+            BoltConnector_release(connector, result2.connection);
         }
-        BoltDirectPool_destroy(pool);
+        BoltConnector_destroy(connector);
         BoltValue_destroy(auth_token);
     }
 }
@@ -113,11 +113,11 @@ SCENARIO("Test running out of connections", "[integration][ipv6][secure][pooling
 {
     GIVEN("a new connection pool with one entry") {
         const auto auth_token = BoltAuth_basic(BOLT_USER, BOLT_PASSWORD, NULL);
-        struct BoltConfig config { BOLT_DIRECT, BOLT_SECURE_SOCKET, BOLT_USER_AGENT, auth_token, NULL, 1 };
-        struct BoltDirectPool* pool = BoltDirectPool_create(&BOLT_IPV6_ADDRESS, &config);
+        struct BoltConfig config{BOLT_DIRECT, BOLT_SECURE_SOCKET, BOLT_USER_AGENT, auth_token, NULL, 1};
+        struct BoltConnector* connector = BoltConnector_create(&BOLT_IPV6_ADDRESS, &config);
         WHEN("two connections are acquired in turn") {
-            struct BoltConnectionResult result1 = BoltDirectPool_acquire(pool);
-            struct BoltConnectionResult result2 = BoltDirectPool_acquire(pool);
+            struct BoltConnectionResult result1 = BoltConnector_acquire(connector, BOLT_ACCESS_MODE_READ);
+            struct BoltConnectionResult result2 = BoltConnector_acquire(connector, BOLT_ACCESS_MODE_READ);
             THEN("the first connection should be connected") {
                 REQUIRE(result1.connection_status==BOLT_READY);
                 REQUIRE(result1.connection_error==BOLT_SUCCESS);
@@ -131,10 +131,10 @@ SCENARIO("Test running out of connections", "[integration][ipv6][secure][pooling
                 REQUIRE(result2.connection_error_ctx==nullptr);
                 REQUIRE(result2.connection==nullptr);
             }
-            BoltDirectPool_release(pool, result2.connection);
-            BoltDirectPool_release(pool, result1.connection);
+            BoltConnector_release(connector, result2.connection);
+            BoltConnector_release(connector, result1.connection);
         }
-        BoltDirectPool_destroy(pool);
+        BoltConnector_destroy(connector);
         BoltValue_destroy(auth_token);
     }
 }

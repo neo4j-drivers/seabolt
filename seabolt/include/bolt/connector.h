@@ -53,12 +53,20 @@ struct BoltConnectionResult {
     char* connection_error_ctx;
 };
 
-struct BoltConnector* BoltConnector_create(struct BoltAddress* address, struct BoltConfig* config);
+#ifdef __cplusplus
+#define CONNECTION_RESULT_SUCCESS(connection) { connection, BOLT_READY,  BOLT_SUCCESS, NULL }
+#define CONNECTION_RESULT_ERROR(code, context) { NULL, BOLT_DISCONNECTED, code, context }
+#else
+#define CONNECTION_RESULT_SUCCESS(connection) (struct BoltConnectionResult) { connection, BOLT_READY,  BOLT_SUCCESS, NULL }
+#define CONNECTION_RESULT_ERROR(code, context) (struct BoltConnectionResult) { NULL, BOLT_DISCONNECTED, code, context }
+#endif
 
-void BoltConnector_destroy(struct BoltConnector* connector);
+PUBLIC struct BoltConnector* BoltConnector_create(struct BoltAddress* address, struct BoltConfig* config);
 
-struct BoltConnectionResult BoltConnector_acquire(struct BoltConnector* connector, enum BoltAccessMode mode);
+PUBLIC void BoltConnector_destroy(struct BoltConnector* connector);
 
-void BoltConnector_release(struct BoltConnector* connector, struct BoltConnection* connection);
+PUBLIC struct BoltConnectionResult BoltConnector_acquire(struct BoltConnector* connector, enum BoltAccessMode mode);
+
+PUBLIC void BoltConnector_release(struct BoltConnector* connector, struct BoltConnection* connection);
 
 #endif //SEABOLT_ALL_CONNECTOR_H

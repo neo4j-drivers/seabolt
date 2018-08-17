@@ -49,7 +49,7 @@ struct RoutingTable* RoutingTable_create()
     return table;
 }
 
-struct RoutingTable* RoutingTable_destroy(struct RoutingTable* state)
+void RoutingTable_destroy(struct RoutingTable* state)
 {
     BoltAddressSet_destroy(state->initial_routers);
     BoltAddressSet_destroy(state->readers);

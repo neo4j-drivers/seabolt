@@ -19,6 +19,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "bolt/config-impl.h"
 #include "routing-pool.h"
 
 #include "bolt/connections.h"
@@ -40,8 +41,10 @@ int BoltRoutingPool_ensure_server(struct BoltRoutingPool* pool, struct BoltAddre
 
         // Expand the direct pools and create a new one for this server
         pool->server_pools = (struct BoltDirectPool**) BoltMem_reallocate(pool->server_pools,
-                (pool->servers->size-1)*SIZE_OF_DIRECT_POOL_PTR,
-                (pool->servers->size)*SIZE_OF_DIRECT_POOL_PTR);
+                (pool->servers->size-1)*
+                        SIZE_OF_DIRECT_POOL_PTR,
+                (pool->servers->size)*
+                        SIZE_OF_DIRECT_POOL_PTR);
         pool->server_pools[index] = BoltDirectPool_create(server, pool->config);
 
         BoltUtil_mutex_unlock(&pool->lock);
@@ -323,29 +326,24 @@ BoltRoutingPool_acquire(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
 {
     int status = BoltRoutingPool_ensure_routing_table(pool, mode);
     if (status==BOLT_SUCCESS) {
-        struct BoltAddress* server = mode==BOLT_ACCESS_MODE_READ ? BoltRoutingPool_select_least_connected_reader(pool)
-                                                                 : BoltRoutingPool_select_least_connected_writer(
+        struct BoltAddress* server = mode==BOLT_ACCESS_MODE_READ
+                                     ? BoltRoutingPool_select_least_connected_reader(pool)
+                                     : BoltRoutingPool_select_least_connected_writer(
                         pool);
         if (server==NULL) {
-            return (struct BoltConnectionResult) {
-                    NULL, BOLT_DISCONNECTED, BOLT_ROUTING_NO_SERVERS_TO_SELECT, NULL
-            };
+            return CONNECTION_RESULT_ERROR(BOLT_ROUTING_NO_SERVERS_TO_SELECT, NULL);
         }
 
         int server_pool_index = BoltRoutingPool_ensure_server(pool, server);
         if (server_pool_index<0) {
-            return (struct BoltConnectionResult) {
-                    NULL, BOLT_DISCONNECTED, BOLT_ROUTING_UNABLE_TO_CONSTRUCT_POOL_FOR_SERVER, NULL
-            };
+            return CONNECTION_RESULT_ERROR(BOLT_ROUTING_UNABLE_TO_CONSTRUCT_POOL_FOR_SERVER, NULL);
         }
 
         struct BoltConnectionResult inner_result = BoltDirectPool_acquire(pool->server_pools[server_pool_index]);
         return inner_result;
     }
 
-    return (struct BoltConnectionResult) {
-            NULL, BOLT_DISCONNECTED, BOLT_ROUTING_UNABLE_TO_REFRESH_ROUTING_TABLE, NULL
-    };
+    return CONNECTION_RESULT_ERROR(BOLT_ROUTING_UNABLE_TO_REFRESH_ROUTING_TABLE, NULL);
 }
 
 int BoltRoutingPool_release(struct BoltRoutingPool* pool, struct BoltConnection* connection)

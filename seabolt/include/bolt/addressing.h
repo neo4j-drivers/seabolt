@@ -48,7 +48,12 @@ struct BoltAddress {
 #define SIZE_OF_ADDRESS sizeof(struct BoltAddress)
 #define SIZE_OF_ADDRESS_PTR sizeof(struct BoltAddress *)
 
+#ifdef __cplusplus
+#define BoltAddress_of(host, port) { (const char *)host, (const char *)port }
+#else
 #define BoltAddress_of(host, port) (struct BoltAddress) { (const char *)host, (const char *)port }
+#endif
+
 
 /**
  * Create a new address structure for a given host and port. No name
@@ -62,7 +67,7 @@ struct BoltAddress {
  */
 PUBLIC struct BoltAddress* BoltAddress_create(const char* host, const char* port);
 
-PUBLIC struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int endpoint_len);
+PUBLIC struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int32_t endpoint_len);
 
 /**
  * Resolve the original host and port into one or more IP addresses and

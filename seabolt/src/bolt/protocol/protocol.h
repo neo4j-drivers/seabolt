@@ -20,7 +20,7 @@
 #ifndef SEABOLT_ALL_PROTOCOL_H
 #define SEABOLT_ALL_PROTOCOL_H
 
-#include <inttypes.h>
+#include "bolt/config.h"
 
 typedef int (*check_struct_signature_func)(int16_t);
 

@@ -260,7 +260,7 @@ int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* c
 int BoltDirectPool_connections_in_use(struct BoltDirectPool* pool)
 {
     int count = 0;
-    for (int i = 0; i<pool->size; i++) {
+    for (uint32_t i = 0; i<pool->size; i++) {
         if (pool->connections[i].agent!=NULL) {
             count++;
         }

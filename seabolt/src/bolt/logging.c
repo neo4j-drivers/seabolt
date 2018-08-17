@@ -20,7 +20,6 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
-#include <inttypes.h>
 
 #include "bolt/logging.h"
 
