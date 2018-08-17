@@ -26,26 +26,27 @@
 #define SIZE_OF_CONNECTOR sizeof(struct BoltConnector)
 #define SIZE_OF_CONFIG sizeof(struct BoltConfig)
 
-struct BoltConnector* BoltConnector_create(struct BoltAddress* address, struct BoltConfig* config)
+struct BoltConnector*
+BoltConnector_create(struct BoltAddress* address, struct BoltValue* auth_token, struct BoltConfig* config)
 {
     struct BoltConfig* config_clone = (struct BoltConfig*) BoltMem_allocate(SIZE_OF_CONFIG);
     config_clone->mode = config->mode;
     config_clone->transport = config->transport;
     config_clone->user_agent = (char*) BoltMem_duplicate(config->user_agent, SIZE_OF_C_STRING(config->user_agent));
-    config_clone->auth_token = BoltValue_duplicate(config->auth_token);
     config_clone->routing_context = BoltValue_duplicate(config->routing_context);
     config_clone->max_pool_size = config->max_pool_size;
 
     struct BoltConnector* connector = (struct BoltConnector*) BoltMem_allocate(SIZE_OF_CONNECTOR);
-    connector->config = config_clone;
     connector->address = BoltAddress_create(address->host, address->port);
+    connector->auth_token = BoltValue_duplicate(auth_token);
+    connector->config = config_clone;
 
     switch (config_clone->mode) {
     case BOLT_DIRECT:
-        connector->pool_state = BoltDirectPool_create(address, config_clone);
+        connector->pool_state = BoltDirectPool_create(address, connector->auth_token, config_clone);
         break;
     case BOLT_ROUTING:
-        connector->pool_state = BoltRoutingPool_create(address, config_clone);
+        connector->pool_state = BoltRoutingPool_create(address, connector->auth_token, config_clone);
         break;
     default:
         // TODO: Set some status
@@ -68,7 +69,7 @@ void BoltConnector_destroy(struct BoltConnector* connector)
 
     BoltAddress_destroy((struct BoltAddress*) connector->address);
     BoltMem_deallocate((char*) connector->config->user_agent, SIZE_OF_C_STRING(connector->config->user_agent));
-    BoltValue_destroy((struct BoltValue*) connector->config->auth_token);
+    BoltValue_destroy((struct BoltValue*) connector->auth_token);
     BoltValue_destroy((struct BoltValue*) connector->config->routing_context);
     BoltMem_deallocate((void*) connector->config, SIZE_OF_CONFIG);
     BoltMem_deallocate(connector, SIZE_OF_CONNECTOR);

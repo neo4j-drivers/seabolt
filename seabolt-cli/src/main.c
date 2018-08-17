@@ -119,11 +119,12 @@ struct Application* app_create(int argc, char** argv)
     config.routing_context = NULL;
     config.user_agent = "seabolt/1.0.0a";
     config.max_pool_size = 10;
-    config.auth_token = BoltAuth_basic(BOLT_CONFIG_USER, BOLT_CONFIG_PASSWORD, NULL);
 
-    app->connector = BoltConnector_create(&BoltAddress_of((char*) BOLT_CONFIG_HOST, (char*) BOLT_CONFIG_PORT), &config);
+    struct BoltValue *auth_token = BoltAuth_basic(BOLT_CONFIG_USER, BOLT_CONFIG_PASSWORD, NULL);
 
-    BoltValue_destroy((struct BoltValue*) config.auth_token);
+    app->connector = BoltConnector_create(&BoltAddress_of((char*) BOLT_CONFIG_HOST, (char*) BOLT_CONFIG_PORT), auth_token, &config);
+
+    BoltValue_destroy(auth_token);
 
     app->access_mode = (strcmp(BOLT_CONFIG_ACCESS_MODE, "WRITE")==0 ? BOLT_ACCESS_MODE_WRITE : BOLT_ACCESS_MODE_READ);
     app->with_allocation_report = 0;

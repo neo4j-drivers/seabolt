@@ -33,7 +33,8 @@
 struct BoltDirectPool {
     mutex_t mutex;
     struct BoltAddress* address;
-    struct BoltConfig* config;
+    const struct BoltValue* auth_token;
+    const struct BoltConfig* config;
     uint32_t size;
     struct BoltConnection* connections;
 };
@@ -42,7 +43,7 @@ struct BoltDirectPool {
 #define SIZE_OF_DIRECT_POOL_PTR sizeof(struct BoltDirectPool*)
 
 struct BoltDirectPool*
-BoltDirectPool_create(struct BoltAddress* address, struct BoltConfig* config);
+BoltDirectPool_create(struct BoltAddress* address, const struct BoltValue* auth_token, const struct BoltConfig* config);
 
 void BoltDirectPool_destroy(struct BoltDirectPool* pool);
 

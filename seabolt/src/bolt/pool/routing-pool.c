@@ -45,7 +45,7 @@ int BoltRoutingPool_ensure_server(struct BoltRoutingPool* pool, struct BoltAddre
                         SIZE_OF_DIRECT_POOL_PTR,
                 (pool->servers->size)*
                         SIZE_OF_DIRECT_POOL_PTR);
-        pool->server_pools[index] = BoltDirectPool_create(server, pool->config);
+        pool->server_pools[index] = BoltDirectPool_create(server, pool->auth_token, pool->config);
 
         BoltUtil_mutex_unlock(&pool->lock);
     }
@@ -286,11 +286,13 @@ struct BoltAddress* BoltRoutingPool_select_least_connected_writer(struct BoltRou
 }
 
 struct BoltRoutingPool*
-BoltRoutingPool_create(struct BoltAddress* address, struct BoltConfig* config)
+BoltRoutingPool_create(struct BoltAddress* address, const struct BoltValue* auth_token, const struct BoltConfig* config)
 {
     struct BoltRoutingPool* pool = (struct BoltRoutingPool*) BoltMem_allocate(SIZE_OF_ROUTING_POOL);
 
+    pool->address = address;
     pool->config = config;
+    pool->auth_token = auth_token;
 
     pool->servers = BoltAddressSet_create();
     pool->server_pools = NULL;

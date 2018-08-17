@@ -24,7 +24,9 @@
 #include "bolt/values.h"
 
 struct BoltRoutingPool {
-    struct BoltConfig* config;
+    struct BoltAddress* address;
+    const struct BoltConfig* config;
+    const struct BoltValue* auth_token;
 
     struct RoutingTable* routing_table;
     int readers_offset;
@@ -40,7 +42,7 @@ struct BoltRoutingPool {
 #define SIZE_OF_ROUTING_POOL_PTR sizeof(struct BoltRoutingConnectionPool*)
 
 struct BoltRoutingPool*
-BoltRoutingPool_create(struct BoltAddress* address, struct BoltConfig* config);
+BoltRoutingPool_create(struct BoltAddress* address, const struct BoltValue* auth_token, const struct BoltConfig* config);
 
 void BoltRoutingPool_destroy(struct BoltRoutingPool* pool);
 

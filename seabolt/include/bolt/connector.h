@@ -35,13 +35,13 @@ struct BoltConfig {
     enum BoltConnectorMode mode;
     enum BoltTransport transport;
     const char* user_agent;
-    const struct BoltValue* auth_token;
     const struct BoltValue* routing_context;
     uint32_t max_pool_size;
 };
 
 struct BoltConnector {
     const struct BoltAddress* address;
+    const struct BoltValue* auth_token;
     const struct BoltConfig* config;
     void* pool_state;
 };
@@ -61,7 +61,8 @@ struct BoltConnectionResult {
 #define CONNECTION_RESULT_ERROR(code, context) (struct BoltConnectionResult) { NULL, BOLT_DISCONNECTED, code, context }
 #endif
 
-PUBLIC struct BoltConnector* BoltConnector_create(struct BoltAddress* address, struct BoltConfig* config);
+PUBLIC struct BoltConnector*
+BoltConnector_create(struct BoltAddress* address, struct BoltValue* auth_token, struct BoltConfig* config);
 
 PUBLIC void BoltConnector_destroy(struct BoltConnector* connector);
 

@@ -65,7 +65,7 @@ int find_connection(struct BoltDirectPool* pool, struct BoltConnection* connecti
 enum BoltConnectionError init(struct BoltDirectPool* pool, int index)
 {
     struct BoltConnection* connection = &pool->connections[index];
-    switch (BoltConnection_init(connection, pool->config->user_agent, pool->config->auth_token)) {
+    switch (BoltConnection_init(connection, pool->config->user_agent, pool->auth_token)) {
     case 0:
         return BOLT_SUCCESS;
     default:
@@ -152,13 +152,14 @@ void reset_or_close(struct BoltDirectPool* pool, int index)
     }
 }
 
-struct BoltDirectPool* BoltDirectPool_create(struct BoltAddress* address, struct BoltConfig* config)
+struct BoltDirectPool* BoltDirectPool_create(struct BoltAddress* address, const struct BoltValue* auth_token, const struct BoltConfig* config)
 {
     BoltLog_info("bolt: creating pool");
     struct BoltDirectPool* pool = (struct BoltDirectPool*) BoltMem_allocate(SIZE_OF_DIRECT_POOL);
     BoltUtil_mutex_create(&pool->mutex);
     pool->config = config;
     pool->address = BoltAddress_create(address->host, address->port);
+    pool->auth_token = auth_token;
     pool->size = config->max_pool_size;
     pool->connections = (struct BoltConnection*) BoltMem_allocate(config->max_pool_size*sizeof(struct BoltConnection));
     memset(pool->connections, 0, config->max_pool_size*sizeof(struct BoltConnection));
