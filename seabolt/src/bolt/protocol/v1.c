@@ -630,7 +630,7 @@ int unload_string(struct BoltConnection* connection, struct BoltValue* value)
         BoltBuffer_unload(state->rx_buffer, BoltString_get(value), size);
         return BOLT_SUCCESS;
     }
-    BoltLog_error("bolt: Unknown marker: %d", marker);
+    BoltLog_error(connection->log, "bolt: Unknown marker: %d", marker);
     return BOLT_PROTOCOL_UNEXPECTED_MARKER;
 }
 
@@ -660,7 +660,7 @@ int unload_bytes(struct BoltConnection* connection, struct BoltValue* value)
         BoltBuffer_unload(state->rx_buffer, BoltBytes_get_all(value), size);
         return BOLT_SUCCESS;
     }
-    BoltLog_error("bolt: Unknown marker: %d", marker);
+    BoltLog_error(connection->log, "bolt: Unknown marker: %d", marker);
     return BOLT_PROTOCOL_UNEXPECTED_MARKER;
 }
 
@@ -785,7 +785,7 @@ int unload(struct BoltConnection* connection, struct BoltValue* value)
     case BOLT_V1_STRUCTURE:
         return unload_structure(connection, value);
     default:
-        BoltLog_error("bolt: Unknown marker: %d", marker);
+        BoltLog_error(connection->log, "bolt: Unknown marker: %d", marker);
         return BOLT_PROTOCOL_UNEXPECTED_MARKER;
     }
 }
@@ -816,7 +816,7 @@ int BoltProtocolV1_fetch(struct BoltConnection* connection, bolt_request_t reque
         char header[2];
         int status = BoltConnection_receive(connection, &header[0], 2);
         if (status!=BOLT_SUCCESS) {
-            BoltLog_error("bolt: Could not fetch chunk header");
+            BoltLog_error(connection->log, "bolt: Could not fetch chunk header");
             return -1;
         }
         uint16_t chunk_size = char_to_uint16be(header);
@@ -825,12 +825,12 @@ int BoltProtocolV1_fetch(struct BoltConnection* connection, bolt_request_t reque
             status = BoltConnection_receive(connection, BoltBuffer_load_pointer(state->rx_buffer, chunk_size),
                     chunk_size);
             if (status!=BOLT_SUCCESS) {
-                BoltLog_error("bolt: Could not fetch chunk data");
+                BoltLog_error(connection->log, "bolt: Could not fetch chunk data");
                 return -1;
             }
             status = BoltConnection_receive(connection, &header[0], 2);
             if (status!=BOLT_SUCCESS) {
-                BoltLog_error("bolt: Could not fetch chunk header");
+                BoltLog_error(connection->log, "bolt: Could not fetch chunk header");
                 return -1;
             }
             chunk_size = char_to_uint16be(header);
@@ -887,7 +887,7 @@ int BoltProtocolV1_unload(struct BoltConnection* connection)
     }
     else {
         if (state->record_counter>MAX_LOGGED_RECORDS) {
-            BoltLog_info("bolt: S[%d]: Received %llu more records", state->response_counter,
+            BoltLog_info(connection->log, "bolt: S[%d]: Received %llu more records", state->response_counter,
                     state->record_counter-MAX_LOGGED_RECORDS);
         }
         state->record_counter = 0;
@@ -976,7 +976,7 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
                 case BOLT_STRING: {
                     memset(state->last_bookmark, 0, MAX_BOOKMARK_SIZE);
                     memcpy(state->last_bookmark, BoltString_get(value), (size_t) (value->size));
-                    BoltLog_info("bolt: <SET last_bookmark=\"%s\">", state->last_bookmark);
+                    BoltLog_info(connection->log, "bolt: <SET last_bookmark=\"%s\">", state->last_bookmark);
                     break;
                 }
                 default:
@@ -1013,7 +1013,7 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
                 case BOLT_STRING: {
                     memset(state->server, 0, MAX_SERVER_SIZE);
                     memcpy(state->server, BoltString_get(value), (size_t) (value->size));
-                    BoltLog_info("bolt: <SET server=\"%s\">", state->server);
+                    BoltLog_info(connection->log, "bolt: <SET server=\"%s\">", state->server);
                     break;
                 }
                 default:

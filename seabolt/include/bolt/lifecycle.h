@@ -26,7 +26,7 @@
 #include "config.h"
 
 
-PUBLIC void Bolt_startup(FILE * log_file);
+PUBLIC void Bolt_startup();
 
 PUBLIC void Bolt_shutdown();
 

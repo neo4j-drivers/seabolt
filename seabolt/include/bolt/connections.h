@@ -115,8 +115,10 @@ struct BoltConnection {
     /// Transport type for this connection
     enum BoltTransport transport;
 
-    const struct BoltAddress *address;
-    const struct BoltAddress *resolved_address;
+    const struct BoltAddress* address;
+    const struct BoltAddress* resolved_address;
+
+    const struct BoltLog* log;
 
     /// The security context (secure connections only)
     struct ssl_ctx_st* ssl_context;
@@ -201,7 +203,7 @@ PUBLIC void BoltConnection_destroy(struct BoltConnection* connection);
  * @return 0 if the connection was opened successfully, -1 otherwise
  */
 PUBLIC int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transport,
-        struct BoltAddress* address);
+        struct BoltAddress* address, struct BoltLog* log);
 
 /**
  * Close a connection.

@@ -17,22 +17,12 @@
  * limitations under the License.
  */
 
+#ifndef SEABOLT_ALL_UTILS_H
+#define SEABOLT_ALL_UTILS_H
 
-#define CATCH_CONFIG_RUNNER  // This tells Catch to provide a main()
+#include "config.h"
+#include <time.h>
 
-#include "catch.hpp"
+PUBLIC void BoltUtil_diff_time(struct timespec* t, struct timespec* t0, struct timespec* t1);
 
-extern "C" {
-#include "bolt/lifecycle.h"
-}
-
-int main(int argc, char* argv[])
-{
-    Bolt_startup();
-
-    int result = Catch::Session().run(argc, argv);
-
-    Bolt_shutdown();
-
-    return result;
-}
+#endif //SEABOLT_ALL_UTILS_H

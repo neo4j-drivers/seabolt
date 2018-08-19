@@ -23,6 +23,7 @@
 #include "config.h"
 #include "platform.h"
 
+
 /**
  * The address of a Bolt server. This can carry both the original host
  * and port details, as supplied by the application, as well as one or
@@ -77,7 +78,7 @@ PUBLIC struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_s
  * @param address pointer to a BoltAddress structure
  * @return status of the internal getaddrinfo call
  */
-PUBLIC int BoltAddress_resolve(struct BoltAddress* address);
+PUBLIC int BoltAddress_resolve(struct BoltAddress* address, struct BoltLog *log);
 
 /**
  * Copy the textual representation of a resolved host IP address into a buffer.

@@ -42,7 +42,6 @@ struct RoutingTable* RoutingTable_create()
     struct RoutingTable* table = (struct RoutingTable*) BoltMem_allocate(SIZE_OF_ROUTING_TABLE);
     table->expires = 0;
     table->last_updated = 0;
-    table->initial_routers = BoltAddressSet_create();
     table->readers = BoltAddressSet_create();
     table->writers = BoltAddressSet_create();
     table->routers = BoltAddressSet_create();
@@ -51,7 +50,6 @@ struct RoutingTable* RoutingTable_create()
 
 void RoutingTable_destroy(struct RoutingTable* state)
 {
-    BoltAddressSet_destroy(state->initial_routers);
     BoltAddressSet_destroy(state->readers);
     BoltAddressSet_destroy(state->writers);
     BoltAddressSet_destroy(state->routers);

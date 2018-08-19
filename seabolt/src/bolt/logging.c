@@ -22,34 +22,74 @@
 #include <stdlib.h>
 
 #include "bolt/logging.h"
+#include "bolt/mem.h"
 
 #include "protocol/v1.h"
 
 static FILE* __bolt_log_file;
 
-void BoltLog_set_file(FILE* log_file)
+void _perform_log_call(log_func func, const char* message, ...)
 {
-    __bolt_log_file = log_file;
+    int previous_size = 512*sizeof(char);
+    int current_size = previous_size;
+    char* fmt_message = BoltMem_allocate(current_size);
+    while (1) {
+        va_list args;
+        va_start(args, message);
+        int written = snprintf(fmt_message, current_size, message, args);
+        va_end(args);
+        if (written<=current_size) {
+            break;
+        }
+        previous_size = current_size;
+        current_size = current_size*2;
+        fmt_message = BoltMem_reallocate(fmt_message, previous_size, current_size);
+    }
+
+    func(fmt_message);
+
+    BoltMem_deallocate(fmt_message, current_size);
 }
 
-void BoltLog_info(const char* message, ...)
+void BoltLog_error(const struct BoltLog* log, const char* message, ...)
 {
-    if (__bolt_log_file==NULL) return;
-    va_list args;
-    va_start(args, message);
-    vfprintf(__bolt_log_file, message, args);
-    va_end(args);
-    fprintf(__bolt_log_file, "\n");
+    if (log!=NULL && log->error_enabled) {
+        va_list args;
+        va_start(args, message);
+        _perform_log_call(log->error_logger, message, args);
+        va_end(args);
+    }
 }
 
-void BoltLog_error(const char* message, ...)
+void BoltLog_warning(const struct BoltLog* log, const char* message, ...)
 {
-    if (__bolt_log_file==NULL) return;
-    va_list args;
-    va_start(args, message);
-    vfprintf(__bolt_log_file, message, args);
-    va_end(args);
-    fprintf(__bolt_log_file, "\n");
+    if (log!=NULL && log->warning_enabled) {
+        va_list args;
+        va_start(args, message);
+        _perform_log_call(log->warning_logger, message, args);
+        va_end(args);
+    }
+}
+
+void BoltLog_info(const struct BoltLog* log, const char* message, ...)
+{
+    if (log!=NULL && log->info_enabled) {
+        va_list args;
+        va_start(args, message);
+        _perform_log_call(log->info_logger, message, args);
+        va_end(args);
+
+    }
+}
+
+void BoltLog_debug(const struct BoltLog* log, const char* message, ...)
+{
+    if (log!=NULL && log->debug_enabled) {
+        va_list args;
+        va_start(args, message);
+        _perform_log_call(log->debug_logger, message, args);
+        va_end(args);
+    }
 }
 
 void BoltLog_value(struct BoltValue* value, int32_t protocol_version, const char* prefix, const char* suffix)

@@ -21,24 +21,10 @@
 #include "bolt/config-impl.h"
 #include "bolt/logging.h"
 #include "bolt/mem.h"
+#include "bolt/utils.h"
 #include "direct-pool.h"
 
 #define SIZE_OF_CONNECTION_POOL sizeof(struct BoltConnectionPool)
-
-// TODO: put this somewhere else
-void timespec_diff(struct timespec* t, struct timespec* t0, struct timespec* t1)
-{
-    t->tv_sec = t0->tv_sec-t1->tv_sec;
-    t->tv_nsec = t0->tv_nsec-t1->tv_nsec;
-    while (t->tv_nsec>=1000000000) {
-        t->tv_sec += 1;
-        t->tv_nsec -= 1000000000;
-    }
-    while (t->tv_nsec<0) {
-        t->tv_sec -= 1;
-        t->tv_nsec += 1000000000;
-    }
-}
 
 int find_unused_connection(struct BoltDirectPool* pool)
 {
@@ -103,14 +89,14 @@ enum BoltConnectionError open_init(struct BoltDirectPool* pool, int index)
     // Host name resolution is carried out every time a connection
     // is opened. Given that connections are pooled and reused,
     // this is not a huge overhead.
-    switch (BoltAddress_resolve(pool->address)) {
+    switch (BoltAddress_resolve(pool->address, pool->config->log)) {
     case 0:
         break;
     default:
         return BOLT_ADDRESS_NOT_RESOLVED;  // Could not resolve address
     }
     struct BoltConnection* connection = &pool->connections[index];
-    switch (BoltConnection_open(connection, pool->config->transport, pool->address)) {
+    switch (BoltConnection_open(connection, pool->config->transport, pool->address, pool->config->log)) {
     case 0:
         return init(pool, index);
     default:
@@ -125,8 +111,9 @@ void close_pool_entry(struct BoltDirectPool* pool, int index)
         struct timespec now;
         struct timespec diff;
         BoltUtil_get_time(&now);
-        timespec_diff(&diff, &now, &connection->metrics.time_opened);
-        BoltLog_info("bolt: Connection alive for %lds %09ldns", (long) (diff.tv_sec), diff.tv_nsec);
+        BoltUtil_diff_time(&diff, &now, &connection->metrics.time_opened);
+        BoltLog_info(pool->config->log, "bolt: Connection alive for %lds %09ldns", (long) (diff.tv_sec),
+                diff.tv_nsec);
         BoltConnection_close(connection);
     }
 }
@@ -152,9 +139,10 @@ void reset_or_close(struct BoltDirectPool* pool, int index)
     }
 }
 
-struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, const struct BoltValue* auth_token, const struct BoltConfig* config)
+struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, const struct BoltValue* auth_token,
+        const struct BoltConfig* config)
 {
-    BoltLog_info("bolt: creating pool");
+    BoltLog_info(config->log, "bolt: creating pool");
     struct BoltDirectPool* pool = (struct BoltDirectPool*) BoltMem_allocate(SIZE_OF_DIRECT_POOL);
     BoltUtil_mutex_create(&pool->mutex);
     pool->config = config;
@@ -168,7 +156,7 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
 
 void BoltDirectPool_destroy(struct BoltDirectPool* pool)
 {
-    BoltLog_info("bolt: destroying pool");
+    BoltLog_info(pool->config->log, "bolt: destroying pool");
     for (size_t index = 0; index<pool->size; index++) {
         close_pool_entry(pool, (int) index);
     }
@@ -180,7 +168,7 @@ void BoltDirectPool_destroy(struct BoltDirectPool* pool)
 
 struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
 {
-    BoltLog_info("bolt: acquiring connection from the pool");
+    BoltLog_info(pool->config->log, "bolt: acquiring connection from the pool");
     BoltUtil_mutex_lock(&pool->mutex);
     int index = find_unused_connection(pool);
     enum BoltConnectionError pool_error = index>=0 ? BOLT_SUCCESS : BOLT_POOL_FULL;
@@ -247,7 +235,7 @@ struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
 
 int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* connection)
 {
-    BoltLog_info("bolt: releasing connection to pool");
+    BoltLog_info(pool->config->log, "bolt: releasing connection to pool");
     BoltUtil_mutex_lock(&pool->mutex);
     int index = find_connection(pool, connection);
     if (index>=0) {

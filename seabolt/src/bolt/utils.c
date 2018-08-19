@@ -17,22 +17,20 @@
  * limitations under the License.
  */
 
+#include "bolt/config-impl.h"
+#include "bolt/utils.h"
 
-#define CATCH_CONFIG_RUNNER  // This tells Catch to provide a main()
-
-#include "catch.hpp"
-
-extern "C" {
-#include "bolt/lifecycle.h"
-}
-
-int main(int argc, char* argv[])
+void BoltUtil_diff_time(struct timespec* t, struct timespec* t0, struct timespec* t1)
 {
-    Bolt_startup();
-
-    int result = Catch::Session().run(argc, argv);
-
-    Bolt_shutdown();
-
-    return result;
+    t->tv_sec = t0->tv_sec-t1->tv_sec;
+    t->tv_nsec = t0->tv_nsec-t1->tv_nsec;
+    while (t->tv_nsec>=1000000000) {
+        t->tv_sec += 1;
+        t->tv_nsec -= 1000000000;
+    }
+    while (t->tv_nsec<0) {
+        t->tv_sec -= 1;
+        t->tv_nsec += 1000000000;
+    }
 }
+

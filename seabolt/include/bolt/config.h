@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 
+
 #define PUBLIC
 
 #if USE_POSIXSOCK
@@ -34,5 +35,7 @@ typedef int socklen_t;
 #undef PUBLIC
 #define PUBLIC __declspec(dllexport)
 #endif // USE_WINSOCK
+
+struct BoltLog;
 
 #endif // SEABOLT_CONFIG

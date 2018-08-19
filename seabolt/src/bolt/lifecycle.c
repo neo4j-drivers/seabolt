@@ -21,12 +21,8 @@
 #include "bolt/logging.h"
 #include "bolt/config-impl.h"
 
-void Bolt_startup(FILE* log_file)
+void Bolt_startup()
 {
-    if (log_file!=NULL) {
-        BoltLog_set_file(log_file);
-    }
-
 #if USE_WINSOCK
     WSADATA data;
     WSAStartup(MAKEWORD(2, 2), &data);

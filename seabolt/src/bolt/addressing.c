@@ -19,10 +19,10 @@
 
 
 #include "bolt/addressing.h"
-#include "bolt/logging.h"
 #include "bolt/mem.h"
 #include "memory.h"
 #include "bolt/config-impl.h"
+#include "bolt/logging.h"
 
 #define DEFAULT_BOLT_PORT "7687"
 #define DEFAULT_BOLT_HOST "localhost"
@@ -74,15 +74,15 @@ struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int
     return result;
 }
 
-int BoltAddress_resolve(struct BoltAddress* address)
+int BoltAddress_resolve(struct BoltAddress* address, struct BoltLog *log)
 {
     BoltUtil_mutex_lock(&address->lock);
 
     if (strchr(address->host, ':')==NULL) {
-        BoltLog_info("bolt: Resolving address %s:%s", address->host, address->port);
+        BoltLog_info(log, "bolt: Resolving address %s:%s", address->host, address->port);
     }
     else {
-        BoltLog_info("bolt: Resolving address [%s]:%s", address->host, address->port);
+        BoltLog_info(log, "bolt: Resolving address [%s]:%s", address->host, address->port);
     }
     static struct addrinfo hints;
     hints.ai_family = AF_UNSPEC;
@@ -131,14 +131,14 @@ int BoltAddress_resolve(struct BoltAddress* address)
         }
         freeaddrinfo(ai);
         if (address->n_resolved_hosts==1) {
-            BoltLog_info("bolt: Host resolved to 1 IP address");
+            BoltLog_info(log, "bolt: Host resolved to 1 IP address");
         }
         else {
-            BoltLog_info("bolt: Host resolved to %d IP addresses", address->n_resolved_hosts);
+            BoltLog_info(log, "bolt: Host resolved to %d IP addresses", address->n_resolved_hosts);
         }
     }
     else {
-        BoltLog_info("bolt: Host resolution failed (status %d)", gai_status);
+        BoltLog_info(log, "bolt: Host resolution failed (status %d)", gai_status);
     }
 
     if (address->n_resolved_hosts>0) {

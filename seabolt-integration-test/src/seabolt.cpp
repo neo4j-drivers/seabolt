@@ -27,7 +27,7 @@
 struct BoltAddress* bolt_get_address(const char* host, const char* port)
 {
     struct BoltAddress* address = BoltAddress_create(host, port);
-    int status = BoltAddress_resolve(address);
+    int status = BoltAddress_resolve(address, NULL);
     REQUIRE(status==0);
     return address;
 }
@@ -36,7 +36,7 @@ struct BoltConnection* bolt_open_b(enum BoltTransport transport, const char* hos
 {
     struct BoltAddress* address = bolt_get_address(host, port);
     struct BoltConnection* connection = BoltConnection_create();
-    BoltConnection_open(connection, transport, address);
+    BoltConnection_open(connection, transport, address, NULL);
     BoltAddress_destroy(address);
     REQUIRE(connection->status==BOLT_CONNECTED);
     return connection;

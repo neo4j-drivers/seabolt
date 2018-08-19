@@ -134,10 +134,24 @@ enum BoltConnectionError BoltRoutingPool_update_routing_table(struct BoltRouting
 {
     enum BoltConnectionError result = BOLT_ROUTING_UNABLE_TO_RETRIEVE_ROUTING_TABLE;
 
+    // discover initial routers which pass through address resolver
+    struct BoltAddressSet* initial_routers = BoltAddressSet_create();
+    // first try to resolve using address resolver callback if specified
+    if (pool->config->address_resolver!=NULL) {
+        pool->config->address_resolver(pool->address, initial_routers);
+    }
+    // if nothing got added to the initial router addresses, add the connector hostname and port
+    if (initial_routers->size==0) {
+        BoltAddressSet_add(initial_routers, *pool->address);
+    }
+
     // Create a set of servers to update the routing table from
     struct BoltAddressSet* routers = BoltAddressSet_create();
+
+    // First add routers present in the routing table
     BoltAddressSet_add_all(routers, pool->routing_table->routers);
-    BoltAddressSet_add_all(routers, pool->routing_table->initial_routers);
+    // Then add initial routers
+    BoltAddressSet_add_all(routers, initial_routers);
 
     // Try each in turn until successful
     for (int i = 0; i<routers->size; i++) {
@@ -150,6 +164,7 @@ enum BoltConnectionError BoltRoutingPool_update_routing_table(struct BoltRouting
 
     // Destroy the set of servers
     BoltAddressSet_destroy(routers);
+    BoltAddressSet_destroy(initial_routers);
 
     return result;
 }
@@ -185,8 +200,6 @@ void BoltRoutingPool_cleanup(struct BoltRoutingPool* pool)
                 continue;
             }
 
-            // TODO: Maybe try to keep the previous entry?
-            // With re-adding the address to a new set, are we loosing previous address resolution information?
             int index = BoltAddressSet_add(new_servers, *old_servers->elements[i]);
             new_server_pools[index] = old_server_pools[i];
         }
@@ -400,8 +413,6 @@ BoltRoutingPool_create(struct BoltAddress* address, const struct BoltValue* auth
     pool->server_pools = NULL;
 
     pool->routing_table = RoutingTable_create();
-    // TODO: custom resolver?
-    BoltAddressSet_add(pool->routing_table->initial_routers, *address);
     pool->readers_offset = 0;
     pool->writers_offset = 0;
 

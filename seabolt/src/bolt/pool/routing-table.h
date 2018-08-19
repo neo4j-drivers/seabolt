@@ -25,7 +25,6 @@
 struct RoutingTable {
     int64_t expires;
     int64_t last_updated;
-    struct BoltAddressSet* initial_routers;
     struct BoltAddressSet* readers;
     struct BoltAddressSet* writers;
     struct BoltAddressSet* routers;
