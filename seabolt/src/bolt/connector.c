@@ -35,6 +35,8 @@ BoltConnector_create(struct BoltAddress* address, struct BoltValue* auth_token, 
     config_clone->user_agent = (char*) BoltMem_duplicate(config->user_agent, SIZE_OF_C_STRING(config->user_agent));
     config_clone->routing_context = BoltValue_duplicate(config->routing_context);
     config_clone->max_pool_size = config->max_pool_size;
+    config_clone->log = config->log;
+    config_clone->address_resolver = config->address_resolver;
 
     struct BoltConnector* connector = (struct BoltConnector*) BoltMem_allocate(SIZE_OF_CONNECTOR);
     connector->address = BoltAddress_create(address->host, address->port);
