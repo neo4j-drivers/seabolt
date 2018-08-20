@@ -25,6 +25,8 @@
 
 #define SIZE_OF_CONNECTOR sizeof(struct BoltConnector)
 #define SIZE_OF_CONFIG sizeof(struct BoltConfig)
+#define SIZE_OF_LOG sizeof(struct BoltLog)
+#define SIZE_OF_ADDRESS_RESOLVER sizeof(struct BoltAddressResolver)
 
 struct BoltConnector*
 BoltConnector_create(struct BoltAddress* address, struct BoltValue* auth_token, struct BoltConfig* config)
@@ -35,8 +37,9 @@ BoltConnector_create(struct BoltAddress* address, struct BoltValue* auth_token, 
     config_clone->user_agent = (char*) BoltMem_duplicate(config->user_agent, SIZE_OF_C_STRING(config->user_agent));
     config_clone->routing_context = BoltValue_duplicate(config->routing_context);
     config_clone->max_pool_size = config->max_pool_size;
-    config_clone->log = config->log;
-    config_clone->address_resolver = config->address_resolver;
+    config_clone->log = (struct BoltLog*) BoltMem_duplicate(config->log, SIZE_OF_LOG);
+    config_clone->address_resolver = (struct BoltAddressResolver*) BoltMem_duplicate(config->address_resolver,
+            SIZE_OF_ADDRESS_RESOLVER);
 
     struct BoltConnector* connector = (struct BoltConnector*) BoltMem_allocate(SIZE_OF_CONNECTOR);
     connector->address = BoltAddress_create(address->host, address->port);
@@ -70,9 +73,11 @@ void BoltConnector_destroy(struct BoltConnector* connector)
     }
 
     BoltAddress_destroy((struct BoltAddress*) connector->address);
-    BoltMem_deallocate((char*) connector->config->user_agent, SIZE_OF_C_STRING(connector->config->user_agent));
     BoltValue_destroy((struct BoltValue*) connector->auth_token);
+    BoltMem_deallocate((char*) connector->config->user_agent, SIZE_OF_C_STRING(connector->config->user_agent));
     BoltValue_destroy((struct BoltValue*) connector->config->routing_context);
+    BoltLog_destroy(connector->config->log);
+    BoltAddressResolver_destroy(connector->config->address_resolver);
     BoltMem_deallocate((void*) connector->config, SIZE_OF_CONFIG);
     BoltMem_deallocate(connector, SIZE_OF_CONNECTOR);
 }

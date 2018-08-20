@@ -59,6 +59,10 @@ void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size)
 
 void* BoltMem_deallocate(void* ptr, size_t old_size)
 {
+    if (ptr==NULL) {
+        return NULL;
+    }
+
     free(ptr);
     __allocation -= old_size;
     __allocation_events += 1;
@@ -101,6 +105,9 @@ void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size)
 
 void* BoltMem_duplicate(const void* ptr, size_t ptr_size)
 {
+    if (ptr == NULL) {
+        return NULL;
+    }
     void* p = BoltMem_allocate(ptr_size);
     memcpy(p, ptr, ptr_size);
     return p;

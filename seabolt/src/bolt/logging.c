@@ -109,7 +109,7 @@ void BoltLog_debug(const struct BoltLog* log, const char* format, ...)
 void
 BoltLog_value(const struct BoltLog* log, const char* format, struct BoltValue* value, int32_t protocol_version)
 {
-    if (log->debug_enabled) {
+    if (log!=NULL && log->debug_enabled) {
         struct StringBuilder* builder = StringBuilder_create();
         BoltValue_write(builder, value, protocol_version);
         BoltLog_debug(log, format, StringBuilder_get_string(builder));
@@ -120,7 +120,7 @@ BoltLog_value(const struct BoltLog* log, const char* format, struct BoltValue* v
 void BoltLog_message(const struct BoltLog* log, const char* peer, bolt_request_t request_id, int16_t code,
         struct BoltValue* fields, int32_t protocol_version)
 {
-    if (log->debug_enabled) {
+    if (log!=NULL && log->debug_enabled) {
         const char* message_name = NULL;
         switch (protocol_version) {
         case 1:
