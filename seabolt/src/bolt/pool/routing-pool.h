@@ -20,7 +20,7 @@
 #define SEABOLT_ALL_DISCOVERY_H
 
 #include "bolt/connector.h"
-#include "bolt/addressing.h"
+#include "bolt/address.h"
 #include "bolt/values.h"
 
 struct BoltRoutingPool {

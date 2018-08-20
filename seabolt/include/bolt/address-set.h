@@ -19,7 +19,7 @@
 #ifndef SEABOLT_ALL_ADDRESS_SET_H
 #define SEABOLT_ALL_ADDRESS_SET_H
 
-#include "bolt/addressing.h"
+#include "address.h"
 
 struct BoltAddressSet {
     int size;
@@ -29,20 +29,20 @@ struct BoltAddressSet {
 #define SIZE_OF_ADDRESS_SET sizeof(struct BoltAddressSet)
 #define SIZE_OF_ADDRESS_SET_PTR sizeof(struct BoltAddressSet*)
 
-struct BoltAddressSet* BoltAddressSet_create();
+PUBLIC struct BoltAddressSet* BoltAddressSet_create();
 
-void BoltAddressSet_destroy(struct BoltAddressSet* set);
+PUBLIC void BoltAddressSet_destroy(struct BoltAddressSet* set);
 
-int BoltAddressSet_size(struct BoltAddressSet* set);
+PUBLIC int BoltAddressSet_size(struct BoltAddressSet* set);
 
-int BoltAddressSet_index_of(struct BoltAddressSet* set, struct BoltAddress address);
+PUBLIC int BoltAddressSet_index_of(struct BoltAddressSet* set, struct BoltAddress address);
 
-int BoltAddressSet_add(struct BoltAddressSet* set, struct BoltAddress address);
+PUBLIC int BoltAddressSet_add(struct BoltAddressSet* set, struct BoltAddress address);
 
-int BoltAddressSet_remove(struct BoltAddressSet* set, struct BoltAddress address);
+PUBLIC int BoltAddressSet_remove(struct BoltAddressSet* set, struct BoltAddress address);
 
-void BoltAddressSet_replace(struct BoltAddressSet* destination, struct BoltAddressSet* source);
+PUBLIC void BoltAddressSet_replace(struct BoltAddressSet* destination, struct BoltAddressSet* source);
 
-void BoltAddressSet_add_all(struct BoltAddressSet* destination, struct BoltAddressSet* source);
+PUBLIC void BoltAddressSet_add_all(struct BoltAddressSet* destination, struct BoltAddressSet* source);
 
 #endif //SEABOLT_ALL_ADDRESS_SET_H

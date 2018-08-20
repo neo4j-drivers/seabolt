@@ -17,8 +17,83 @@
  * limitations under the License.
  */
 
+#include <string.h>
+
 #include "bolt/config-impl.h"
 #include "bolt/utils.h"
+#include "bolt/mem.h"
+
+struct StringBuilder* StringBuilder_create()
+{
+    struct StringBuilder* builder = (struct StringBuilder*) BoltMem_allocate(sizeof(struct StringBuilder));
+    builder->buffer = BoltMem_allocate(1*sizeof(char));
+    builder->buffer[0] = '\0';
+    builder->buffer_pos = 0;
+    builder->buffer_size = 1;
+    return builder;
+}
+
+void StringBuilder_destroy(struct StringBuilder* builder)
+{
+    BoltMem_deallocate(builder->buffer, builder->buffer_size);
+    BoltMem_deallocate(builder, sizeof(struct StringBuilder));
+}
+
+void StringBuilder_ensure_buffer(struct StringBuilder* builder, size_t size_to_add)
+{
+    if (builder->buffer_size-builder->buffer_pos>size_to_add) {
+        return;
+    }
+
+    size_t new_size = builder->buffer_pos+size_to_add+1;
+    builder->buffer = (char*) BoltMem_reallocate(builder->buffer, builder->buffer_size, new_size);
+    builder->buffer_size = new_size;
+}
+
+void StringBuilder_append(struct StringBuilder* builder, const char* string)
+{
+    StringBuilder_append_n(builder, string, strlen(string));
+}
+
+void StringBuilder_append_n(struct StringBuilder* builder, const char* string, const size_t len)
+{
+    StringBuilder_ensure_buffer(builder, len);
+    strncpy(builder->buffer+builder->buffer_pos, string, len);
+    builder->buffer_pos += len;
+    builder->buffer[builder->buffer_pos] = '\0';
+}
+
+void StringBuilder_append_f(struct StringBuilder* builder, const char* format, ...)
+{
+    int size = 512*sizeof(char);
+    char* message_fmt = BoltMem_allocate(size);
+    while (1) {
+        va_list args;
+        va_start(args, format);
+        int written = vsnprintf(message_fmt, size, format, args);
+        va_end(args);
+        if (written<size) {
+            break;
+        }
+        BoltMem_deallocate(message_fmt, size);
+        size = size*2;
+        message_fmt = BoltMem_allocate(size);
+    }
+
+    StringBuilder_append(builder, message_fmt);
+
+    BoltMem_deallocate(message_fmt, size);
+}
+
+char* StringBuilder_get_string(struct StringBuilder* builder)
+{
+    return builder->buffer;
+}
+
+size_t StringBuilder_get_length(struct StringBuilder* builder)
+{
+    return builder->buffer_pos;
+}
 
 void BoltUtil_diff_time(struct timespec* t, struct timespec* t0, struct timespec* t1)
 {

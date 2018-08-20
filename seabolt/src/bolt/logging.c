@@ -26,103 +26,114 @@
 
 #include "protocol/v1.h"
 
-static FILE* __bolt_log_file;
-
-void _perform_log_call(log_func func, const char* message, ...)
+struct BoltLog* BoltLog_create()
 {
-    int previous_size = 512*sizeof(char);
-    int current_size = previous_size;
-    char* fmt_message = BoltMem_allocate(current_size);
-    while (1) {
-        va_list args;
-        va_start(args, message);
-        int written = snprintf(fmt_message, current_size, message, args);
-        va_end(args);
-        if (written<=current_size) {
-            break;
-        }
-        previous_size = current_size;
-        current_size = current_size*2;
-        fmt_message = BoltMem_reallocate(fmt_message, previous_size, current_size);
-    }
-
-    func(fmt_message);
-
-    BoltMem_deallocate(fmt_message, current_size);
+    struct BoltLog* log = (struct BoltLog*) BoltMem_allocate(sizeof(struct BoltLog));
+    log->state = 0;
+    log->debug_logger = NULL;
+    log->info_logger = NULL;
+    log->warning_logger = NULL;
+    log->error_logger = NULL;
+    log->debug_enabled = 0;
+    log->info_enabled = 0;
+    log->warning_enabled = 0;
+    log->error_enabled = 0;
+    return log;
 }
 
-void BoltLog_error(const struct BoltLog* log, const char* message, ...)
+void BoltLog_destroy(struct BoltLog* log)
+{
+    BoltMem_deallocate(log, sizeof(struct BoltLog));
+}
+
+void _perform_log_call(log_func func, int state, const char* format, va_list args)
+{
+    int size = 512*sizeof(char);
+    char* message_fmt = BoltMem_allocate(size);
+    while (1) {
+        int written = vsnprintf(message_fmt, size, format, args);
+        if (written<size) {
+            break;
+        }
+        BoltMem_deallocate(message_fmt, size);
+        size = size*2;
+        message_fmt = BoltMem_allocate(size);
+    }
+
+    func(state, message_fmt);
+
+    BoltMem_deallocate(message_fmt, size);
+}
+
+void BoltLog_error(const struct BoltLog* log, const char* format, ...)
 {
     if (log!=NULL && log->error_enabled) {
         va_list args;
-        va_start(args, message);
-        _perform_log_call(log->error_logger, message, args);
+        va_start(args, format);
+        _perform_log_call(log->error_logger, log->state, format, args);
         va_end(args);
     }
 }
 
-void BoltLog_warning(const struct BoltLog* log, const char* message, ...)
+void BoltLog_warning(const struct BoltLog* log, const char* format, ...)
 {
     if (log!=NULL && log->warning_enabled) {
         va_list args;
-        va_start(args, message);
-        _perform_log_call(log->warning_logger, message, args);
+        va_start(args, format);
+        _perform_log_call(log->warning_logger, log->state, format, args);
         va_end(args);
     }
 }
 
-void BoltLog_info(const struct BoltLog* log, const char* message, ...)
+void BoltLog_info(const struct BoltLog* log, const char* format, ...)
 {
     if (log!=NULL && log->info_enabled) {
         va_list args;
-        va_start(args, message);
-        _perform_log_call(log->info_logger, message, args);
+        va_start(args, format);
+        _perform_log_call(log->info_logger, log->state, format, args);
         va_end(args);
 
     }
 }
 
-void BoltLog_debug(const struct BoltLog* log, const char* message, ...)
+void BoltLog_debug(const struct BoltLog* log, const char* format, ...)
 {
     if (log!=NULL && log->debug_enabled) {
         va_list args;
-        va_start(args, message);
-        _perform_log_call(log->debug_logger, message, args);
+        va_start(args, format);
+        _perform_log_call(log->debug_logger, log->state, format, args);
         va_end(args);
     }
 }
 
-void BoltLog_value(struct BoltValue* value, int32_t protocol_version, const char* prefix, const char* suffix)
+void
+BoltLog_value(const struct BoltLog* log, const char* format, struct BoltValue* value, int32_t protocol_version)
 {
-    if (__bolt_log_file==NULL) return;
-    fprintf(__bolt_log_file, "bolt: %s", prefix);
-    BoltValue_write(value, __bolt_log_file, protocol_version);
-    fprintf(__bolt_log_file, "%s\n", suffix);
+    if (log->debug_enabled) {
+        struct StringBuilder* builder = StringBuilder_create();
+        BoltValue_write(builder, value, protocol_version);
+        BoltLog_debug(log, format, StringBuilder_get_string(builder));
+        StringBuilder_destroy(builder);
+    }
 }
 
-void BoltLog_message(const char* peer, bolt_request_t request_id, int16_t code, struct BoltValue* fields,
-        int32_t protocol_version)
+void BoltLog_message(const struct BoltLog* log, const char* peer, bolt_request_t request_id, int16_t code,
+        struct BoltValue* fields, int32_t protocol_version)
 {
-    if (__bolt_log_file==NULL) return;
-    fprintf(__bolt_log_file, "bolt: %s[%" PRIu64 "]: ", peer, request_id);
-    switch (protocol_version) {
-    case 1:
-    case 2: {
-        const char* name = BoltProtocolV1_message_name(code);
-        if (name==NULL) {
-            fprintf(__bolt_log_file, "?");
+    if (log->debug_enabled) {
+        const char* message_name = NULL;
+        switch (protocol_version) {
+        case 1:
+        case 2: {
+            message_name = BoltProtocolV1_message_name(code);
+            break;
         }
-        else {
-            fprintf(__bolt_log_file, "%s", name);
         }
-        break;
+
+        struct StringBuilder* builder = StringBuilder_create();
+        BoltValue_write(builder, fields, protocol_version);
+        BoltLog_debug(log, "%s[%" PRIu64 "] %s %s", peer, request_id, message_name==NULL ? "?" : message_name,
+                StringBuilder_get_string(builder));
+        StringBuilder_destroy(builder);
     }
-    default:
-        fprintf(__bolt_log_file, "?");
-    }
-    for (int i = 0; i<fields->size; i++) {
-        fprintf(__bolt_log_file, " ");
-        BoltValue_write(BoltList_value(fields, i), __bolt_log_file, protocol_version);
-    }
-    fprintf(__bolt_log_file, "\n");
 }

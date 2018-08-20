@@ -27,7 +27,7 @@
 
 #include "routing-table.h"
 #include "direct-pool.h"
-#include "../utils/address-set.h"
+#include "bolt/address-set.h"
 
 int BoltRoutingPool_ensure_server(struct BoltRoutingPool* pool, const struct BoltAddress* server)
 {
@@ -137,9 +137,7 @@ enum BoltConnectionError BoltRoutingPool_update_routing_table(struct BoltRouting
     // discover initial routers which pass through address resolver
     struct BoltAddressSet* initial_routers = BoltAddressSet_create();
     // first try to resolve using address resolver callback if specified
-    if (pool->config->address_resolver!=NULL) {
-        pool->config->address_resolver(pool->address, initial_routers);
-    }
+    BoltAddressResolver_resolve(pool->config->address_resolver, pool->address, initial_routers);
     // if nothing got added to the initial router addresses, add the connector hostname and port
     if (initial_routers->size==0) {
         BoltAddressSet_add(initial_routers, *pool->address);

@@ -23,6 +23,26 @@
 #include "config.h"
 #include <time.h>
 
+struct StringBuilder {
+    char* buffer;
+    size_t buffer_size;
+    size_t buffer_pos;
+};
+
+PUBLIC struct StringBuilder* StringBuilder_create();
+
+PUBLIC void StringBuilder_destroy(struct StringBuilder* builder);
+
+PUBLIC void StringBuilder_append(struct StringBuilder* builder, const char* string);
+
+PUBLIC void StringBuilder_append_n(struct StringBuilder* builder, const char* string, const size_t len);
+
+PUBLIC void StringBuilder_append_f(struct StringBuilder* builder, const char* format, ...);
+
+PUBLIC char* StringBuilder_get_string(struct StringBuilder* builder);
+
+PUBLIC size_t StringBuilder_get_length(struct StringBuilder* builder);
+
 PUBLIC void BoltUtil_diff_time(struct timespec* t, struct timespec* t0, struct timespec* t1);
 
 #endif //SEABOLT_ALL_UTILS_H

@@ -112,7 +112,7 @@ void close_pool_entry(struct BoltDirectPool* pool, int index)
         struct timespec diff;
         BoltUtil_get_time(&now);
         BoltUtil_diff_time(&diff, &now, &connection->metrics.time_opened);
-        BoltLog_info(pool->config->log, "bolt: Connection alive for %lds %09ldns", (long) (diff.tv_sec),
+        BoltLog_info(pool->config->log, "Connection alive for %lds %09ldns", (long) (diff.tv_sec),
                 diff.tv_nsec);
         BoltConnection_close(connection);
     }
@@ -142,7 +142,7 @@ void reset_or_close(struct BoltDirectPool* pool, int index)
 struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, const struct BoltValue* auth_token,
         const struct BoltConfig* config)
 {
-    BoltLog_info(config->log, "bolt: creating pool");
+    BoltLog_info(config->log, "creating pool");
     struct BoltDirectPool* pool = (struct BoltDirectPool*) BoltMem_allocate(SIZE_OF_DIRECT_POOL);
     BoltUtil_mutex_create(&pool->mutex);
     pool->config = config;
@@ -156,7 +156,7 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
 
 void BoltDirectPool_destroy(struct BoltDirectPool* pool)
 {
-    BoltLog_info(pool->config->log, "bolt: destroying pool");
+    BoltLog_info(pool->config->log, "destroying pool");
     for (size_t index = 0; index<pool->size; index++) {
         close_pool_entry(pool, (int) index);
     }
@@ -168,7 +168,7 @@ void BoltDirectPool_destroy(struct BoltDirectPool* pool)
 
 struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
 {
-    BoltLog_info(pool->config->log, "bolt: acquiring connection from the pool");
+    BoltLog_info(pool->config->log, "acquiring connection from the pool");
     BoltUtil_mutex_lock(&pool->mutex);
     int index = find_unused_connection(pool);
     enum BoltConnectionError pool_error = index>=0 ? BOLT_SUCCESS : BOLT_POOL_FULL;
@@ -235,7 +235,7 @@ struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
 
 int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* connection)
 {
-    BoltLog_info(pool->config->log, "bolt: releasing connection to pool");
+    BoltLog_info(pool->config->log, "releasing connection to pool");
     BoltUtil_mutex_lock(&pool->mutex);
     int index = find_connection(pool, connection);
     if (index>=0) {

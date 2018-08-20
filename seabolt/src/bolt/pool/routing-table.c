@@ -22,7 +22,7 @@
 
 #include "routing-table.h"
 #include "bolt/mem.h"
-#include "../utils/address-set.h"
+#include "bolt/address-set.h"
 
 #define READ_ROLE "READ"
 #define WRITE_ROLE "WRITE"

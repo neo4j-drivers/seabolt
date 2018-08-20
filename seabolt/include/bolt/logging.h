@@ -27,30 +27,38 @@
 #include "connections.h"
 #include "values.h"
 
-typedef void (* log_func)(const char* message);
+typedef void (* log_func)(int state, const char* message);
 
 struct BoltLog {
+    int state;
+
     int error_enabled;
     int warning_enabled;
     int info_enabled;
     int debug_enabled;
+
     log_func error_logger;
     log_func warning_logger;
     log_func info_logger;
     log_func debug_logger;
 };
 
-void BoltLog_error(const struct BoltLog* log, const char* message, ...);
+PUBLIC struct BoltLog* BoltLog_create();
 
-void BoltLog_warning(const struct BoltLog* log, const char* message, ...);
+PUBLIC void BoltLog_destroy(struct BoltLog* log);
 
-void BoltLog_info(const struct BoltLog* log, const char* message, ...);
+void BoltLog_error(const struct BoltLog* log, const char* format, ...);
 
-void BoltLog_debug(const struct BoltLog* log, const char* message, ...);
+void BoltLog_warning(const struct BoltLog* log, const char* format, ...);
 
-void BoltLog_value(struct BoltValue* value, int32_t protocol_version, const char* prefix, const char* suffix);
+void BoltLog_info(const struct BoltLog* log, const char* format, ...);
 
-void BoltLog_message(const char* peer, bolt_request_t request_id, int16_t code, struct BoltValue* fields,
-        int32_t protocol_version);
+void BoltLog_debug(const struct BoltLog* log, const char* format, ...);
+
+void
+BoltLog_value(const struct BoltLog* log, const char* format, struct BoltValue* value, int32_t protocol_version);
+
+void BoltLog_message(const struct BoltLog* log, const char* peer, bolt_request_t request_id, int16_t code,
+        struct BoltValue* fields, int32_t protocol_version);
 
 #endif // SEABOLT_LOGGING

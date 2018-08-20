@@ -21,7 +21,7 @@
 
 #include "bolt/logging.h"
 #include "bolt/connections.h"
-#include "../../src/bolt/utils/address-set.h"
+#include "bolt/address-resolver.h"
 
 enum BoltConnectorMode {
     BOLT_DIRECT = 0,
@@ -33,14 +33,12 @@ enum BoltAccessMode {
     BOLT_ACCESS_MODE_WRITE = 2
 };
 
-typedef void (* address_resolver_func)(const struct BoltAddress*, struct BoltAddressSet*);
-
 struct BoltConfig {
     enum BoltConnectorMode mode;
     enum BoltTransport transport;
     const char* user_agent;
     const struct BoltValue* routing_context;
-    address_resolver_func address_resolver;
+    struct BoltAddressResolver* address_resolver;
     struct BoltLog* log;
     uint32_t max_pool_size;
 };

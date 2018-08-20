@@ -44,7 +44,6 @@ void* BoltMem_allocate(size_t new_size)
     void* p = malloc(new_size);
     __allocation += new_size;
     if (__allocation>__peak_allocation) __peak_allocation = __allocation;
-//    BoltLog_info("bolt: (Allocated %ld bytes (balance: %lu))", new_size, __allocation);
     __allocation_events += 1;
     return p;
 }
@@ -54,7 +53,6 @@ void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size)
     void* p = realloc(ptr, new_size);
     __allocation = __allocation-old_size+new_size;
     if (__allocation>__peak_allocation) __peak_allocation = __allocation;
-//    BoltLog_info("bolt: (Reallocated %ld bytes as %ld bytes (balance: %lu))", old_size, new_size, __allocation);
     __allocation_events += 1;
     return p;
 }
@@ -63,7 +61,6 @@ void* BoltMem_deallocate(void* ptr, size_t old_size)
 {
     free(ptr);
     __allocation -= old_size;
-//    BoltLog_info("bolt: (Freed %ld bytes (balance: %lu))", old_size, __allocation);
     __allocation_events += 1;
     return NULL;
 }

@@ -19,7 +19,7 @@
 
 #include <string.h>
 
-#include "address-set.h"
+#include "bolt/address-set.h"
 #include "bolt/mem.h"
 
 struct BoltAddressSet* BoltAddressSet_create()

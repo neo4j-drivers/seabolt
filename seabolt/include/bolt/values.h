@@ -29,6 +29,7 @@
 #include <stdint.h>
 
 #include "config.h"
+#include "utils.h"
 
 #if CHAR_BIT!=8
 #error "Cannot compile if `char` is not 8-bit"
@@ -179,7 +180,7 @@ PUBLIC enum BoltType BoltValue_type(const struct BoltValue* value);
  * @param protocol_version
  * @return
  */
-PUBLIC int BoltValue_write(struct BoltValue* value, FILE* file, int32_t protocol_version);
+PUBLIC int BoltValue_write(struct StringBuilder *builder, struct BoltValue* value, int32_t protocol_version);
 
 
 

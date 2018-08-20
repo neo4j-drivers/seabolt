@@ -42,10 +42,11 @@ extern "C" {
 
 #include "src/bolt/protocol/v1.h"
 
-#include "src/bolt/addressing.c"
+#include "src/bolt/address.c"
 #include "src/bolt/values.c"
 #include "src/bolt/memory.c"
-#include "src/bolt/utils/address-set.c"
+#include "src/bolt/address-set.c"
+#include "src/bolt/address-resolver.c"
 #include "src/bolt/pool/routing-table.c"
 #include "src/bolt/pool/direct-pool.c"
 #include "src/bolt/pool/routing-pool.c"

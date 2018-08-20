@@ -29,6 +29,7 @@
 #include "bolt/mem.h"
 #include "bolt/values.h"
 #include "bolt/platform.h"
+#include "bolt/logging.h"
 
 #ifdef WIN32
 
@@ -290,7 +291,10 @@ int app_run(struct Application* app, const char* cypher)
             if (i>0) {
                 putc('\t', stdout);
             }
-            BoltValue_write(BoltList_value(fields, i), stdout, app->connection->protocol_version);
+            struct StringBuilder* builder = StringBuilder_create();
+            BoltValue_write(builder, BoltList_value(fields, i), app->connection->protocol_version);
+            fprintf(stdout, "%s", StringBuilder_get_string(builder));
+            StringBuilder_destroy(builder);
         }
         putc('\n', stdout);
     }
@@ -302,7 +306,10 @@ int app_run(struct Application* app, const char* cypher)
             if (i>0) {
                 putc('\t', stdout);
             }
-            BoltValue_write(value, stdout, app->connection->protocol_version);
+            struct StringBuilder* builder = StringBuilder_create();
+            BoltValue_write(builder, value, app->connection->protocol_version);
+            fprintf(stdout, "%s", StringBuilder_get_string(builder));
+            StringBuilder_destroy(builder);
         }
         putc('\n', stdout);
     }
