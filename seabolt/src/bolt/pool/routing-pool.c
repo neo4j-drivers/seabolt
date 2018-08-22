@@ -153,6 +153,9 @@ enum BoltConnectionError BoltRoutingPool_update_routing_table(struct BoltRouting
 
     // Try each in turn until successful
     for (int i = 0; i<routers->size; i++) {
+        BoltLog_debug(pool->config->log, "trying routing table update from server '%s:%s'", routers->elements[i]->host,
+                routers->elements[i]->port);
+
         int status = BoltRoutingPool_update_routing_table_from(pool, routers->elements[i]);
         if (status==BOLT_SUCCESS) {
             result = BOLT_SUCCESS;
@@ -231,10 +234,18 @@ enum BoltConnectionError BoltRoutingPool_ensure_routing_table(struct BoltRouting
         // Is routing table still refresh wrt the requested access mode? (i.e. another thread could have updated it
         // while we were waiting for acquiring the lock
         if (RoutingTable_is_expired(pool->routing_table, mode)) {
-            status = BoltRoutingPool_update_routing_table(pool);
+            BoltLog_debug(pool->config->log, "routing table is expired, starting refresh");
 
+            status = BoltRoutingPool_update_routing_table(pool);
             if (status==BOLT_SUCCESS) {
+                BoltLog_debug(pool->config->log, "routing table is updated, calling cleanup on server pools");
+
                 BoltRoutingPool_cleanup(pool);
+
+                BoltLog_debug(pool->config->log, "server pools cleanup completed");
+            }
+            else {
+                BoltLog_debug(pool->config->log, "routing table update failed with code %d", status);
             }
         }
 
@@ -443,8 +454,7 @@ BoltRoutingPool_acquire(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
     if (status==BOLT_SUCCESS) {
         server = mode==BOLT_ACCESS_MODE_READ
                  ? BoltRoutingPool_select_least_connected_reader(pool)
-                 : BoltRoutingPool_select_least_connected_writer(
-                        pool);
+                 : BoltRoutingPool_select_least_connected_writer(pool);
         if (server==NULL) {
             status = BOLT_ROUTING_NO_SERVERS_TO_SELECT;
         }
@@ -475,7 +485,11 @@ BoltRoutingPool_acquire(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
         return result;
     }
 
-    BoltRoutingPool_handle_connection_error_by_code(pool, server, status);
+    // check if we were able to complete server selection. this is not the case when routing
+    // table refresh fails.
+    if (server!=NULL) {
+        BoltRoutingPool_handle_connection_error_by_code(pool, server, status);
+    }
 
     return CONNECTION_RESULT_ERROR(status, NULL);
 }

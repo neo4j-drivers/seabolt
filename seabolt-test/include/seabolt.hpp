@@ -36,12 +36,12 @@ extern "C" {
 #define USE_OPENSSL 0
 #endif
 
-#include "bolt/logging.h"
 #include "bolt/platform.h"
 #include "bolt/connections.h"
 
 #include "src/bolt/protocol/v1.h"
 
+#include "src/bolt/logging.c"
 #include "src/bolt/address.c"
 #include "src/bolt/values.c"
 #include "src/bolt/memory.c"
