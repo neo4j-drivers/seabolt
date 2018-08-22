@@ -27,10 +27,6 @@ extern "C" {
 #pragma warning( disable : 4100 )
 #endif
 
-void BoltLog_info(const char* message, ...)
-{
-}
-
 int BoltUtil_get_time(struct timespec* t)
 {
     return 0;
@@ -63,6 +59,10 @@ int BoltUtil_mutex_unlock(mutex_t* mutex)
 
 const char* BoltProtocolV1_structure_name(int16_t code)
 {
+    return "MOCKED";
+}
+
+const char* BoltProtocolV1_message_name(int16_t code) {
     return "MOCKED";
 }
 
