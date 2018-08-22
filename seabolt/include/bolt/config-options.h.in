@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002-2018 "Neo Technology,"
- * Network Engine for Objects in Lund AB [http://neotechnology.com]
+ * Copyright (c) 2002-2018 "Neo4j,"
+ * Neo4j Sweden AB [http://neo4j.com]
  *
  * This file is part of Neo4j.
  *
@@ -17,8 +17,13 @@
  * limitations under the License.
  */
 
+#ifndef SEABOLT_CONFIG_OPTS
+#define SEABOLT_CONFIG_OPTS
+
 #define	USE_OPENSSL	@OPENSSL@
 #define	USE_WINSOCK	@WINSOCK@
 #define	USE_WINSSPI	@WINSSPI@
 #define USE_POSIXSOCK @POSIXSOCK@
 #define IS_BIG_ENDIAN @BIG_ENDIAN@
+
+#endif // SEABOLT_CONFIG_OPTS

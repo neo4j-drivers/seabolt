@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2017 "Neo Technology,"
+ * Copyright (c) 2002-2018 "Neo4j,"
  * Neo4j Sweden AB [http://neo4j.com]
  *
  * This file is part of Neo4j.
@@ -17,8 +17,22 @@
  * limitations under the License.
  */
 
-#define	USE_OPENSSL	1
-#define	USE_WINSOCK	1
-#define	USE_WINSSPI	0
-#define USE_POSIXSOCK 0
-#define IS_BIG_ENDIAN 0
+
+#define CATCH_CONFIG_RUNNER  // This tells Catch to provide a main()
+
+#include "catch.hpp"
+
+extern "C" {
+#include "bolt/lifecycle.h"
+}
+
+int main(int argc, char* argv[])
+{
+    Bolt_startup();
+
+    int result = Catch::Session().run(argc, argv);
+
+    Bolt_shutdown();
+
+    return result;
+}

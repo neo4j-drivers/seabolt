@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002-2018 "Neo Technology,"
- * Network Engine for Objects in Lund AB [http://neotechnology.com]
+ * Copyright (c) 2002-2018 "Neo4j,"
+ * Neo4j Sweden AB [http://neo4j.com]
  *
  * This file is part of Neo4j.
  *
@@ -29,6 +29,7 @@
 #include <stdint.h>
 
 #include "config.h"
+#include "utils.h"
 
 #if CHAR_BIT!=8
 #error "Cannot compile if `char` is not 8-bit"
@@ -179,7 +180,7 @@ PUBLIC enum BoltType BoltValue_type(const struct BoltValue* value);
  * @param protocol_version
  * @return
  */
-PUBLIC int BoltValue_write(struct BoltValue* value, FILE* file, int32_t protocol_version);
+PUBLIC int BoltValue_write(struct StringBuilder *builder, struct BoltValue* value, int32_t protocol_version);
 
 
 

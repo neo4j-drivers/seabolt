@@ -160,7 +160,7 @@ Function RunTests($Version)
         }
 
         Write-Host "-- Running tests"
-        & $BaseDir\build\bin\seabolt-test.exe $TestArgs
+        & $BaseDir\build\bin\seabolt-integration-test.exe $TestArgs
         if ( $LASTEXITCODE -ne 0 )
         {
             throw @{ 

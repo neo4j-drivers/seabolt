@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002-2018 "Neo Technology,"
- * Network Engine for Objects in Lund AB [http://neotechnology.com]
+ * Copyright (c) 2002-2018 "Neo4j,"
+ * Neo4j Sweden AB [http://neo4j.com]
  *
  * This file is part of Neo4j.
  *
@@ -44,7 +44,6 @@ void* BoltMem_allocate(size_t new_size)
     void* p = malloc(new_size);
     __allocation += new_size;
     if (__allocation>__peak_allocation) __peak_allocation = __allocation;
-//    BoltLog_info("bolt: (Allocated %ld bytes (balance: %lu))", new_size, __allocation);
     __allocation_events += 1;
     return p;
 }
@@ -54,16 +53,18 @@ void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size)
     void* p = realloc(ptr, new_size);
     __allocation = __allocation-old_size+new_size;
     if (__allocation>__peak_allocation) __peak_allocation = __allocation;
-//    BoltLog_info("bolt: (Reallocated %ld bytes as %ld bytes (balance: %lu))", old_size, new_size, __allocation);
     __allocation_events += 1;
     return p;
 }
 
 void* BoltMem_deallocate(void* ptr, size_t old_size)
 {
+    if (ptr==NULL) {
+        return NULL;
+    }
+
     free(ptr);
     __allocation -= old_size;
-//    BoltLog_info("bolt: (Freed %ld bytes (balance: %lu))", old_size, __allocation);
     __allocation_events += 1;
     return NULL;
 }
@@ -104,6 +105,9 @@ void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size)
 
 void* BoltMem_duplicate(const void* ptr, size_t ptr_size)
 {
+    if (ptr == NULL) {
+        return NULL;
+    }
     void* p = BoltMem_allocate(ptr_size);
     memcpy(p, ptr, ptr_size);
     return p;

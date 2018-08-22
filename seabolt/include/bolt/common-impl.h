@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2017 "Neo Technology,"
+ * Copyright (c) 2002-2018 "Neo4j,"
  * Neo4j Sweden AB [http://neo4j.com]
  *
  * This file is part of Neo4j.
@@ -16,9 +16,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef SEABOLT_ALL_COMMON_IMPL_H
+#define SEABOLT_ALL_COMMON_IMPL_H
 
-#define	USE_OPENSSL	1
-#define	USE_WINSOCK	1
-#define	USE_WINSSPI	0
-#define USE_POSIXSOCK 0
-#define IS_BIG_ENDIAN 0
+#define SIZE_OF_C_STRING(str) (sizeof(char)*(strlen(str)+1))
+
+#endif //SEABOLT_ALL_COMMON_IMPL_H

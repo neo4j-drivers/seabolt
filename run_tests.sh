@@ -175,7 +175,7 @@ function run_tests
     fi
 
     echo "-- Running tests"
-    BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt-test ${TEST_ARGS}
+    BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt-integration-test ${TEST_ARGS}
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Test execution failed."

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002-2018 "Neo Technology,"
- * Network Engine for Objects in Lund AB [http://neotechnology.com]
+ * Copyright (c) 2002-2018 "Neo4j,"
+ * Neo4j Sweden AB [http://neo4j.com]
  *
  * This file is part of Neo4j.
  *
@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "addressing.h"
+#include "address.h"
 #include "config.h"
 #include "values.h"
 
@@ -79,8 +79,20 @@ enum BoltConnectionError {
     BOLT_PROTOCOL_NOT_IMPLEMENTED_TYPE = 0x502,
     BOLT_PROTOCOL_UNEXPECTED_MARKER = 0x503,
     BOLT_PROTOCOL_UNSUPPORTED = 0x504,
-    BOLT_STATUS_SET = 0x900,
+    BOLT_POOL_FULL = 0x600,
+    BOLT_ADDRESS_NOT_RESOLVED = 0x700,
+    BOLT_ROUTING_UNABLE_TO_RETRIEVE_ROUTING_TABLE = 0x800,
+    BOLT_ROUTING_NO_SERVERS_TO_SELECT = 0x801,
+    BOLT_ROUTING_UNABLE_TO_CONSTRUCT_POOL_FOR_SERVER = 0x802,
+    BOLT_ROUTING_UNABLE_TO_REFRESH_ROUTING_TABLE = 0x803,
+    BOLT_ROUTING_UNEXPECTED_DISCOVERY_RESPONSE = 0x804,
+    BOLT_CONNECTION_HAS_MORE_INFO = 0xFFE,
+    BOLT_STATUS_SET = 0xFFF,
 };
+
+struct BoltConnection;
+
+typedef void (* error_action_func)(struct BoltConnection*, void*);
 
 /**
  * Record of connection usage statistics.
@@ -103,10 +115,10 @@ struct BoltConnection {
     /// Transport type for this connection
     enum BoltTransport transport;
 
-    char* host;
-    char* port;
-    char* resolvedHost;
-    in_port_t resolvedPort;
+    const struct BoltAddress* address;
+    const struct BoltAddress* resolved_address;
+
+    const struct BoltLog* log;
 
     /// The security context (secure connections only)
     struct ssl_ctx_st* ssl_context;
@@ -135,6 +147,11 @@ struct BoltConnection {
     enum BoltConnectionStatus status;
     /// Current connection error code
     enum BoltConnectionError error;
+    /// Additional context info about error
+    char* error_ctx;
+
+    error_action_func on_error_cb;
+    void* on_error_cb_state;
 };
 
 /**
@@ -186,7 +203,7 @@ PUBLIC void BoltConnection_destroy(struct BoltConnection* connection);
  * @return 0 if the connection was opened successfully, -1 otherwise
  */
 PUBLIC int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transport,
-        struct BoltAddress* address);
+        struct BoltAddress* address, struct BoltLog* log);
 
 /**
  * Close a connection.
@@ -409,6 +426,16 @@ PUBLIC int BoltConnection_summary_success(struct BoltConnection* connection);
  * @return
  */
 PUBLIC struct BoltValue* BoltConnection_failure(struct BoltConnection* connection);
+
+/**
+ * Check whether current failure is categorized as a transient error. The check applies
+ * both to database generated error codes and/or system generated ones (i.e. network level
+ * failures).
+ *
+ * @param connection
+ * @return 0 if failure is not transient, 1 if it is
+ */
+PUBLIC int BoltConnection_failure_is_transient(struct BoltConnection* connection);
 
 /**
  * Return the fields available in the current result.

@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2002-2018 "Neo Technology,"
-* Network Engine for Objects in Lund AB [http://neotechnology.com]
+* Copyright (c) 2002-2018 "Neo4j,"
+* Neo4j Sweden AB [http://neo4j.com]
 *
 * This file is part of Neo4j.
 *
@@ -18,14 +18,17 @@
 */
 #ifndef SEABOLT_CONFIG_IMPL
 #define SEABOLT_CONFIG_IMPL
-#include "config.h"
 
-#if defined(_WIN32) && _WIN32_WINNT < 0x0600
+#include "config.h"
+#include "common-impl.h"
+
+#if defined(_WIN32) && _WIN32_WINNT<0x0600
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0600
 #endif
 
 #if defined(_WIN32) && _MSC_VER
+#pragma  warning(disable:4204)
 #pragma  warning(push)
 #pragma  warning(disable:4255)
 #pragma  warning(disable:4265)
@@ -46,9 +49,11 @@
 #endif // USE_POSIXSOCK
 
 #if USE_WINSOCK
+
 #include <winsock2.h>
 #include <windows.h>
 #include <Ws2tcpip.h>
+
 #endif // USE_WINSOCK
 
 #if USE_WINSSPI
@@ -56,9 +61,11 @@
 #endif // USE_WINSSPI
 
 #if USE_OPENSSL
+
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+
 #endif // USE_OPENSSL
 
 #if defined(_WIN32) && _MSC_VER

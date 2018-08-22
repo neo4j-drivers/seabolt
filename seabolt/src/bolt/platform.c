@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2002-2018 "Neo Technology,"
-* Network Engine for Objects in Lund AB [http://neotechnology.com]
+* Copyright (c) 2002-2018 "Neo4j,"
+* Neo4j Sweden AB [http://neo4j.com]
 *
 * This file is part of Neo4j.
 *
@@ -19,7 +19,6 @@
 
 #include "bolt/config-impl.h"
 #include "bolt/platform.h"
-#include <time.h>
 
 #ifdef __APPLE__
 #include <mach/clock.h>
@@ -27,7 +26,9 @@
 #endif
 
 #ifndef _WIN32
+
 #include <pthread.h>
+
 #endif
 
 int BoltUtil_get_time(struct timespec* tp)
@@ -53,6 +54,13 @@ int BoltUtil_get_time(struct timespec* tp)
 #endif
 }
 
+int64_t BoltUtil_get_time_ms()
+{
+    struct timespec now;
+    BoltUtil_get_time(&now);
+    return (now.tv_sec)*1000+(now.tv_nsec)/1000000;
+}
+
 int BoltUtil_mutex_create(mutex_t* mutex)
 {
 #ifdef _WIN32
@@ -62,7 +70,11 @@ int BoltUtil_mutex_create(mutex_t* mutex)
     }
     return 0;
 #else
-    return pthread_mutex_init(mutex, NULL);
+    pthread_mutexattr_t mutex_attr;
+    pthread_mutexattr_init(&mutex_attr);
+    pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE);
+
+    return pthread_mutex_init(mutex, &mutex_attr);
 #endif
 }
 

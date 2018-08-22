@@ -16,12 +16,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef SEABOLT_ALL_SERVER_ADDRESS_RESOLVER_H
+#define SEABOLT_ALL_SERVER_ADDRESS_RESOLVER_H
 
-#ifndef SEABOLT_ALL_PROTOCOL_H
-#define SEABOLT_ALL_PROTOCOL_H
+#include "config.h"
+#include "address.h"
+#include "address-set.h"
 
-#include "bolt/config.h"
+typedef void (* address_resolver_func)(int state, struct BoltAddress*, struct BoltAddressSet*);
 
-typedef int (*check_struct_signature_func)(int16_t);
+struct BoltAddressResolver {
+    int state;
+    address_resolver_func resolver;
+};
 
-#endif //SEABOLT_ALL_PROTOCOL_H
+PUBLIC struct BoltAddressResolver* BoltAddressResolver_create();
+
+PUBLIC void BoltAddressResolver_destroy(struct BoltAddressResolver* resolver);
+
+void BoltAddressResolver_resolve(struct BoltAddressResolver* resolver, struct BoltAddress* address,
+        struct BoltAddressSet* resolved);
+
+#endif //SEABOLT_ALL_SERVER_ADDRESS_RESOLVER_H

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002-2018 "Neo Technology,"
- * Network Engine for Objects in Lund AB [http://neotechnology.com]
+ * Copyright (c) 2002-2018 "Neo4j,"
+ * Neo4j Sweden AB [http://neo4j.com]
  *
  * This file is part of Neo4j.
  *
@@ -27,11 +27,11 @@ using Catch::Matchers::Equals;
 #define REQUIRE_BOLT_BOOLEAN(value, x) { REQUIRE(BoltValue_type(value) == BOLT_BOOLEAN); REQUIRE(BoltBoolean_get(value) == (x)); }
 #define REQUIRE_BOLT_INTEGER(value, x) { REQUIRE(BoltValue_type(value) == BOLT_INTEGER); REQUIRE(BoltInteger_get(value) == (x)); }
 #define REQUIRE_BOLT_FLOAT(value, x) { REQUIRE(BoltValue_type(value) == BOLT_FLOAT); REQUIRE( BoltFloat_get(value) == (x)); }
-#define REQUIRE_BOLT_STRING(value, x, size_) { REQUIRE(BoltValue_type(value) == BOLT_STRING); REQUIRE(strncmp(BoltString_get(value), x, size_) == 0); REQUIRE((value)->size == (size_)); }
-#define REQUIRE_BOLT_DICTIONARY(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_DICTIONARY); REQUIRE((value)->size == (size_)); }
-#define REQUIRE_BOLT_LIST(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_LIST); REQUIRE((value)->size == (size_)); }
-#define REQUIRE_BOLT_BYTES(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_BYTES); REQUIRE((value)->size == (size_)); }
-#define REQUIRE_BOLT_STRUCTURE(value, code, size_) { REQUIRE(BoltValue_type(value) == BOLT_STRUCTURE); REQUIRE(BoltStructure_code(value) == (code)); REQUIRE((value)->size == (size_)); }
+#define REQUIRE_BOLT_STRING(value, x, size_) { REQUIRE(BoltValue_type(value) == BOLT_STRING); REQUIRE(strncmp(BoltString_get(value), x, size_) == 0); REQUIRE((value)->size == (int32_t)(size_)); }
+#define REQUIRE_BOLT_DICTIONARY(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_DICTIONARY); REQUIRE((value)->size == (int32_t)(size_)); }
+#define REQUIRE_BOLT_LIST(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_LIST); REQUIRE((value)->size == (int32_t)(size_)); }
+#define REQUIRE_BOLT_BYTES(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_BYTES); REQUIRE((value)->size == (int32_t)(size_)); }
+#define REQUIRE_BOLT_STRUCTURE(value, code, size_) { REQUIRE(BoltValue_type(value) == BOLT_STRUCTURE); REQUIRE(BoltStructure_code(value) == (code)); REQUIRE((value)->size == (int32_t)(size_)); }
 #define REQUIRE_BOLT_SUCCESS(connection) { REQUIRE(BoltConnection_summary_success(connection) == 1); }
 
 #define RUN_PULL_SEND(connection, result)\
@@ -53,7 +53,7 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
             for (int i = 1; i<param_size; i++) {
                 param[i-1] = 'A'+(rand()%25);
             }
-            BoltValue_format_as_String(x, param, strlen(param));
+            BoltValue_format_as_String(x, param, (int32_t) strlen(param));
             RUN_PULL_SEND(connection, result);
             THEN("It should return passed parameter") {
                 while (BoltConnection_fetch(connection, result)) {
@@ -74,7 +74,7 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
             for (int i = 1; i<param_size; i++) {
                 param[i-1] = 'A'+(rand()%25);
             }
-            BoltValue_format_as_String(x, param, strlen(param));
+            BoltValue_format_as_String(x, param, (int32_t) strlen(param));
             RUN_PULL_SEND(connection, result);
             THEN("It should return passed parameter") {
                 while (BoltConnection_fetch(connection, result)) {
@@ -95,7 +95,7 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
             for (int i = 1; i<param_size; i++) {
                 param[i-1] = 'A'+(rand()%25);
             }
-            BoltValue_format_as_String(x, param, strlen(param));
+            BoltValue_format_as_String(x, param, (int32_t) strlen(param));
             RUN_PULL_SEND(connection, result);
             THEN("It should return passed parameter") {
                 while (BoltConnection_fetch(connection, result)) {
@@ -116,7 +116,7 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
             for (int i = 1; i<param_size; i++) {
                 param[i-1] = 'A'+(rand()%25);
             }
-            BoltValue_format_as_String(x, param, strlen(param));
+            BoltValue_format_as_String(x, param, (int32_t) strlen(param));
             RUN_PULL_SEND(connection, result);
             THEN("It should return passed parameter") {
                 while (BoltConnection_fetch(connection, result)) {
@@ -137,7 +137,7 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
             for (int i = 1; i<param_size; i++) {
                 param[i-1] = 'A'+(rand()%25);
             }
-            BoltValue_format_as_String(x, param, strlen(param));
+            BoltValue_format_as_String(x, param, (int32_t) strlen(param));
             RUN_PULL_SEND(connection, result);
             THEN("It should return passed parameter") {
                 while (BoltConnection_fetch(connection, result)) {

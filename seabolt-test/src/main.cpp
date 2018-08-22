@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002-2018 "Neo Technology,"
- * Network Engine for Objects in Lund AB [http://neotechnology.com]
+ * Copyright (c) 2002-2018 "Neo4j,"
+ * Neo4j Sweden AB [http://neo4j.com]
  *
  * This file is part of Neo4j.
  *
@@ -18,21 +18,6 @@
  */
 
 
-#define CATCH_CONFIG_RUNNER  // This tells Catch to provide a main()
+#define CATCH_CONFIG_MAIN
 
 #include "catch.hpp"
-
-extern "C" {
-#include "bolt/lifecycle.h"
-}
-
-int main(int argc, char* argv[])
-{
-    Bolt_startup(stderr);
-
-    int result = Catch::Session().run(argc, argv);
-
-    Bolt_shutdown();
-
-    return result;
-}

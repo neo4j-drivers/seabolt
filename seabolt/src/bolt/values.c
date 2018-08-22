@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002-2018 "Neo Technology,"
- * Network Engine for Objects in Lund AB [http://neotechnology.com]
+ * Copyright (c) 2002-2018 "Neo4j,"
+ * Neo4j Sweden AB [http://neo4j.com]
  *
  * This file is part of Neo4j.
  *
@@ -19,7 +19,6 @@
 
 
 #include <assert.h>
-#include <inttypes.h>
 #include <memory.h>
 #include <string.h>
 
@@ -68,8 +67,9 @@ void _resize(struct BoltValue* value, int32_t size, int multiplier)
         // grow physically
         size_t unit_size = sizeof(struct BoltValue);
         size_t new_data_size = multiplier*unit_size*size;
-        size_t old_data_size = value->data_size;
-        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, new_data_size);
+        size_t old_data_size = (size_t) value->data_size;
+        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, (size_t) value->data_size,
+                new_data_size);
         value->data_size = new_data_size;
         // grow logically
         memset(value->data.extended.as_char+old_data_size, 0, new_data_size-old_data_size);
@@ -83,7 +83,8 @@ void _resize(struct BoltValue* value, int32_t size, int multiplier)
         value->size = size;
         // shrink physically
         size_t new_data_size = multiplier*sizeof_n(struct BoltValue, size);
-        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, new_data_size);
+        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, (size_t) value->data_size,
+                new_data_size);
         value->data_size = new_data_size;
     }
     else {
@@ -103,7 +104,7 @@ void
 _format(struct BoltValue* value, enum BoltType type, int16_t subtype, int32_t size, const void* data, size_t data_size)
 {
     _recycle(value);
-    value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
+    value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, (size_t) value->data_size, data_size);
     value->data_size = data_size;
     if (data!=NULL && data_size>0) {
         memcpy(value->data.extended.as_char, data, data_size);
@@ -114,10 +115,10 @@ _format(struct BoltValue* value, enum BoltType type, int16_t subtype, int32_t si
 void _format_as_structure(struct BoltValue* value, enum BoltType type, int16_t code, int32_t size)
 {
     _recycle(value);
-    value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size,
+    value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, (size_t) value->data_size,
             sizeof_n(struct BoltValue, size));
     value->data_size = sizeof_n(struct BoltValue, size);
-    memset(value->data.extended.as_char, 0, value->data_size);
+    memset(value->data.extended.as_char, 0, (size_t) value->data_size);
     _set_type(value, type, code, size);
 }
 
@@ -138,7 +139,7 @@ void _write_escaped_code_point(FILE* file, const uint32_t ch)
 void _write_string(FILE* file, const char* data, size_t size)
 {
     fputc(STRING_QUOTE, file);
-    for (int i = 0; i<size; i++) {
+    for (size_t i = 0; i<size; i++) {
         char ch0 = data[i];
         if (IS_PRINTABLE_ASCII(ch0) && ch0!=STRING_QUOTE) {
             fputc(ch0, file);
@@ -191,7 +192,7 @@ void _write_string(FILE* file, const char* data, size_t size)
 struct BoltValue* BoltValue_create()
 {
     size_t size = sizeof(struct BoltValue);
-    struct BoltValue* value = BoltMem_allocate(size);
+    struct BoltValue* value = (struct BoltValue*) BoltMem_allocate(size);
     _set_type(value, BOLT_NULL, 0, 0);
     value->data_size = 0;
     value->data.as_int64[0] = 0;
@@ -202,12 +203,20 @@ struct BoltValue* BoltValue_create()
 
 void BoltValue_destroy(struct BoltValue* value)
 {
+    if (value==NULL) {
+        return;
+    }
+
     BoltValue_format_as_Null(value);
     BoltMem_deallocate(value, sizeof(struct BoltValue));
 }
 
 struct BoltValue* BoltValue_duplicate(const struct BoltValue* value)
 {
+    if (value==NULL) {
+        return NULL;
+    }
+
     struct BoltValue* duplicate = BoltValue_create();
     BoltValue_copy(duplicate, value);
     return duplicate;
@@ -318,7 +327,7 @@ double BoltFloat_get(const struct BoltValue* value)
 void BoltValue_format_as_String(struct BoltValue* value, const char* data, int32_t length)
 {
     size_t data_size = length>=0 ? sizeof(char)*length : 0;
-    if (length<=sizeof(value->data)/sizeof(char)) {
+    if (length<=(int32_t) (sizeof(value->data)/sizeof(char))) {
         // If the string is short, it can fit entirely within the
         // BoltValue instance
         _format(value, BOLT_STRING, 0, length, NULL, 0);
@@ -328,7 +337,7 @@ void BoltValue_format_as_String(struct BoltValue* value, const char* data, int32
     }
     else if (BoltValue_type(value)==BOLT_STRING) {
         // This is already a UTF-8 string so we can just tweak the value
-        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
+        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, (size_t) value->data_size, data_size);
         value->data_size = data_size;
         value->size = length;
         if (data!=NULL) {
@@ -343,7 +352,7 @@ void BoltValue_format_as_String(struct BoltValue* value, const char* data, int32
 
 char* BoltString_get(const struct BoltValue* value)
 {
-    return value->size<=sizeof(value->data)/sizeof(char) ?
+    return value->size<=(int32_t) (sizeof(value->data)/sizeof(char)) ?
            (char*) value->data.as_char : value->data.extended.as_char;
 }
 
@@ -373,7 +382,7 @@ void BoltValue_format_as_Dictionary(struct BoltValue* value, int32_t length)
         size_t unit_size = sizeof(struct BoltValue);
         size_t data_size = 2*unit_size*length;
         _recycle(value);
-        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
+        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, (size_t) value->data_size, data_size);
         value->data_size = data_size;
         memset(value->data.extended.as_char, 0, data_size);
         _set_type(value, BOLT_DICTIONARY, 0, length);
@@ -409,7 +418,7 @@ BoltDictionary_get_key_index(const struct BoltValue* value, const char* key, siz
     if (start_index>=value->size) return -1;
     for (int32_t i = start_index; i<value->size; i++) {
         struct BoltValue* key_value = &value->data.extended.as_value[2*i];
-        if (key_value->size==key_size) {
+        if (key_value->size==(int32_t) key_size) {
             if (strncmp(BoltString_get(key_value), key, key_size)==0) {
                 return i;
             }
@@ -454,7 +463,7 @@ void BoltValue_format_as_List(struct BoltValue* value, int32_t length)
     else {
         size_t data_size = sizeof(struct BoltValue)*length;
         _recycle(value);
-        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, value->data_size, data_size);
+        value->data.extended.as_ptr = BoltMem_adjust(value->data.extended.as_ptr, (size_t) value->data_size, data_size);
         value->data_size = data_size;
         memset(value->data.extended.as_char, 0, data_size);
         _set_type(value, BOLT_LIST, 0, length);
@@ -475,7 +484,7 @@ struct BoltValue* BoltList_value(const struct BoltValue* value, int32_t index)
 
 void BoltValue_format_as_Bytes(struct BoltValue* value, char* data, int32_t length)
 {
-    if (length<=sizeof(value->data)/sizeof(char)) {
+    if (length<=(int32_t) (sizeof(value->data)/sizeof(char))) {
         _format(value, BOLT_BYTES, 0, length, NULL, 0);
         if (data!=NULL) {
             memcpy(value->data.as_char, data, (size_t) (length));
@@ -488,14 +497,14 @@ void BoltValue_format_as_Bytes(struct BoltValue* value, char* data, int32_t leng
 
 char BoltBytes_get(const struct BoltValue* value, int32_t index)
 {
-    const char* data = value->size<=sizeof(value->data)/sizeof(char) ?
+    const char* data = value->size<=(int32_t) (sizeof(value->data)/sizeof(char)) ?
                        value->data.as_char : value->data.extended.as_char;
     return data[index];
 }
 
 char* BoltBytes_get_all(const struct BoltValue* value)
 {
-    return value->size<=sizeof(value->data)/sizeof(char) ?
+    return value->size<=(int32_t) (sizeof(value->data)/sizeof(char)) ?
            (char*) value->data.as_char : value->data.extended.as_char;
 }
 
@@ -516,29 +525,29 @@ struct BoltValue* BoltStructure_value(const struct BoltValue* value, int32_t ind
     return &value->data.extended.as_value[index];
 }
 
-int BoltValue_write(struct BoltValue* value, FILE* file, int32_t protocol_version)
+int BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, int32_t protocol_version)
 {
     switch (BoltValue_type(value)) {
     case BOLT_NULL: {
-        fprintf(file, "null");
+        StringBuilder_append(builder, "null");
         return 0;
     }
     case BOLT_BOOLEAN: {
-        fprintf(file, "%s", BoltBoolean_get(value) ? "true" : "false");
+        StringBuilder_append_f(builder, "%s", BoltBoolean_get(value) ? "true" : "false");
         return 0;
     }
     case BOLT_INTEGER: {
-        fprintf(file, "%" PRIi64, BoltInteger_get(value));
+        StringBuilder_append_f(builder, "%" PRIi64, BoltInteger_get(value));
         return 0;
     }
     case BOLT_FLOAT: {
-        fprintf(file, "%E", BoltFloat_get(value));
+        StringBuilder_append_f(builder, "%E", BoltFloat_get(value));
         return 0;
     }
     case BOLT_STRING: {
         char* data = BoltString_get(value);
         if (value->size>=0) {
-            _write_string(file, data, (size_t) (value->size));
+            StringBuilder_append_n(builder, data, (size_t) (value->size));
             return 0;
         }
         else {
@@ -546,35 +555,35 @@ int BoltValue_write(struct BoltValue* value, FILE* file, int32_t protocol_versio
         }
     }
     case BOLT_DICTIONARY: {
-        fprintf(file, "{");
+        StringBuilder_append(builder, "{");
         int comma = 0;
         for (int i = 0; i<value->size; i++) {
             const char* key = BoltDictionary_get_key(value, i);
             if (key!=NULL) {
-                if (comma) fprintf(file, ", ");
-                _write_string(file, key, (size_t) (BoltDictionary_get_key_size(value, i)));
-                fprintf(file, ": ");
-                BoltValue_write(BoltDictionary_value(value, i), file, protocol_version);
+                if (comma) StringBuilder_append(builder, ", ");
+                StringBuilder_append_n(builder, key, (size_t) (BoltDictionary_get_key_size(value, i)));
+                StringBuilder_append(builder, ": ");
+                BoltValue_write(builder, BoltDictionary_value(value, i), protocol_version);
                 comma = 1;
             }
         }
-        fprintf(file, "}");
+        StringBuilder_append(builder, "}");
         return 0;
     }
     case BOLT_LIST: {
-        fprintf(file, "[");
+        StringBuilder_append(builder, "[");
         for (int i = 0; i<value->size; i++) {
-            if (i>0) fprintf(file, ", ");
-            BoltValue_write(BoltList_value(value, i), file, protocol_version);
+            if (i>0) StringBuilder_append(builder, ", ");
+            BoltValue_write(builder, BoltList_value(value, i), protocol_version);
         }
-        fprintf(file, "]");
+        StringBuilder_append(builder, "]");
         return 0;
     }
     case BOLT_BYTES: {
-        fprintf(file, "#");
+        StringBuilder_append(builder, "#");
         for (int i = 0; i<value->size; i++) {
             char b = BoltBytes_get(value, i);
-            fprintf(file, "%c%c", hex1(&b, 0), hex0(&b, 0));
+            StringBuilder_append_f(builder, "%c%c", hex1(&b, 0), hex0(&b, 0));
         }
         return 0;
     }
@@ -584,22 +593,23 @@ int BoltValue_write(struct BoltValue* value, FILE* file, int32_t protocol_versio
         case 1:
         case 2: {
             const char* name = BoltProtocolV1_structure_name(code);
-            fprintf(file, "$%s", name);
+            StringBuilder_append_f(builder, "$%s", name);
             break;
         }
         default:
-            fprintf(file, "$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0), hex0(&code, 0));
+            StringBuilder_append_f(builder, "$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0),
+                    hex0(&code, 0));
         }
-        fprintf(file, "(");
+        StringBuilder_append(builder, "(");
         for (int i = 0; i<value->size; i++) {
-            if (i>0) fprintf(file, " ");
-            BoltValue_write(BoltStructure_value(value, i), file, protocol_version);
+            if (i>0) StringBuilder_append(builder, " ");
+            BoltValue_write(builder, BoltStructure_value(value, i), protocol_version);
         }
-        fprintf(file, ")");
+        StringBuilder_append(builder, ")");
         return 0;
     }
     default:
-        fprintf(file, "?");
+        StringBuilder_append(builder, "?");
         return -1;
     }
 }

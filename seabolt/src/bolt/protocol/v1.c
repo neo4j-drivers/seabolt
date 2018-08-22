@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002-2018 "Neo Technology,"
- * Network Engine for Objects in Lund AB [http://neotechnology.com]
+ * Copyright (c) 2002-2018 "Neo4j,"
+ * Neo4j Sweden AB [http://neo4j.com]
  *
  * This file is part of Neo4j.
  *
@@ -51,7 +51,7 @@
 
 #define char_to_uint16be(array) ((uint8_t)(header[0]) << 8) | (uint8_t)(header[1]);
 
-#define TRY(code) { int status = (code); if (status != BOLT_SUCCESS) { return status; } }
+#define TRY(code) { int status_try = (code); if (status_try != BOLT_SUCCESS) { return status_try; } }
 
 struct BoltMessage* BoltMessage_create(int8_t code, int32_t n_fields)
 {
@@ -293,7 +293,7 @@ int load_float(struct BoltBuffer* buffer, double value)
 int load_bytes(struct BoltBuffer* buffer, const char* string, int32_t size)
 {
     if (size<0) {
-        return  BOLT_PROTOCOL_VIOLATION;
+        return BOLT_PROTOCOL_VIOLATION;
     }
     if (size<0x100) {
         BoltBuffer_load_u8(buffer, 0xCC);
@@ -418,14 +418,15 @@ int BoltProtocolV1_load_message(struct BoltConnection* connection, struct BoltMe
 {
     if (!quiet) {
         struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-        BoltLog_message("C", state->next_request_id, message->code, message->fields, connection->protocol_version);
+        BoltLog_message(connection->log, "C", state->next_request_id, message->code, message->fields,
+                connection->protocol_version);
     }
 
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     int prev_cursor = state->tx_buffer->cursor;
     int prev_extent = state->tx_buffer->extent;
     int status = load_message(connection, message);
-    if (status != BOLT_SUCCESS) {
+    if (status!=BOLT_SUCCESS) {
         // Reset buffer to its previous state
         state->tx_buffer->cursor = prev_cursor;
         state->tx_buffer->extent = prev_extent;
@@ -630,7 +631,7 @@ int unload_string(struct BoltConnection* connection, struct BoltValue* value)
         BoltBuffer_unload(state->rx_buffer, BoltString_get(value), size);
         return BOLT_SUCCESS;
     }
-    BoltLog_error("bolt: Unknown marker: %d", marker);
+    BoltLog_error(connection->log, "Unknown marker: %d", marker);
     return BOLT_PROTOCOL_UNEXPECTED_MARKER;
 }
 
@@ -660,7 +661,7 @@ int unload_bytes(struct BoltConnection* connection, struct BoltValue* value)
         BoltBuffer_unload(state->rx_buffer, BoltBytes_get_all(value), size);
         return BOLT_SUCCESS;
     }
-    BoltLog_error("bolt: Unknown marker: %d", marker);
+    BoltLog_error(connection->log, "Unknown marker: %d", marker);
     return BOLT_PROTOCOL_UNEXPECTED_MARKER;
 }
 
@@ -785,7 +786,7 @@ int unload(struct BoltConnection* connection, struct BoltValue* value)
     case BOLT_V1_STRUCTURE:
         return unload_structure(connection, value);
     default:
-        BoltLog_error("bolt: Unknown marker: %d", marker);
+        BoltLog_error(connection->log, "Unknown marker: %d", marker);
         return BOLT_PROTOCOL_UNEXPECTED_MARKER;
     }
 }
@@ -816,7 +817,7 @@ int BoltProtocolV1_fetch(struct BoltConnection* connection, bolt_request_t reque
         char header[2];
         int status = BoltConnection_receive(connection, &header[0], 2);
         if (status!=BOLT_SUCCESS) {
-            BoltLog_error("bolt: Could not fetch chunk header");
+            BoltLog_error(connection->log, "Could not fetch chunk header");
             return -1;
         }
         uint16_t chunk_size = char_to_uint16be(header);
@@ -825,12 +826,12 @@ int BoltProtocolV1_fetch(struct BoltConnection* connection, bolt_request_t reque
             status = BoltConnection_receive(connection, BoltBuffer_load_pointer(state->rx_buffer, chunk_size),
                     chunk_size);
             if (status!=BOLT_SUCCESS) {
-                BoltLog_error("bolt: Could not fetch chunk data");
+                BoltLog_error(connection->log, "Could not fetch chunk data");
                 return -1;
             }
             status = BoltConnection_receive(connection, &header[0], 2);
             if (status!=BOLT_SUCCESS) {
-                BoltLog_error("bolt: Could not fetch chunk header");
+                BoltLog_error(connection->log, "Could not fetch chunk header");
                 return -1;
             }
             chunk_size = char_to_uint16be(header);
@@ -877,21 +878,21 @@ int BoltProtocolV1_unload(struct BoltConnection* connection)
     int32_t size = marker & 0x0F;
     BoltValue_format_as_List(state->data, size);
     for (int i = 0; i<size; i++) {
-        TRY(unload( connection, BoltList_value(state->data, i)));
+        TRY(unload(connection, BoltList_value(state->data, i)));
     }
     if (code==BOLT_V1_RECORD) {
         if (state->record_counter<MAX_LOGGED_RECORDS) {
-            BoltLog_message("S", state->response_counter, code, state->data, connection->protocol_version);
+            BoltLog_message(connection->log, "S", state->response_counter, code, state->data, connection->protocol_version);
         }
         state->record_counter += 1;
     }
     else {
         if (state->record_counter>MAX_LOGGED_RECORDS) {
-            BoltLog_info("bolt: S[%d]: Received %llu more records", state->response_counter,
+            BoltLog_info(connection->log, "S[%d]: Received %llu more records", state->response_counter,
                     state->record_counter-MAX_LOGGED_RECORDS);
         }
         state->record_counter = 0;
-        BoltLog_message("S", state->response_counter, code, state->data, connection->protocol_version);
+        BoltLog_message(connection->log, "S", state->response_counter, code, state->data, connection->protocol_version);
     }
     return BOLT_SUCCESS;
 }
@@ -945,7 +946,7 @@ int BoltProtocolV1_init(struct BoltConnection* connection, const char* user_agen
     struct BoltMessage* init = BoltMessage_create(INIT, 2);
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     TRY(BoltProtocolV1_compile_INIT(init, user_agent, auth_token, 1));
-    BoltLog_message("C", state->next_request_id, init->code, init->fields, connection->protocol_version);
+    BoltLog_message(connection->log, "C", state->next_request_id, init->code, init->fields, connection->protocol_version);
     TRY(BoltProtocolV1_compile_INIT(init, user_agent, auth_token, 0));
     TRY(BoltProtocolV1_load_message(connection, init, 1));
     bolt_request_t init_request = BoltConnection_last_request(connection);
@@ -976,7 +977,7 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
                 case BOLT_STRING: {
                     memset(state->last_bookmark, 0, MAX_BOOKMARK_SIZE);
                     memcpy(state->last_bookmark, BoltString_get(value), (size_t) (value->size));
-                    BoltLog_info("bolt: <SET last_bookmark=\"%s\">", state->last_bookmark);
+                    BoltLog_info(connection->log, "<SET last_bookmark=\"%s\">", state->last_bookmark);
                     break;
                 }
                 default:
@@ -1000,7 +1001,8 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
                             BoltValue_format_as_Null(BoltList_value(target_value, j));
                         }
                     }
-                    BoltLog_value(target_value, 1, "<SET result_field_names=", ">");
+                    BoltLog_value(connection->log, "<SET result_field_names=%s>", target_value,
+                            connection->protocol_version);
                     break;
                 }
                 default:
@@ -1013,7 +1015,7 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
                 case BOLT_STRING: {
                     memset(state->server, 0, MAX_SERVER_SIZE);
                     memcpy(state->server, BoltString_get(value), (size_t) (value->size));
-                    BoltLog_info("bolt: <SET server=\"%s\">", state->server);
+                    BoltLog_info(connection->log, "<SET server=\"%s\">", state->server);
                     break;
                 }
                 default:
@@ -1028,7 +1030,10 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
 
                     struct BoltValue* target_value = BoltDictionary_value(state->failure_data, 0);
                     BoltValue_format_as_String(target_value, BoltString_get(value), value->size);
-                    BoltLog_value(target_value, 1, "bolt: <FAILURE code=\"", "\">");
+
+                    BoltLog_value(connection->log, "<FAILURE code=\"%s\">", target_value,
+                            connection->protocol_version);
+
                     break;
                 }
                 default:
@@ -1043,7 +1048,10 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
 
                     struct BoltValue* target_value = BoltDictionary_value(state->failure_data, 1);
                     BoltValue_format_as_String(target_value, BoltString_get(value), value->size);
-                    BoltLog_value(target_value, 1, "bolt: <FAILURE message=\"", "\">");
+
+                    BoltLog_value(connection->log, "<FAILURE message=\"%s\">", target_value,
+                            connection->protocol_version);
+
                     break;
                 }
                 default:

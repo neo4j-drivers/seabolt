@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002-2018 "Neo Technology,"
- * Network Engine for Objects in Lund AB [http://neotechnology.com]
+ * Copyright (c) 2002-2018 "Neo4j,"
+ * Neo4j Sweden AB [http://neo4j.com]
  *
  * This file is part of Neo4j.
  *
@@ -20,8 +20,8 @@
 #ifndef SEABOLT_ADDRESSING_H
 #define SEABOLT_ADDRESSING_H
 
-
 #include "config.h"
+#include "platform.h"
 
 
 /**
@@ -29,20 +29,32 @@
  * and port details, as supplied by the application, as well as one or
  * more resolved IP addresses and port number.
  */
-struct BoltAddress
-{
+struct BoltAddress {
     /// Original host name or IP address string
-    char * host;
+    const char* host;
     /// Original service name or port number string
-    char * port;
+    const char* port;
 
     /// Number of resolved IP addresses
     size_t n_resolved_hosts;
     /// Resolved IP address data
-    struct sockaddr_storage * resolved_hosts;
+    struct sockaddr_storage* resolved_hosts;
     /// Resolved port number
     in_port_t resolved_port;
+
+    // Lock to protect DNS resolution process
+    mutex_t lock;
 };
+
+#define SIZE_OF_ADDRESS sizeof(struct BoltAddress)
+#define SIZE_OF_ADDRESS_PTR sizeof(struct BoltAddress *)
+
+#ifdef __cplusplus
+#define BoltAddress_of(host, port) { (const char *)host, (const char *)port }
+#else
+#define BoltAddress_of(host, port) (struct BoltAddress) { (const char *)host, (const char *)port }
+#endif
+
 
 /**
  * Create a new address structure for a given host and port. No name
@@ -54,7 +66,9 @@ struct BoltAddress
  * @param port port name or numeric string, e.g. "7687" or "http"
  * @return pointer to a new BoltAddress structure
  */
-PUBLIC struct BoltAddress * BoltAddress_create(const char * host, const char * port);
+PUBLIC struct BoltAddress* BoltAddress_create(const char* host, const char* port);
+
+PUBLIC struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int32_t endpoint_len);
 
 /**
  * Resolve the original host and port into one or more IP addresses and
@@ -64,7 +78,7 @@ PUBLIC struct BoltAddress * BoltAddress_create(const char * host, const char * p
  * @param address pointer to a BoltAddress structure
  * @return status of the internal getaddrinfo call
  */
-PUBLIC int BoltAddress_resolve(struct BoltAddress * address);
+PUBLIC int BoltAddress_resolve(struct BoltAddress* address, struct BoltLog *log);
 
 /**
  * Copy the textual representation of a resolved host IP address into a buffer.
@@ -79,14 +93,14 @@ PUBLIC int BoltAddress_resolve(struct BoltAddress * address);
  * @param buffer_size size of the buffer
  * @return address family (AF_INET or AF_INET6) or -1 on error
  */
-PUBLIC int BoltAddress_copy_resolved_host(struct BoltAddress * address, size_t index, char * buffer, socklen_t buffer_size);
+PUBLIC int
+BoltAddress_copy_resolved_host(struct BoltAddress* address, size_t index, char* buffer, socklen_t buffer_size);
 
 /**
  * Destroy an address structure and deallocate any associated memory.
  *
  * @param address pointer to a BoltAddress structure
  */
-PUBLIC void BoltAddress_destroy(struct BoltAddress * address);
-
+PUBLIC void BoltAddress_destroy(struct BoltAddress* address);
 
 #endif // SEABOLT_ADDRESSING_H

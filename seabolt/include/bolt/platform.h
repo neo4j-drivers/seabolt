@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2002-2018 "Neo Technology,"
-* Network Engine for Objects in Lund AB [http://neotechnology.com]
+* Copyright (c) 2002-2018 "Neo4j,"
+* Neo4j Sweden AB [http://neo4j.com]
 *
 * This file is part of Neo4j.
 *
@@ -21,6 +21,7 @@
 #define SEABOLT_UTILS_H
 
 #include "config.h"
+#include <time.h>
 
 #if  _WIN32
 typedef void * mutex_t;
@@ -29,6 +30,8 @@ typedef pthread_mutex_t mutex_t;
 #endif
 
 PUBLIC int BoltUtil_get_time(struct timespec *tp);
+
+int64_t BoltUtil_get_time_ms();
 
 int BoltUtil_mutex_create(mutex_t *mutex);
 
