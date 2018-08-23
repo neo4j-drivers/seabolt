@@ -428,16 +428,6 @@ PUBLIC int BoltConnection_summary_success(struct BoltConnection* connection);
 PUBLIC struct BoltValue* BoltConnection_failure(struct BoltConnection* connection);
 
 /**
- * Check whether current failure is categorized as a transient error. The check applies
- * both to database generated error codes and/or system generated ones (i.e. network level
- * failures).
- *
- * @param connection
- * @return 0 if failure is not transient, 1 if it is
- */
-PUBLIC int BoltConnection_failure_is_transient(struct BoltConnection* connection);
-
-/**
  * Return the fields available in the current result.
  *
  * @param connection

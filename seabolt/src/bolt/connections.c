@@ -864,53 +864,6 @@ struct BoltValue* BoltConnection_failure(struct BoltConnection* connection)
     }
 }
 
-int BoltConnection_failure_is_transient(struct BoltConnection* connection)
-{
-    if (connection->status!=BOLT_FAILED && connection->status!=BOLT_DEFUNCT) {
-        return 0;
-    }
-
-    if (connection->error==BOLT_SERVER_FAILURE) {
-        struct BoltValue* failure = BoltConnection_failure(connection);
-        if (failure==NULL) {
-            return 0;
-        }
-
-        struct BoltValue* code = BoltDictionary_value_by_key(failure, "code", 4);
-        if (code==NULL) {
-            return 0;
-        }
-
-        char* code_str = (char*) BoltMem_allocate((code->size+1)*sizeof(char));
-        strncpy(code_str, BoltString_get(code), code->size);
-        code_str[code->size] = '\0';
-
-        int transient = 0;
-        if (strstr(code_str, "Neo.TransientError")==0) {
-            transient = strcmp(code_str, "Neo.TransientError.Transaction.Terminated")!=0
-                    && strcmp(code_str, "Neo.TransientError.Transaction.LockClientStopped")!=0;
-        }
-
-        BoltMem_deallocate(code_str, (code->size+1)*sizeof(char));
-
-        return transient;
-    }
-
-    switch (connection->error) {
-    case BOLT_INTERRUPTED:
-    case BOLT_CONNECTION_RESET:
-    case BOLT_NO_VALID_ADDRESS:
-    case BOLT_TIMED_OUT:
-    case BOLT_CONNECTION_REFUSED:
-    case BOLT_NETWORK_UNREACHABLE:
-    case BOLT_TLS_ERROR:
-    case BOLT_END_OF_TRANSMISSION:
-        return 1;
-    default:
-        return 0;
-    }
-}
-
 char* BoltConnection_server(struct BoltConnection* connection)
 {
     switch (connection->protocol_version) {
