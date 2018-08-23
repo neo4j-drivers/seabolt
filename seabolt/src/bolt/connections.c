@@ -232,6 +232,10 @@ int _secure(struct BoltConnection* connection)
         _set_status(connection, BOLT_DEFUNCT, BOLT_TLS_ERROR);
         return -1;
     }
+    if (SSL_set_tlsext_host_name(connection->ssl, connection->address->host)!=1) {
+        _set_status(connection, BOLT_DEFUNCT, BOLT_TLS_ERROR);
+        return -1;
+    }
     int connected = SSL_connect(connection->ssl);
     if (connected!=1) {
         _set_status(connection, BOLT_DEFUNCT, BOLT_TLS_ERROR);
@@ -428,6 +432,8 @@ int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport tr
         BoltConnection_close(connection);
     }
     connection->log = log;
+    // Store connection info
+    connection->address = BoltAddress_create(address->host, address->port);
     for (int i = 0; i<address->n_resolved_hosts; i++) {
         const int opened = _open(connection, transport, &address->resolved_hosts[i]);
         if (opened==BOLT_SUCCESS) {
@@ -441,8 +447,6 @@ int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport tr
                 TRY(handshake_b(connection, 2, 1, 0, 0));
             }
 
-            // Store connection info
-            connection->address = BoltAddress_create(address->host, address->port);
             char resolved_host[MAX_IPADDR_LEN], resolved_port[6];
             BoltAddress_copy_resolved_host(address, i, resolved_host, MAX_IPADDR_LEN);
             sprintf(resolved_port, "%d", address->resolved_port);
