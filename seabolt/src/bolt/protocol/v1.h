@@ -36,19 +36,6 @@
 
 #define BOLT_MAX_CHUNK_SIZE 65535
 
-enum BoltProtocolV1Type {
-    BOLT_V1_NULL,
-    BOLT_V1_BOOLEAN,
-    BOLT_V1_INTEGER,
-    BOLT_V1_FLOAT,
-    BOLT_V1_STRING,
-    BOLT_V1_BYTES,
-    BOLT_V1_LIST,
-    BOLT_V1_MAP,
-    BOLT_V1_STRUCTURE,
-    BOLT_V1_RESERVED,
-};
-
 struct _run_request {
     struct BoltMessage* request;
     struct BoltValue* statement;
