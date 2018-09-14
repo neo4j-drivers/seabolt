@@ -220,11 +220,11 @@ SCENARIO("Test execution of simple Cypher statement", "[integration][ipv6][secur
         struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN 1";
-            BoltConnection_cypher(connection, cypher, strlen(cypher), 0);
+            BoltConnection_set_run_cypher(connection, cypher, strlen(cypher), 0);
             BoltConnection_load_run_request(connection);
-            bolt_request_t run = BoltConnection_last_request(connection);
+            bolt_request run = BoltConnection_last_request(connection);
             BoltConnection_load_pull_request(connection, -1);
-            bolt_request_t pull = BoltConnection_last_request(connection);
+            bolt_request pull = BoltConnection_last_request(connection);
             BoltConnection_send(connection);
             int records = BoltConnection_fetch_summary(connection, run);
             REQUIRE(records==0);
@@ -241,14 +241,14 @@ SCENARIO("Test field names returned from Cypher execution", "[integration][ipv6]
         struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN 1 AS first, true AS second, 3.14 AS third";
-            BoltConnection_cypher(connection, cypher, strlen(cypher), 0);
+            BoltConnection_set_run_cypher(connection, cypher, strlen(cypher), 0);
             BoltConnection_load_run_request(connection);
-            bolt_request_t run = BoltConnection_last_request(connection);
+            bolt_request run = BoltConnection_last_request(connection);
             BoltConnection_load_pull_request(connection, -1);
             BoltConnection_send(connection);
-            bolt_request_t last = BoltConnection_last_request(connection);
+            bolt_request last = BoltConnection_last_request(connection);
             BoltConnection_fetch_summary(connection, run);
-            const struct BoltValue* fields = BoltConnection_fields(connection);
+            const struct BoltValue* fields = BoltConnection_field_names(connection);
             REQUIRE(fields->size==3);
             struct BoltValue* field_name_value = BoltList_value(fields, 0);
             const char* field_name = BoltString_get(field_name_value);
@@ -275,19 +275,19 @@ SCENARIO("Test parameterised Cypher statements", "[integration][ipv6][secure]")
         struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN $x";
-            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
-            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+            BoltConnection_set_run_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue* x = BoltConnection_set_run_cypher_parameter(connection, 0, "x", 1);
             BoltValue_format_as_Integer(x, 42);
             BoltConnection_load_run_request(connection);
-            bolt_request_t run = BoltConnection_last_request(connection);
+            bolt_request run = BoltConnection_last_request(connection);
             BoltConnection_load_pull_request(connection, -1);
-            bolt_request_t pull = BoltConnection_last_request(connection);
+            bolt_request pull = BoltConnection_last_request(connection);
             BoltConnection_send(connection);
             int records = BoltConnection_fetch_summary(connection, run);
             REQUIRE(records==0);
             REQUIRE(BoltConnection_summary_success(connection)==1);
             while (BoltConnection_fetch(connection, pull)) {
-                const struct BoltValue* field_values = BoltConnection_record_fields(connection);
+                const struct BoltValue* field_values = BoltConnection_field_values(connection);
                 struct BoltValue* value = BoltList_value(field_values, 0);
                 REQUIRE(BoltValue_type(value)==BOLT_INTEGER);
                 REQUIRE(BoltInteger_get(value)==42);
@@ -306,8 +306,8 @@ SCENARIO("Test execution of multiple Cypher statements transmitted together", "[
         struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
             const char* cypher = "RETURN $x";
-            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
-            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+            BoltConnection_set_run_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue* x = BoltConnection_set_run_cypher_parameter(connection, 0, "x", 1);
             BoltValue_format_as_Integer(x, 1);
             BoltConnection_load_run_request(connection);
             BoltConnection_load_discard_request(connection, -1);
@@ -328,21 +328,21 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
     GIVEN("an open and initialised connection") {
         struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
-            BoltConnection_load_begin_request(connection);
-            bolt_request_t begin = BoltConnection_last_request(connection);
+            BoltConnection_load_begin_tx_request(connection);
+            bolt_request begin = BoltConnection_last_request(connection);
 
             const char* cypher = "RETURN 1";
-            BoltConnection_cypher(connection, cypher, strlen(cypher), 0);
+            BoltConnection_set_run_cypher(connection, cypher, strlen(cypher), 0);
             BoltConnection_load_run_request(connection);
-            bolt_request_t run = BoltConnection_last_request(connection);
+            bolt_request run = BoltConnection_last_request(connection);
             BoltConnection_load_pull_request(connection, -1);
-            bolt_request_t pull = BoltConnection_last_request(connection);
+            bolt_request pull = BoltConnection_last_request(connection);
 
             BoltConnection_load_commit_request(connection);
-            bolt_request_t commit = BoltConnection_last_request(connection);
+            bolt_request commit = BoltConnection_last_request(connection);
 
             BoltConnection_send(connection);
-            bolt_request_t last = BoltConnection_last_request(connection);
+            bolt_request last = BoltConnection_last_request(connection);
             REQUIRE(last==commit);
 
             int records = BoltConnection_fetch_summary(connection, begin);
@@ -354,7 +354,7 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
             REQUIRE(BoltConnection_summary_success(connection)==1);
 
             while (BoltConnection_fetch(connection, pull)) {
-                const struct BoltValue* field_values = BoltConnection_record_fields(connection);
+                const struct BoltValue* field_values = BoltConnection_field_values(connection);
                 struct BoltValue* value = BoltList_value(field_values, 0);
                 REQUIRE(BoltValue_type(value)==BOLT_INTEGER);
                 REQUIRE(BoltInteger_get(value)==1);
@@ -378,7 +378,7 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
         auto connection = bolt_open_init_default();
         WHEN("an invalid cypher statement is sent") {
             const auto cypher = "some invalid statement";
-            BoltConnection_cypher(connection, cypher, strlen(cypher), 0);
+            BoltConnection_set_run_cypher(connection, cypher, strlen(cypher), 0);
             BoltConnection_load_run_request(connection);
             const auto run = BoltConnection_last_request(connection);
             BoltConnection_load_pull_request(connection, -1);
@@ -426,7 +426,7 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
 
             THEN("upcoming requests should be IGNORED after FAILURE") {
                 const auto cypher1 = "RETURN 1";
-                BoltConnection_cypher(connection, cypher1, strlen(cypher1), 0);
+                BoltConnection_set_run_cypher(connection, cypher1, strlen(cypher1), 0);
                 BoltConnection_load_run_request(connection);
                 const auto run1 = BoltConnection_last_request(connection);
 

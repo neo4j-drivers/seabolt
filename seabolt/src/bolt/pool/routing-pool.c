@@ -67,11 +67,11 @@ int BoltRoutingPool_update_routing_table_from(struct BoltRoutingPool* pool, stru
 
     // Load Run message filled with discovery procedure along with routing context
     if (status==BOLT_SUCCESS) {
-        status = BoltConnection_cypher(result.connection, routing_table_call, strlen(routing_table_call), 1);
+        status = BoltConnection_set_run_cypher(result.connection, routing_table_call, strlen(routing_table_call), 1);
 
         if (status==BOLT_SUCCESS) {
-            struct BoltValue* routing_table_context = BoltConnection_cypher_parameter(result.connection, 0, "context",
-                    7);
+            struct BoltValue* routing_table_context = BoltConnection_set_run_cypher_parameter(result.connection, 0,
+                    "context", 7);
             if (pool->config->routing_context!=NULL) {
                 BoltValue_copy(routing_table_context, pool->config->routing_context);
             }
@@ -86,7 +86,7 @@ int BoltRoutingPool_update_routing_table_from(struct BoltRoutingPool* pool, stru
     }
 
     // Send pending messages
-    bolt_request_t pull_all = 0;
+    bolt_request pull_all = 0;
     if (status==BOLT_SUCCESS) {
         pull_all = BoltConnection_last_request(result.connection);
 
@@ -103,8 +103,8 @@ int BoltRoutingPool_update_routing_table_from(struct BoltRoutingPool* pool, stru
                 break;
             }
 
-            struct BoltValue* field_keys = BoltConnection_fields(result.connection);
-            struct BoltValue* field_values = BoltConnection_record_fields(result.connection);
+            struct BoltValue* field_keys = BoltConnection_field_names(result.connection);
+            struct BoltValue* field_values = BoltConnection_field_values(result.connection);
 
             response = BoltValue_create();
             BoltValue_format_as_Dictionary(response, field_keys->size);

@@ -178,7 +178,7 @@ int load_structure_header(struct BoltBuffer* buffer, int16_t code, int8_t size)
 }
 
 int load(check_struct_signature_func check_struct_type, struct BoltBuffer* buffer, struct BoltValue* value,
-        struct BoltLog* log)
+        const struct BoltLog* log)
 {
     switch (BoltValue_type(value)) {
     case BOLT_NULL:
@@ -340,7 +340,7 @@ int unload_float(struct BoltBuffer* recv_buffer, struct BoltValue* value)
     return BOLT_SUCCESS;
 }
 
-int unload_string(struct BoltBuffer* recv_buffer, struct BoltValue* value, struct BoltLog* log)
+int unload_string(struct BoltBuffer* recv_buffer, struct BoltValue* value, const struct BoltLog* log)
 {
     uint8_t marker;
     BoltBuffer_unload_u8(recv_buffer, &marker);
@@ -376,7 +376,7 @@ int unload_string(struct BoltBuffer* recv_buffer, struct BoltValue* value, struc
     return BOLT_PROTOCOL_UNEXPECTED_MARKER;
 }
 
-int unload_bytes(struct BoltBuffer* recv_buffer, struct BoltValue* value, struct BoltLog* log)
+int unload_bytes(struct BoltBuffer* recv_buffer, struct BoltValue* value, const struct BoltLog* log)
 {
     uint8_t marker;
     BoltBuffer_unload_u8(recv_buffer, &marker);
@@ -406,7 +406,7 @@ int unload_bytes(struct BoltBuffer* recv_buffer, struct BoltValue* value, struct
 }
 
 int unload_list(check_struct_signature_func check_struct_type, struct BoltBuffer* recv_buffer, struct BoltValue* value,
-        struct BoltLog* log)
+        const struct BoltLog* log)
 {
     uint8_t marker;
     int32_t size;
@@ -443,7 +443,7 @@ int unload_list(check_struct_signature_func check_struct_type, struct BoltBuffer
 }
 
 int unload_map(check_struct_signature_func check_struct_type, struct BoltBuffer* recv_buffer, struct BoltValue* value,
-        struct BoltLog* log)
+        const struct BoltLog* log)
 {
     uint8_t marker;
     int32_t size;
@@ -482,7 +482,7 @@ int unload_map(check_struct_signature_func check_struct_type, struct BoltBuffer*
 
 int
 unload_structure(check_struct_signature_func check_struct_type, struct BoltBuffer* recv_buffer, struct BoltValue* value,
-        struct BoltLog* log)
+        const struct BoltLog* log)
 {
     uint8_t marker;
     int8_t code;
@@ -503,7 +503,7 @@ unload_structure(check_struct_signature_func check_struct_type, struct BoltBuffe
 }
 
 int unload(check_struct_signature_func check_struct_type, struct BoltBuffer* buffer, struct BoltValue* value,
-        struct BoltLog* log)
+        const struct BoltLog* log)
 {
     uint8_t marker;
     BoltBuffer_peek_u8(buffer, &marker);

@@ -34,23 +34,13 @@
 #define BOLT_V1_IGNORED 0x7E
 #define BOLT_V1_FAILURE 0x7F
 
-#define BOLT_MAX_CHUNK_SIZE 65535
-
 struct _run_request {
     struct BoltMessage* request;
     struct BoltValue* statement;
     struct BoltValue* parameters;
 };
 
-struct BoltMessage {
-    int8_t code;
-    struct BoltValue* fields;
-};
-
 struct BoltProtocolV1State {
-    check_struct_signature_func check_readable_struct;
-    check_struct_signature_func check_writable_struct;
-
     // These buffers exclude chunk headers.
     struct BoltBuffer* tx_buffer;
     struct BoltBuffer* rx_buffer;
@@ -66,8 +56,8 @@ struct BoltProtocolV1State {
     /// The last bookmark received from the server
     char* last_bookmark;
 
-    bolt_request_t next_request_id;
-    bolt_request_t response_counter;
+    bolt_request next_request_id;
+    bolt_request response_counter;
     unsigned long long record_counter;
 
     struct _run_request run;
@@ -82,72 +72,16 @@ struct BoltProtocolV1State {
     /// Holder for fetched data and metadata
     int16_t data_type;
     struct BoltValue* data;
-
 };
 
 int BoltProtocolV1_check_readable_struct_signature(int16_t signature);
 
 int BoltProtocolV1_check_writable_struct_signature(int16_t signature);
 
-struct BoltProtocolV1State* BoltProtocolV1_create_state();
-
-void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state);
-
-struct BoltProtocolV1State* BoltProtocolV1_state(struct BoltConnection* connection);
-
-int BoltProtocolV1_load_message(struct BoltConnection* connection, struct BoltMessage* message, int quiet);
-
-int BoltProtocolV1_compile_INIT(struct BoltMessage* message, const char* user_agent, const struct BoltValue* auth_token,
-        int mask_secure_fields);
-
-int BoltProtocolV1_fetch(struct BoltConnection* connection, bolt_request_t request_id);
-
-/**
- * Top-level unload.
- *
- * For a typical Bolt v1 data stream, this will unload either a summary
- * or the first value of a record.
- *
- * @param connection
- * @return
- */
-int BoltProtocolV1_unload(struct BoltConnection* connection);
-
 const char* BoltProtocolV1_structure_name(int16_t code);
 
-const char* BoltProtocolV1_message_name(int16_t code);
+struct BoltProtocol* BoltProtocolV1_create_protocol();
 
-int BoltProtocolV1_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token);
-
-void BoltProtocolV1_clear_failure(struct BoltConnection* connection);
-
-void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct BoltValue* summary);
-
-int BoltProtocolV1_set_cypher_template(struct BoltConnection* connection, const char* statement, size_t size);
-
-int BoltProtocolV1_set_n_cypher_parameters(struct BoltConnection* connection, int32_t size);
-
-int BoltProtocolV1_set_cypher_parameter_key(struct BoltConnection* connection, int32_t index, const char* key,
-        size_t key_size);
-
-struct BoltValue* BoltProtocolV1_cypher_parameter_value(struct BoltConnection* connection, int32_t index);
-
-int BoltProtocolV1_load_bookmark(struct BoltConnection* connection, const char* bookmark);
-
-int BoltProtocolV1_load_begin_request(struct BoltConnection* connection);
-
-int BoltProtocolV1_load_commit_request(struct BoltConnection* connection);
-
-int BoltProtocolV1_load_rollback_request(struct BoltConnection* connection);
-
-int BoltProtocolV1_load_run_request(struct BoltConnection* connection);
-
-int BoltProtocolV1_load_pull_request(struct BoltConnection* connection, int32_t n);
-
-int BoltProtocolV1_load_reset_request(struct BoltConnection* connection);
-
-struct BoltValue* BoltProtocolV1_result_fields(struct BoltConnection* connection);
-
-struct BoltValue* BoltProtocolV1_result_metadata(struct BoltConnection* connection);
+void BoltProtocolV1_destroy_protocol(struct BoltProtocol* state);
 
 #endif // SEABOLT_PROTOCOL_V1

@@ -20,6 +20,8 @@
 #ifndef SEABOLT_ALL_V2_H
 #define SEABOLT_ALL_V2_H
 
-struct BoltProtocolV1State* BoltProtocolV2_create_state();
+struct BoltProtocol* BoltProtocolV2_create_protocol();
+
+void BoltProtocolV2_destroy_protocol(struct BoltProtocol* state);
 
 #endif //SEABOLT_ALL_V2_H

@@ -73,12 +73,45 @@ int BoltProtocolV2_check_writable_struct_signature(int16_t signature)
     return 0;
 }
 
-struct BoltProtocolV1State* BoltProtocolV2_create_state()
+const char* BoltProtocolV2_structure_name(int16_t code)
 {
-    struct BoltProtocolV1State* v1_state = BoltProtocolV1_create_state();
+    switch (code) {
+    case POINT_2D:
+        return "Point2D";
+    case POINT_3D:
+        return "Point3D";
+    case LOCAL_DATE:
+        return "LocalDate";
+    case LOCAL_TIME:
+        return "LocalTime";
+    case LOCAL_DATE_TIME:
+        return "LocalDateTime";
+    case OFFSET_TIME:
+        return "OffsetTime";
+    case OFFSET_DATE_TIME:
+        return "OffsetDateTime";
+    case ZONED_DATE_TIME:
+        return "ZonedDateTime";
+    case DURATION:
+        return "Duration";
+    default:
+        return BoltProtocolV1_structure_name(code);
+    }
+}
 
-    v1_state->check_writable_struct = &BoltProtocolV2_check_writable_struct_signature;
-    v1_state->check_readable_struct = &BoltProtocolV2_check_readable_struct_signature;
+struct BoltProtocol* BoltProtocolV2_create_protocol()
+{
+    struct BoltProtocol* v1_protocol = BoltProtocolV1_create_protocol();
 
-    return v1_state;
+    // Overrides for new structure types
+    v1_protocol->structure_name = &BoltProtocolV2_structure_name;
+    v1_protocol->check_writable_struct = &BoltProtocolV2_check_writable_struct_signature;
+    v1_protocol->check_readable_struct = &BoltProtocolV2_check_readable_struct_signature;
+
+    return v1_protocol;
+}
+
+void BoltProtocolV2_destroy_protocol(struct BoltProtocol* protocol)
+{
+    BoltProtocolV1_destroy_protocol(protocol);
 }

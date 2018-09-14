@@ -45,9 +45,9 @@ enum PackStreamType marker_type(uint8_t marker);
 int load_structure_header(struct BoltBuffer* buffer, int16_t code, int8_t size);
 
 int load(check_struct_signature_func check_struct_type, struct BoltBuffer* buffer, struct BoltValue* value,
-        struct BoltLog* log);
+        const struct BoltLog* log);
 
 int unload(check_struct_signature_func check_struct_type, struct BoltBuffer* buffer, struct BoltValue* value,
-        struct BoltLog* log);
+        const struct BoltLog* log);
 
 #endif //SEABOLT_ALL_PACKSTREAM_H

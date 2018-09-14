@@ -24,6 +24,7 @@
 #include "bolt/logging.h"
 #include "bolt/mem.h"
 
+#include "protocol/protocol.h"
 #include "protocol/v1.h"
 #include "protocol/v2.h"
 #include "bolt/platform.h"
@@ -103,35 +104,34 @@ enum BoltConnectionError _last_error(struct BoltConnection* connection)
 #else
     int error_code = errno;
     BoltLog_error(connection->log, "socket error code: %d", error_code);
-    switch (error_code)
-    {
-        case EACCES:
-        case EPERM:
-            return BOLT_PERMISSION_DENIED;
-        case EAFNOSUPPORT:
-        case EINVAL:
-        case EPROTONOSUPPORT:
-            return BOLT_UNSUPPORTED;
-        case EMFILE:
-        case ENFILE:
-            return BOLT_OUT_OF_FILES;
-        case ENOBUFS:
-        case ENOMEM:
-            return BOLT_OUT_OF_MEMORY;
-        case EAGAIN:
-            return BOLT_OUT_OF_PORTS;
-        case ECONNREFUSED:
-            return BOLT_CONNECTION_REFUSED;
-        case ECONNRESET:
-            return BOLT_CONNECTION_RESET;
-        case EINTR:
-            return BOLT_INTERRUPTED;
-        case ENETUNREACH:
-            return BOLT_NETWORK_UNREACHABLE;
-        case ETIMEDOUT:
-            return BOLT_TIMED_OUT;
-        default:
-            return BOLT_UNKNOWN_ERROR;
+    switch (error_code) {
+    case EACCES:
+    case EPERM:
+        return BOLT_PERMISSION_DENIED;
+    case EAFNOSUPPORT:
+    case EINVAL:
+    case EPROTONOSUPPORT:
+        return BOLT_UNSUPPORTED;
+    case EMFILE:
+    case ENFILE:
+        return BOLT_OUT_OF_FILES;
+    case ENOBUFS:
+    case ENOMEM:
+        return BOLT_OUT_OF_MEMORY;
+    case EAGAIN:
+        return BOLT_OUT_OF_PORTS;
+    case ECONNREFUSED:
+        return BOLT_CONNECTION_REFUSED;
+    case ECONNRESET:
+        return BOLT_CONNECTION_RESET;
+    case EINTR:
+        return BOLT_INTERRUPTED;
+    case ENETUNREACH:
+        return BOLT_NETWORK_UNREACHABLE;
+    case ETIMEDOUT:
+        return BOLT_TIMED_OUT;
+    default:
+        return BOLT_UNKNOWN_ERROR;
     }
 #endif
 }
@@ -247,16 +247,25 @@ int _secure(struct BoltConnection* connection)
 void _close(struct BoltConnection* connection)
 {
     BoltLog_info(connection->log, "Closing connection");
+
+    int status = connection->protocol->goodbye(connection);
+    if (status!=BOLT_SUCCESS) {
+        BoltLog_warning(connection->log, "Unable to complete GOODBYE, status is %d", status);
+    }
+
     switch (connection->protocol_version) {
     case 1:
+        BoltProtocolV1_destroy_protocol(connection->protocol);
+        break;
     case 2:
-        BoltProtocolV1_destroy_state(connection->protocol_state);
-        connection->protocol_state = NULL;
+        BoltProtocolV2_destroy_protocol(connection->protocol);
         break;
     default:
         break;
     }
+    connection->protocol = NULL;
     connection->protocol_version = 0;
+
     switch (connection->transport) {
     case BOLT_SOCKET: {
         SHUTDOWN(connection->socket, SHUT_RDWR);
@@ -401,10 +410,10 @@ int handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int32
     BoltLog_info(connection->log, "<SET protocol_version=%d>", connection->protocol_version);
     switch (connection->protocol_version) {
     case 1:
-        connection->protocol_state = BoltProtocolV1_create_state();
+        connection->protocol = BoltProtocolV1_create_protocol();
         return BOLT_SUCCESS;
     case 2:
-        connection->protocol_state = BoltProtocolV2_create_state();
+        connection->protocol = BoltProtocolV2_create_protocol();
         return BOLT_SUCCESS;
     default:
         _close(connection);
@@ -519,46 +528,34 @@ int BoltConnection_receive(struct BoltConnection* connection, char* buffer, int 
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_fetch(struct BoltConnection* connection, bolt_request_t request)
+int BoltConnection_fetch(struct BoltConnection* connection, bolt_request request)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        const int fetched = BoltProtocolV1_fetch(connection, request);
-        if (fetched==0) {
-            // Summary received
-            struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-            switch (state->data_type) {
-            case BOLT_V1_SUCCESS:
-                _set_status(connection, BOLT_READY, BOLT_SUCCESS);
-                return 0;
-            case BOLT_V1_IGNORED:
-                // we may need to update status based on an earlier reported FAILURE
-                // which our consumer did not care its result
-                if (state->failure_data!=NULL) {
-                    _set_status(connection, BOLT_FAILED, BOLT_SERVER_FAILURE);
-                }
-
-                return 0;
-            case BOLT_V1_FAILURE:
+    const int fetched = connection->protocol->fetch(connection, request);
+    if (fetched==FETCH_SUMMARY) {
+        if (connection->protocol->is_success_summary(connection)) {
+            _set_status(connection, BOLT_READY, BOLT_SUCCESS);
+        }
+        else if (connection->protocol->is_ignored_summary(connection)) {
+            // we may need to update status based on an earlier reported FAILURE
+            // which our consumer did not care its result
+            if (connection->protocol->failure(connection)!=NULL) {
                 _set_status(connection, BOLT_FAILED, BOLT_SERVER_FAILURE);
-                return 0;
-            default:
-                BoltLog_error(connection->log, "Protocol violation (received summary code %d)", state->data_type);
-                _set_status(connection, BOLT_DEFUNCT, BOLT_PROTOCOL_VIOLATION);
-                return -1;
             }
         }
-        return fetched;
+        else if (connection->protocol->is_failure_summary(connection)) {
+            _set_status(connection, BOLT_FAILED, BOLT_SERVER_FAILURE);
+        }
+        else {
+            BoltLog_error(connection->log, "Protocol violation (received summary code %d)",
+                    connection->protocol->last_data_type(connection));
+            _set_status(connection, BOLT_DEFUNCT, BOLT_PROTOCOL_VIOLATION);
+            return FETCH_ERROR;
+        }
     }
-    default: {
-        _set_status(connection, BOLT_DEFUNCT, BOLT_PROTOCOL_UNSUPPORTED);
-        return -1;
-    }
-    }
+    return fetched;
 }
 
-int BoltConnection_fetch_summary(struct BoltConnection* connection, bolt_request_t request)
+int BoltConnection_fetch_summary(struct BoltConnection* connection, bolt_request request)
 {
     int records = 0;
     int data;
@@ -573,55 +570,19 @@ int BoltConnection_fetch_summary(struct BoltConnection* connection, bolt_request
     return records;
 }
 
-struct BoltValue* BoltConnection_record_fields(struct BoltConnection* connection)
+struct BoltValue* BoltConnection_field_values(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-        switch (state->data_type) {
-        case BOLT_V1_RECORD:
-            switch (BoltValue_type(state->data)) {
-            case BOLT_LIST: {
-                struct BoltValue* values = BoltList_value(state->data, 0);
-                return values;
-            }
-            default:
-                return NULL;
-            }
-        default:
-            return NULL;
-        }
-    }
-    default:
-        return NULL;
-    }
+    return connection->protocol->field_values(connection);
 }
 
 int BoltConnection_summary_success(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-        return state->data_type==BOLT_V1_SUCCESS;
-    }
-    default:
-        return -1;
-    }
+    return connection->protocol->is_success_summary(connection);
 }
 
 int BoltConnection_summary_failure(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-        return state->data_type==BOLT_V1_FAILURE;
-    }
-    default:
-        return -1;
-    }
+    return connection->protocol->is_failure_summary(connection);
 }
 
 int BoltConnection_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token)
@@ -630,7 +591,7 @@ int BoltConnection_init(struct BoltConnection* connection, const char* user_agen
     switch (connection->protocol_version) {
     case 1:
     case 2: {
-        int code = BoltProtocolV1_init(connection, user_agent, auth_token);
+        int code = connection->protocol->init(connection, user_agent, auth_token);
         switch (code) {
         case BOLT_V1_SUCCESS:
             _set_status(connection, BOLT_READY, BOLT_SUCCESS);
@@ -650,237 +611,137 @@ int BoltConnection_init(struct BoltConnection* connection, const char* user_agen
     }
 }
 
-int
-BoltConnection_cypher(struct BoltConnection* connection, const char* cypher, size_t cypher_size, int32_t n_parameters)
+int BoltConnection_clear_begin_tx(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        TRY(BoltProtocolV1_set_cypher_template(connection, cypher, cypher_size));
-        TRY(BoltProtocolV1_set_n_cypher_parameters(connection, n_parameters));
-        return BOLT_SUCCESS;
-    }
-    default:
-        return BOLT_PROTOCOL_UNSUPPORTED;
-    }
+    TRY(connection->protocol->clear_begin_tx(connection));
+    return BOLT_SUCCESS;
 }
 
-struct BoltValue*
-BoltConnection_cypher_parameter(struct BoltConnection* connection, int32_t index, const char* key, size_t key_size)
+int BoltConnection_set_begin_tx_bookmark(struct BoltConnection* connection, struct BoltValue* bookmark_list)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        int status = BoltProtocolV1_set_cypher_parameter_key(connection, index, key, key_size);
-        if (status==BOLT_SUCCESS) {
-            return BoltProtocolV1_cypher_parameter_value(connection, index);
-        }
-        else {
-            _set_status(connection, BOLT_DEFUNCT, status);
-            return NULL;
-        }
-    }
-    default:
-        return NULL;
-    }
+    TRY(connection->protocol->set_begin_tx_bookmark(connection, bookmark_list));
+    return BOLT_SUCCESS;
 }
 
-int BoltConnection_load_bookmark(struct BoltConnection* connection, const char* bookmark)
+int BoltConnection_set_begin_tx_timeout(struct BoltConnection* connection, int32_t timeout)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        TRY(BoltProtocolV1_load_bookmark(connection, bookmark));
-        return BOLT_SUCCESS;
-    }
-    default:
-        return BOLT_PROTOCOL_UNSUPPORTED;
-    }
+    TRY(connection->protocol->set_begin_tx_timeout(connection, timeout));
+    return BOLT_SUCCESS;
 }
 
-int BoltConnection_load_begin_request(struct BoltConnection* connection)
+int BoltConnection_set_begin_tx_metadata(struct BoltConnection* connection, struct BoltValue* metadata)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        TRY(BoltProtocolV1_load_begin_request(connection));
-        return BOLT_SUCCESS;
-    }
-    default:
-        return BOLT_PROTOCOL_UNSUPPORTED;
-    }
+    TRY(connection->protocol->set_begin_tx_metadata(connection, metadata));
+    return BOLT_SUCCESS;
+}
+
+int BoltConnection_load_begin_tx_request(struct BoltConnection* connection)
+{
+    TRY(connection->protocol->load_begin_tx(connection));
+    return BOLT_SUCCESS;
 }
 
 int BoltConnection_load_commit_request(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        TRY(BoltProtocolV1_load_commit_request(connection));
-        return BOLT_SUCCESS;
-    }
-    default:
-        return BOLT_PROTOCOL_UNSUPPORTED;
-    }
+    TRY(connection->protocol->load_commit_tx(connection));
+    return BOLT_SUCCESS;
 }
 
 int BoltConnection_load_rollback_request(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        TRY(BoltProtocolV1_load_rollback_request(connection));
-        return BOLT_SUCCESS;
-    }
-    default:
-        return BOLT_PROTOCOL_UNSUPPORTED;
-    }
+    TRY(connection->protocol->load_rollback_tx(connection));
+    return BOLT_SUCCESS;
+}
+
+int BoltConnection_clear_run(struct BoltConnection* connection)
+{
+    TRY(connection->protocol->clear_run(connection));
+    return BOLT_SUCCESS;
+}
+
+int
+BoltConnection_set_run_cypher(struct BoltConnection* connection, const char* cypher, const size_t cypher_size,
+        int32_t n_parameter)
+{
+    TRY(connection->protocol->set_run_cypher(connection, cypher, cypher_size, n_parameter));
+    return BOLT_SUCCESS;
+}
+
+struct BoltValue*
+BoltConnection_set_run_cypher_parameter(struct BoltConnection* connection, int32_t index, const char* name,
+        size_t name_size)
+{
+    return connection->protocol->set_run_cypher_parameter(connection, index, name, name_size);
+}
+
+int BoltConnection_set_run_bookmark(struct BoltConnection* connection, struct BoltValue* bookmark_list)
+{
+    TRY(connection->protocol->set_run_bookmark(connection, bookmark_list));
+    return BOLT_SUCCESS;
+}
+
+int BoltConnection_set_run_tx_timeout(struct BoltConnection* connection, int32_t timeout)
+{
+    TRY(connection->protocol->set_run_tx_timeout(connection, timeout));
+    return BOLT_SUCCESS;
+}
+
+int BoltConnection_set_run_tx_metadata(struct BoltConnection* connection, struct BoltValue* metadata)
+{
+    TRY(connection->protocol->set_run_tx_metadata(connection, metadata));
+    return BOLT_SUCCESS;
 }
 
 int BoltConnection_load_run_request(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        TRY(BoltProtocolV1_load_run_request(connection));
-        return BOLT_SUCCESS;
-    }
-    default:
-        return BOLT_PROTOCOL_UNSUPPORTED;
-    }
+    TRY(connection->protocol->load_run(connection));
+    return BOLT_SUCCESS;
 }
 
 int BoltConnection_load_discard_request(struct BoltConnection* connection, int32_t n)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        if (n>=0) {
-            return BOLT_PROTOCOL_VIOLATION;
-        }
-        else {
-            struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-            TRY(BoltProtocolV1_load_message(connection, state->discard_request, 0));
-            return BOLT_SUCCESS;
-        }
-    }
-    default:
-        return BOLT_PROTOCOL_UNSUPPORTED;
-    }
+    TRY(connection->protocol->load_discard(connection, n));
+    return BOLT_SUCCESS;
 }
 
 int BoltConnection_load_pull_request(struct BoltConnection* connection, int32_t n)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        TRY(BoltProtocolV1_load_pull_request(connection, n));
-        return BOLT_SUCCESS;
-    }
-    default:
-        return BOLT_PROTOCOL_UNSUPPORTED;
-    }
+    TRY(connection->protocol->load_pull(connection, n));
+    return BOLT_SUCCESS;
 }
 
 int BoltConnection_load_reset_request(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        TRY(BoltProtocolV1_load_reset_request(connection));
-        return BOLT_SUCCESS;
-    }
-    default:
-        return BOLT_PROTOCOL_UNSUPPORTED;
-    }
+    TRY(connection->protocol->load_reset(connection));
+    return BOLT_SUCCESS;
 }
 
-bolt_request_t BoltConnection_last_request(struct BoltConnection* connection)
+bolt_request BoltConnection_last_request(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-        if (state==NULL) {
-            return 0;
-        }
-        return state->next_request_id-1;
-    }
-    default: {
-        return 0;
-    }
-    }
+    return connection->protocol->last_request(connection);
 }
 
 char* BoltConnection_last_bookmark(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-        if (state==NULL) {
-            return NULL;
-        }
-        return state->last_bookmark;
-    }
-    default: {
-        return NULL;
-    }
-    }
+    return connection->protocol->last_bookmark(connection);
 }
 
-struct BoltValue* BoltConnection_fields(struct BoltConnection* connection)
+struct BoltValue* BoltConnection_field_names(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2:
-        return BoltProtocolV1_result_fields(connection);
-    default:
-        return NULL;
-    }
+    return connection->protocol->field_names(connection);
 }
 
 struct BoltValue* BoltConnection_metadata(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2:
-        return BoltProtocolV1_result_metadata(connection);
-    default:
-        return NULL;
-    }
+    return connection->protocol->metadata(connection);
 }
 
 struct BoltValue* BoltConnection_failure(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-        if (state==NULL) {
-            return NULL;
-        }
-
-        return state->failure_data;
-    }
-    default:
-        return NULL;
-    }
+    return connection->protocol->failure(connection);
 }
 
 char* BoltConnection_server(struct BoltConnection* connection)
 {
-    switch (connection->protocol_version) {
-    case 1:
-    case 2: {
-        struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-        if (state==NULL) {
-            return NULL;
-        }
-
-        return state->server;
-    }
-    default:
-        return NULL;
-    }
+    return connection->protocol->server(connection);
 }
