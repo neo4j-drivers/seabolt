@@ -29,16 +29,22 @@
 #include "bolt/connections.h"
 #include "protocol.h"
 
+#define BOLT_V1_INIT        0x01
+#define BOLT_V1_ACK_FAILURE 0x0E
+#define BOLT_V1_RESET       0x0F
+#define BOLT_V1_RUN         0x10
+#define BOLT_V1_DISCARD_ALL 0x2F
+#define BOLT_V1_PULL_ALL    0x3F
+
+#define BOLT_V1_NODE    'N'
+#define BOLT_V1_RELATIONSHIP 'R'
+#define BOLT_V1_UNBOUND_RELATIONSHIP 'r'
+#define BOLT_V1_PATH 'P'
+
 #define BOLT_V1_SUCCESS 0x70
 #define BOLT_V1_RECORD  0x71
 #define BOLT_V1_IGNORED 0x7E
 #define BOLT_V1_FAILURE 0x7F
-
-struct _run_request {
-    struct BoltMessage* request;
-    struct BoltValue* statement;
-    struct BoltValue* parameters;
-};
 
 struct BoltProtocolV1State {
     // These buffers exclude chunk headers.
@@ -60,10 +66,10 @@ struct BoltProtocolV1State {
     bolt_request response_counter;
     unsigned long long record_counter;
 
-    struct _run_request run;
-    struct _run_request begin;
-    struct _run_request commit;
-    struct _run_request rollback;
+    struct BoltMessage* run_request;
+    struct BoltMessage* begin_request;
+    struct BoltMessage* commit_request;
+    struct BoltMessage* rollback_request;
 
     struct BoltMessage* discard_request;
     struct BoltMessage* pull_request;
@@ -80,8 +86,10 @@ int BoltProtocolV1_check_writable_struct_signature(int16_t signature);
 
 const char* BoltProtocolV1_structure_name(int16_t code);
 
+struct BoltProtocolV1State* BoltProtocolV1_state(struct BoltConnection* connection);
+
 struct BoltProtocol* BoltProtocolV1_create_protocol();
 
-void BoltProtocolV1_destroy_protocol(struct BoltProtocol* state);
+void BoltProtocolV1_destroy_protocol(struct BoltProtocol* protocol);
 
 #endif // SEABOLT_PROTOCOL_V1

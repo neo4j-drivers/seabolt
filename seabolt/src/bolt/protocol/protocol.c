@@ -43,6 +43,15 @@ void BoltMessage_destroy(struct BoltMessage* message)
     BoltMem_deallocate(message, sizeof(struct BoltMessage));
 }
 
+struct BoltValue* BoltMessage_param(struct BoltMessage* message, int32_t index)
+{
+    if (index>=message->fields->size) {
+        return NULL;
+    }
+
+    return BoltList_value(message->fields, index);
+}
+
 int write_message(struct BoltMessage* message, check_struct_signature_func check_writable_struct,
         struct BoltBuffer* buffer, const struct BoltLog* log)
 {
@@ -56,7 +65,7 @@ int write_message(struct BoltMessage* message, check_struct_signature_func check
     return BOLT_PROTOCOL_UNSUPPORTED_TYPE;
 }
 
-int push_to_transmission(struct BoltBuffer* msg_buffer, struct BoltBuffer* tx_buffer)
+void push_to_transmission(struct BoltBuffer* msg_buffer, struct BoltBuffer* tx_buffer)
 {
     // loop through data, generate several chunks if it's larger than max chunk size
     int total_size = BoltBuffer_unloadable(msg_buffer);

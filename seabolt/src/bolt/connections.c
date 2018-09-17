@@ -27,6 +27,7 @@
 #include "protocol/protocol.h"
 #include "protocol/v1.h"
 #include "protocol/v2.h"
+#include "protocol/v3.h"
 #include "bolt/platform.h"
 #include <assert.h>
 
@@ -260,6 +261,9 @@ void _close(struct BoltConnection* connection)
     case 2:
         BoltProtocolV2_destroy_protocol(connection->protocol);
         break;
+    case 3:
+        BoltProtocolV3_destroy_protocol(connection->protocol);
+        break;
     default:
         break;
     }
@@ -415,6 +419,9 @@ int handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int32
     case 2:
         connection->protocol = BoltProtocolV2_create_protocol();
         return BOLT_SUCCESS;
+    case 3:
+        connection->protocol = BoltProtocolV3_create_protocol();
+        return BOLT_SUCCESS;
     default:
         _close(connection);
         return BOLT_PROTOCOL_UNSUPPORTED;
@@ -449,11 +456,11 @@ int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport tr
             if (connection->transport==BOLT_SECURE_SOCKET) {
                 const int secured = _secure(connection);
                 if (secured==0) {
-                    TRY(handshake_b(connection, 2, 1, 0, 0));
+                    TRY(handshake_b(connection, 3, 2, 1, 0));
                 }
             }
             else {
-                TRY(handshake_b(connection, 2, 1, 0, 0));
+                TRY(handshake_b(connection, 3, 2, 1, 0));
             }
 
             char resolved_host[MAX_IPADDR_LEN], resolved_port[6];
@@ -590,7 +597,8 @@ int BoltConnection_init(struct BoltConnection* connection, const char* user_agen
     BoltLog_info(connection->log, "Initialising connection");
     switch (connection->protocol_version) {
     case 1:
-    case 2: {
+    case 2:
+    case 3: {
         int code = connection->protocol->init(connection, user_agent, auth_token);
         switch (code) {
         case BOLT_V1_SUCCESS:

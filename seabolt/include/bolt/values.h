@@ -206,7 +206,7 @@ PUBLIC void BoltValue_format_as_String(struct BoltValue* value, const char* data
 
 PUBLIC char* BoltString_get(const struct BoltValue* value);
 
-PUBLIC int BoltString_equals(struct BoltValue* value, const char* data);
+PUBLIC int BoltString_equals(struct BoltValue* value, const char* data, const size_t data_size);
 
 PUBLIC void BoltValue_format_as_Dictionary(struct BoltValue* value, int32_t length);
 

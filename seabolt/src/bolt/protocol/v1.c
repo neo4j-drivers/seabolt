@@ -30,17 +30,18 @@
 #include "packstream.h"
 #include "v1.h"
 
-#define INIT        0x01
-#define ACK_FAILURE 0x0E
-#define RESET       0x0F
-#define RUN         0x10
-#define DISCARD_ALL 0x2F
-#define PULL_ALL    0x3F
-
-#define NODE    'N'
-#define RELATIONSHIP 'R'
-#define UNBOUND_RELATIONSHIP 'r'
-#define PATH 'P'
+#define BOOKMARKS_KEY "bookmarks"
+#define BOOKMARKS_KEY_SIZE 9
+#define BOOKMARK_KEY "bookmark"
+#define BOOKMARK_KEY_SIZE 8
+#define FIELDS_KEY "fields"
+#define FIELDS_KEY_SIZE 6
+#define SERVER_KEY "server"
+#define SERVER_KEY_SIZE 6
+#define FAILURE_CODE_KEY "code"
+#define FAILURE_CODE_KEY_SIZE 4
+#define FAILURE_MESSAGE_KEY "message"
+#define FAILURE_MESSAGE_KEY_SIZE 7
 
 #define INITIAL_TX_BUFFER_SIZE 8192
 #define INITIAL_RX_BUFFER_SIZE 8192
@@ -73,12 +74,12 @@ int BoltProtocolV1_compile_INIT(struct BoltMessage* message, const char* user_ag
     return BOLT_SUCCESS;
 }
 
-void compile_RUN(struct _run_request* run, int32_t n_parameters)
+struct BoltMessage* create_run_message(const char* statement, size_t statement_size, int32_t n_parameters)
 {
-    run->request = BoltMessage_create(RUN, 2);
-    run->statement = BoltList_value(run->request->fields, 0);
-    run->parameters = BoltList_value(run->request->fields, 1);
-    BoltValue_format_as_Dictionary(run->parameters, n_parameters);
+    struct BoltMessage* message = BoltMessage_create(BOLT_V1_RUN, 2);
+    BoltValue_format_as_String(BoltMessage_param(message, 0), statement, statement_size);
+    BoltValue_format_as_Dictionary(BoltMessage_param(message, 1), n_parameters);
+    return message;
 }
 
 int BoltProtocolV1_check_readable_struct_signature(int16_t signature)
@@ -88,10 +89,10 @@ int BoltProtocolV1_check_readable_struct_signature(int16_t signature)
     case BOLT_V1_FAILURE:
     case BOLT_V1_IGNORED:
     case BOLT_V1_RECORD:
-    case NODE:
-    case RELATIONSHIP:
-    case UNBOUND_RELATIONSHIP:
-    case PATH:
+    case BOLT_V1_NODE:
+    case BOLT_V1_RELATIONSHIP:
+    case BOLT_V1_UNBOUND_RELATIONSHIP:
+    case BOLT_V1_PATH:
         return 1;
     }
 
@@ -101,12 +102,12 @@ int BoltProtocolV1_check_readable_struct_signature(int16_t signature)
 int BoltProtocolV1_check_writable_struct_signature(int16_t signature)
 {
     switch (signature) {
-    case INIT:
-    case ACK_FAILURE:
-    case RESET:
-    case RUN:
-    case DISCARD_ALL:
-    case PULL_ALL:
+    case BOLT_V1_INIT:
+    case BOLT_V1_ACK_FAILURE:
+    case BOLT_V1_RESET:
+    case BOLT_V1_RUN:
+    case BOLT_V1_DISCARD_ALL:
+    case BOLT_V1_PULL_ALL:
         return 1;
     }
 
@@ -116,13 +117,13 @@ int BoltProtocolV1_check_writable_struct_signature(int16_t signature)
 const char* BoltProtocolV1_structure_name(int16_t code)
 {
     switch (code) {
-    case 'N':
+    case BOLT_V1_NODE:
         return "Node";
-    case 'R':
+    case BOLT_V1_RELATIONSHIP:
         return "Relationship";
-    case 'r':
+    case BOLT_V1_UNBOUND_RELATIONSHIP:
         return "UnboundRelationship";
-    case 'P':
+    case BOLT_V1_PATH:
         return "Path";
     default:
         return "?";
@@ -132,28 +133,28 @@ const char* BoltProtocolV1_structure_name(int16_t code)
 const char* BoltProtocolV1_message_name(int16_t code)
 {
     switch (code) {
-    case 0x01:
+    case BOLT_V1_INIT:
         return "INIT";
-    case 0x0E:
+    case BOLT_V1_ACK_FAILURE:
         return "ACK_FAILURE";
-    case 0x0F:
+    case BOLT_V1_RESET:
         return "RESET";
-    case 0x10:
+    case BOLT_V1_RUN:
         return "RUN";
-    case 0x2F:
+    case BOLT_V1_DISCARD_ALL:
         return "DISCARD_ALL";
-    case 0x3F:
+    case BOLT_V1_PULL_ALL:
         return "PULL_ALL";
-    case 0x70:
+    case BOLT_V1_SUCCESS:
         return "SUCCESS";
-    case 0x71:
+    case BOLT_V1_RECORD:
         return "RECORD";
-    case 0x7E:
+    case BOLT_V1_IGNORED:
         return "IGNORED";
-    case 0x7F:
+    case BOLT_V1_FAILURE:
         return "FAILURE";
     default:
-        return NULL;
+        return "?";
     }
 }
 
@@ -178,12 +179,6 @@ void clear_failure_data(struct BoltProtocolV1State* state)
         BoltValue_destroy(state->failure_data);
         state->failure_data = NULL;
     }
-}
-
-void BoltProtocolV1_clear_failure(struct BoltConnection* connection)
-{
-    struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    clear_failure_data(state);
 }
 
 int BoltProtocolV1_load_message(struct BoltConnection* connection, struct BoltMessage* message, int quiet)
@@ -212,7 +207,7 @@ int BoltProtocolV1_load_message(struct BoltConnection* connection, struct BoltMe
 
 int BoltProtocolV1_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token)
 {
-    struct BoltMessage* init = BoltMessage_create(INIT, 2);
+    struct BoltMessage* init = BoltMessage_create(BOLT_V1_INIT, 2);
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     TRY(BoltProtocolV1_compile_INIT(init, user_agent, auth_token, 1));
     BoltLog_message(connection->log, "C", state->next_request_id, init->code, init->fields,
@@ -254,15 +249,16 @@ int BoltProtocolV1_load_reset_request(struct BoltConnection* connection)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     TRY(BoltProtocolV1_load_message(connection, state->reset_request, 0));
-    BoltProtocolV1_clear_failure(connection);
+    clear_failure_data(state);
     return BOLT_SUCCESS;
 }
 
 int BoltProtocolV1_clear_load_run_request(struct BoltConnection* connection)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    BoltValue_format_as_Null(state->run.statement);
-    BoltValue_format_as_Dictionary(state->run.parameters, 0);
+    BoltValue_format_as_String(BoltMessage_param(state->run_request, 0), "", 0);
+    BoltValue_format_as_Dictionary(BoltMessage_param(state->run_request, 1), 0);
+    return BOLT_SUCCESS;
 }
 
 int BoltProtocolV1_set_run_cypher(struct BoltConnection* connection, const char* cypher, const size_t cypher_size,
@@ -270,8 +266,10 @@ int BoltProtocolV1_set_run_cypher(struct BoltConnection* connection, const char*
 {
     if (cypher_size<=INT32_MAX) {
         struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-        BoltValue_format_as_String(state->run.statement, cypher, (int32_t) (cypher_size));
-        BoltValue_format_as_Dictionary(state->run.parameters, n_parameter);
+        struct BoltValue* statement = BoltMessage_param(state->run_request, 0);
+        struct BoltValue* params = BoltMessage_param(state->run_request, 1);
+        BoltValue_format_as_String(statement, cypher, (int32_t) (cypher_size));
+        BoltValue_format_as_Dictionary(params, n_parameter);
         return BOLT_SUCCESS;
     }
 
@@ -282,29 +280,33 @@ struct BoltValue* BoltProtocolV1_set_run_cypher_parameter(struct BoltConnection*
         const char* name, size_t name_size)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    BoltDictionary_set_key(state->run.parameters, index, name, name_size);
-    return BoltDictionary_value(state->run.parameters, index);
+    struct BoltValue* params = BoltMessage_param(state->run_request, 1);
+    BoltDictionary_set_key(params, index, name, name_size);
+    return BoltDictionary_value(params, index);
 }
 
 int BoltProtocolV1_load_run_request(struct BoltConnection* connection)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    TRY(BoltProtocolV1_load_message(connection, state->run.request, 0));
+    TRY(BoltProtocolV1_load_message(connection, state->run_request, 0));
     return BOLT_SUCCESS;
 }
 
 int BoltProtocolV1_clear_load_begin_tx_request(struct BoltConnection* connection)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    BoltValue_format_as_Dictionary(state->begin.parameters, 0);
+    struct BoltValue* params = BoltMessage_param(state->begin_request, 1);
+    BoltValue_format_as_Dictionary(params, 0);
+    return BOLT_SUCCESS;
 }
 
 int BoltProtocolV1_set_begin_tx_bookmark(struct BoltConnection* connection, struct BoltValue* bookmark_list)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
+    struct BoltValue* params = BoltMessage_param(state->begin_request, 1);
 
     if (bookmark_list==NULL) {
-        BoltValue_format_as_Dictionary(state->begin.parameters, 0);
+        BoltValue_format_as_Dictionary(params, 0);
         return BOLT_SUCCESS;
     }
 
@@ -325,15 +327,15 @@ int BoltProtocolV1_set_begin_tx_bookmark(struct BoltConnection* connection, stru
     }
 
     struct BoltValue* bookmarks;
-    if (state->begin.parameters->size==0) {
-        BoltValue_format_as_Dictionary(state->begin.parameters, 1);
-        if (BoltDictionary_set_key(state->begin.parameters, 0, "bookmarks", 9)) {
+    if (params->size==0) {
+        BoltValue_format_as_Dictionary(params, 1);
+        if (BoltDictionary_set_key(params, 0, BOOKMARK_KEY, BOOKMARK_KEY_SIZE)) {
             return BOLT_PROTOCOL_VIOLATION;
         }
-        bookmarks = BoltDictionary_value(state->begin.parameters, 0);
+        bookmarks = BoltDictionary_value(params, 0);
     }
     else {
-        bookmarks = BoltDictionary_value(state->begin.parameters, 0);
+        bookmarks = BoltDictionary_value(params, 0);
     }
 
     BoltValue_copy(bookmarks, bookmark_list);
@@ -344,7 +346,7 @@ int BoltProtocolV1_set_begin_tx_bookmark(struct BoltConnection* connection, stru
 int BoltProtocolV1_load_begin_request(struct BoltConnection* connection)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    TRY(BoltProtocolV1_load_message(connection, state->begin.request, 0));
+    TRY(BoltProtocolV1_load_message(connection, state->begin_request, 0));
     TRY(BoltProtocolV1_load_message(connection, state->discard_request, 0));
     return BOLT_SUCCESS;
 }
@@ -352,7 +354,7 @@ int BoltProtocolV1_load_begin_request(struct BoltConnection* connection)
 int BoltProtocolV1_load_commit_request(struct BoltConnection* connection)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    TRY(BoltProtocolV1_load_message(connection, state->commit.request, 0));
+    TRY(BoltProtocolV1_load_message(connection, state->commit_request, 0));
     TRY(BoltProtocolV1_load_message(connection, state->discard_request, 0));
     return BOLT_SUCCESS;
 }
@@ -360,7 +362,7 @@ int BoltProtocolV1_load_commit_request(struct BoltConnection* connection)
 int BoltProtocolV1_load_rollback_request(struct BoltConnection* connection)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    TRY(BoltProtocolV1_load_message(connection, state->rollback.request, 0));
+    TRY(BoltProtocolV1_load_message(connection, state->rollback_request, 0));
     TRY(BoltProtocolV1_load_message(connection, state->discard_request, 0));
     return BOLT_SUCCESS;
 }
@@ -472,19 +474,16 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
     state->next_request_id = 0;
     state->response_counter = 0;
 
-    compile_RUN(&state->run, 0);
-    compile_RUN(&state->begin, 0);
-    BoltValue_format_as_String(state->begin.statement, "BEGIN", 5);
-    compile_RUN(&state->commit, 0);
-    BoltValue_format_as_String(state->commit.statement, "COMMIT", 6);
-    compile_RUN(&state->rollback, 0);
-    BoltValue_format_as_String(state->rollback.statement, "ROLLBACK", 8);
+    state->run_request = create_run_message("", 0, 0);
+    state->begin_request = create_run_message("BEGIN", 5, 0);
+    state->commit_request = create_run_message("COMMIT", 6, 0);
+    state->rollback_request = create_run_message("ROLLBACK", 8, 0);
 
-    state->discard_request = BoltMessage_create(DISCARD_ALL, 0);
+    state->discard_request = BoltMessage_create(BOLT_V1_DISCARD_ALL, 0);
 
-    state->pull_request = BoltMessage_create(PULL_ALL, 0);
+    state->pull_request = BoltMessage_create(BOLT_V1_PULL_ALL, 0);
 
-    state->reset_request = BoltMessage_create(RESET, 0);
+    state->reset_request = BoltMessage_create(BOLT_V1_RESET, 0);
 
     state->data_type = BOLT_V1_RECORD;
     state->data = BoltValue_create();
@@ -498,10 +497,10 @@ void BoltProtocolV1_destroy_state(struct BoltProtocolV1State* state)
     BoltBuffer_destroy(state->tx_buffer);
     BoltBuffer_destroy(state->rx_buffer);
 
-    BoltMessage_destroy(state->run.request);
-    BoltMessage_destroy(state->begin.request);
-    BoltMessage_destroy(state->commit.request);
-    BoltMessage_destroy(state->rollback.request);
+    BoltMessage_destroy(state->run_request);
+    BoltMessage_destroy(state->begin_request);
+    BoltMessage_destroy(state->commit_request);
+    BoltMessage_destroy(state->rollback_request);
 
     BoltMessage_destroy(state->discard_request);
     BoltMessage_destroy(state->pull_request);
@@ -572,7 +571,7 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
         for (int32_t i = 0; i<metadata->size; i++) {
             struct BoltValue* key = BoltDictionary_key(metadata, i);
 
-            if (BoltString_equals(key, "bookmark")) {
+            if (BoltString_equals(key, BOOKMARK_KEY, BOOKMARK_KEY_SIZE)) {
                 struct BoltValue* value = BoltDictionary_value(metadata, i);
                 switch (BoltValue_type(value)) {
                 case BOLT_STRING: {
@@ -585,7 +584,7 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
                     break;
                 }
             }
-            else if (BoltString_equals(key, "fields")) {
+            else if (BoltString_equals(key, FIELDS_KEY, FIELDS_KEY_SIZE)) {
                 struct BoltValue* value = BoltDictionary_value(metadata, i);
                 switch (BoltValue_type(value)) {
                 case BOLT_LIST: {
@@ -610,7 +609,7 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
                     break;
                 }
             }
-            else if (BoltString_equals(key, "server")) {
+            else if (BoltString_equals(key, SERVER_KEY, SERVER_KEY_SIZE)) {
                 struct BoltValue* value = BoltDictionary_value(metadata, i);
                 switch (BoltValue_type(value)) {
                 case BOLT_STRING: {
@@ -623,7 +622,8 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
                     break;
                 }
             }
-            else if (BoltString_equals(key, "code") && state->data_type==BOLT_V1_FAILURE) {
+            else if (BoltString_equals(key, FAILURE_CODE_KEY, FAILURE_CODE_KEY_SIZE)
+                    && state->data_type==BOLT_V1_FAILURE) {
                 struct BoltValue* value = BoltDictionary_value(metadata, i);
                 switch (BoltValue_type(value)) {
                 case BOLT_STRING: {
@@ -641,7 +641,8 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
                     break;
                 }
             }
-            else if (BoltString_equals(key, "message") && state->data_type==BOLT_V1_FAILURE) {
+            else if (BoltString_equals(key, FAILURE_MESSAGE_KEY, FAILURE_MESSAGE_KEY_SIZE)
+                    && state->data_type==BOLT_V1_FAILURE) {
                 struct BoltValue* value = BoltDictionary_value(metadata, i);
                 switch (BoltValue_type(value)) {
                 case BOLT_STRING: {

@@ -356,10 +356,10 @@ char* BoltString_get(const struct BoltValue* value)
            (char*) value->data.as_char : value->data.extended.as_char;
 }
 
-int BoltString_equals(struct BoltValue* value, const char* data)
+int BoltString_equals(struct BoltValue* value, const char* data, const size_t data_size)
 {
     if (BoltValue_type(value)==BOLT_STRING) {
-        const int32_t length = (int32_t) strlen(data);
+        const int32_t length = (int32_t) data_size;
         if (value->size!=length) {
             return 0;
         }

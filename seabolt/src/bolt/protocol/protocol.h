@@ -145,10 +145,12 @@ struct BoltMessage* BoltMessage_create(int8_t code, int32_t n_fields);
 
 void BoltMessage_destroy(struct BoltMessage* message);
 
+struct BoltValue* BoltMessage_param(struct BoltMessage* message, int32_t index);
+
 int
 write_message(struct BoltMessage* message, check_struct_signature_func check_writable, struct BoltBuffer* buffer,
         const struct BoltLog* log);
 
-int push_to_transmission(struct BoltBuffer* msg_buffer, struct BoltBuffer* tx_buffer);
+void push_to_transmission(struct BoltBuffer* msg_buffer, struct BoltBuffer* tx_buffer);
 
 #endif //SEABOLT_ALL_PROTOCOL_H
