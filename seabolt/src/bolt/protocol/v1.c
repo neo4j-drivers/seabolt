@@ -736,9 +736,10 @@ int BoltProtocolV1_set_tx_timeout_unsupported(struct BoltConnection* connection,
     return BOLT_PROTOCOL_UNSUPPORTED;
 }
 
-int BoltProtocolV1_set_tx_bookmark_unsupported(struct BoltConnection* connection, struct BoltValue* value)
+int BoltProtocolV1_set_tx_bookmark_ignore(struct BoltConnection* connection, struct BoltValue* value)
 {
-    return BOLT_PROTOCOL_UNSUPPORTED;
+    // we will ignore bookmarks with this version of the protocol
+    return BOLT_SUCCESS;
 }
 
 int BoltProtocolV1_set_tx_metadata_unsupported(struct BoltConnection* connection, struct BoltValue* value)
@@ -769,7 +770,7 @@ struct BoltProtocol* BoltProtocolV1_create_protocol()
     protocol->clear_run = &BoltProtocolV1_clear_load_run_request;
     protocol->set_run_cypher = &BoltProtocolV1_set_run_cypher;
     protocol->set_run_cypher_parameter = &BoltProtocolV1_set_run_cypher_parameter;
-    protocol->set_run_bookmark = &BoltProtocolV1_set_tx_bookmark_unsupported;
+    protocol->set_run_bookmark = &BoltProtocolV1_set_tx_bookmark_ignore;
     protocol->set_run_tx_timeout = &BoltProtocolV1_set_tx_timeout_unsupported;
     protocol->set_run_tx_metadata = &BoltProtocolV1_set_tx_metadata_unsupported;
     protocol->load_run = &BoltProtocolV1_load_run_request;
