@@ -109,12 +109,15 @@ void close_pool_entry(struct BoltDirectPool* pool, int index)
 {
     struct BoltConnection* connection = &pool->connections[index];
     if (connection->status!=BOLT_DISCONNECTED) {
-        struct timespec now;
-        struct timespec diff;
-        BoltUtil_get_time(&now);
-        BoltUtil_diff_time(&diff, &now, &connection->metrics.time_opened);
-        BoltLog_info(pool->config->log, "Connection alive for %lds %09ldns", (long) (diff.tv_sec),
-                diff.tv_nsec);
+        if (connection->metrics.time_opened.tv_sec!=0 || connection->metrics.time_opened.tv_nsec!=0) {
+            struct timespec now;
+            struct timespec diff;
+            BoltUtil_get_time(&now);
+            BoltUtil_diff_time(&diff, &now, &connection->metrics.time_opened);
+            BoltLog_info(pool->config->log, "Connection alive for %lds %09ldns", (long) (diff.tv_sec),
+                    diff.tv_nsec);
+        }
+
         BoltConnection_close(connection);
     }
 }

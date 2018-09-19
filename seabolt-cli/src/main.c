@@ -218,6 +218,7 @@ void app_connect(struct Application* app)
     struct BoltConnectionResult result = BoltConnector_acquire(app->connector, app->access_mode);
     if (result.connection==NULL) {
         fprintf(stderr, "FATAL: Failed to connect\n");
+        app_destroy(app);
         exit(EXIT_FAILURE);
     }
     app->connection = result.connection;

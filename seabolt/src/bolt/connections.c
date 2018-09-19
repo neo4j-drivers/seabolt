@@ -249,26 +249,28 @@ void _close(struct BoltConnection* connection)
 {
     BoltLog_info(connection->log, "Closing connection");
 
-    int status = connection->protocol->goodbye(connection);
-    if (status!=BOLT_SUCCESS) {
-        BoltLog_warning(connection->log, "Unable to complete GOODBYE, status is %d", status);
-    }
+    if (connection->protocol!=NULL) {
+        int status = connection->protocol->goodbye(connection);
+        if (status!=BOLT_SUCCESS) {
+            BoltLog_warning(connection->log, "Unable to complete GOODBYE, status is %d", status);
+        }
 
-    switch (connection->protocol_version) {
-    case 1:
-        BoltProtocolV1_destroy_protocol(connection->protocol);
-        break;
-    case 2:
-        BoltProtocolV2_destroy_protocol(connection->protocol);
-        break;
-    case 3:
-        BoltProtocolV3_destroy_protocol(connection->protocol);
-        break;
-    default:
-        break;
+        switch (connection->protocol_version) {
+        case 1:
+            BoltProtocolV1_destroy_protocol(connection->protocol);
+            break;
+        case 2:
+            BoltProtocolV2_destroy_protocol(connection->protocol);
+            break;
+        case 3:
+            BoltProtocolV3_destroy_protocol(connection->protocol);
+            break;
+        default:
+            break;
+        }
+        connection->protocol = NULL;
+        connection->protocol_version = 0;
     }
-    connection->protocol = NULL;
-    connection->protocol_version = 0;
 
     switch (connection->transport) {
     case BOLT_SOCKET: {
@@ -476,7 +478,7 @@ int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport tr
         _set_status(connection, BOLT_DEFUNCT, BOLT_NO_VALID_ADDRESS);
         return -1;
     }
-    return 0;
+    return connection->status==BOLT_READY ? BOLT_SUCCESS : connection->error;
 }
 
 void BoltConnection_close(struct BoltConnection* connection)
