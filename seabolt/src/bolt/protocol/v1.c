@@ -329,7 +329,7 @@ int BoltProtocolV1_set_begin_tx_bookmark(struct BoltConnection* connection, stru
     struct BoltValue* bookmarks;
     if (params->size==0) {
         BoltValue_format_as_Dictionary(params, 1);
-        if (BoltDictionary_set_key(params, 0, BOOKMARK_KEY, BOOKMARK_KEY_SIZE)) {
+        if (BoltDictionary_set_key(params, 0, BOOKMARKS_KEY, BOOKMARKS_KEY_SIZE)) {
             return BOLT_PROTOCOL_VIOLATION;
         }
         bookmarks = BoltDictionary_value(params, 0);
