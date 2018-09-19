@@ -123,8 +123,8 @@ void _ensure_failure_data(struct BoltProtocolV3State* state)
     if (state->failure_data==NULL) {
         state->failure_data = BoltValue_create();
         BoltValue_format_as_Dictionary(state->failure_data, 2);
-        BoltDictionary_set_key(state->failure_data, 0, "code", strlen("code"));
-        BoltDictionary_set_key(state->failure_data, 1, "message", strlen("message"));
+        BoltDictionary_set_key(state->failure_data, 0, FAILURE_CODE_KEY, FAILURE_CODE_KEY_SIZE);
+        BoltDictionary_set_key(state->failure_data, 1, FAILURE_MESSAGE_KEY, FAILURE_MESSAGE_KEY_SIZE);
     }
 }
 
@@ -521,7 +521,7 @@ int _set_tx_metadata(struct BoltValue* metadata, struct BoltValue* tx_metadata)
     if (tx_metadata_value==NULL) {
         int32_t index = metadata->size;
         BoltValue_format_as_Dictionary(metadata, metadata->size+1);
-        BoltDictionary_set_key(metadata, index, TX_METADATA_KEY, TX_TIMEOUT_KEY_SIZE);
+        BoltDictionary_set_key(metadata, index, TX_METADATA_KEY, TX_METADATA_KEY_SIZE);
         tx_metadata_value = BoltDictionary_value(metadata, index);
     }
 
