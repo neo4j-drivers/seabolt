@@ -631,7 +631,7 @@ int BoltConnection_set_begin_tx_bookmark(struct BoltConnection* connection, stru
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_set_begin_tx_timeout(struct BoltConnection* connection, int32_t timeout)
+int BoltConnection_set_begin_tx_timeout(struct BoltConnection* connection, int64_t timeout)
 {
     TRY(connection->protocol->set_begin_tx_timeout(connection, timeout));
     return BOLT_SUCCESS;
@@ -688,7 +688,7 @@ int BoltConnection_set_run_bookmark(struct BoltConnection* connection, struct Bo
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_set_run_tx_timeout(struct BoltConnection* connection, int32_t timeout)
+int BoltConnection_set_run_tx_timeout(struct BoltConnection* connection, int64_t timeout)
 {
     TRY(connection->protocol->set_run_tx_timeout(connection, timeout));
     return BOLT_SUCCESS;

@@ -298,7 +298,7 @@ PUBLIC int BoltConnection_clear_begin_tx(struct BoltConnection* connection);
 
 PUBLIC int BoltConnection_set_begin_tx_bookmark(struct BoltConnection* connection, struct BoltValue* bookmark_list);
 
-PUBLIC int BoltConnection_set_begin_tx_timeout(struct BoltConnection* connection, int32_t timeout);
+PUBLIC int BoltConnection_set_begin_tx_timeout(struct BoltConnection* connection, int64_t timeout);
 
 PUBLIC int BoltConnection_set_begin_tx_metadata(struct BoltConnection* connection, struct BoltValue* metadata);
 
@@ -336,7 +336,7 @@ PUBLIC int BoltConnection_clear_run(struct BoltConnection* connection);
 
 PUBLIC int BoltConnection_set_run_bookmark(struct BoltConnection* connection, struct BoltValue* bookmark_list);
 
-PUBLIC int BoltConnection_set_run_tx_timeout(struct BoltConnection* connection, int32_t timeout);
+PUBLIC int BoltConnection_set_run_tx_timeout(struct BoltConnection* connection, int64_t timeout);
 
 PUBLIC int BoltConnection_set_run_tx_metadata(struct BoltConnection* connection, struct BoltValue* metadata);
 

@@ -469,7 +469,7 @@ int _set_tx_bookmark(struct BoltValue* metadata, struct BoltValue* bookmark_list
     return BOLT_SUCCESS;
 }
 
-int _set_tx_timeout(struct BoltValue* metadata, int32_t tx_timeout)
+int _set_tx_timeout(struct BoltValue* metadata, int64_t tx_timeout)
 {
     struct BoltValue* tx_timeout_value = BoltDictionary_value_by_key(metadata, TX_TIMEOUT_KEY, TX_TIMEOUT_KEY_SIZE);
 
@@ -537,7 +537,7 @@ int BoltProtocolV3_set_begin_tx_bookmark(struct BoltConnection* connection, stru
     return _set_tx_bookmark(metadata, bookmark_list, connection->log, connection->protocol->structure_name);
 }
 
-int BoltProtocolV3_set_begin_tx_timeout(struct BoltConnection* connection, int32_t tx_timeout)
+int BoltProtocolV3_set_begin_tx_timeout(struct BoltConnection* connection, int64_t tx_timeout)
 {
     struct BoltProtocolV3State* state = BoltProtocolV3_state(connection);
     struct BoltValue* metadata = BoltMessage_param(state->begin_request, 0);
@@ -592,7 +592,7 @@ int BoltProtocolV3_set_run_tx_metadata(struct BoltConnection* connection, struct
     return _set_tx_metadata(metadata, tx_metadata);
 }
 
-int BoltProtocolV3_set_run_tx_timeout(struct BoltConnection* connection, int32_t tx_timeout)
+int BoltProtocolV3_set_run_tx_timeout(struct BoltConnection* connection, int64_t tx_timeout)
 {
     struct BoltProtocolV3State* state = BoltProtocolV3_state(connection);
     struct BoltValue* metadata = BoltMessage_param(state->run_request, 2);

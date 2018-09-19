@@ -51,7 +51,7 @@ typedef int (* set_begin_tx_bookmark_func)(struct BoltConnection*, struct BoltVa
 
 typedef int (* set_begin_tx_metadata_func)(struct BoltConnection*, struct BoltValue*);
 
-typedef int (* set_begin_tx_timeout_func)(struct BoltConnection*, int32_t);
+typedef int (* set_begin_tx_timeout_func)(struct BoltConnection*, int64_t);
 
 typedef int (* load_begin_tx_func)(struct BoltConnection*);
 
@@ -65,7 +65,7 @@ typedef int (* set_run_bookmark_func)(struct BoltConnection*, struct BoltValue*)
 
 typedef int (* set_run_tx_metadata_func)(struct BoltConnection*, struct BoltValue*);
 
-typedef int (* set_run_tx_timeout_func)(struct BoltConnection*, int32_t);
+typedef int (* set_run_tx_timeout_func)(struct BoltConnection*, int64_t);
 
 typedef int (* set_run_cypher_func)(struct BoltConnection*, const char*, const size_t, int32_t);
 

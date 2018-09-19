@@ -731,7 +731,7 @@ int BoltProtocolV1_fetch(struct BoltConnection* connection, bolt_request request
     return 1;
 }
 
-int BoltProtocolV1_set_tx_timeout_unsupported(struct BoltConnection* connection, int32_t n)
+int BoltProtocolV1_set_tx_timeout_unsupported(struct BoltConnection* connection, int64_t n)
 {
     return BOLT_PROTOCOL_UNSUPPORTED;
 }
