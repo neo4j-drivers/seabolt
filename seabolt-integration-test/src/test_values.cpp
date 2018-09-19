@@ -430,7 +430,7 @@ SCENARIO("Test structure in result", "[integration][ipv6][secure]")
     GIVEN("an open and initialised connection") {
         struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
-            BoltConnection_load_begin_tx_request(connection);
+            BoltConnection_load_begin_request(connection);
             const char* cypher = "CREATE (a:Person {name:'Alice'}) RETURN a";
             BoltConnection_set_run_cypher(connection, cypher, strlen(cypher), 0);
             BoltConnection_load_run_request(connection);

@@ -328,7 +328,7 @@ SCENARIO("Test transactions", "[integration][ipv6][secure]")
     GIVEN("an open and initialised connection") {
         struct BoltConnection* connection = bolt_open_init_default();
         WHEN("successfully executed Cypher") {
-            BoltConnection_load_begin_tx_request(connection);
+            BoltConnection_load_begin_request(connection);
             bolt_request begin = BoltConnection_last_request(connection);
 
             const char* cypher = "RETURN 1";
@@ -399,7 +399,8 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 struct BoltValue* message = BoltDictionary_value_by_key(failure_data, "message", strlen("message"));
                 REQUIRE(code!=nullptr);
                 REQUIRE(BoltValue_type(code)==BOLT_STRING);
-                REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError"));
+                REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError",
+                        strlen("Neo.ClientError.Statement.SyntaxError")));
                 REQUIRE(message!=nullptr);
                 REQUIRE(BoltValue_type(message)==BOLT_STRING);
             }
@@ -419,7 +420,8 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 struct BoltValue* message = BoltDictionary_value_by_key(failure_data, "message", strlen("message"));
                 REQUIRE(code!=nullptr);
                 REQUIRE(BoltValue_type(code)==BOLT_STRING);
-                REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError"));
+                REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError",
+                        strlen("Neo.ClientError.Statement.SyntaxError")));
                 REQUIRE(message!=nullptr);
                 REQUIRE(BoltValue_type(message)==BOLT_STRING);
             }
@@ -445,7 +447,8 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 struct BoltValue* message = BoltDictionary_value_by_key(failure_data, "message", strlen("message"));
                 REQUIRE(code!=nullptr);
                 REQUIRE(BoltValue_type(code)==BOLT_STRING);
-                REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError"));
+                REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError",
+                        strlen("Neo.ClientError.Statement.SyntaxError")));
                 REQUIRE(message!=nullptr);
                 REQUIRE(BoltValue_type(message)==BOLT_STRING);
             }
