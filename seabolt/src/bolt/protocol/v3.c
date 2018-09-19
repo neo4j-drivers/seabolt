@@ -410,6 +410,13 @@ int BoltProtocolV3_hello(struct BoltConnection* connection, const char* user_age
 
 int BoltProtocolV3_goodbye(struct BoltConnection* connection)
 {
+    struct BoltMessage* goodbye = BoltMessage_create(BOLT_V3_GOODBYE, 0);
+    TRY(BoltProtocolV3_load_message(connection, goodbye, 0));
+    BoltMessage_destroy(goodbye);
+    int status = BoltConnection_send(connection);
+    if (status!=BOLT_SUCCESS) {
+        BoltLog_warning(connection->log, "unable to complete GOODBYE call, returned code is %x", status);
+    }
     return BOLT_SUCCESS;
 }
 
