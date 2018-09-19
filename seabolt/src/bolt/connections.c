@@ -483,6 +483,9 @@ int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport tr
 
 void BoltConnection_close(struct BoltConnection* connection)
 {
+    if (connection->status!=BOLT_DISCONNECTED) {
+        _close(connection);
+    }
     if (connection->rx_buffer!=NULL) {
         BoltBuffer_destroy(connection->rx_buffer);
         connection->rx_buffer = NULL;
@@ -490,9 +493,6 @@ void BoltConnection_close(struct BoltConnection* connection)
     if (connection->tx_buffer!=NULL) {
         BoltBuffer_destroy(connection->tx_buffer);
         connection->tx_buffer = NULL;
-    }
-    if (connection->status!=BOLT_DISCONNECTED) {
-        _close(connection);
     }
     if (connection->address!=NULL) {
         BoltAddress_destroy((struct BoltAddress*) connection->address);
