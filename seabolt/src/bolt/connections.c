@@ -621,13 +621,13 @@ int BoltConnection_init(struct BoltConnection* connection, const char* user_agen
     }
 }
 
-int BoltConnection_clear_begin_tx(struct BoltConnection* connection)
+int BoltConnection_clear_begin(struct BoltConnection* connection)
 {
     TRY(connection->protocol->clear_begin_tx(connection));
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_set_begin_tx_bookmark(struct BoltConnection* connection, struct BoltValue* bookmark_list)
+int BoltConnection_set_begin_bookmarks(struct BoltConnection* connection, struct BoltValue* bookmark_list)
 {
     TRY(connection->protocol->set_begin_tx_bookmark(connection, bookmark_list));
     return BOLT_SUCCESS;
@@ -645,7 +645,7 @@ int BoltConnection_set_begin_tx_metadata(struct BoltConnection* connection, stru
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_load_begin_tx_request(struct BoltConnection* connection)
+int BoltConnection_load_begin_request(struct BoltConnection* connection)
 {
     TRY(connection->protocol->load_begin_tx(connection));
     return BOLT_SUCCESS;
@@ -684,7 +684,7 @@ BoltConnection_set_run_cypher_parameter(struct BoltConnection* connection, int32
     return connection->protocol->set_run_cypher_parameter(connection, index, name, name_size);
 }
 
-int BoltConnection_set_run_bookmark(struct BoltConnection* connection, struct BoltValue* bookmark_list)
+int BoltConnection_set_run_bookmarks(struct BoltConnection* connection, struct BoltValue* bookmark_list)
 {
     TRY(connection->protocol->set_run_bookmark(connection, bookmark_list));
     return BOLT_SUCCESS;

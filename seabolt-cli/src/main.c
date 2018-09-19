@@ -242,7 +242,7 @@ int app_debug(struct Application* app, const char* cypher)
     BoltUtil_get_time(&t[2]);    // Checkpoint 2 - after handshake and initialisation
 
     //BoltConnection_load_bookmark(bolt->connection, "tx:1234");
-    BoltConnection_load_begin_tx_request(app->connection);
+    BoltConnection_load_begin_request(app->connection);
     BoltConnection_set_run_cypher(app->connection, cypher, strlen(cypher), 0);
     BoltConnection_load_run_request(app->connection);
     bolt_request run = BoltConnection_last_request(app->connection);
@@ -354,7 +354,7 @@ long run_fetch(const struct Application* app, const char* cypher)
 {
     long record_count = 0;
     //BoltConnection_load_bookmark(bolt->connection, "tx:1234");
-    BoltConnection_load_begin_tx_request(app->connection);
+    BoltConnection_load_begin_request(app->connection);
     BoltConnection_set_run_cypher(app->connection, cypher, strlen(cypher), 0);
     BoltConnection_load_run_request(app->connection);
     bolt_request run = BoltConnection_last_request(app->connection);

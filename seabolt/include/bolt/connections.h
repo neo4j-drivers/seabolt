@@ -294,9 +294,9 @@ PUBLIC int BoltConnection_fetch_summary(struct BoltConnection* connection, bolt_
  * @param connection
  * @return
  */
-PUBLIC int BoltConnection_clear_begin_tx(struct BoltConnection* connection);
+PUBLIC int BoltConnection_clear_begin(struct BoltConnection* connection);
 
-PUBLIC int BoltConnection_set_begin_tx_bookmark(struct BoltConnection* connection, struct BoltValue* bookmark_list);
+PUBLIC int BoltConnection_set_begin_bookmarks(struct BoltConnection* connection, struct BoltValue* bookmark_list);
 
 PUBLIC int BoltConnection_set_begin_tx_timeout(struct BoltConnection* connection, int64_t timeout);
 
@@ -308,7 +308,7 @@ PUBLIC int BoltConnection_set_begin_tx_metadata(struct BoltConnection* connectio
  * @param connection
  * @return
  */
-PUBLIC int BoltConnection_load_begin_tx_request(struct BoltConnection* connection);
+PUBLIC int BoltConnection_load_begin_request(struct BoltConnection* connection);
 
 /**
  * Load a transaction COMMIT request into the request queue.
@@ -334,7 +334,7 @@ PUBLIC int BoltConnection_load_rollback_request(struct BoltConnection* connectio
  */
 PUBLIC int BoltConnection_clear_run(struct BoltConnection* connection);
 
-PUBLIC int BoltConnection_set_run_bookmark(struct BoltConnection* connection, struct BoltValue* bookmark_list);
+PUBLIC int BoltConnection_set_run_bookmarks(struct BoltConnection* connection, struct BoltValue* bookmark_list);
 
 PUBLIC int BoltConnection_set_run_tx_timeout(struct BoltConnection* connection, int64_t timeout);
 
