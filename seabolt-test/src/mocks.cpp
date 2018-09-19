@@ -87,7 +87,7 @@ int BoltConnection_load_reset_request(struct BoltConnection* connection)
     return 0;
 }
 
-bolt_request_t BoltConnection_last_request(struct BoltConnection* connection)
+bolt_request BoltConnection_last_request(struct BoltConnection* connection)
 {
     return 0;
 }
@@ -97,7 +97,7 @@ int BoltConnection_send(struct BoltConnection* connection)
     return 0;
 }
 
-int BoltConnection_fetch_summary(struct BoltConnection* connection, bolt_request_t request)
+int BoltConnection_fetch_summary(struct BoltConnection* connection, bolt_request request)
 {
     return 0;
 }
@@ -129,17 +129,17 @@ int BoltConnection_load_pull_request(struct BoltConnection* connection, int32_t 
     return 0;
 }
 
-struct BoltValue* BoltConnection_record_fields(struct BoltConnection* connection)
+struct BoltValue* BoltConnection_field_values(struct BoltConnection* connection)
 {
     return BoltValue_create();
 }
 
-struct BoltValue* BoltConnection_fields(struct BoltConnection* connection)
+struct BoltValue* BoltConnection_field_names(struct BoltConnection* connection)
 {
     return BoltValue_create();
 }
 
-int BoltConnection_fetch(struct BoltConnection* connection, bolt_request_t request)
+int BoltConnection_fetch(struct BoltConnection* connection, bolt_request request)
 {
     return 0;
 }

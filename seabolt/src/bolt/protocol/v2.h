@@ -20,6 +20,18 @@
 #ifndef SEABOLT_ALL_V2_H
 #define SEABOLT_ALL_V2_H
 
-struct BoltProtocolV1State* BoltProtocolV2_create_state();
+#define BOLT_V2_POINT_2D            'X'
+#define BOLT_V2_POINT_3D            'Y'
+#define BOLT_V2_LOCAL_DATE          'D'
+#define BOLT_V2_LOCAL_TIME          't'
+#define BOLT_V2_LOCAL_DATE_TIME     'd'
+#define BOLT_V2_OFFSET_TIME         'T'
+#define BOLT_V2_OFFSET_DATE_TIME    'F'
+#define BOLT_V2_ZONED_DATE_TIME     'f'
+#define BOLT_V2_DURATION            'E'
+
+struct BoltProtocol* BoltProtocolV2_create_protocol();
+
+void BoltProtocolV2_destroy_protocol(struct BoltProtocol* protocol);
 
 #endif //SEABOLT_ALL_V2_H

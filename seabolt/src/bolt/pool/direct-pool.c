@@ -23,6 +23,7 @@
 #include "bolt/mem.h"
 #include "bolt/utils.h"
 #include "direct-pool.h"
+#include "../protocol/protocol.h"
 
 #define SIZE_OF_CONNECTION_POOL sizeof(struct BoltConnectionPool)
 
@@ -64,7 +65,7 @@ int reset(struct BoltDirectPool* pool, int index)
     struct BoltConnection* connection = &pool->connections[index];
     switch (BoltConnection_load_reset_request(connection)) {
     case 0: {
-        bolt_request_t request_id = BoltConnection_last_request(connection);
+        bolt_request request_id = BoltConnection_last_request(connection);
         if (BoltConnection_send(connection)<0) {
             return -1;
         }
@@ -108,12 +109,15 @@ void close_pool_entry(struct BoltDirectPool* pool, int index)
 {
     struct BoltConnection* connection = &pool->connections[index];
     if (connection->status!=BOLT_DISCONNECTED) {
-        struct timespec now;
-        struct timespec diff;
-        BoltUtil_get_time(&now);
-        BoltUtil_diff_time(&diff, &now, &connection->metrics.time_opened);
-        BoltLog_info(pool->config->log, "Connection alive for %lds %09ldns", (long) (diff.tv_sec),
-                diff.tv_nsec);
+        if (connection->metrics.time_opened.tv_sec!=0 || connection->metrics.time_opened.tv_nsec!=0) {
+            struct timespec now;
+            struct timespec diff;
+            BoltUtil_get_time(&now);
+            BoltUtil_diff_time(&diff, &now, &connection->metrics.time_opened);
+            BoltLog_info(pool->config->log, "Connection alive for %lds %09ldns", (long) (diff.tv_sec),
+                    diff.tv_nsec);
+        }
+
         BoltConnection_close(connection);
     }
 }
@@ -240,6 +244,10 @@ int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* c
     int index = find_connection(pool, connection);
     if (index>=0) {
         connection->agent = NULL;
+
+        connection->protocol->clear_run(connection);
+        connection->protocol->clear_begin_tx(connection);
+
         reset_or_close(pool, index);
     }
     BoltUtil_mutex_unlock(&pool->mutex);

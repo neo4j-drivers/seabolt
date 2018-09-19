@@ -107,31 +107,28 @@ void BoltLog_debug(const struct BoltLog* log, const char* format, ...)
 }
 
 void
-BoltLog_value(const struct BoltLog* log, const char* format, struct BoltValue* value, int32_t protocol_version)
+BoltLog_value(const struct BoltLog* log, const char* format, struct BoltValue* value,
+        name_resolver_func struct_name_resolver)
 {
     if (log!=NULL && log->debug_enabled) {
         struct StringBuilder* builder = StringBuilder_create();
-        BoltValue_write(builder, value, protocol_version);
+        BoltValue_write(builder, value, struct_name_resolver);
         BoltLog_debug(log, format, StringBuilder_get_string(builder));
         StringBuilder_destroy(builder);
     }
 }
 
-void BoltLog_message(const struct BoltLog* log, const char* peer, bolt_request_t request_id, int16_t code,
-        struct BoltValue* fields, int32_t protocol_version)
+void BoltLog_message(const struct BoltLog* log, const char* peer, bolt_request request_id, int16_t code,
+        struct BoltValue* fields, name_resolver_func struct_name_resolver, name_resolver_func message_name_resolver)
 {
     if (log!=NULL && log->debug_enabled) {
         const char* message_name = NULL;
-        switch (protocol_version) {
-        case 1:
-        case 2: {
-            message_name = BoltProtocolV1_message_name(code);
-            break;
-        }
+        if (message_name_resolver!=NULL) {
+            message_name = message_name_resolver(code);
         }
 
         struct StringBuilder* builder = StringBuilder_create();
-        BoltValue_write(builder, fields, protocol_version);
+        BoltValue_write(builder, fields, struct_name_resolver);
         BoltLog_debug(log, "%s[%" PRIu64 "] %s %s", peer, request_id, message_name==NULL ? "?" : message_name,
                 StringBuilder_get_string(builder));
         StringBuilder_destroy(builder);

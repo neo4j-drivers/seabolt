@@ -38,7 +38,7 @@ using Catch::Matchers::Equals;
     BoltConnection_load_run_request(connection);\
     BoltConnection_load_pull_request(connection, -1);\
     BoltConnection_send(connection);\
-    bolt_request_t (result) = BoltConnection_last_request(connection);
+    bolt_request (result) = BoltConnection_last_request(connection);
 
 SCENARIO("Test chunking", "[integration][ipv6][secure]")
 {
@@ -46,8 +46,8 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
         struct BoltConnection* connection = bolt_open_init_default();
         WHEN("Cypher with parameter of small size") {
             const char* cypher = "RETURN $x";
-            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
-            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+            BoltConnection_set_run_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue* x = BoltConnection_set_run_cypher_parameter(connection, 0, "x", 1);
             int param_size = 2;
             char* param = (char*) calloc(param_size, sizeof(char));
             for (int i = 1; i<param_size; i++) {
@@ -57,7 +57,7 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
             RUN_PULL_SEND(connection, result);
             THEN("It should return passed parameter") {
                 while (BoltConnection_fetch(connection, result)) {
-                    const struct BoltValue* field_values = BoltConnection_record_fields(connection);
+                    const struct BoltValue* field_values = BoltConnection_field_values(connection);
                     struct BoltValue* value = BoltList_value(field_values, 0);
                     REQUIRE_BOLT_STRING(value, param, strlen(param));
                 }
@@ -67,8 +67,8 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
 
         WHEN("Cypher with parameter of medium size") {
             const char* cypher = "RETURN $x";
-            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
-            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+            BoltConnection_set_run_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue* x = BoltConnection_set_run_cypher_parameter(connection, 0, "x", 1);
             int param_size = 32769;
             char* param = (char*) calloc(param_size, sizeof(char));
             for (int i = 1; i<param_size; i++) {
@@ -78,7 +78,7 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
             RUN_PULL_SEND(connection, result);
             THEN("It should return passed parameter") {
                 while (BoltConnection_fetch(connection, result)) {
-                    const struct BoltValue* field_values = BoltConnection_record_fields(connection);
+                    const struct BoltValue* field_values = BoltConnection_field_values(connection);
                     struct BoltValue* value = BoltList_value(field_values, 0);
                     REQUIRE_BOLT_STRING(value, param, strlen(param));
                 }
@@ -88,8 +88,8 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
 
         WHEN("Cypher with parameter of boundary size") {
             const char* cypher = "RETURN $x";
-            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
-            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+            BoltConnection_set_run_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue* x = BoltConnection_set_run_cypher_parameter(connection, 0, "x", 1);
             int param_size = 65536;
             char* param = (char*) calloc(param_size, sizeof(char));
             for (int i = 1; i<param_size; i++) {
@@ -99,7 +99,7 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
             RUN_PULL_SEND(connection, result);
             THEN("It should return passed parameter") {
                 while (BoltConnection_fetch(connection, result)) {
-                    const struct BoltValue* field_values = BoltConnection_record_fields(connection);
+                    const struct BoltValue* field_values = BoltConnection_field_values(connection);
                     struct BoltValue* value = BoltList_value(field_values, 0);
                     REQUIRE_BOLT_STRING(value, param, strlen(param));
                 }
@@ -109,8 +109,8 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
 
         WHEN("Cypher with parameter of large size") {
             const char* cypher = "RETURN $x";
-            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
-            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+            BoltConnection_set_run_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue* x = BoltConnection_set_run_cypher_parameter(connection, 0, "x", 1);
             int param_size = 65535*2+1;
             char* param = (char*) calloc(param_size, sizeof(char));
             for (int i = 1; i<param_size; i++) {
@@ -120,7 +120,7 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
             RUN_PULL_SEND(connection, result);
             THEN("It should return passed parameter") {
                 while (BoltConnection_fetch(connection, result)) {
-                    const struct BoltValue* field_values = BoltConnection_record_fields(connection);
+                    const struct BoltValue* field_values = BoltConnection_field_values(connection);
                     struct BoltValue* value = BoltList_value(field_values, 0);
                     REQUIRE_BOLT_STRING(value, param, strlen(param));
                 }
@@ -130,8 +130,8 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
 
         WHEN("Cypher with parameter of very large size") {
             const char* cypher = "RETURN $x";
-            BoltConnection_cypher(connection, cypher, strlen(cypher), 1);
-            BoltValue* x = BoltConnection_cypher_parameter(connection, 0, "x", 1);
+            BoltConnection_set_run_cypher(connection, cypher, strlen(cypher), 1);
+            BoltValue* x = BoltConnection_set_run_cypher_parameter(connection, 0, "x", 1);
             int param_size = 65535*10+1;
             char* param = (char*) calloc(param_size, sizeof(char));
             for (int i = 1; i<param_size; i++) {
@@ -141,7 +141,7 @@ SCENARIO("Test chunking", "[integration][ipv6][secure]")
             RUN_PULL_SEND(connection, result);
             THEN("It should return passed parameter") {
                 while (BoltConnection_fetch(connection, result)) {
-                    const struct BoltValue* field_values = BoltConnection_record_fields(connection);
+                    const struct BoltValue* field_values = BoltConnection_field_values(connection);
                     struct BoltValue* value = BoltList_value(field_values, 0);
                     REQUIRE_BOLT_STRING(value, param, strlen(param));
                 }

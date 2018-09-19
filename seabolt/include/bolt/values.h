@@ -131,7 +131,7 @@ struct BoltValue {
 
 };
 
-
+typedef const char* (* name_resolver_func)(int16_t code);
 
 /**
  * Create a new BoltValue instance.
@@ -162,7 +162,7 @@ PUBLIC struct BoltValue* BoltValue_duplicate(const struct BoltValue* value);
  * @param dest
  * @return
  */
-PUBLIC void BoltValue_copy(struct BoltValue* dest, const struct BoltValue *src);
+PUBLIC void BoltValue_copy(struct BoltValue* dest, const struct BoltValue* src);
 
 /**
  * Return the type of a BoltValue.
@@ -180,9 +180,8 @@ PUBLIC enum BoltType BoltValue_type(const struct BoltValue* value);
  * @param protocol_version
  * @return
  */
-PUBLIC int BoltValue_write(struct StringBuilder *builder, struct BoltValue* value, int32_t protocol_version);
-
-
+PUBLIC int
+BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, name_resolver_func struct_name_resolver);
 
 /**
  * Set a BoltValue instance to null.
@@ -207,7 +206,7 @@ PUBLIC void BoltValue_format_as_String(struct BoltValue* value, const char* data
 
 PUBLIC char* BoltString_get(const struct BoltValue* value);
 
-PUBLIC int BoltString_equals(struct BoltValue* value, const char* data);
+PUBLIC int BoltString_equals(struct BoltValue* value, const char* data, const size_t data_size);
 
 PUBLIC void BoltValue_format_as_Dictionary(struct BoltValue* value, int32_t length);
 

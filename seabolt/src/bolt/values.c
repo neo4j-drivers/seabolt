@@ -356,10 +356,10 @@ char* BoltString_get(const struct BoltValue* value)
            (char*) value->data.as_char : value->data.extended.as_char;
 }
 
-int BoltString_equals(struct BoltValue* value, const char* data)
+int BoltString_equals(struct BoltValue* value, const char* data, const size_t data_size)
 {
     if (BoltValue_type(value)==BOLT_STRING) {
-        const int32_t length = (int32_t) strlen(data);
+        const int32_t length = (int32_t) data_size;
         if (value->size!=length) {
             return 0;
         }
@@ -525,7 +525,7 @@ struct BoltValue* BoltStructure_value(const struct BoltValue* value, int32_t ind
     return &value->data.extended.as_value[index];
 }
 
-int BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, int32_t protocol_version)
+int BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, name_resolver_func struct_name_resolver)
 {
     switch (BoltValue_type(value)) {
     case BOLT_NULL: {
@@ -563,7 +563,7 @@ int BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, int3
                 if (comma) StringBuilder_append(builder, ", ");
                 StringBuilder_append_n(builder, key, (size_t) (BoltDictionary_get_key_size(value, i)));
                 StringBuilder_append(builder, ": ");
-                BoltValue_write(builder, BoltDictionary_value(value, i), protocol_version);
+                BoltValue_write(builder, BoltDictionary_value(value, i), struct_name_resolver);
                 comma = 1;
             }
         }
@@ -574,7 +574,7 @@ int BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, int3
         StringBuilder_append(builder, "[");
         for (int i = 0; i<value->size; i++) {
             if (i>0) StringBuilder_append(builder, ", ");
-            BoltValue_write(builder, BoltList_value(value, i), protocol_version);
+            BoltValue_write(builder, BoltList_value(value, i), struct_name_resolver);
         }
         StringBuilder_append(builder, "]");
         return 0;
@@ -589,21 +589,19 @@ int BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, int3
     }
     case BOLT_STRUCTURE: {
         int16_t code = BoltStructure_code(value);
-        switch (protocol_version) {
-        case 1:
-        case 2: {
-            const char* name = BoltProtocolV1_structure_name(code);
-            StringBuilder_append_f(builder, "$%s", name);
-            break;
+
+        if (struct_name_resolver!=NULL) {
+            StringBuilder_append_f(builder, "$%s", struct_name_resolver(code));
         }
-        default:
+        else {
             StringBuilder_append_f(builder, "$#%c%c%c%c", hex3(&code, 0), hex2(&code, 0), hex1(&code, 0),
                     hex0(&code, 0));
         }
+
         StringBuilder_append(builder, "(");
         for (int i = 0; i<value->size; i++) {
             if (i>0) StringBuilder_append(builder, " ");
-            BoltValue_write(builder, BoltStructure_value(value, i), protocol_version);
+            BoltValue_write(builder, BoltStructure_value(value, i), struct_name_resolver);
         }
         StringBuilder_append(builder, ")");
         return 0;

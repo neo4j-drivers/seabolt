@@ -17,17 +17,8 @@
  * limitations under the License.
  */
 
+#include "v2.h"
 #include "v1.h"
-
-#define POINT_2D            'X'
-#define POINT_3D            'Y'
-#define LOCAL_DATE          'D'
-#define LOCAL_TIME          't'
-#define LOCAL_DATE_TIME     'd'
-#define OFFSET_TIME         'T'
-#define OFFSET_DATE_TIME    'F'
-#define ZONED_DATE_TIME     'f'
-#define DURATION            'E'
 
 int BoltProtocolV2_check_readable_struct_signature(int16_t signature)
 {
@@ -36,15 +27,15 @@ int BoltProtocolV2_check_readable_struct_signature(int16_t signature)
     }
 
     switch (signature) {
-    case POINT_2D:
-    case POINT_3D:
-    case LOCAL_DATE:
-    case LOCAL_DATE_TIME:
-    case LOCAL_TIME:
-    case OFFSET_TIME:
-    case OFFSET_DATE_TIME:
-    case ZONED_DATE_TIME:
-    case DURATION:
+    case BOLT_V2_POINT_2D:
+    case BOLT_V2_POINT_3D:
+    case BOLT_V2_LOCAL_DATE:
+    case BOLT_V2_LOCAL_DATE_TIME:
+    case BOLT_V2_LOCAL_TIME:
+    case BOLT_V2_OFFSET_TIME:
+    case BOLT_V2_OFFSET_DATE_TIME:
+    case BOLT_V2_ZONED_DATE_TIME:
+    case BOLT_V2_DURATION:
         return 1;
     }
 
@@ -58,27 +49,60 @@ int BoltProtocolV2_check_writable_struct_signature(int16_t signature)
     }
 
     switch (signature) {
-    case POINT_2D:
-    case POINT_3D:
-    case LOCAL_DATE:
-    case LOCAL_DATE_TIME:
-    case LOCAL_TIME:
-    case OFFSET_TIME:
-    case OFFSET_DATE_TIME:
-    case ZONED_DATE_TIME:
-    case DURATION:
+    case BOLT_V2_POINT_2D:
+    case BOLT_V2_POINT_3D:
+    case BOLT_V2_LOCAL_DATE:
+    case BOLT_V2_LOCAL_DATE_TIME:
+    case BOLT_V2_LOCAL_TIME:
+    case BOLT_V2_OFFSET_TIME:
+    case BOLT_V2_OFFSET_DATE_TIME:
+    case BOLT_V2_ZONED_DATE_TIME:
+    case BOLT_V2_DURATION:
         return 1;
     }
 
     return 0;
 }
 
-struct BoltProtocolV1State* BoltProtocolV2_create_state()
+const char* BoltProtocolV2_structure_name(int16_t code)
 {
-    struct BoltProtocolV1State* v1_state = BoltProtocolV1_create_state();
+    switch (code) {
+    case BOLT_V2_POINT_2D:
+        return "Point2D";
+    case BOLT_V2_POINT_3D:
+        return "Point3D";
+    case BOLT_V2_LOCAL_DATE:
+        return "LocalDate";
+    case BOLT_V2_LOCAL_TIME:
+        return "LocalTime";
+    case BOLT_V2_LOCAL_DATE_TIME:
+        return "LocalDateTime";
+    case BOLT_V2_OFFSET_TIME:
+        return "OffsetTime";
+    case BOLT_V2_OFFSET_DATE_TIME:
+        return "OffsetDateTime";
+    case BOLT_V2_ZONED_DATE_TIME:
+        return "ZonedDateTime";
+    case BOLT_V2_DURATION:
+        return "Duration";
+    default:
+        return BoltProtocolV1_structure_name(code);
+    }
+}
 
-    v1_state->check_writable_struct = &BoltProtocolV2_check_writable_struct_signature;
-    v1_state->check_readable_struct = &BoltProtocolV2_check_readable_struct_signature;
+struct BoltProtocol* BoltProtocolV2_create_protocol()
+{
+    struct BoltProtocol* v1_protocol = BoltProtocolV1_create_protocol();
 
-    return v1_state;
+    // Overrides for new structure types
+    v1_protocol->structure_name = &BoltProtocolV2_structure_name;
+    v1_protocol->check_writable_struct = &BoltProtocolV2_check_writable_struct_signature;
+    v1_protocol->check_readable_struct = &BoltProtocolV2_check_readable_struct_signature;
+
+    return v1_protocol;
+}
+
+void BoltProtocolV2_destroy_protocol(struct BoltProtocol* protocol)
+{
+    BoltProtocolV1_destroy_protocol(protocol);
 }

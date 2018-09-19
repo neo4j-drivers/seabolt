@@ -85,7 +85,7 @@ SCENARIO("Test reusing a pooled connection that was abandoned", "[integration][i
                 REQUIRE(result1.connection!=nullptr);
             }
             const char* cypher = "RETURN 1";
-            BoltConnection_cypher(result1.connection, cypher, strlen(cypher), 0);
+            BoltConnection_set_run_cypher(result1.connection, cypher, strlen(cypher), 0);
             BoltConnection_load_run_request(result1.connection);
             BoltConnection_send(result1.connection);
             BoltConnector_release(connector, result1.connection);

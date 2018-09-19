@@ -32,7 +32,7 @@
 #include "config.h"
 #include "values.h"
 
-typedef uint64_t bolt_request_t;
+typedef uint64_t bolt_request;
 
 /**
  *
@@ -92,6 +92,8 @@ enum BoltConnectionError {
 
 struct BoltConnection;
 
+struct BoltProtocol;
+
 typedef void (* error_action_func)(struct BoltConnection*, void*);
 
 /**
@@ -130,7 +132,7 @@ struct BoltConnection {
     /// The protocol version used for this connection
     int32_t protocol_version;
     /// State required by the protocol
-    void* protocol_state;
+    struct BoltProtocol* protocol;
 
     // These buffers contain data exactly as it is transmitted or
     // received. Therefore for Bolt v1, chunk headers are included
@@ -264,7 +266,7 @@ int BoltConnection_receive(struct BoltConnection* connection, char* buffer, int 
  *         -1 if an error occurs
  *
  */
-PUBLIC int BoltConnection_fetch(struct BoltConnection* connection, bolt_request_t request);
+PUBLIC int BoltConnection_fetch(struct BoltConnection* connection, bolt_request request);
 
 /**
  * Fetch values from the result stream for a given request, up to and
@@ -284,40 +286,21 @@ PUBLIC int BoltConnection_fetch(struct BoltConnection* connection, bolt_request_
  * @return >=0 the number of records discarded from this result
  *         -1 if an error occurs
  */
-PUBLIC int BoltConnection_fetch_summary(struct BoltConnection* connection, bolt_request_t request);
+PUBLIC int BoltConnection_fetch_summary(struct BoltConnection* connection, bolt_request request);
 
 /**
- * Set the next Cypher statement template to be run on this connection.
+ * Load a transaction BEGIN request into the request queue.
  *
  * @param connection
- * @param cypher
- * @param cypher_size
- * @param n_parameters
  * @return
  */
-PUBLIC int BoltConnection_cypher(struct BoltConnection* connection, const char* cypher, size_t cypher_size,
-        int32_t n_parameters);
+PUBLIC int BoltConnection_clear_begin(struct BoltConnection* connection);
 
-/**
- * Return a pointer to a Cypher parameter.
- *
- * @param connection
- * @param index
- * @param key
- * @param key_size
- * @return
- */
-PUBLIC struct BoltValue* BoltConnection_cypher_parameter(struct BoltConnection* connection, int32_t index,
-        const char* key, size_t key_size);
+PUBLIC int BoltConnection_set_begin_bookmarks(struct BoltConnection* connection, struct BoltValue* bookmark_list);
 
-/**
- * Load a bookmark to be used when beginning the next transaction.
- *
- * @param connection
- * @param bookmark
- * @return
- */
-PUBLIC int BoltConnection_load_bookmark(struct BoltConnection* connection, const char* bookmark);
+PUBLIC int BoltConnection_set_begin_tx_timeout(struct BoltConnection* connection, int64_t timeout);
+
+PUBLIC int BoltConnection_set_begin_tx_metadata(struct BoltConnection* connection, struct BoltValue* metadata);
 
 /**
  * Load a transaction BEGIN request into the request queue.
@@ -349,6 +332,22 @@ PUBLIC int BoltConnection_load_rollback_request(struct BoltConnection* connectio
  * @param connection
  * @return
  */
+PUBLIC int BoltConnection_clear_run(struct BoltConnection* connection);
+
+PUBLIC int BoltConnection_set_run_bookmarks(struct BoltConnection* connection, struct BoltValue* bookmark_list);
+
+PUBLIC int BoltConnection_set_run_tx_timeout(struct BoltConnection* connection, int64_t timeout);
+
+PUBLIC int BoltConnection_set_run_tx_metadata(struct BoltConnection* connection, struct BoltValue* metadata);
+
+PUBLIC int
+BoltConnection_set_run_cypher(struct BoltConnection* connection, const char* cypher, const size_t cypher_size,
+        int32_t n_parameter);
+
+PUBLIC struct BoltValue*
+BoltConnection_set_run_cypher_parameter(struct BoltConnection* connection, int32_t index, const char* name,
+        size_t name_size);
+
 PUBLIC int BoltConnection_load_run_request(struct BoltConnection* connection);
 
 /**
@@ -388,7 +387,7 @@ PUBLIC int BoltConnection_load_reset_request(struct BoltConnection* connection);
  * @param connection
  * @return
  */
-PUBLIC bolt_request_t BoltConnection_last_request(struct BoltConnection* connection);
+PUBLIC bolt_request BoltConnection_last_request(struct BoltConnection* connection);
 
 /**
  * Obtain the latest bookmark sent by the server. This may return null if
@@ -402,15 +401,6 @@ PUBLIC bolt_request_t BoltConnection_last_request(struct BoltConnection* connect
  */
 PUBLIC char* BoltConnection_last_bookmark(struct BoltConnection* connection);
 
-
-/**
-* Obtain a value from the current record.
-*
-* @param connection
-* @param field
-* @return pointer to a `BoltValue` data structure formatted as a BOLT_LIST
-*/
-PUBLIC struct BoltValue* BoltConnection_record_fields(struct BoltConnection* connection);
 
 /**
 *
@@ -433,7 +423,16 @@ PUBLIC struct BoltValue* BoltConnection_failure(struct BoltConnection* connectio
  * @param connection
  * @return
  */
-PUBLIC struct BoltValue* BoltConnection_fields(struct BoltConnection* connection);
+PUBLIC struct BoltValue* BoltConnection_field_names(struct BoltConnection* connection);
+
+/**
+* Obtain a value from the current record.
+*
+* @param connection
+* @param field
+* @return pointer to a `BoltValue` data structure formatted as a BOLT_LIST
+*/
+PUBLIC struct BoltValue* BoltConnection_field_values(struct BoltConnection* connection);
 
 /**
  * Returns the metadata sent by the server.
