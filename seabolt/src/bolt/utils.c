@@ -26,10 +26,10 @@
 struct StringBuilder* StringBuilder_create()
 {
     struct StringBuilder* builder = (struct StringBuilder*) BoltMem_allocate(sizeof(struct StringBuilder));
-    builder->buffer = BoltMem_allocate(1*sizeof(char));
-    builder->buffer[0] = '\0';
+    builder->buffer = (char*) BoltMem_allocate(256*sizeof(char));
+    builder->buffer[0] = 0;
     builder->buffer_pos = 0;
-    builder->buffer_size = 1;
+    builder->buffer_size = 256;
     return builder;
 }
 
@@ -45,7 +45,7 @@ void StringBuilder_ensure_buffer(struct StringBuilder* builder, size_t size_to_a
         return;
     }
 
-    size_t new_size = builder->buffer_pos+size_to_add+1;
+    size_t new_size = builder->buffer_pos+size_to_add;
     builder->buffer = (char*) BoltMem_reallocate(builder->buffer, builder->buffer_size, new_size);
     builder->buffer_size = new_size;
 }
@@ -57,27 +57,27 @@ void StringBuilder_append(struct StringBuilder* builder, const char* string)
 
 void StringBuilder_append_n(struct StringBuilder* builder, const char* string, const size_t len)
 {
-    StringBuilder_ensure_buffer(builder, len);
+    StringBuilder_ensure_buffer(builder, len+1);
     strncpy(builder->buffer+builder->buffer_pos, string, len);
     builder->buffer_pos += len;
-    builder->buffer[builder->buffer_pos] = '\0';
+    builder->buffer[builder->buffer_pos] = 0;
 }
 
 void StringBuilder_append_f(struct StringBuilder* builder, const char* format, ...)
 {
-    int size = 512*sizeof(char);
-    char* message_fmt = BoltMem_allocate(size);
+    size_t size = 10240*sizeof(char);
+    char* message_fmt = (char*) BoltMem_allocate(size);
     while (1) {
         va_list args;
         va_start(args, format);
-        int written = vsnprintf(message_fmt, size, format, args);
+        size_t written = vsnprintf(message_fmt, size, format, args);
         va_end(args);
         if (written<size) {
             break;
         }
-        BoltMem_deallocate(message_fmt, size);
-        size = size*2;
-        message_fmt = BoltMem_allocate(size);
+
+        message_fmt = (char*) BoltMem_reallocate(message_fmt, size, written+1);
+        size = written+1;
     }
 
     StringBuilder_append(builder, message_fmt);

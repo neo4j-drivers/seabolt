@@ -48,16 +48,19 @@ void BoltLog_destroy(struct BoltLog* log)
 
 void _perform_log_call(log_func func, int state, const char* format, va_list args)
 {
-    int size = 512*sizeof(char);
+    size_t size = 512*sizeof(char);
     char* message_fmt = (char*) BoltMem_allocate(size);
     while (1) {
-        int written = vsnprintf(message_fmt, size, format, args);
+        va_list args_copy;
+        va_copy(args_copy, args);
+        size_t written = vsnprintf(message_fmt, size, format, args_copy);
+        va_end(args_copy);
         if (written<size) {
             break;
         }
-        BoltMem_deallocate(message_fmt, size);
-        size = size*2;
-        message_fmt = (char*) BoltMem_allocate(size);
+        
+        message_fmt = (char*) BoltMem_reallocate(message_fmt, size, written+1);
+        size = written+1;
     }
 
     func(state, message_fmt);
@@ -122,15 +125,14 @@ void BoltLog_message(const struct BoltLog* log, const char* peer, bolt_request r
         struct BoltValue* fields, name_resolver_func struct_name_resolver, name_resolver_func message_name_resolver)
 {
     if (log!=NULL && log->debug_enabled) {
-        const char* message_name = NULL;
+        const char* message_name = "?";
         if (message_name_resolver!=NULL) {
             message_name = message_name_resolver(code);
         }
 
         struct StringBuilder* builder = StringBuilder_create();
         BoltValue_write(builder, fields, struct_name_resolver);
-        BoltLog_debug(log, "%s[%" PRIu64 "] %s %s", peer, request_id, message_name==NULL ? "?" : message_name,
-                StringBuilder_get_string(builder));
+        BoltLog_debug(log, "%s[%" PRIu64 "] %s %s", peer, request_id, message_name, StringBuilder_get_string(builder));
         StringBuilder_destroy(builder);
     }
 }
