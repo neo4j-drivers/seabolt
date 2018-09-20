@@ -558,10 +558,10 @@ int BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, name
         StringBuilder_append(builder, "{");
         int comma = 0;
         for (int i = 0; i<value->size; i++) {
-            const char* key = BoltDictionary_get_key(value, i);
+            struct BoltValue* key = BoltDictionary_key(value, i);
             if (key!=NULL) {
                 if (comma) StringBuilder_append(builder, ", ");
-                StringBuilder_append_n(builder, key, (size_t) (BoltDictionary_get_key_size(value, i)));
+                StringBuilder_append_n(builder, BoltString_get(key), (size_t) key->size);
                 StringBuilder_append(builder, ": ");
                 BoltValue_write(builder, BoltDictionary_value(value, i), struct_name_resolver);
                 comma = 1;
