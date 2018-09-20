@@ -48,16 +48,19 @@ void BoltLog_destroy(struct BoltLog* log)
 
 void _perform_log_call(log_func func, int state, const char* format, va_list args)
 {
-    int size = 512*sizeof(char);
+    size_t size = 512*sizeof(char);
     char* message_fmt = (char*) BoltMem_allocate(size);
     while (1) {
-        int written = vsnprintf(message_fmt, size, format, args);
+        va_list args_copy;
+        va_copy(args_copy, args);
+        size_t written = vsnprintf(message_fmt, size, format, args_copy);
+        va_end(args_copy);
         if (written<size) {
             break;
         }
-        BoltMem_deallocate(message_fmt, size);
-        size = size*2;
-        message_fmt = (char*) BoltMem_allocate(size);
+        
+        message_fmt = (char*) BoltMem_reallocate(message_fmt, size, written+1);
+        size = written+1;
     }
 
     func(state, message_fmt);
