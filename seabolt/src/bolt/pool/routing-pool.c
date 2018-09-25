@@ -32,20 +32,23 @@
 int BoltRoutingPool_ensure_server(struct BoltRoutingPool* pool, const struct BoltAddress* server)
 {
     int index = BoltAddressSet_index_of(pool->servers, *server);
-
     if (index<0) {
         BoltUtil_mutex_lock(&pool->lock);
 
-        // Add and return the index (which is always the end of the set - there's no ordering in place)
-        index = BoltAddressSet_add(pool->servers, *server);
+        // Check once more in case it was added just before we acquired the lock
+        index = BoltAddressSet_index_of(pool->servers, *server);
+        if (index < 0) {
+            // Add and return the index (which is always the end of the set - there's no ordering in place)
+            index = BoltAddressSet_add(pool->servers, *server);
 
-        // Expand the direct pools and create a new one for this server
-        pool->server_pools = (struct BoltDirectPool**) BoltMem_reallocate(pool->server_pools,
-                (pool->servers->size-1)*
-                        SIZE_OF_DIRECT_POOL_PTR,
+            // Expand the direct pools and create a new one for this server
+            pool->server_pools = (struct BoltDirectPool**) BoltMem_reallocate(pool->server_pools,
+                (pool->servers->size - 1)*
+                SIZE_OF_DIRECT_POOL_PTR,
                 (pool->servers->size)*
-                        SIZE_OF_DIRECT_POOL_PTR);
-        pool->server_pools[index] = BoltDirectPool_create(server, pool->auth_token, pool->config);
+                SIZE_OF_DIRECT_POOL_PTR);
+            pool->server_pools[index] = BoltDirectPool_create(server, pool->auth_token, pool->config);
+        }
 
         BoltUtil_mutex_unlock(&pool->lock);
     }
