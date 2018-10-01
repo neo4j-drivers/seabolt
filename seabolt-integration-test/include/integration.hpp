@@ -38,7 +38,7 @@ extern "C" {
 
 #endif
 
-#define SETTING(name, default_value) ((getenv(name) == nullptr) ? (default_value) : getenv(name))
+#define SETTING(name, default_value) ((char*)((getenv(name) == nullptr) ? (default_value) : getenv(name)))
 
 #define BOLT_IPV4_HOST  SETTING("BOLT_IPV4_HOST", "127.0.0.1")
 #define BOLT_IPV6_HOST  SETTING("BOLT_IPV6_HOST", "::1")

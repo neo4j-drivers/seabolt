@@ -144,6 +144,7 @@ struct Application* app_create(int argc, char** argv)
     config.max_pool_size = 10;
     config.log = create_logger();
     config.address_resolver = NULL;
+    config.trust = NULL;
 
     struct BoltValue* auth_token = BoltAuth_basic(BOLT_CONFIG_USER, BOLT_CONFIG_PASSWORD, NULL);
 
@@ -417,9 +418,9 @@ void app_help()
 
 int main(int argc, char* argv[])
 {
-    struct Application* app = app_create(argc, argv);
-
     Bolt_startup();
+
+    struct Application* app = app_create(argc, argv);
 
     switch (app->command) {
     case CMD_NONE:

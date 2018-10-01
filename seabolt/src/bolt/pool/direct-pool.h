@@ -24,8 +24,8 @@
 #ifndef SEABOLT_POOLING_H
 #define SEABOLT_POOLING_H
 
-#include "../../../include/bolt/connector.h"
-#include "../../../include/bolt/platform.h"
+#include "bolt/connector.h"
+#include "bolt/platform.h"
 
 /**
  * Connection pool (experimental)
@@ -35,6 +35,7 @@ struct BoltDirectPool {
     struct BoltAddress* address;
     const struct BoltValue* auth_token;
     const struct BoltConfig* config;
+    struct ssl_ctx_st *ssl_context;
     uint32_t size;
     struct BoltConnection* connections;
 };

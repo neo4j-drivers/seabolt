@@ -36,8 +36,9 @@ enum BoltAccessMode {
 struct BoltConfig {
     enum BoltConnectorMode mode;
     enum BoltTransport transport;
-    const char* user_agent;
-    const struct BoltValue* routing_context;
+    struct BoltTrust* trust;
+    char* user_agent;
+    struct BoltValue* routing_context;
     struct BoltAddressResolver* address_resolver;
     struct BoltLog* log;
     uint32_t max_pool_size;

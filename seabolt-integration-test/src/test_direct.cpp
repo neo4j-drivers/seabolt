@@ -26,8 +26,9 @@ SCENARIO("Test basic secure connection (IPv4)", "[integration][ipv4][secure]")
     GIVEN("a local server address") {
         struct BoltAddress* address = bolt_get_address(BOLT_IPV4_HOST, BOLT_PORT);
         WHEN("a secure connection is opened") {
+            struct BoltTrust trust{nullptr, 0, 1, 1};
             struct BoltConnection* connection = BoltConnection_create();
-            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, nullptr);
+            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, &trust, nullptr);
             THEN("the connection should be connected") {
                 REQUIRE(connection->status==BOLT_CONNECTED);
             }
@@ -43,8 +44,9 @@ SCENARIO("Test basic secure connection (IPv6)", "[integration][ipv6][secure]")
     GIVEN("a local server address") {
         struct BoltAddress* address = bolt_get_address(BOLT_IPV6_HOST, BOLT_PORT);
         WHEN("a secure connection is opened") {
+            struct BoltTrust trust{nullptr, 0, 1, 1};
             struct BoltConnection* connection = BoltConnection_create();
-            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, nullptr);
+            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, &trust, nullptr);
             THEN("the connection should be connected") {
                 REQUIRE(connection->status==BOLT_CONNECTED);
             }
@@ -60,8 +62,9 @@ SCENARIO("Test basic insecure connection (IPv4)", "[integration][ipv4][insecure]
     GIVEN("a local server address") {
         struct BoltAddress* address = bolt_get_address(BOLT_IPV4_HOST, BOLT_PORT);
         WHEN("an insecure connection is opened") {
+            struct BoltTrust trust{nullptr, 0, 1, 1};
             struct BoltConnection* connection = BoltConnection_create();
-            BoltConnection_open(connection, BOLT_SOCKET, address, nullptr);
+            BoltConnection_open(connection, BOLT_SOCKET, address, &trust, nullptr);
             THEN("the connection should be connected") {
                 REQUIRE(connection->status==BOLT_CONNECTED);
             }
@@ -78,7 +81,7 @@ SCENARIO("Test basic insecure connection (IPv6)", "[integration][ipv6][insecure]
         struct BoltAddress* address = bolt_get_address(BOLT_IPV6_HOST, BOLT_PORT);
         WHEN("an insecure connection is opened") {
             struct BoltConnection* connection = BoltConnection_create();
-            BoltConnection_open(connection, BOLT_SOCKET, address, nullptr);
+            BoltConnection_open(connection, BOLT_SOCKET, address, nullptr, nullptr);
             THEN("the connection should be connected") {
                 REQUIRE(connection->status==BOLT_CONNECTED);
             }
@@ -95,7 +98,7 @@ SCENARIO("Test secure connection to dead port", "[integration][ipv6][secure]")
         struct BoltAddress* address = bolt_get_address(BOLT_IPV6_HOST, "9999");
         WHEN("a secure connection attempt is made") {
             struct BoltConnection* connection = BoltConnection_create();
-            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, nullptr);
+            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, nullptr, nullptr);
             THEN("a DEFUNCT connection should be returned") {
                 REQUIRE(connection->status==BOLT_DEFUNCT);
             }
@@ -112,7 +115,7 @@ SCENARIO("Test insecure connection to dead port", "[integration][ipv6][insecure]
         struct BoltAddress* address = bolt_get_address(BOLT_IPV6_HOST, "9999");
         WHEN("an insecure connection attempt is made") {
             struct BoltConnection* connection = BoltConnection_create();
-            BoltConnection_open(connection, BOLT_SOCKET, address, nullptr);
+            BoltConnection_open(connection, BOLT_SOCKET, address, nullptr, nullptr);
             THEN("a DEFUNCT connection should be returned") {
                 REQUIRE(connection->status==BOLT_DEFUNCT);
             }
@@ -128,8 +131,9 @@ SCENARIO("Test connection reuse after graceful shutdown", "[integration][ipv6][s
     GIVEN("a local server address") {
         struct BoltAddress* address = bolt_get_address(BOLT_IPV6_HOST, BOLT_PORT);
         WHEN("a secure connection is opened") {
+            struct BoltTrust trust{nullptr, 0, 1, 1};
             struct BoltConnection* connection = BoltConnection_create();
-            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, nullptr);
+            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, &trust, nullptr);
             THEN("the connection should be connected") {
                 REQUIRE(connection->status==BOLT_CONNECTED);
             }
@@ -137,7 +141,7 @@ SCENARIO("Test connection reuse after graceful shutdown", "[integration][ipv6][s
             THEN("the connection should be disconnected") {
                 REQUIRE(connection->status==BOLT_DISCONNECTED);
             }
-            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, nullptr);
+            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, &trust, nullptr);
             THEN("the connection should be connected") {
                 REQUIRE(connection->status==BOLT_CONNECTED);
             }
@@ -153,13 +157,14 @@ SCENARIO("Test connection reuse after graceless shutdown", "[integration][ipv6][
     GIVEN("a local server address") {
         struct BoltAddress* address = bolt_get_address(BOLT_IPV6_HOST, BOLT_PORT);
         WHEN("a secure connection is opened") {
+            struct BoltTrust trust{nullptr, 0, 1, 1};
             struct BoltConnection* connection = BoltConnection_create();
-            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, nullptr);
+            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, &trust, nullptr);
             THEN("the connection should be connected") {
                 REQUIRE(connection->status==BOLT_CONNECTED);
             }
             connection->status = BOLT_DEFUNCT;
-            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, nullptr);
+            BoltConnection_open(connection, BOLT_SECURE_SOCKET, address, &trust, nullptr);
             THEN("the connection should be connected") {
                 REQUIRE(connection->status==BOLT_CONNECTED);
             }
