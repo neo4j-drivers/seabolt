@@ -22,8 +22,8 @@
 #include "bolt/config-impl.h"
 #include "bolt/logging.h"
 
-struct ssl_ctx_st* create_ssl_ctx(struct BoltTrust* trust, const char* hostname, const struct BoltLog* log);
+PUBLIC struct ssl_ctx_st* create_ssl_ctx(struct BoltTrust* trust, const char* hostname, const struct BoltLog* log);
 
-void free_ssl_context(struct ssl_ctx_st* ctx);
+PUBLIC void free_ssl_context(struct ssl_ctx_st* ctx);
 
 #endif //SEABOLT_ALL_TLS_H
