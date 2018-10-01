@@ -15,6 +15,7 @@ done
 shift $((OPTIND -1))
 
 BASE=$(dirname $0)
+DATE_FORMAT="%Y-%m-%dT%H:%M:%S"
 PASSWORD="password"
 BOLT_PORT=7699
 HTTPS_PORT=7698
@@ -186,7 +187,7 @@ function run_tests
 
 }
 
-echo "Seabolt test run started at $(date -Ins)"
+echo "Seabolt test run started at $(date +$DATE_FORMAT)"
 check_boltkit
 compile_debug
 for NEO4J_VERSION in $(grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" COMPATIBILITY)
@@ -215,4 +216,4 @@ then
         fi
     done
 fi
-echo "Seabolt test run completed at $(date -Ins)"
+echo "Seabolt test run completed at $(date +$DATE_FORMAT)"
