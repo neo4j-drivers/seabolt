@@ -18,6 +18,7 @@
  */
 
 #include <bolt/connections.h>
+#include <bolt/tls.h>
 #include "bolt/config-impl.h"
 #include "bolt/logging.h"
 #include "bolt/mem.h"
@@ -97,7 +98,8 @@ enum BoltConnectionError open_init(struct BoltDirectPool* pool, int index)
         return BOLT_ADDRESS_NOT_RESOLVED;  // Could not resolve address
     }
     struct BoltConnection* connection = &pool->connections[index];
-    switch (BoltConnection_open(connection, pool->config->transport, pool->address, pool->config->log)) {
+    switch (BoltConnection_open(connection, pool->config->transport, pool->address, pool->config->trust,
+            pool->config->log)) {
     case 0:
         return init(pool, index);
     default:
@@ -155,6 +157,18 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
     pool->size = config->max_pool_size;
     pool->connections = (struct BoltConnection*) BoltMem_allocate(config->max_pool_size*sizeof(struct BoltConnection));
     memset(pool->connections, 0, config->max_pool_size*sizeof(struct BoltConnection));
+    if (config->transport==BOLT_SECURE_SOCKET) {
+        pool->ssl_context = create_ssl_ctx(config->trust, address->host, config->log);
+
+        // assign ssl_context to all connections
+        for (uint32_t i = 0; i<config->max_pool_size; i++) {
+            pool->connections[0].ssl_context = pool->ssl_context;
+            pool->connections[0].owns_ssl_context = 0;
+        }
+    }
+    else {
+        pool->ssl_context = NULL;
+    }
     return pool;
 }
 
@@ -165,6 +179,9 @@ void BoltDirectPool_destroy(struct BoltDirectPool* pool)
         close_pool_entry(pool, (int) index);
     }
     BoltMem_deallocate(pool->connections, pool->size*sizeof(struct BoltConnection));
+    if (pool->ssl_context!=NULL) {
+        free_ssl_context(pool->ssl_context);
+    }
     BoltAddress_destroy(pool->address);
     BoltUtil_mutex_destroy(&pool->mutex);
     BoltMem_deallocate(pool, SIZE_OF_DIRECT_POOL);

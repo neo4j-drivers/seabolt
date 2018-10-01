@@ -94,6 +94,8 @@ struct BoltConnection;
 
 struct BoltProtocol;
 
+struct BoltTrust;
+
 typedef void (* error_action_func)(struct BoltConnection*, void*);
 
 /**
@@ -122,6 +124,7 @@ struct BoltConnection {
 
     const struct BoltLog* log;
 
+    int owns_ssl_context;
     /// The security context (secure connections only)
     struct ssl_ctx_st* ssl_context;
     /// A secure socket wrapper (secure connections only)
@@ -154,6 +157,13 @@ struct BoltConnection {
 
     error_action_func on_error_cb;
     void* on_error_cb_state;
+};
+
+struct BoltTrust {
+    char* certs;
+    int32_t certs_len;
+    int skip_verify;
+    int skip_verify_hostname;
 };
 
 /**
@@ -205,7 +215,7 @@ PUBLIC void BoltConnection_destroy(struct BoltConnection* connection);
  * @return 0 if the connection was opened successfully, -1 otherwise
  */
 PUBLIC int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transport,
-        struct BoltAddress* address, struct BoltLog* log);
+        struct BoltAddress* address, struct BoltTrust* trust, struct BoltLog* log);
 
 /**
  * Close a connection.

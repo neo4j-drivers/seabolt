@@ -30,6 +30,7 @@
 #include "protocol/v3.h"
 #include "bolt/platform.h"
 #include <assert.h>
+#include <bolt/tls.h>
 
 #define INITIAL_TX_BUFFER_SIZE 8192
 #define INITIAL_RX_BUFFER_SIZE 8192
@@ -205,44 +206,44 @@ int _open(struct BoltConnection* connection, enum BoltTransport transport, const
     return BOLT_SUCCESS;
 }
 
-int _secure(struct BoltConnection* connection)
+int _secure(struct BoltConnection* connection, struct BoltTrust* trust)
 {
+    int status = 1;
     // TODO: investigate ways to provide a greater resolution of TLS errors
     BoltLog_info(connection->log, "Securing socket");
-    const SSL_METHOD* ctx_init_method = NULL;
-#if OPENSSL_VERSION_NUMBER<0x10100000L
-    ctx_init_method = TLSv1_2_client_method();
-#else
-    ctx_init_method = TLS_client_method();
-#endif
-    SSL_library_init();
-    SSL_load_error_strings();
-    OpenSSL_add_all_algorithms();
-    connection->ssl_context = SSL_CTX_new(ctx_init_method);
+
     if (connection->ssl_context==NULL) {
-        _set_status(connection, BOLT_DEFUNCT, BOLT_TLS_ERROR);
-        return -1;
+        connection->ssl_context = create_ssl_ctx(trust, connection->address->host, connection->log);
+        connection->owns_ssl_context = 1;
     }
-    if (SSL_CTX_set_default_verify_paths(connection->ssl_context)!=1) {
-        _set_status(connection, BOLT_DEFUNCT, BOLT_TLS_ERROR);
-        return -1;
-    }
+
     connection->ssl = SSL_new(connection->ssl_context);
-    int linked_socket = SSL_set_fd(connection->ssl, connection->socket);
-    if (linked_socket!=1) {
-        _set_status(connection, BOLT_DEFUNCT, BOLT_TLS_ERROR);
-        return -1;
+
+    // Link to underlying socket
+    if (status) {
+        status = SSL_set_fd(connection->ssl, connection->socket);
     }
-    if (SSL_set_tlsext_host_name(connection->ssl, connection->address->host)!=1) {
-        _set_status(connection, BOLT_DEFUNCT, BOLT_TLS_ERROR);
-        return -1;
+
+    // Enable SNI
+    if (status) {
+        status = SSL_set_tlsext_host_name(connection->ssl, connection->address->host);
     }
-    int connected = SSL_connect(connection->ssl);
-    if (connected!=1) {
-        _set_status(connection, BOLT_DEFUNCT, BOLT_TLS_ERROR);
-        return -1;
+
+    status = SSL_connect(connection->ssl);
+    if (status==1) {
+        return 0;
     }
-    return 0;
+
+    _set_status(connection, BOLT_DEFUNCT, BOLT_TLS_ERROR);
+    SSL_free(connection->ssl);
+    if (connection->owns_ssl_context) {
+        SSL_CTX_free(connection->ssl_context);
+    }
+    connection->owns_ssl_context = 0;
+    connection->ssl_context = NULL;
+    connection->ssl = NULL;
+
+    return -1;
 }
 
 void _close(struct BoltConnection* connection)
@@ -284,9 +285,10 @@ void _close(struct BoltConnection* connection)
             SSL_free(connection->ssl);
             connection->ssl = NULL;
         }
-        if (connection->ssl_context!=NULL) {
+        if (connection->ssl_context!=NULL && connection->owns_ssl_context) {
             SSL_CTX_free(connection->ssl_context);
             connection->ssl_context = NULL;
+            connection->owns_ssl_context = 0;
         }
         SHUTDOWN(connection->socket, SHUT_RDWR);
         CLOSE(connection->socket);
@@ -444,7 +446,7 @@ void BoltConnection_destroy(struct BoltConnection* connection)
 }
 
 int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transport, struct BoltAddress* address,
-        struct BoltLog* log)
+        struct BoltTrust* trust, struct BoltLog* log)
 {
     if (connection->status!=BOLT_DISCONNECTED) {
         BoltConnection_close(connection);
@@ -456,9 +458,11 @@ int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport tr
         const int opened = _open(connection, transport, &address->resolved_hosts[i]);
         if (opened==BOLT_SUCCESS) {
             if (connection->transport==BOLT_SECURE_SOCKET) {
-                const int secured = _secure(connection);
+                const int secured = _secure(connection, trust);
                 if (secured==0) {
                     TRY(handshake_b(connection, 3, 2, 1, 0));
+                } else {
+                    return connection->error;
                 }
             }
             else {

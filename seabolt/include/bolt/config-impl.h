@@ -42,10 +42,12 @@
 #include <time.h>
 
 #if USE_POSIXSOCK
+
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
+
 #endif // USE_POSIXSOCK
 
 #if USE_WINSOCK
@@ -65,6 +67,10 @@
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <openssl/x509v3.h>
+
+extern int SSL_CTX_TRUST_INDEX;
+extern int SSL_CTX_LOG_INDEX;
 
 #endif // USE_OPENSSL
 

@@ -20,11 +20,14 @@
 #include "bolt/config-impl.h"
 #include "bolt/connector.h"
 #include "bolt/mem.h"
+#include "bolt/logging.h"
 #include "pool/direct-pool.h"
 #include "pool/routing-pool.h"
+#include "bolt/tls.h"
 
 #define SIZE_OF_CONNECTOR sizeof(struct BoltConnector)
 #define SIZE_OF_CONFIG sizeof(struct BoltConfig)
+#define SIZE_OF_TRUST sizeof(struct BoltTrust)
 #define SIZE_OF_LOG sizeof(struct BoltLog)
 #define SIZE_OF_ADDRESS_RESOLVER sizeof(struct BoltAddressResolver)
 
@@ -33,6 +36,20 @@ struct BoltConfig* BoltConfig_clone(struct BoltConfig* config)
     struct BoltConfig* clone = (struct BoltConfig*) BoltMem_allocate(SIZE_OF_CONFIG);
     clone->mode = config->mode;
     clone->transport = config->transport;
+    clone->trust = (struct BoltTrust*) BoltMem_allocate(SIZE_OF_TRUST);
+    if (config->trust!=NULL) {
+        clone->trust->certs = (char*) BoltMem_duplicate(config->trust->certs, config->trust->certs_len);
+        clone->trust->certs_len = config->trust->certs_len;
+        clone->trust->skip_verify = config->trust->skip_verify;
+        clone->trust->skip_verify_hostname = config->trust->skip_verify_hostname;
+    }
+    else {
+        // by default we trust any certificate presented but perform hostname verification
+        clone->trust->certs = NULL;
+        clone->trust->certs_len = 0;
+        clone->trust->skip_verify = 1;
+        clone->trust->skip_verify_hostname = 0;
+    }
     clone->user_agent = (char*) BoltMem_duplicate(config->user_agent, SIZE_OF_C_STRING(config->user_agent));
     clone->routing_context = BoltValue_duplicate(config->routing_context);
     clone->max_pool_size = config->max_pool_size;
@@ -44,8 +61,10 @@ struct BoltConfig* BoltConfig_clone(struct BoltConfig* config)
 
 void BoltConfig_destroy(struct BoltConfig* config)
 {
-    BoltMem_deallocate((char*) config->user_agent, SIZE_OF_C_STRING(config->user_agent));
-    BoltValue_destroy((struct BoltValue*) config->routing_context);
+    BoltMem_deallocate(config->trust->certs, config->trust->certs_len);
+    BoltMem_deallocate(config->trust, SIZE_OF_TRUST);
+    BoltMem_deallocate(config->user_agent, SIZE_OF_C_STRING(config->user_agent));
+    BoltValue_destroy(config->routing_context);
     BoltLog_destroy(config->log);
     BoltAddressResolver_destroy(config->address_resolver);
     BoltMem_deallocate(config, SIZE_OF_CONFIG);
@@ -57,7 +76,7 @@ BoltConnector_create(struct BoltAddress* address, struct BoltValue* auth_token, 
     struct BoltConnector* connector = (struct BoltConnector*) BoltMem_allocate(SIZE_OF_CONNECTOR);
     connector->address = BoltAddress_create(address->host, address->port);
     connector->auth_token = BoltValue_duplicate(auth_token);
-    connector->config = BoltConfig_clone(config);;
+    connector->config = BoltConfig_clone(config);
 
     switch (connector->config->mode) {
     case BOLT_DIRECT:

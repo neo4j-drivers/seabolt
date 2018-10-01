@@ -67,7 +67,7 @@ const char* BoltProtocolV1_message_name(int16_t code) {
 }
 
 int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transport,
-        struct BoltAddress* address, struct BoltLog* log)
+        struct BoltAddress* address, struct BoltTrust *trust, struct BoltLog* log)
 {
     return 0;
 }
