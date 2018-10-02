@@ -83,7 +83,7 @@ int64_t BoltUtil_get_time_ms()
 int64_t BoltUtil_increment(volatile int64_t* ref)
 {
 #if defined(__APPLE__)
-    return OSAtomicIncrement32(ref);
+    return OSAtomicIncrement64(ref);
 #elif defined(_WIN32)
     return _InterlockedIncrement64(ref);
 #else
@@ -94,7 +94,7 @@ int64_t BoltUtil_increment(volatile int64_t* ref)
 int64_t BoltUtil_decrement(volatile int64_t* ref)
 {
 #if defined(__APPLE__)
-    return OSAtomicDecrement32(ref);
+    return OSAtomicDecrement64(ref);
 #elif defined(_WIN32)
     return _InterlockedDecrement64(ref);
 #else
@@ -232,7 +232,6 @@ int BoltUtil_rwlock_trywrlock(rwlock_t* rwlock)
 
 int BoltUtil_rwlock_timedrdlock(rwlock_t* rwlock, int timeout_ms)
 {
-#ifdef  _WIN32
     int64_t end_at = BoltUtil_get_time_ms()+timeout_ms;
 
     while (1) {
@@ -244,20 +243,16 @@ int BoltUtil_rwlock_timedrdlock(rwlock_t* rwlock, int timeout_ms)
             return 0;
         }
 
+#ifdef _WIN32
         SleepEx(10, TRUE);
-    }
 #else
-    struct timespec timeout;
-    BoltUtil_get_time(&timeout);
-    BoltUtil_add_time_ns(&timeout, timeout_ms*NSEC_PER_MSEC);
-
-    return pthread_rwlock_timedrdlock(rwlock, &timeout)==0;
+        usleep(1000);
 #endif
+    }
 }
 
 int BoltUtil_rwlock_timedwrlock(rwlock_t* rwlock, int timeout_ms)
 {
-#ifdef  _WIN32
     int64_t end_at = BoltUtil_get_time_ms()+timeout_ms;
 
     while (1) {
@@ -269,15 +264,12 @@ int BoltUtil_rwlock_timedwrlock(rwlock_t* rwlock, int timeout_ms)
             return 0;
         }
 
-        SleepEx(5, TRUE);
-    }
+#ifdef _WIN32
+        SleepEx(10, TRUE);
 #else
-    struct timespec timeout;
-    BoltUtil_get_time(&timeout);
-    BoltUtil_add_time_ns(&timeout, timeout_ms*NSEC_PER_MSEC);
-
-    return pthread_rwlock_timedwrlock(rwlock, &timeout)==0;
+        usleep(1000);
 #endif
+    }
 }
 
 int BoltUtil_rwlock_rdunlock(rwlock_t* rwlock)
