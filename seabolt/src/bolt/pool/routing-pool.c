@@ -38,7 +38,7 @@ int BoltRoutingPool_ensure_server(struct BoltRoutingPool* pool, const struct Bol
         index = BoltAddressSet_index_of(pool->servers, *server);
 
         // Release read lock
-        BoltUtil_rwlock_unlock(&pool->rwlock);
+        BoltUtil_rwlock_rdunlock(&pool->rwlock);
 
         if (BoltUtil_rwlock_timedwrlock(&pool->rwlock, WRITE_LOCK_TIMEOUT)) {
 
@@ -57,7 +57,7 @@ int BoltRoutingPool_ensure_server(struct BoltRoutingPool* pool, const struct Bol
                 pool->server_pools[index] = BoltDirectPool_create(server, pool->auth_token, pool->config);
             }
 
-            BoltUtil_rwlock_unlock(&pool->rwlock);
+            BoltUtil_rwlock_wrunlock(&pool->rwlock);
         }
 
         BoltUtil_rwlock_rdlock(&pool->rwlock);
@@ -251,7 +251,7 @@ enum BoltConnectionError BoltRoutingPool_ensure_routing_table(struct BoltRouting
     // Is routing table refresh wrt the requested access mode?
     while (RoutingTable_is_expired(pool->routing_table, mode)) {
         // First unlock read lock
-        BoltUtil_rwlock_unlock(&pool->rwlock);
+        BoltUtil_rwlock_rdunlock(&pool->rwlock);
 
         // Try acquire write lock
         if (BoltUtil_rwlock_timedwrlock(&pool->rwlock, WRITE_LOCK_TIMEOUT)) {
@@ -274,7 +274,7 @@ enum BoltConnectionError BoltRoutingPool_ensure_routing_table(struct BoltRouting
             }
 
             // Unlock write lock
-            BoltUtil_rwlock_unlock(&pool->rwlock);
+            BoltUtil_rwlock_wrunlock(&pool->rwlock);
         }
 
         // Acquire read lock
@@ -344,7 +344,7 @@ void BoltRoutingPool_forget_server(struct BoltRoutingPool* pool, const struct Bo
     BoltRoutingPool_cleanup(pool);
 
     // Unlock
-    BoltUtil_rwlock_unlock(&pool->rwlock);
+    BoltUtil_rwlock_wrunlock(&pool->rwlock);
 }
 
 void BoltRoutingPool_forget_writer(struct BoltRoutingPool* pool, const struct BoltAddress* server)
@@ -360,7 +360,7 @@ void BoltRoutingPool_forget_writer(struct BoltRoutingPool* pool, const struct Bo
     BoltRoutingPool_cleanup(pool);
 
     // Unlock
-    BoltUtil_rwlock_unlock(&pool->rwlock);
+    BoltUtil_rwlock_wrunlock(&pool->rwlock);
 }
 
 void BoltRoutingPool_handle_connection_error_by_code(struct BoltRoutingPool* pool, const struct BoltAddress* server,
@@ -515,7 +515,7 @@ BoltRoutingPool_acquire(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
         }
     }
 
-    BoltUtil_rwlock_unlock(&pool->rwlock);
+    BoltUtil_rwlock_rdunlock(&pool->rwlock);
 
     if (status==BOLT_SUCCESS) {
         return result;
@@ -547,7 +547,7 @@ int BoltRoutingPool_release(struct BoltRoutingPool* pool, struct BoltConnection*
         result = BoltDirectPool_release(pool->server_pools[server_pool_index], connection);
     }
 
-    BoltUtil_rwlock_unlock(&pool->rwlock);
+    BoltUtil_rwlock_rdunlock(&pool->rwlock);
 
     return result;
 }
