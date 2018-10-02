@@ -29,8 +29,8 @@ struct BoltRoutingPool {
     const struct BoltValue* auth_token;
 
     struct RoutingTable* routing_table;
-    int readers_offset;
-    int writers_offset;
+    int64_t readers_offset;
+    int64_t writers_offset;
 
     struct BoltAddressSet* servers;
     struct BoltDirectPool** server_pools;

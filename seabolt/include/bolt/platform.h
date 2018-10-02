@@ -30,7 +30,7 @@ typedef pthread_mutex_t mutex_t;
 #endif
 
 #if _WIN32
-
+typedef void * rwlock_t;
 #else
 typedef pthread_rwlock_t rwlock_t;
 #endif
@@ -39,9 +39,9 @@ PUBLIC int BoltUtil_get_time(struct timespec* tp);
 
 int64_t BoltUtil_get_time_ms();
 
-int BoltUtil_increment(volatile int* ref);
+int64_t BoltUtil_increment(volatile int64_t* ref);
 
-int BoltUtil_decrement(volatile int* ref);
+int64_t BoltUtil_decrement(volatile int64_t* ref);
 
 int BoltUtil_mutex_create(mutex_t* mutex);
 
@@ -69,7 +69,8 @@ int BoltUtil_rwlock_timedrdlock(rwlock_t* rwlock, int timeout_ms);
 
 int BoltUtil_rwlock_timedwrlock(rwlock_t* rwlock, int timeout_ms);
 
-int BoltUtil_rwlock_unlock(rwlock_t* rwlock);
+int BoltUtil_rwlock_rdunlock(rwlock_t* rwlock);
 
+int BoltUtil_rwlock_wrunlock(rwlock_t* rwlock);
 #endif //SEABOLT_UTILS_H
 

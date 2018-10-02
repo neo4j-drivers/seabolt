@@ -49,7 +49,7 @@ int BoltUtil_get_time(struct timespec* tp)
     return 0;
 #elif defined(_WIN32)
     __int64 wintime;
-    GetSystemTimeAsFileTime((FILETIME*) &wintime);
+    GetSystemTimePreciseAsFileTime((FILETIME*) &wintime);
     wintime -= 116444736000000000L;  //1jan1601 to 1jan1970
     tp->tv_sec = wintime/10000000L;           //seconds
     tp->tv_nsec = wintime%10000000L*100;      //nano-seconds
@@ -80,23 +80,23 @@ int64_t BoltUtil_get_time_ms()
     return (now.tv_sec)*1000+(now.tv_nsec)/1000000;
 }
 
-int BoltUtil_increment(volatile int* ref)
+int64_t BoltUtil_increment(volatile int64_t* ref)
 {
 #if defined(__APPLE__)
     return OSAtomicIncrement32(ref);
 #elif defined(_WIN32)
-    return _InterlockedIncrement(ref);
+    return _InterlockedIncrement64(ref);
 #else
     return __sync_add_and_fetch(ref, 1);
 #endif
 }
 
-int BoltUtil_decrement(volatile int* ref)
+int64_t BoltUtil_decrement(volatile int64_t* ref)
 {
 #if defined(__APPLE__)
     return OSAtomicDecrement32(ref);
 #elif defined(_WIN32)
-    return _InterlockedDecrement(ref);
+    return _InterlockedDecrement64(ref);
 #else
     return __sync_add_and_fetch(ref, -1);
 #endif
@@ -173,7 +173,8 @@ int BoltUtil_mutex_trylock(mutex_t* mutex)
 int BoltUtil_rwlock_create(rwlock_t* rwlock)
 {
 #ifdef  _WIN32
-
+    InitializeSRWLock((PSRWLOCK) rwlock);
+    return 1;
 #else
     pthread_rwlockattr_t rwlock_attr;
     pthread_rwlockattr_init(&rwlock_attr);
@@ -185,7 +186,7 @@ int BoltUtil_rwlock_create(rwlock_t* rwlock)
 int BoltUtil_rwlock_destroy(rwlock_t* rwlock)
 {
 #ifdef  _WIN32
-
+    return 1;
 #else
     return pthread_rwlock_destroy(rwlock)==0;
 #endif
@@ -194,7 +195,8 @@ int BoltUtil_rwlock_destroy(rwlock_t* rwlock)
 int BoltUtil_rwlock_rdlock(rwlock_t* rwlock)
 {
 #ifdef  _WIN32
-
+    AcquireSRWLockShared((PSRWLOCK) rwlock);
+    return 1;
 #else
     return pthread_rwlock_rdlock(rwlock)==0;
 #endif
@@ -203,7 +205,8 @@ int BoltUtil_rwlock_rdlock(rwlock_t* rwlock)
 int BoltUtil_rwlock_wrlock(rwlock_t* rwlock)
 {
 #ifdef  _WIN32
-
+    AcquireSRWLockExclusive((PSRWLOCK) rwlock);
+    return 1;
 #else
     return pthread_rwlock_wrlock(rwlock)==0;
 #endif
@@ -212,7 +215,7 @@ int BoltUtil_rwlock_wrlock(rwlock_t* rwlock)
 int BoltUtil_rwlock_tryrdlock(rwlock_t* rwlock)
 {
 #ifdef  _WIN32
-
+    return TryAcquireSRWLockShared((PSRWLOCK) rwlock)==TRUE;
 #else
     return pthread_rwlock_tryrdlock(rwlock)==0;
 #endif
@@ -221,7 +224,7 @@ int BoltUtil_rwlock_tryrdlock(rwlock_t* rwlock)
 int BoltUtil_rwlock_trywrlock(rwlock_t* rwlock)
 {
 #ifdef  _WIN32
-
+    return TryAcquireSRWLockExclusive((PSRWLOCK) rwlock)==TRUE;
 #else
     return pthread_rwlock_trywrlock(rwlock)==0;
 #endif
@@ -230,7 +233,19 @@ int BoltUtil_rwlock_trywrlock(rwlock_t* rwlock)
 int BoltUtil_rwlock_timedrdlock(rwlock_t* rwlock, int timeout_ms)
 {
 #ifdef  _WIN32
+    int64_t end_at = BoltUtil_get_time_ms()+timeout_ms;
 
+    while (1) {
+        if (BoltUtil_rwlock_tryrdlock(rwlock)) {
+            return 1;
+        }
+
+        if (BoltUtil_get_time_ms()>end_at) {
+            return 0;
+        }
+
+        SleepEx(10, TRUE);
+    }
 #else
     struct timespec timeout;
     BoltUtil_get_time(&timeout);
@@ -243,7 +258,19 @@ int BoltUtil_rwlock_timedrdlock(rwlock_t* rwlock, int timeout_ms)
 int BoltUtil_rwlock_timedwrlock(rwlock_t* rwlock, int timeout_ms)
 {
 #ifdef  _WIN32
+    int64_t end_at = BoltUtil_get_time_ms()+timeout_ms;
 
+    while (1) {
+        if (BoltUtil_rwlock_trywrlock(rwlock)) {
+            return 1;
+        }
+
+        if (BoltUtil_get_time_ms()>end_at) {
+            return 0;
+        }
+
+        SleepEx(5, TRUE);
+    }
 #else
     struct timespec timeout;
     BoltUtil_get_time(&timeout);
@@ -253,10 +280,21 @@ int BoltUtil_rwlock_timedwrlock(rwlock_t* rwlock, int timeout_ms)
 #endif
 }
 
-int BoltUtil_rwlock_unlock(rwlock_t* rwlock)
+int BoltUtil_rwlock_rdunlock(rwlock_t* rwlock)
 {
 #ifdef  _WIN32
+    ReleaseSRWLockShared((PSRWLOCK) rwlock);
+    return 1;
+#else
+    return pthread_rwlock_unlock(rwlock)==0;
+#endif
+}
 
+int BoltUtil_rwlock_wrunlock(rwlock_t* rwlock)
+{
+#ifdef  _WIN32
+    ReleaseSRWLockExclusive((PSRWLOCK) rwlock);
+    return 1;
 #else
     return pthread_rwlock_unlock(rwlock)==0;
 #endif
