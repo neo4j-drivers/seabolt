@@ -19,6 +19,7 @@
 
 #include "bolt/config-impl.h"
 #include "bolt/platform.h"
+#include "bolt/mem.h"
 
 #ifdef __APPLE__
 #include <mach/clock.h>
@@ -28,8 +29,12 @@
 #ifndef _WIN32
 
 #include <pthread.h>
+#include <assert.h>
 
 #endif
+
+#define NSEC_PER_SEC 1000000000
+#define NSEC_PER_MSEC 1000000
 
 int BoltUtil_get_time(struct timespec* tp)
 {
@@ -54,11 +59,47 @@ int BoltUtil_get_time(struct timespec* tp)
 #endif
 }
 
+void BoltUtil_add_time_ns(struct timespec* tp, int64_t nanoseconds)
+{
+    tp->tv_sec += (nanoseconds/NSEC_PER_SEC);
+    tp->tv_nsec += (nanoseconds%NSEC_PER_SEC);
+    if (tp->tv_nsec>NSEC_PER_SEC) {
+        tp->tv_sec++;
+        tp->tv_nsec -= NSEC_PER_SEC;
+    }
+    else if (tp->tv_nsec<0) {
+        tp->tv_sec--;
+        tp->tv_nsec += NSEC_PER_SEC;
+    }
+}
+
 int64_t BoltUtil_get_time_ms()
 {
     struct timespec now;
     BoltUtil_get_time(&now);
     return (now.tv_sec)*1000+(now.tv_nsec)/1000000;
+}
+
+int BoltUtil_increment(volatile int* ref)
+{
+#if defined(__APPLE__)
+    return OSAtomicIncrement32(ref);
+#elif defined(_WIN32)
+    return _InterlockedIncrement(ref);
+#else
+    return __sync_add_and_fetch(ref, 1);
+#endif
+}
+
+int BoltUtil_decrement(volatile int* ref)
+{
+#if defined(__APPLE__)
+    return OSAtomicDecrement32(ref);
+#elif defined(_WIN32)
+    return _InterlockedDecrement(ref);
+#else
+    return __sync_add_and_fetch(ref, -1);
+#endif
 }
 
 int BoltUtil_mutex_create(mutex_t* mutex)
@@ -125,6 +166,98 @@ int BoltUtil_mutex_trylock(mutex_t* mutex)
     }
     return 0;
 #else
-    return pthread_mutex_trylock(mutex);
+    return pthread_mutex_trylock(mutex)==0;
+#endif
+}
+
+int BoltUtil_rwlock_create(rwlock_t* rwlock)
+{
+#ifdef  _WIN32
+
+#else
+    pthread_rwlockattr_t rwlock_attr;
+    pthread_rwlockattr_init(&rwlock_attr);
+
+    return pthread_rwlock_init(rwlock, &rwlock_attr)==0;
+#endif
+}
+
+int BoltUtil_rwlock_destroy(rwlock_t* rwlock)
+{
+#ifdef  _WIN32
+
+#else
+    return pthread_rwlock_destroy(rwlock)==0;
+#endif
+}
+
+int BoltUtil_rwlock_rdlock(rwlock_t* rwlock)
+{
+#ifdef  _WIN32
+
+#else
+    return pthread_rwlock_rdlock(rwlock)==0;
+#endif
+}
+
+int BoltUtil_rwlock_wrlock(rwlock_t* rwlock)
+{
+#ifdef  _WIN32
+
+#else
+    return pthread_rwlock_wrlock(rwlock)==0;
+#endif
+}
+
+int BoltUtil_rwlock_tryrdlock(rwlock_t* rwlock)
+{
+#ifdef  _WIN32
+
+#else
+    return pthread_rwlock_tryrdlock(rwlock)==0;
+#endif
+}
+
+int BoltUtil_rwlock_trywrlock(rwlock_t* rwlock)
+{
+#ifdef  _WIN32
+
+#else
+    return pthread_rwlock_trywrlock(rwlock)==0;
+#endif
+}
+
+int BoltUtil_rwlock_timedrdlock(rwlock_t* rwlock, int timeout_ms)
+{
+#ifdef  _WIN32
+
+#else
+    struct timespec timeout;
+    BoltUtil_get_time(&timeout);
+    BoltUtil_add_time_ns(&timeout, timeout_ms*NSEC_PER_MSEC);
+
+    return pthread_rwlock_timedrdlock(rwlock, &timeout)==0;
+#endif
+}
+
+int BoltUtil_rwlock_timedwrlock(rwlock_t* rwlock, int timeout_ms)
+{
+#ifdef  _WIN32
+
+#else
+    struct timespec timeout;
+    BoltUtil_get_time(&timeout);
+    BoltUtil_add_time_ns(&timeout, timeout_ms*NSEC_PER_MSEC);
+
+    return pthread_rwlock_timedwrlock(rwlock, &timeout)==0;
+#endif
+}
+
+int BoltUtil_rwlock_unlock(rwlock_t* rwlock)
+{
+#ifdef  _WIN32
+
+#else
+    return pthread_rwlock_unlock(rwlock)==0;
 #endif
 }
