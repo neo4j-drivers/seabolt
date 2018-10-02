@@ -35,7 +35,7 @@ struct BoltRoutingPool {
     struct BoltAddressSet* servers;
     struct BoltDirectPool** server_pools;
 
-    mutex_t lock;
+    rwlock_t rwlock;
 };
 
 #define SIZE_OF_ROUTING_POOL sizeof(struct BoltRoutingPool)
