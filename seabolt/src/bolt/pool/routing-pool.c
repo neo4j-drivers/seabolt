@@ -249,7 +249,7 @@ enum BoltConnectionError BoltRoutingPool_ensure_routing_table(struct BoltRouting
     enum BoltConnectionError status = BOLT_SUCCESS;
 
     // Is routing table refresh wrt the requested access mode?
-    while (RoutingTable_is_expired(pool->routing_table, mode)) {
+    while (status==BOLT_SUCCESS && RoutingTable_is_expired(pool->routing_table, mode)) {
         // First unlock read lock
         BoltUtil_rwlock_rdunlock(&pool->rwlock);
 
