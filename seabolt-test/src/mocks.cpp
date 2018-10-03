@@ -37,24 +37,82 @@ int64_t BoltUtil_get_time_ms()
     return 0;
 }
 
+int64_t BoltUtil_increment(volatile int64_t* ref) {
+    return (*ref += 1);
+}
+
+int64_t BoltUtil_decrement(volatile int64_t* ref) {
+    return (*ref -= 1);
+}
+
 int BoltUtil_mutex_create(mutex_t* mutex)
 {
-    return 0;
+    return 1;
 }
 
 int BoltUtil_mutex_destroy(mutex_t* mutex)
 {
-    return 0;
+    return 1;
 }
 
 int BoltUtil_mutex_lock(mutex_t* mutex)
 {
-    return 0;
+    return 1;
 }
 
 int BoltUtil_mutex_unlock(mutex_t* mutex)
 {
-    return 0;
+    return 1;
+}
+
+int BoltUtil_rwlock_create(rwlock_t* rwlock)
+{
+    return 1;
+}
+
+int BoltUtil_rwlock_destroy(rwlock_t* rwlock)
+{
+    return 1;
+}
+
+int BoltUtil_rwlock_rdlock(rwlock_t* rwlock)
+{
+    return 1;
+}
+
+int BoltUtil_rwlock_wrlock(rwlock_t* rwlock)
+{
+    return 1;
+}
+
+int BoltUtil_rwlock_tryrdlock(rwlock_t* rwlock)
+{
+    return 1;
+}
+
+int BoltUtil_rwlock_trywrlock(rwlock_t* rwlock)
+{
+    return 1;
+}
+
+int BoltUtil_rwlock_timedrdlock(rwlock_t* rwlock, int timeout_ms)
+{
+    return 1;
+}
+
+int BoltUtil_rwlock_timedwrlock(rwlock_t* rwlock, int timeout_ms)
+{
+    return 1;
+}
+
+int BoltUtil_rwlock_rdunlock(rwlock_t* rwlock)
+{
+    return 1;
+}
+
+int BoltUtil_rwlock_wrunlock(rwlock_t* rwlock)
+{
+    return 1;
 }
 
 const char* BoltProtocolV1_structure_name(int16_t code)
@@ -62,12 +120,13 @@ const char* BoltProtocolV1_structure_name(int16_t code)
     return "MOCKED";
 }
 
-const char* BoltProtocolV1_message_name(int16_t code) {
+const char* BoltProtocolV1_message_name(int16_t code)
+{
     return "MOCKED";
 }
 
 int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transport,
-        struct BoltAddress* address, struct BoltTrust *trust, struct BoltLog* log)
+        struct BoltAddress* address, struct BoltTrust* trust, struct BoltLog* log)
 {
     return 0;
 }
