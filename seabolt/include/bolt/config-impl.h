@@ -47,6 +47,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
+#include <fcntl.h>
 
 #endif // USE_POSIXSOCK
 

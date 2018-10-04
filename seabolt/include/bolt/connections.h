@@ -109,6 +109,16 @@ struct BoltConnectionMetrics {
 };
 
 /**
+ * Socket options
+ */
+struct BoltSocketOptions {
+    int connect_timeout;
+    int recv_timeout;
+    int send_timeout;
+    int keepalive;
+};
+
+/**
  * A Bolt client-server connection instance.
  *
  */
@@ -118,6 +128,9 @@ struct BoltConnection {
 
     /// Transport type for this connection
     enum BoltTransport transport;
+
+    /// Socket options
+    const struct BoltSocketOptions* sock_opts;
 
     const struct BoltAddress* address;
     const struct BoltAddress* resolved_address;
@@ -215,7 +228,7 @@ PUBLIC void BoltConnection_destroy(struct BoltConnection* connection);
  * @return 0 if the connection was opened successfully, -1 otherwise
  */
 PUBLIC int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transport,
-        struct BoltAddress* address, struct BoltTrust* trust, struct BoltLog* log);
+        struct BoltAddress* address, struct BoltTrust* trust, struct BoltLog* log, struct BoltSocketOptions* sock_opts);
 
 /**
  * Close a connection.

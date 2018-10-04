@@ -145,6 +145,7 @@ struct Application* app_create(int argc, char** argv)
     config.log = create_logger();
     config.address_resolver = NULL;
     config.trust = NULL;
+    config.sock_opts = NULL;
 
     struct BoltValue* auth_token = BoltAuth_basic(BOLT_CONFIG_USER, BOLT_CONFIG_PASSWORD, NULL);
 

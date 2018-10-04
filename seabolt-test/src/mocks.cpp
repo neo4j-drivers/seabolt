@@ -37,11 +37,13 @@ int64_t BoltUtil_get_time_ms()
     return 0;
 }
 
-int64_t BoltUtil_increment(volatile int64_t* ref) {
+int64_t BoltUtil_increment(volatile int64_t* ref)
+{
     return (*ref += 1);
 }
 
-int64_t BoltUtil_decrement(volatile int64_t* ref) {
+int64_t BoltUtil_decrement(volatile int64_t* ref)
+{
     return (*ref -= 1);
 }
 
@@ -126,7 +128,7 @@ const char* BoltProtocolV1_message_name(int16_t code)
 }
 
 int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transport,
-        struct BoltAddress* address, struct BoltTrust* trust, struct BoltLog* log)
+        struct BoltAddress* address, struct BoltTrust* trust, struct BoltLog* log, struct BoltSocketOptions* sock_opts)
 {
     return 0;
 }

@@ -46,9 +46,11 @@
 #define RECEIVE_S(socket, buffer, size, flags) SSL_read(socket, buffer, size)
 #define ADDR_SIZE(address) address->ss_family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6)
 #if USE_WINSOCK
+#define GETSOCKETOPT(socket, level, optname, optval, optlen) getsockopt(socket, level, optname, (char *)(optval), optlen)
 #define SETSOCKETOPT(socket, level, optname, optval, optlen) setsockopt(socket, level, optname, (const char *)(optval), optlen)
 #define CLOSE(socket) closesocket(socket)
 #else
+#define GETSOCKETOPT(socket, level, optname, optval, optlen) getsockopt(socket, level, optname, (void *)optval, optlen)
 #define SETSOCKETOPT(socket, level, optname, optval, optlen) setsockopt(socket, level, optname, (const void *)optval, optlen)
 #define CLOSE(socket) close(socket)
 #endif
@@ -71,11 +73,9 @@
 #define SHUT_RDWR SD_BOTH
 #endif
 
-enum BoltConnectionError _last_error(struct BoltConnection* connection)
+enum BoltConnectionError _transform_error(int error_code)
 {
 #if USE_WINSOCK
-    int error_code = WSAGetLastError();
-    BoltLog_error(connection->log, "Winsock error code: %d", error_code);
     switch (error_code) {
     case WSAEACCES:
         return BOLT_PERMISSION_DENIED;
@@ -104,8 +104,6 @@ enum BoltConnectionError _last_error(struct BoltConnection* connection)
         return BOLT_UNKNOWN_ERROR;
     }
 #else
-    int error_code = errno;
-    BoltLog_error(connection->log, "socket error code: %d", error_code);
     switch (error_code) {
     case EACCES:
     case EPERM:
@@ -136,6 +134,22 @@ enum BoltConnectionError _last_error(struct BoltConnection* connection)
         return BOLT_UNKNOWN_ERROR;
     }
 #endif
+}
+
+int _last_error_code(struct BoltConnection* connection)
+{
+#if USE_WINSOCK
+    return WSAGetLastError();
+#else
+    return errno;
+#endif
+}
+
+enum BoltConnectionError _last_error(struct BoltConnection* connection)
+{
+    int error_code = _last_error_code(connection);
+    BoltLog_error(connection->log, "socket error code: %d", error_code);
+    return _transform_error(error_code);
 }
 
 void _set_status(struct BoltConnection* connection, enum BoltConnectionStatus status, enum BoltConnectionError error)
@@ -170,6 +184,62 @@ void _set_status(struct BoltConnection* connection, enum BoltConnectionStatus st
     }
 }
 
+int _socket_configure(struct BoltConnection* connection)
+{
+    const int YES = 1, NO = 0;
+
+    // Enable TCP_NODELAY
+    TRY(SETSOCKETOPT(connection->socket, IPPROTO_TCP, TCP_NODELAY, &YES, sizeof(YES)));
+
+    // Set keep-alive accordingly, default: TRUE
+    if (connection->sock_opts==NULL || connection->sock_opts->keepalive) {
+        TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_KEEPALIVE, &YES, sizeof(YES)));
+    }
+    else {
+        TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_KEEPALIVE, &NO, sizeof(NO)));
+    }
+
+    // Set send and receive timeouts
+    struct timeval recv_timeout, send_timeout;
+    if (connection->sock_opts!=NULL) {
+        recv_timeout.tv_sec = connection->sock_opts->recv_timeout/1000;
+        recv_timeout.tv_usec = (connection->sock_opts->recv_timeout%1000)*1000;
+        send_timeout.tv_sec = connection->sock_opts->send_timeout/1000;
+        send_timeout.tv_usec = (connection->sock_opts->send_timeout%1000)*1000;
+    } else {
+        recv_timeout.tv_sec = 0;
+        recv_timeout.tv_usec = 0;
+        send_timeout.tv_sec = 0;
+        send_timeout.tv_usec = 0;
+    }
+
+    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(struct timeval)));
+    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_SNDTIMEO, &send_timeout, sizeof(struct timeval)));
+
+    return BOLT_SUCCESS;
+}
+
+int _socket_set_mode(struct BoltConnection* connection, int blocking)
+{
+    int status = 0;
+
+#if USE_WINSOCK
+    u_long non_blocking = blocking ? 0 : 1;
+    status = ioctlsocket(socket, FIONBIO, &non_blocking);
+#else
+    const int flags = fcntl(connection->socket, F_GETFL, 0);
+    if ((flags & O_NONBLOCK) && !blocking) {
+        return 0;
+    }
+    if (!(flags & O_NONBLOCK) && blocking) {
+        return 0;
+    }
+    status = fcntl(connection->socket, F_SETFL, blocking ? flags ^ O_NONBLOCK : flags | O_NONBLOCK);
+#endif
+
+    return status;
+}
+
 int _open(struct BoltConnection* connection, enum BoltTransport transport, const struct sockaddr_storage* address)
 {
     memset(&connection->metrics, 0, sizeof(connection->metrics));
@@ -195,11 +265,62 @@ int _open(struct BoltConnection* connection, enum BoltTransport transport, const
         _set_status(connection, BOLT_DEFUNCT, _last_error(connection));
         return BOLT_STATUS_SET;
     }
-    const int YES = 1;
-    // TODO: socket options in Windows
-    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_KEEPALIVE, &YES, sizeof(YES)));
-    TRY(SETSOCKETOPT(connection->socket, IPPROTO_TCP, TCP_NODELAY, &YES, sizeof(YES)));
-    TRY(CONNECT(connection->socket, (struct sockaddr*) (address), ADDR_SIZE(address)));
+
+    if (connection->sock_opts!=NULL && connection->sock_opts->connect_timeout>0) {
+        // enable non-blocking mode
+        TRY(_socket_set_mode(connection, 0));
+
+        // initiate connection
+        int status = CONNECT(connection->socket, (struct sockaddr*) (address), ADDR_SIZE(address));
+        if (status==-1 && _last_error_code(connection)!=EINPROGRESS) {
+            _set_status(connection, BOLT_DEFUNCT, _last_error(connection));
+            return BOLT_STATUS_SET;
+        }
+
+        if (status) {
+            // connection in progress
+            fd_set write_set;
+            FD_ZERO(&write_set);
+            FD_SET(connection->socket, &write_set);
+
+            struct timeval timeout;
+            timeout.tv_sec = connection->sock_opts->connect_timeout/1000;
+            timeout.tv_usec = (connection->sock_opts->connect_timeout%1000)*1000;
+
+            status = select(FD_SETSIZE, NULL, &write_set, NULL, &timeout);
+            switch (status) {
+            case 0: {
+                //timeout expired
+                _set_status(connection, BOLT_DEFUNCT, BOLT_TIMED_OUT);
+                return BOLT_STATUS_SET;
+            }
+            case 1: {
+                int so_error;
+                unsigned int so_error_len = sizeof(int);
+
+                TRY(GETSOCKETOPT(connection->socket, SOL_SOCKET, SO_ERROR, &so_error, &so_error_len));
+                if (so_error!=0) {
+                    _set_status(connection, BOLT_DEFUNCT, _transform_error(so_error));
+                    return BOLT_STATUS_SET;
+                }
+
+                break;
+            }
+            default:
+                //another error occurred
+                _set_status(connection, BOLT_DEFUNCT, _last_error(connection));
+                return BOLT_STATUS_SET;
+            }
+        }
+
+        // revert to blocking mode
+        TRY(_socket_set_mode(connection, 1));
+    }
+    else {
+        TRY(CONNECT(connection->socket, (struct sockaddr*) (address), ADDR_SIZE(address)));
+    }
+
+    TRY(_socket_configure(connection));
     BoltUtil_get_time(&connection->metrics.time_opened);
     connection->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
     connection->rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
@@ -446,7 +567,7 @@ void BoltConnection_destroy(struct BoltConnection* connection)
 }
 
 int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transport, struct BoltAddress* address,
-        struct BoltTrust* trust, struct BoltLog* log)
+        struct BoltTrust* trust, struct BoltLog* log, struct BoltSocketOptions* sock_opts)
 {
     if (connection->status!=BOLT_DISCONNECTED) {
         BoltConnection_close(connection);
@@ -454,6 +575,8 @@ int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport tr
     connection->log = log;
     // Store connection info
     connection->address = BoltAddress_create(address->host, address->port);
+    // Store socket options
+    connection->sock_opts = sock_opts;
     for (int i = 0; i<address->n_resolved_hosts; i++) {
         const int opened = _open(connection, transport, &address->resolved_hosts[i]);
         if (opened==BOLT_SUCCESS) {
@@ -461,7 +584,8 @@ int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport tr
                 const int secured = _secure(connection, trust);
                 if (secured==0) {
                     TRY(handshake_b(connection, 3, 2, 1, 0));
-                } else {
+                }
+                else {
                     return connection->error;
                 }
             }
