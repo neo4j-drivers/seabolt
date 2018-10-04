@@ -41,7 +41,10 @@ struct BoltConfig {
     struct BoltValue* routing_context;
     struct BoltAddressResolver* address_resolver;
     struct BoltLog* log;
-    uint32_t max_pool_size;
+    int max_pool_size;
+    int max_connection_lifetime;
+    int max_connection_acquire_time;
+    struct BoltSocketOptions* sock_opts;
 };
 
 struct BoltConnector {

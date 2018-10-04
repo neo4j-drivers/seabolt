@@ -29,6 +29,7 @@
 #define SIZE_OF_CONFIG sizeof(struct BoltConfig)
 #define SIZE_OF_TRUST sizeof(struct BoltTrust)
 #define SIZE_OF_LOG sizeof(struct BoltLog)
+#define SIZE_OF_SOCK_OPTS sizeof(struct BoltSocketOptions)
 #define SIZE_OF_ADDRESS_RESOLVER sizeof(struct BoltAddressResolver)
 
 struct BoltConfig* BoltConfig_clone(struct BoltConfig* config)
@@ -53,6 +54,21 @@ struct BoltConfig* BoltConfig_clone(struct BoltConfig* config)
     clone->user_agent = (char*) BoltMem_duplicate(config->user_agent, SIZE_OF_C_STRING(config->user_agent));
     clone->routing_context = BoltValue_duplicate(config->routing_context);
     clone->max_pool_size = config->max_pool_size;
+    clone->max_connection_lifetime = config->max_connection_lifetime;
+    clone->max_connection_acquire_time = config->max_connection_acquire_time;
+    clone->sock_opts = (struct BoltSocketOptions*) BoltMem_allocate(SIZE_OF_SOCK_OPTS);
+    if (config->sock_opts!=NULL) {
+        clone->sock_opts->connect_timeout = config->sock_opts->connect_timeout;
+        clone->sock_opts->recv_timeout = config->sock_opts->recv_timeout;
+        clone->sock_opts->send_timeout = config->sock_opts->send_timeout;
+        clone->sock_opts->keepalive = config->sock_opts->keepalive;
+    }
+    else {
+        clone->sock_opts->connect_timeout = 5000;
+        clone->sock_opts->recv_timeout = 0;
+        clone->sock_opts->send_timeout = 0;
+        clone->sock_opts->keepalive = 1;
+    }
     clone->log = (struct BoltLog*) BoltMem_duplicate(config->log, SIZE_OF_LOG);
     clone->address_resolver = (struct BoltAddressResolver*) BoltMem_duplicate(config->address_resolver,
             SIZE_OF_ADDRESS_RESOLVER);
@@ -63,6 +79,7 @@ void BoltConfig_destroy(struct BoltConfig* config)
 {
     BoltMem_deallocate(config->trust->certs, config->trust->certs_len);
     BoltMem_deallocate(config->trust, SIZE_OF_TRUST);
+    BoltMem_deallocate(config->sock_opts, SIZE_OF_SOCK_OPTS);
     BoltMem_deallocate(config->user_agent, SIZE_OF_C_STRING(config->user_agent));
     BoltValue_destroy(config->routing_context);
     BoltLog_destroy(config->log);

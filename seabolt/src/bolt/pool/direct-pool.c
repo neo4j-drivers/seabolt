@@ -99,7 +99,7 @@ enum BoltConnectionError open_init(struct BoltDirectPool* pool, int index)
     }
     struct BoltConnection* connection = &pool->connections[index];
     switch (BoltConnection_open(connection, pool->config->transport, pool->address, pool->config->trust,
-            pool->config->log)) {
+            pool->config->log, pool->config->sock_opts)) {
     case 0:
         return init(pool, index);
     default:
@@ -161,7 +161,7 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
         pool->ssl_context = create_ssl_ctx(config->trust, address->host, config->log);
 
         // assign ssl_context to all connections
-        for (uint32_t i = 0; i<config->max_pool_size; i++) {
+        for (int i = 0; i<config->max_pool_size; i++) {
             pool->connections[0].ssl_context = pool->ssl_context;
             pool->connections[0].owns_ssl_context = 0;
         }

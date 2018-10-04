@@ -37,7 +37,7 @@ struct BoltConnection* bolt_open_b(enum BoltTransport transport, const char* hos
     struct BoltTrust trust{nullptr, 0, 1, 1};
     struct BoltAddress* address = bolt_get_address(host, port);
     struct BoltConnection* connection = BoltConnection_create();
-    BoltConnection_open(connection, transport, address, &trust, NULL);
+    BoltConnection_open(connection, transport, address, &trust, NULL, NULL);
     BoltAddress_destroy(address);
     REQUIRE(connection->status==BOLT_CONNECTED);
     return connection;

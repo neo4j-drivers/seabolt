@@ -78,7 +78,7 @@ int BoltRoutingPool_update_routing_table_from(struct BoltRoutingPool* pool, stru
     // Open a new connection
     if (status==BOLT_SUCCESS) {
         status = BoltConnection_open(connection, pool->config->transport, server, pool->config->trust,
-                pool->config->log);
+                pool->config->log, pool->config->sock_opts);
     }
 
     // Initialize
