@@ -213,7 +213,7 @@ int _socket_configure(struct BoltConnection* connection)
 #else
     // Set send and receive timeouts
     struct timeval recv_timeout, send_timeout;
-    int recv_timeout_size = sizeof(struct timeval), int send_timeout_size = sizeof(struct timeval);
+    int recv_timeout_size = sizeof(struct timeval), send_timeout_size = sizeof(struct timeval);
     if (connection->sock_opts!=NULL) {
         recv_timeout.tv_sec = connection->sock_opts->recv_timeout/1000;
         recv_timeout.tv_usec = (connection->sock_opts->recv_timeout%1000)*1000;
