@@ -73,10 +73,10 @@ int find_unused_connection(struct BoltDirectPool* pool)
 
 int find_connection(struct BoltDirectPool* pool, struct BoltConnection* connection)
 {
-    for (size_t i = 0; i<pool->size; i++) {
+    for (int i = 0; i<pool->size; i++) {
         struct BoltConnection* candidate = &pool->connections[i];
         if (candidate==connection) {
-            return (int) i;
+            return i;
         }
     }
     return -1;
@@ -189,8 +189,8 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
 void BoltDirectPool_destroy(struct BoltDirectPool* pool)
 {
     BoltLog_info(pool->config->log, "destroying pool");
-    for (size_t index = 0; index<pool->size; index++) {
-        close_pool_entry(pool, (int) index);
+    for (int index = 0; index<pool->size; index++) {
+        close_pool_entry(pool, index);
     }
     BoltMem_deallocate(pool->connections, pool->size*sizeof(struct BoltConnection));
     if (pool->ssl_context!=NULL) {
@@ -320,7 +320,7 @@ int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* c
 int BoltDirectPool_connections_in_use(struct BoltDirectPool* pool)
 {
     int count = 0;
-    for (uint32_t i = 0; i<pool->size; i++) {
+    for (int i = 0; i<pool->size; i++) {
         if (pool->connections[i].agent!=NULL) {
             count++;
         }

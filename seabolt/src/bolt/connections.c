@@ -98,6 +98,7 @@ enum BoltConnectionError _transform_error(int error_code)
     case WSAENETRESET:
     case WSAENETDOWN:
         return BOLT_NETWORK_UNREACHABLE;
+    case WSAEWOULDBLOCK:
     case WSAETIMEDOUT:
         return BOLT_TIMED_OUT;
     default:
@@ -118,8 +119,6 @@ enum BoltConnectionError _transform_error(int error_code)
     case ENOBUFS:
     case ENOMEM:
         return BOLT_OUT_OF_MEMORY;
-    case EAGAIN:
-        return BOLT_OUT_OF_PORTS;
     case ECONNREFUSED:
         return BOLT_CONNECTION_REFUSED;
     case ECONNRESET:
@@ -128,6 +127,7 @@ enum BoltConnectionError _transform_error(int error_code)
         return BOLT_INTERRUPTED;
     case ENETUNREACH:
         return BOLT_NETWORK_UNREACHABLE;
+    case EAGAIN:
     case ETIMEDOUT:
         return BOLT_TIMED_OUT;
     default:
@@ -150,6 +150,22 @@ enum BoltConnectionError _last_error(struct BoltConnection* connection)
     int error_code = _last_error_code(connection);
     BoltLog_error(connection->log, "socket error code: %d", error_code);
     return _transform_error(error_code);
+}
+
+enum BoltConnectionError _last_error_ssl(struct BoltConnection* connection, int ret)
+{
+    int ssl_error_code = SSL_get_error(connection->ssl, ret);
+    BoltLog_error(connection->log, "ssl error code: %d", ssl_error_code);
+    switch (ssl_error_code) {
+    case SSL_ERROR_NONE:
+        return BOLT_SUCCESS;
+    case SSL_ERROR_SYSCALL:
+    case SSL_ERROR_WANT_READ:
+    case SSL_ERROR_WANT_WRITE:
+        return _last_error(connection);
+    default:
+        return BOLT_TLS_ERROR;
+    }
 }
 
 void _set_status(struct BoltConnection* connection, enum BoltConnectionStatus status, enum BoltConnectionError error)
@@ -291,9 +307,9 @@ int _open(struct BoltConnection* connection, enum BoltTransport transport, const
             int error_code = _last_error_code(connection);
             switch (error_code) {
 #if USE_WINSOCK
-            case WSAEWOULDBLOCK: {
-                break;
-            }
+                case WSAEWOULDBLOCK: {
+                    break;
+                }
 #else
             case EINPROGRESS: {
                 break;
@@ -481,7 +497,7 @@ int _send(struct BoltConnection* connection, const char* data, int size)
                 BoltLog_error(connection->log, "Socket error %d on transmit", connection->error);
                 break;
             case BOLT_SECURE_SOCKET:
-                _set_status(connection, BOLT_DEFUNCT, SSL_get_error(connection->ssl, sent));
+                _set_status(connection, BOLT_DEFUNCT, _last_error_ssl(connection, sent));
                 BoltLog_error(connection->log, "SSL error %d on transmit", connection->error);
                 break;
             }
@@ -535,7 +551,7 @@ int _receive(struct BoltConnection* connection, char* buffer, int min_size, int 
                 BoltLog_error(connection->log, "Socket error %d on receive", connection->error);
                 break;
             case BOLT_SECURE_SOCKET:
-                _set_status(connection, BOLT_DEFUNCT, SSL_get_error(connection->ssl, single_received));
+                _set_status(connection, BOLT_DEFUNCT, _last_error_ssl(connection, single_received));
                 BoltLog_error(connection->log, "SSL error %d on receive", connection->error);
                 break;
             }
