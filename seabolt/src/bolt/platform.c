@@ -59,25 +59,16 @@ int BoltUtil_get_time(struct timespec* tp)
 #endif
 }
 
-void BoltUtil_add_time_ns(struct timespec* tp, int64_t nanoseconds)
+int64_t BoltUtil_get_time_ms_from(struct timespec* tp)
 {
-    tp->tv_sec += (nanoseconds/NSEC_PER_SEC);
-    tp->tv_nsec += (nanoseconds%NSEC_PER_SEC);
-    if (tp->tv_nsec>NSEC_PER_SEC) {
-        tp->tv_sec++;
-        tp->tv_nsec -= NSEC_PER_SEC;
-    }
-    else if (tp->tv_nsec<0) {
-        tp->tv_sec--;
-        tp->tv_nsec += NSEC_PER_SEC;
-    }
+    return (tp->tv_sec)*1000+(tp->tv_nsec)/1000000;
 }
 
 int64_t BoltUtil_get_time_ms()
 {
     struct timespec now;
     BoltUtil_get_time(&now);
-    return (now.tv_sec)*1000+(now.tv_nsec)/1000000;
+    return BoltUtil_get_time_ms_from(&now);
 }
 
 int64_t BoltUtil_increment(volatile int64_t* ref)
@@ -99,6 +90,14 @@ int64_t BoltUtil_decrement(volatile int64_t* ref)
     return _InterlockedDecrement64(ref);
 #else
     return __sync_add_and_fetch(ref, -1);
+#endif
+}
+
+void BoltUtil_sleep(int milliseconds) {
+#ifdef _WIN32
+    SleepEx(milliseconds, TRUE);
+#else
+    usleep(milliseconds*1000);
 #endif
 }
 
@@ -243,11 +242,7 @@ int BoltUtil_rwlock_timedrdlock(rwlock_t* rwlock, int timeout_ms)
             return 0;
         }
 
-#ifdef _WIN32
-        SleepEx(10, TRUE);
-#else
-        usleep(1000);
-#endif
+        BoltUtil_sleep(10);
     }
 }
 
@@ -264,11 +259,7 @@ int BoltUtil_rwlock_timedwrlock(rwlock_t* rwlock, int timeout_ms)
             return 0;
         }
 
-#ifdef _WIN32
-        SleepEx(10, TRUE);
-#else
-        usleep(1000);
-#endif
+        BoltUtil_sleep(10);
     }
 }
 

@@ -28,12 +28,44 @@
 
 #define SIZE_OF_CONNECTION_POOL sizeof(struct BoltConnectionPool)
 
+void close_pool_entry(struct BoltDirectPool* pool, int index)
+{
+    struct BoltConnection* connection = &pool->connections[index];
+    if (connection->status!=BOLT_DISCONNECTED) {
+        if (connection->metrics.time_opened.tv_sec!=0 || connection->metrics.time_opened.tv_nsec!=0) {
+            struct timespec now;
+            struct timespec diff;
+            BoltUtil_get_time(&now);
+            BoltUtil_diff_time(&diff, &now, &connection->metrics.time_opened);
+            BoltLog_info(pool->config->log, "Connection alive for %lds %09ldns", (long) (diff.tv_sec),
+                    diff.tv_nsec);
+        }
+
+        BoltConnection_close(connection);
+    }
+}
+
 int find_unused_connection(struct BoltDirectPool* pool)
 {
-    for (size_t i = 0; i<pool->size; i++) {
+    for (int i = 0; i<pool->size; i++) {
         struct BoltConnection* connection = &pool->connections[i];
+
         if (connection->agent==NULL) {
-            return (int) i;
+            // check for max lifetime and close existing connection if required
+            if (connection->status!=BOLT_DISCONNECTED && connection->status!=BOLT_DEFUNCT) {
+                if (pool->config->max_connection_lifetime>0) {
+                    int64_t now = BoltUtil_get_time_ms();
+                    int64_t created = BoltUtil_get_time_ms_from(&connection->metrics.time_opened);
+
+                    if (now-created>pool->config->max_connection_lifetime) {
+                        BoltLog_info(pool->config->log, "Connection reached its maximum lifetime, force closing.");
+
+                        close_pool_entry(pool, i);
+                    }
+                }
+            }
+
+            return i;
         }
     }
     return -1;
@@ -107,23 +139,6 @@ enum BoltConnectionError open_init(struct BoltDirectPool* pool, int index)
     }
 }
 
-void close_pool_entry(struct BoltDirectPool* pool, int index)
-{
-    struct BoltConnection* connection = &pool->connections[index];
-    if (connection->status!=BOLT_DISCONNECTED) {
-        if (connection->metrics.time_opened.tv_sec!=0 || connection->metrics.time_opened.tv_nsec!=0) {
-            struct timespec now;
-            struct timespec diff;
-            BoltUtil_get_time(&now);
-            BoltUtil_diff_time(&diff, &now, &connection->metrics.time_opened);
-            BoltLog_info(pool->config->log, "Connection alive for %lds %09ldns", (long) (diff.tv_sec),
-                    diff.tv_nsec);
-        }
-
-        BoltConnection_close(connection);
-    }
-}
-
 enum BoltConnectionError reset_or_open_init(struct BoltDirectPool* pool, int index)
 {
     switch (reset(pool, index)) {
@@ -136,7 +151,6 @@ enum BoltConnectionError reset_or_open_init(struct BoltDirectPool* pool, int ind
 
 void reset_or_close(struct BoltDirectPool* pool, int index)
 {
-    // TODO: disconnect if too old
     switch (reset(pool, index)) {
     case 0:
         break;
@@ -189,67 +203,98 @@ void BoltDirectPool_destroy(struct BoltDirectPool* pool)
 
 struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
 {
+    struct BoltConnectionResult handle;
+    int index = 0, pool_error = 0;
+
+    int64_t started_at = BoltUtil_get_time_ms();
     BoltLog_info(pool->config->log, "acquiring connection from the pool");
-    BoltUtil_mutex_lock(&pool->mutex);
-    int index = find_unused_connection(pool);
-    enum BoltConnectionError pool_error = index>=0 ? BOLT_SUCCESS : BOLT_POOL_FULL;
-    if (index>=0) {
-        switch (pool->connections[index].status) {
-        case BOLT_DISCONNECTED:
-        case BOLT_DEFUNCT:
-            // if the connection is DISCONNECTED or DEFUNCT then try
-            // to open and initialise it before handing it out.
-            pool_error = open_init(pool, index);
+
+    while (1) {
+        BoltUtil_mutex_lock(&pool->mutex);
+
+        index = find_unused_connection(pool);
+        pool_error = index>=0 ? BOLT_SUCCESS : BOLT_POOL_FULL;
+        if (index>=0) {
+            switch (pool->connections[index].status) {
+            case BOLT_DISCONNECTED:
+            case BOLT_DEFUNCT:
+                // if the connection is DISCONNECTED or DEFUNCT then try
+                // to open and initialise it before handing it out.
+                pool_error = open_init(pool, index);
+                break;
+            case BOLT_CONNECTED:
+                // If CONNECTED, the connection will need to be initialised.
+                // This state should rarely, if ever, be encountered here.
+                pool_error = init(pool, index);
+                break;
+            case BOLT_FAILED:
+                // If FAILED, attempt to RESET the connection, reopening
+                // from scratch if that fails. This state should rarely,
+                // if ever, be encountered here.
+                pool_error = reset_or_open_init(pool, index);
+                break;
+            case BOLT_READY:
+                // If the connection is already in the READY state then
+                // do nothing and assume that the connection hasn't been
+                // timed out by some piece of network housekeeping
+                // infrastructure. Such timeouts should instead be managed
+                // by setting the maximum connection lifetime.
+                break;
+            }
+        }
+
+        handle.connection_status = BOLT_DISCONNECTED;
+        handle.connection_error = BOLT_SUCCESS;
+        handle.connection_error_ctx = NULL;
+        handle.connection = NULL;
+
+        switch (pool_error) {
+        case BOLT_SUCCESS:
+            handle.connection = &pool->connections[index];
+            handle.connection->agent = "USED";
+            handle.connection_status = handle.connection->status;
             break;
-        case BOLT_CONNECTED:
-            // If CONNECTED, the connection will need to be initialised.
-            // This state should rarely, if ever, be encountered here.
-            // TODO: disconnect if too old
-            pool_error = init(pool, index);
+        case BOLT_CONNECTION_HAS_MORE_INFO:
+            handle.connection_status = pool->connections[index].status;
+            handle.connection_error = pool->connections[index].error;
+            handle.connection_error_ctx = pool->connections[index].error_ctx;
             break;
-        case BOLT_FAILED:
-            // If FAILED, attempt to RESET the connection, reopening
-            // from scratch if that fails. This state should rarely,
-            // if ever, be encountered here.
-            // TODO: disconnect if too old
-            pool_error = reset_or_open_init(pool, index);
+        default:
+            handle.connection_status = BOLT_DISCONNECTED;
+            handle.connection_error = pool_error;
+            handle.connection_error_ctx = NULL;
             break;
-        case BOLT_READY:
-            // If the connection is already in the READY state then
-            // do nothing and assume that the connection hasn't been
-            // timed out by some piece of network housekeeping
-            // infrastructure. Such timeouts should instead be managed
-            // by setting the maximum connection lifetime.
-            // TODO: disconnect if too old
+        }
+
+        BoltUtil_mutex_unlock(&pool->mutex);
+
+        if (pool->config->max_connection_acquire_time==0) {
+            // fail fast, we report the failure asap
+            break;
+        }
+
+        // Retry acquire operation until we get a live connection or timeout
+        if (handle.connection_error==BOLT_POOL_FULL) {
+            if (pool->config->max_connection_acquire_time>0
+                    && BoltUtil_get_time_ms()-started_at>pool->config->max_connection_acquire_time) {
+                handle.connection_status = BOLT_DISCONNECTED;
+                handle.connection_error = BOLT_POOL_ACQUISITION_TIMED_OUT;
+                handle.connection_error_ctx = NULL;
+
+                break;
+            }
+            else {
+                BoltLog_info(pool->config->log, "Pool is full, will retry acquiring a connection from the pool.");
+
+                BoltUtil_sleep(250);
+
+                continue;
+            }
+        }
+        else {
             break;
         }
     }
-
-    struct BoltConnectionResult handle;
-    handle.connection_status = BOLT_DISCONNECTED;
-    handle.connection_error = BOLT_SUCCESS;
-    handle.connection_error_ctx = NULL;
-    handle.connection = NULL;
-
-    switch (pool_error) {
-    case BOLT_SUCCESS:
-        handle.connection = &pool->connections[index];
-        handle.connection->agent = "USED";
-        handle.connection_status = handle.connection->status;
-        break;
-    case BOLT_CONNECTION_HAS_MORE_INFO:
-        handle.connection_status = pool->connections[index].status;
-        handle.connection_error = pool->connections[index].error;
-        handle.connection_error_ctx = pool->connections[index].error_ctx;
-        break;
-    default:
-        handle.connection_status = BOLT_DISCONNECTED;
-        handle.connection_error = pool_error;
-        handle.connection_error_ctx = NULL;
-        break;
-    }
-
-    BoltUtil_mutex_unlock(&pool->mutex);
 
     return handle;
 }

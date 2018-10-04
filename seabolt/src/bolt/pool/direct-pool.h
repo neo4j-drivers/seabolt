@@ -36,7 +36,7 @@ struct BoltDirectPool {
     const struct BoltValue* auth_token;
     const struct BoltConfig* config;
     struct ssl_ctx_st *ssl_context;
-    uint32_t size;
+    int size;
     struct BoltConnection* connections;
 };
 
