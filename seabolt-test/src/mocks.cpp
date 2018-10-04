@@ -37,6 +37,16 @@ int64_t BoltUtil_get_time_ms()
     return 0;
 }
 
+int64_t BoltUtil_get_time_ms_from(struct timespec* tp)
+{
+    return 0;
+}
+
+void BoltUtil_sleep(int milliseconds)
+{
+
+}
+
 int64_t BoltUtil_increment(volatile int64_t* ref)
 {
     return (*ref += 1);

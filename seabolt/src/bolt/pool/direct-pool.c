@@ -204,7 +204,8 @@ void BoltDirectPool_destroy(struct BoltDirectPool* pool)
 struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
 {
     struct BoltConnectionResult handle;
-    int index = 0, pool_error = 0;
+    int index = 0;
+    enum BoltConnectionError pool_error = BOLT_SUCCESS;
 
     int64_t started_at = BoltUtil_get_time_ms();
     BoltLog_info(pool->config->log, "acquiring connection from the pool");
