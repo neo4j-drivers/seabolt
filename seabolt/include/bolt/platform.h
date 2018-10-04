@@ -39,9 +39,13 @@ PUBLIC int BoltUtil_get_time(struct timespec* tp);
 
 int64_t BoltUtil_get_time_ms();
 
+int64_t BoltUtil_get_time_ms_from(struct timespec* tp);
+
 int64_t BoltUtil_increment(volatile int64_t* ref);
 
 int64_t BoltUtil_decrement(volatile int64_t* ref);
+
+void BoltUtil_sleep(int milliseconds);
 
 int BoltUtil_mutex_create(mutex_t* mutex);
 
@@ -72,5 +76,6 @@ int BoltUtil_rwlock_timedwrlock(rwlock_t* rwlock, int timeout_ms);
 int BoltUtil_rwlock_rdunlock(rwlock_t* rwlock);
 
 int BoltUtil_rwlock_wrunlock(rwlock_t* rwlock);
+
 #endif //SEABOLT_UTILS_H
 
