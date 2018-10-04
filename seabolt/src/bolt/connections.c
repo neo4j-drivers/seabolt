@@ -50,7 +50,7 @@
 #define SETSOCKETOPT(socket, level, optname, optval, optlen) setsockopt(socket, level, optname, (const char *)(optval), optlen)
 #define CLOSE(socket) closesocket(socket)
 #else
-#define GETSOCKETOPT(socket, level, optname, optval, optlen) getsockopt(socket, level, optname, (void *)optval, optlen)
+#define GETSOCKETOPT(socket, level, optname, optval, optlen) getsockopt(socket, level, optname, (void *)optval, (unsigned int*)optlen)
 #define SETSOCKETOPT(socket, level, optname, optval, optlen) setsockopt(socket, level, optname, (const void *)optval, optlen)
 #define CLOSE(socket) close(socket)
 #endif
@@ -199,22 +199,37 @@ int _socket_configure(struct BoltConnection* connection)
         TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_KEEPALIVE, &NO, sizeof(NO)));
     }
 
+#if USE_WINSOCK
+    int recv_timeout, send_timeout;
+    int recv_timeout_size = sizeof(int), send_timeout_size = sizeof(int);
+    if (connection->sock_opts!=NULL) {
+        recv_timeout = connection->sock_opts->recv_timeout;
+        send_timeout = connection->sock_opts->send_timeout;
+    }
+    else {
+        recv_timeout = 0;
+        send_timeout = 0;
+    }
+#else
     // Set send and receive timeouts
     struct timeval recv_timeout, send_timeout;
+    int recv_timeout_size = sizeof(struct timeval), int send_timeout_size = sizeof(struct timeval);
     if (connection->sock_opts!=NULL) {
         recv_timeout.tv_sec = connection->sock_opts->recv_timeout/1000;
         recv_timeout.tv_usec = (connection->sock_opts->recv_timeout%1000)*1000;
         send_timeout.tv_sec = connection->sock_opts->send_timeout/1000;
         send_timeout.tv_usec = (connection->sock_opts->send_timeout%1000)*1000;
-    } else {
+    }
+    else {
         recv_timeout.tv_sec = 0;
         recv_timeout.tv_usec = 0;
         send_timeout.tv_sec = 0;
         send_timeout.tv_usec = 0;
     }
+#endif
 
-    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(struct timeval)));
-    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_SNDTIMEO, &send_timeout, sizeof(struct timeval)));
+    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, recv_timeout_size));
+    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_SNDTIMEO, &send_timeout, send_timeout_size));
 
     return BOLT_SUCCESS;
 }
@@ -225,7 +240,7 @@ int _socket_set_mode(struct BoltConnection* connection, int blocking)
 
 #if USE_WINSOCK
     u_long non_blocking = blocking ? 0 : 1;
-    status = ioctlsocket(socket, FIONBIO, &non_blocking);
+    status = ioctlsocket(connection->socket, FIONBIO, &non_blocking);
 #else
     const int flags = fcntl(connection->socket, F_GETFL, 0);
     if ((flags & O_NONBLOCK) && !blocking) {
@@ -272,9 +287,22 @@ int _open(struct BoltConnection* connection, enum BoltTransport transport, const
 
         // initiate connection
         int status = CONNECT(connection->socket, (struct sockaddr*) (address), ADDR_SIZE(address));
-        if (status==-1 && _last_error_code(connection)!=EINPROGRESS) {
-            _set_status(connection, BOLT_DEFUNCT, _last_error(connection));
-            return BOLT_STATUS_SET;
+        if (status==-1) {
+            int error_code = _last_error_code(connection);
+            switch (error_code) {
+#if USE_WINSOCK
+            case WSAEWOULDBLOCK: {
+                break;
+            }
+#else
+            case EINPROGRESS: {
+                break;
+            }
+#endif
+            default:
+                _set_status(connection, BOLT_DEFUNCT, _transform_error(error_code));
+                return BOLT_STATUS_SET;
+            }
         }
 
         if (status) {
@@ -291,12 +319,13 @@ int _open(struct BoltConnection* connection, enum BoltTransport transport, const
             switch (status) {
             case 0: {
                 //timeout expired
+                BoltLog_info(connection->log, "Connect timed out");
                 _set_status(connection, BOLT_DEFUNCT, BOLT_TIMED_OUT);
                 return BOLT_STATUS_SET;
             }
             case 1: {
                 int so_error;
-                unsigned int so_error_len = sizeof(int);
+                int so_error_len = sizeof(int);
 
                 TRY(GETSOCKETOPT(connection->socket, SOL_SOCKET, SO_ERROR, &so_error, &so_error_len));
                 if (so_error!=0) {
@@ -566,7 +595,8 @@ void BoltConnection_destroy(struct BoltConnection* connection)
     BoltMem_deallocate(connection, sizeof(struct BoltConnection));
 }
 
-int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transport, struct BoltAddress* address,
+int
+BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transport, struct BoltAddress* address,
         struct BoltTrust* trust, struct BoltLog* log, struct BoltSocketOptions* sock_opts)
 {
     if (connection->status!=BOLT_DISCONNECTED) {
@@ -722,7 +752,8 @@ int BoltConnection_summary_failure(struct BoltConnection* connection)
     return connection->protocol->is_failure_summary(connection);
 }
 
-int BoltConnection_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token)
+int
+BoltConnection_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token)
 {
     BoltLog_info(connection->log, "Initialising connection");
     switch (connection->protocol_version) {
