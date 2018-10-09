@@ -154,6 +154,9 @@ enum BoltConnectionError _last_error(struct BoltConnection* connection)
 
 enum BoltConnectionError _last_error_ssl(struct BoltConnection* connection, int ret)
 {
+    // On windows, SSL_get_error resets WSAGetLastError so we're left without an error code after
+    // asking error code - so we're saving it here in case.
+    int last_error_saved = _last_error_code(connection);
     int ssl_error_code = SSL_get_error(connection->ssl, ret);
     BoltLog_error(connection->log, "ssl error code: %d", ssl_error_code);
     switch (ssl_error_code) {
@@ -161,8 +164,14 @@ enum BoltConnectionError _last_error_ssl(struct BoltConnection* connection, int 
         return BOLT_SUCCESS;
     case SSL_ERROR_SYSCALL:
     case SSL_ERROR_WANT_READ:
-    case SSL_ERROR_WANT_WRITE:
-        return _last_error(connection);
+    case SSL_ERROR_WANT_WRITE: {
+        int last_error = _last_error_code(connection);
+        if (last_error==0) {
+            last_error = last_error_saved;
+        }
+        BoltLog_error(connection->log, "socket error code: %d", last_error);
+        return _transform_error(last_error);
+    }
     default:
         return BOLT_TLS_ERROR;
     }
