@@ -20,14 +20,13 @@
 #include <assert.h>
 
 #include "bolt/config-impl.h"
-#include "routing-pool.h"
-
+#include "bolt/address-set.h"
 #include "bolt/connections.h"
 #include "bolt/mem.h"
-
-#include "routing-table.h"
 #include "direct-pool.h"
-#include "bolt/address-set.h"
+#include "routing-table.h"
+
+#include "routing-pool.h"
 
 #define WRITE_LOCK_TIMEOUT 50
 
@@ -152,9 +151,9 @@ int BoltRoutingPool_update_routing_table_from(struct BoltRoutingPool* pool, stru
     return status;
 }
 
-enum BoltConnectionError BoltRoutingPool_update_routing_table(struct BoltRoutingPool* pool)
+int BoltRoutingPool_update_routing_table(struct BoltRoutingPool* pool)
 {
-    enum BoltConnectionError result = BOLT_ROUTING_UNABLE_TO_RETRIEVE_ROUTING_TABLE;
+    int result = BOLT_ROUTING_UNABLE_TO_RETRIEVE_ROUTING_TABLE;
 
     // discover initial routers which pass through address resolver
     struct BoltAddressSet* initial_routers = BoltAddressSet_create();
@@ -244,9 +243,9 @@ void BoltRoutingPool_cleanup(struct BoltRoutingPool* pool)
     BoltAddressSet_destroy(active_servers);
 }
 
-enum BoltConnectionError BoltRoutingPool_ensure_routing_table(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
+int BoltRoutingPool_ensure_routing_table(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
 {
-    enum BoltConnectionError status = BOLT_SUCCESS;
+    int status = BOLT_SUCCESS;
 
     // Is routing table refresh wrt the requested access mode?
     while (status==BOLT_SUCCESS && RoutingTable_is_expired(pool->routing_table, mode)) {
@@ -364,7 +363,7 @@ void BoltRoutingPool_forget_writer(struct BoltRoutingPool* pool, const struct Bo
 }
 
 void BoltRoutingPool_handle_connection_error_by_code(struct BoltRoutingPool* pool, const struct BoltAddress* server,
-        enum BoltConnectionError code)
+        int code)
 {
     switch (code) {
     case BOLT_ROUTING_UNABLE_TO_RETRIEVE_ROUTING_TABLE:
@@ -484,7 +483,7 @@ BoltRoutingPool_acquire(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
 
     BoltUtil_rwlock_rdlock(&pool->rwlock);
 
-    enum BoltConnectionError status = BoltRoutingPool_ensure_routing_table(pool, mode);
+    int status = BoltRoutingPool_ensure_routing_table(pool, mode);
     if (status==BOLT_SUCCESS) {
         server = mode==BOLT_ACCESS_MODE_READ
                  ? BoltRoutingPool_select_least_connected_reader(pool)

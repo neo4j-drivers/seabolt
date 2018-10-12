@@ -19,11 +19,11 @@
 
 #include "bolt/config-impl.h"
 #include "bolt/connector.h"
-#include "bolt/mem.h"
 #include "bolt/logging.h"
+#include "bolt/mem.h"
+#include "bolt/tls.h"
 #include "pool/direct-pool.h"
 #include "pool/routing-pool.h"
-#include "bolt/tls.h"
 
 #define SIZE_OF_CONNECTOR sizeof(struct BoltConnector)
 #define SIZE_OF_CONFIG sizeof(struct BoltConfig)

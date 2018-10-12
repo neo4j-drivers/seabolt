@@ -21,6 +21,7 @@
 
 #include "config.h"
 #include "common-impl.h"
+#include "error.h"
 
 #if defined(_WIN32) && _WIN32_WINNT<0x0600
 #undef _WIN32_WINNT

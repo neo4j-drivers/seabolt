@@ -25,6 +25,7 @@
 #include <cstdlib>
 
 extern "C" {
+#include "bolt/error.h"
 #include "bolt/auth.h"
 #include "bolt/connections.h"
 #include "bolt/logging.h"

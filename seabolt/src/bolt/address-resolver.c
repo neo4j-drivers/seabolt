@@ -18,8 +18,8 @@
  */
 
 #include "bolt/config-impl.h"
-#include "bolt/mem.h"
 #include "bolt/address-resolver.h"
+#include "bolt/mem.h"
 
 struct BoltAddressResolver* BoltAddressResolver_create()
 {

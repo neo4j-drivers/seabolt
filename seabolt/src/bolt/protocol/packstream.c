@@ -17,10 +17,11 @@
  * limitations under the License.
  */
 
-#include "packstream.h"
-#include "bolt/connections.h"
+#include "bolt/config-impl.h"
 #include "bolt/buffering.h"
+#include "bolt/connections.h"
 #include "bolt/logging.h"
+#include "packstream.h"
 
 #define TRY(code) { int status_try = (code); if (status_try != BOLT_SUCCESS) { return status_try; } }
 

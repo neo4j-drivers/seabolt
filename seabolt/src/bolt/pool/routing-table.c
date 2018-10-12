@@ -20,9 +20,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include "routing-table.h"
-#include "bolt/mem.h"
+#include "bolt/config-impl.h"
 #include "bolt/address-set.h"
+#include "bolt/mem.h"
+#include "routing-table.h"
 
 #define READ_ROLE "READ"
 #define WRITE_ROLE "WRITE"

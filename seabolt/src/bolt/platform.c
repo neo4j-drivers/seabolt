@@ -18,8 +18,8 @@
 */
 
 #include "bolt/config-impl.h"
-#include "bolt/platform.h"
 #include "bolt/mem.h"
+#include "bolt/platform.h"
 
 #ifdef __APPLE__
 #include <mach/clock.h>
