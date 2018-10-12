@@ -18,11 +18,11 @@
  */
 
 
+#include "bolt/config-impl.h"
 #include "bolt/address.h"
+#include "bolt/logging.h"
 #include "bolt/mem.h"
 #include "memory.h"
-#include "bolt/config-impl.h"
-#include "bolt/logging.h"
 
 #define DEFAULT_BOLT_PORT "7687"
 #define DEFAULT_BOLT_HOST "localhost"
@@ -74,7 +74,7 @@ struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int
     return result;
 }
 
-int BoltAddress_resolve(struct BoltAddress* address, struct BoltLog *log)
+int BoltAddress_resolve(struct BoltAddress* address, struct BoltLog* log)
 {
     BoltUtil_mutex_lock(&address->lock);
 

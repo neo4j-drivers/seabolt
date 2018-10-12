@@ -17,9 +17,9 @@
  * limitations under the License.
  */
 
-#include "bolt/tls.h"
 #include "bolt/connections.h"
 #include "bolt/logging.h"
+#include "bolt/tls.h"
 
 int verify_callback(int preverify_ok, X509_STORE_CTX* ctx)
 {

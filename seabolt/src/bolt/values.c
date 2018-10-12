@@ -24,7 +24,6 @@
 
 #include "bolt/mem.h"
 #include "bolt/values.h"
-
 #include "protocol/v1.h"
 
 #define STRING_QUOTE '"'

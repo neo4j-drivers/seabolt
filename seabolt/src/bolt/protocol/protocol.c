@@ -17,11 +17,11 @@
  * limitations under the License.
  */
 
-#include "bolt/mem.h"
+#include "bolt/config-impl.h"
 #include "bolt/buffering.h"
-
-#include "protocol.h"
+#include "bolt/mem.h"
 #include "packstream.h"
+#include "protocol.h"
 
 #define BOLT_MAX_CHUNK_SIZE 65535
 

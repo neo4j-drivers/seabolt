@@ -17,16 +17,14 @@
  * limitations under the License.
  */
 
-#include <bolt/connections.h>
-#include <bolt/tls.h>
 #include "bolt/config-impl.h"
+#include "bolt/connections.h"
 #include "bolt/logging.h"
 #include "bolt/mem.h"
+#include "bolt/tls.h"
 #include "bolt/utils.h"
 #include "direct-pool.h"
 #include "../protocol/protocol.h"
-
-#define SIZE_OF_CONNECTION_POOL sizeof(struct BoltConnectionPool)
 
 void close_pool_entry(struct BoltDirectPool* pool, int index)
 {
@@ -82,7 +80,7 @@ int find_connection(struct BoltDirectPool* pool, struct BoltConnection* connecti
     return -1;
 }
 
-enum BoltConnectionError init(struct BoltDirectPool* pool, int index)
+int init(struct BoltDirectPool* pool, int index)
 {
     struct BoltConnection* connection = &pool->connections[index];
     switch (BoltConnection_init(connection, pool->config->user_agent, pool->auth_token)) {
@@ -118,7 +116,7 @@ int reset(struct BoltDirectPool* pool, int index)
     }
 }
 
-enum BoltConnectionError open_init(struct BoltDirectPool* pool, int index)
+int open_init(struct BoltDirectPool* pool, int index)
 {
     // Host name resolution is carried out every time a connection
     // is opened. Given that connections are pooled and reused,
@@ -139,7 +137,7 @@ enum BoltConnectionError open_init(struct BoltDirectPool* pool, int index)
     }
 }
 
-enum BoltConnectionError reset_or_open_init(struct BoltDirectPool* pool, int index)
+int reset_or_open_init(struct BoltDirectPool* pool, int index)
 {
     switch (reset(pool, index)) {
     case 0:
@@ -205,7 +203,7 @@ struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
 {
     struct BoltConnectionResult handle;
     int index = 0;
-    enum BoltConnectionError pool_error = BOLT_SUCCESS;
+    int pool_error = BOLT_SUCCESS;
 
     int64_t started_at = BoltUtil_get_time_ms();
     BoltLog_info(pool->config->log, "acquiring connection from the pool");

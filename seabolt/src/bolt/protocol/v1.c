@@ -17,14 +17,14 @@
  * limitations under the License.
  */
 
-
 #include <assert.h>
 #include <memory.h>
 #include <string.h>
 #include <stdlib.h>
-#include <bolt/connections.h>
 
+#include "bolt/config-impl.h"
 #include "bolt/buffering.h"
+#include "bolt/connections.h"
 #include "bolt/logging.h"
 #include "bolt/mem.h"
 #include "packstream.h"

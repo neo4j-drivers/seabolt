@@ -17,8 +17,8 @@
  * limitations under the License.
  */
 
-#include "v2.h"
 #include "v1.h"
+#include "v2.h"
 
 int BoltProtocolV2_check_readable_struct_signature(int16_t signature)
 {

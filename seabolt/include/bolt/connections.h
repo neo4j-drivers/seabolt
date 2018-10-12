@@ -53,44 +53,6 @@ enum BoltConnectionStatus {
     BOLT_DEFUNCT = 4,               // unrecoverable failure
 };
 
-/**
- *
- */
-enum BoltConnectionError {
-    BOLT_SUCCESS = 0,
-    BOLT_UNKNOWN_ERROR = 1,
-    BOLT_UNSUPPORTED = 2,
-    BOLT_INTERRUPTED = 3,
-    BOLT_CONNECTION_RESET = 4,
-    BOLT_NO_VALID_ADDRESS = 5,
-    BOLT_TIMED_OUT = 6,
-    BOLT_PERMISSION_DENIED = 7,
-    BOLT_OUT_OF_FILES = 8,
-    BOLT_OUT_OF_MEMORY = 9,
-    BOLT_OUT_OF_PORTS = 10,
-    BOLT_CONNECTION_REFUSED = 11,
-    BOLT_NETWORK_UNREACHABLE = 12,
-    BOLT_TLS_ERROR = 13,             // general catch-all for OpenSSL errors :/
-    BOLT_END_OF_TRANSMISSION = 15,
-    BOLT_SERVER_FAILURE = 16,
-    BOLT_TRANSPORT_UNSUPPORTED = 0x400,
-    BOLT_PROTOCOL_VIOLATION = 0x500,
-    BOLT_PROTOCOL_UNSUPPORTED_TYPE = 0x501,
-    BOLT_PROTOCOL_NOT_IMPLEMENTED_TYPE = 0x502,
-    BOLT_PROTOCOL_UNEXPECTED_MARKER = 0x503,
-    BOLT_PROTOCOL_UNSUPPORTED = 0x504,
-    BOLT_POOL_FULL = 0x600,
-    BOLT_POOL_ACQUISITION_TIMED_OUT = 0x601,
-    BOLT_ADDRESS_NOT_RESOLVED = 0x700,
-    BOLT_ROUTING_UNABLE_TO_RETRIEVE_ROUTING_TABLE = 0x800,
-    BOLT_ROUTING_NO_SERVERS_TO_SELECT = 0x801,
-    BOLT_ROUTING_UNABLE_TO_CONSTRUCT_POOL_FOR_SERVER = 0x802,
-    BOLT_ROUTING_UNABLE_TO_REFRESH_ROUTING_TABLE = 0x803,
-    BOLT_ROUTING_UNEXPECTED_DISCOVERY_RESPONSE = 0x804,
-    BOLT_CONNECTION_HAS_MORE_INFO = 0xFFE,
-    BOLT_STATUS_SET = 0xFFF,
-};
-
 struct BoltConnection;
 
 struct BoltProtocol;
@@ -165,7 +127,7 @@ struct BoltConnection {
     /// Current status of the connection
     enum BoltConnectionStatus status;
     /// Current connection error code
-    enum BoltConnectionError error;
+    int error;
     /// Additional context info about error
     char* error_ctx;
 

@@ -19,10 +19,10 @@
 
 #include <string.h>
 
+#include "bolt/config-impl.h"
 #include "bolt/buffering.h"
-#include "bolt/mem.h"
 #include "bolt/logging.h"
-
+#include "bolt/mem.h"
 #include "protocol.h"
 #include "v3.h"
 

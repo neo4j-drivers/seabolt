@@ -20,8 +20,8 @@
 #include <string.h>
 
 #include "bolt/config-impl.h"
-#include "bolt/utils.h"
 #include "bolt/mem.h"
+#include "bolt/utils.h"
 
 struct StringBuilder* StringBuilder_create()
 {

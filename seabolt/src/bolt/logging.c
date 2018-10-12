@@ -23,7 +23,6 @@
 
 #include "bolt/logging.h"
 #include "bolt/mem.h"
-
 #include "protocol/v1.h"
 
 struct BoltLog* BoltLog_create()

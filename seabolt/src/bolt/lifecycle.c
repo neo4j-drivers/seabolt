@@ -17,9 +17,9 @@
  * limitations under the License.
  */
 
+#include "bolt/config-impl.h"
 #include "bolt/lifecycle.h"
 #include "bolt/logging.h"
-#include "bolt/config-impl.h"
 
 int SSL_CTX_TRUST_INDEX = -1;
 int SSL_CTX_LOG_INDEX = -1;

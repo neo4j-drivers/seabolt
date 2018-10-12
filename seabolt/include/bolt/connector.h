@@ -57,7 +57,7 @@ struct BoltConnector {
 struct BoltConnectionResult {
     struct BoltConnection* connection;
     enum BoltConnectionStatus connection_status;
-    enum BoltConnectionError connection_error;
+    int connection_error;
     char* connection_error_ctx;
 };
 
