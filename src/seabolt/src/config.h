@@ -28,7 +28,7 @@
 #include <netdb.h>
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 typedef unsigned short in_port_t;
 typedef int socklen_t;
 #undef PUBLIC

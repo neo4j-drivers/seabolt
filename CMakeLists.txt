@@ -23,11 +23,13 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(ON_MACOS ON)
 endif ()
 
+if (NOT ON_WINDOWS)
 include(CheckIncludeFile)
 check_include_file("unistd.h" HAVE_UNISTD_H)
 if (HAVE_UNISTD_H)
     set(ON_POSIX ON)
 endif ()
+endif()
 
 include(GNUInstallDirs)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})

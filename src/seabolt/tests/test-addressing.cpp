@@ -21,6 +21,10 @@
 #include "integration.hpp"
 #include "catch.hpp"
 
+#if USE_WINSOCK
+#include <winsock2.h>
+#endif
+
 SCENARIO("Test address construction", "")
 {
     WHEN("hostname is provided as NULL")

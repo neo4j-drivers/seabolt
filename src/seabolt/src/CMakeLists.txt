@@ -77,6 +77,12 @@ if (ON_POSIX)
             Threads::Threads)
 endif ()
 
+if (ON_WINDOWS)
+    target_link_libraries(seabolt
+        PUBLIC
+        ws2_32)
+endif()
+
 if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
     if (NOT BUILD_SHARED_LIBS)
         set(OPENSSL_USE_STATIC_LIBS ON)
@@ -91,6 +97,11 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
             PUBLIC
             ${OPENSSL_LIBRARIES}
             ${CMAKE_DL_LIBS})
+    if (ON_WINDOWS)
+        target_link_libraries(seabolt
+            PUBLIC
+            crypt32)
+    endif()
 
     target_include_directories(seabolt
             PRIVATE
