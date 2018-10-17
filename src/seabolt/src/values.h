@@ -138,14 +138,14 @@ typedef const char* (* name_resolver_func)(int16_t code);
  *
  * @return
  */
-PUBLIC struct BoltValue* BoltValue_create();
+SEABOLT_EXPORT struct BoltValue* BoltValue_create();
 
 /**
  * Destroy a BoltValue instance.
  *
  * @param value
  */
-PUBLIC void BoltValue_destroy(struct BoltValue* value);
+SEABOLT_EXPORT void BoltValue_destroy(struct BoltValue* value);
 
 /**
  * Duplicates a BoltValue instance
@@ -153,7 +153,7 @@ PUBLIC void BoltValue_destroy(struct BoltValue* value);
  * @param value
  * @return
  */
-PUBLIC struct BoltValue* BoltValue_duplicate(const struct BoltValue* value);
+SEABOLT_EXPORT struct BoltValue* BoltValue_duplicate(const struct BoltValue* value);
 
 /**
  * Deep copy a BoltValue instance to another one
@@ -162,7 +162,7 @@ PUBLIC struct BoltValue* BoltValue_duplicate(const struct BoltValue* value);
  * @param dest
  * @return
  */
-PUBLIC void BoltValue_copy(struct BoltValue* dest, const struct BoltValue* src);
+SEABOLT_EXPORT void BoltValue_copy(struct BoltValue* dest, const struct BoltValue* src);
 
 /**
  * Return the type of a BoltValue.
@@ -170,7 +170,7 @@ PUBLIC void BoltValue_copy(struct BoltValue* dest, const struct BoltValue* src);
  * @param value
  * @return
  */
-PUBLIC enum BoltType BoltValue_type(const struct BoltValue* value);
+SEABOLT_EXPORT enum BoltType BoltValue_type(const struct BoltValue* value);
 
 /**
  * Write a textual representation of a BoltValue to a FILE.
@@ -180,7 +180,7 @@ PUBLIC enum BoltType BoltValue_type(const struct BoltValue* value);
  * @param protocol_version
  * @return
  */
-PUBLIC int
+SEABOLT_EXPORT int
 BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, name_resolver_func struct_name_resolver);
 
 /**
@@ -188,42 +188,42 @@ BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, name_res
  *
  * @param value
  */
-PUBLIC void BoltValue_format_as_Null(struct BoltValue* value);
+SEABOLT_EXPORT void BoltValue_format_as_Null(struct BoltValue* value);
 
-PUBLIC void BoltValue_format_as_Boolean(struct BoltValue* value, char data);
+SEABOLT_EXPORT void BoltValue_format_as_Boolean(struct BoltValue* value, char data);
 
-PUBLIC char BoltBoolean_get(const struct BoltValue* value);
+SEABOLT_EXPORT char BoltBoolean_get(const struct BoltValue* value);
 
-PUBLIC void BoltValue_format_as_Integer(struct BoltValue* value, int64_t data);
+SEABOLT_EXPORT void BoltValue_format_as_Integer(struct BoltValue* value, int64_t data);
 
-PUBLIC int64_t BoltInteger_get(const struct BoltValue* value);
+SEABOLT_EXPORT int64_t BoltInteger_get(const struct BoltValue* value);
 
-PUBLIC void BoltValue_format_as_Float(struct BoltValue* value, double data);
+SEABOLT_EXPORT void BoltValue_format_as_Float(struct BoltValue* value, double data);
 
-PUBLIC double BoltFloat_get(const struct BoltValue* value);
+SEABOLT_EXPORT double BoltFloat_get(const struct BoltValue* value);
 
-PUBLIC void BoltValue_format_as_String(struct BoltValue* value, const char* data, int32_t length);
+SEABOLT_EXPORT void BoltValue_format_as_String(struct BoltValue* value, const char* data, int32_t length);
 
-PUBLIC char* BoltString_get(const struct BoltValue* value);
+SEABOLT_EXPORT char* BoltString_get(const struct BoltValue* value);
 
-PUBLIC int BoltString_equals(struct BoltValue* value, const char* data, const size_t data_size);
+SEABOLT_EXPORT int BoltString_equals(struct BoltValue* value, const char* data, const size_t data_size);
 
-PUBLIC void BoltValue_format_as_Dictionary(struct BoltValue* value, int32_t length);
+SEABOLT_EXPORT void BoltValue_format_as_Dictionary(struct BoltValue* value, int32_t length);
 
-PUBLIC struct BoltValue* BoltDictionary_key(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT struct BoltValue* BoltDictionary_key(const struct BoltValue* value, int32_t index);
 
-PUBLIC const char* BoltDictionary_get_key(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT const char* BoltDictionary_get_key(const struct BoltValue* value, int32_t index);
 
-PUBLIC int32_t BoltDictionary_get_key_size(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT int32_t BoltDictionary_get_key_size(const struct BoltValue* value, int32_t index);
 
-PUBLIC int32_t
+SEABOLT_EXPORT int32_t
 BoltDictionary_get_key_index(const struct BoltValue* value, const char* key, size_t key_size, int32_t start_index);
 
-PUBLIC int BoltDictionary_set_key(struct BoltValue* value, int32_t index, const char* key, size_t key_size);
+SEABOLT_EXPORT int BoltDictionary_set_key(struct BoltValue* value, int32_t index, const char* key, size_t key_size);
 
-PUBLIC struct BoltValue* BoltDictionary_value(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT struct BoltValue* BoltDictionary_value(const struct BoltValue* value, int32_t index);
 
-PUBLIC struct BoltValue* BoltDictionary_value_by_key(const struct BoltValue* value, const char* key, size_t key_size);
+SEABOLT_EXPORT struct BoltValue* BoltDictionary_value_by_key(const struct BoltValue* value, const char* key, size_t key_size);
 
 
 /**
@@ -232,22 +232,22 @@ PUBLIC struct BoltValue* BoltDictionary_value_by_key(const struct BoltValue* val
  * @param value
  * @param length
  */
-PUBLIC void BoltValue_format_as_List(struct BoltValue* value, int32_t length);
+SEABOLT_EXPORT void BoltValue_format_as_List(struct BoltValue* value, int32_t length);
 
-PUBLIC void BoltList_resize(struct BoltValue* value, int32_t size);
+SEABOLT_EXPORT void BoltList_resize(struct BoltValue* value, int32_t size);
 
-PUBLIC struct BoltValue* BoltList_value(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT struct BoltValue* BoltList_value(const struct BoltValue* value, int32_t index);
 
-PUBLIC void BoltValue_format_as_Bytes(struct BoltValue* value, char* data, int32_t length);
+SEABOLT_EXPORT void BoltValue_format_as_Bytes(struct BoltValue* value, char* data, int32_t length);
 
-PUBLIC char BoltBytes_get(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT char BoltBytes_get(const struct BoltValue* value, int32_t index);
 
-PUBLIC char* BoltBytes_get_all(const struct BoltValue* value);
+SEABOLT_EXPORT char* BoltBytes_get_all(const struct BoltValue* value);
 
-PUBLIC void BoltValue_format_as_Structure(struct BoltValue* value, int16_t code, int32_t length);
+SEABOLT_EXPORT void BoltValue_format_as_Structure(struct BoltValue* value, int16_t code, int32_t length);
 
-PUBLIC int16_t BoltStructure_code(const struct BoltValue* value);
+SEABOLT_EXPORT int16_t BoltStructure_code(const struct BoltValue* value);
 
-PUBLIC struct BoltValue* BoltStructure_value(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT struct BoltValue* BoltStructure_value(const struct BoltValue* value, int32_t index);
 
 #endif // SEABOLT_VALUES

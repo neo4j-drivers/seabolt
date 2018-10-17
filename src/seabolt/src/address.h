@@ -65,9 +65,9 @@ struct BoltAddress {
  * @param port port name or numeric string, e.g. "7687" or "http"
  * @return pointer to a new BoltAddress structure
  */
-PUBLIC struct BoltAddress* BoltAddress_create(const char* host, const char* port);
+SEABOLT_EXPORT struct BoltAddress* BoltAddress_create(const char* host, const char* port);
 
-PUBLIC struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int32_t endpoint_len);
+SEABOLT_EXPORT struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int32_t endpoint_len);
 
 /**
  * Resolve the original host and port into one or more IP addresses and
@@ -77,7 +77,7 @@ PUBLIC struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_s
  * @param address pointer to a BoltAddress structure
  * @return status of the internal getaddrinfo call
  */
-PUBLIC int BoltAddress_resolve(struct BoltAddress* address, struct BoltLog* log);
+SEABOLT_EXPORT int BoltAddress_resolve(struct BoltAddress* address, struct BoltLog* log);
 
 /**
  * Copy the textual representation of a resolved host IP address into a buffer.
@@ -92,7 +92,7 @@ PUBLIC int BoltAddress_resolve(struct BoltAddress* address, struct BoltLog* log)
  * @param buffer_size size of the buffer
  * @return address family (AF_INET or AF_INET6) or -1 on error
  */
-PUBLIC int
+SEABOLT_EXPORT int
 BoltAddress_copy_resolved_host(struct BoltAddress* address, size_t index, char* buffer, socklen_t buffer_size);
 
 /**
@@ -100,6 +100,6 @@ BoltAddress_copy_resolved_host(struct BoltAddress* address, size_t index, char* 
  *
  * @param address pointer to a BoltAddress structure
  */
-PUBLIC void BoltAddress_destroy(struct BoltAddress* address);
+SEABOLT_EXPORT void BoltAddress_destroy(struct BoltAddress* address);
 
 #endif // SEABOLT_ADDRESSING_H

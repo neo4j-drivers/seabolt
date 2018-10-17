@@ -26,7 +26,7 @@
 #include "config.h"
 
 
-PUBLIC void* BoltMem_reverse_copy(void * dest, const void * src, size_t n);
+SEABOLT_EXPORT void* BoltMem_reverse_copy(void * dest, const void * src, size_t n);
 
 #if IS_BIG_ENDIAN
     #define memcpy_be(target, src, n) memcpy(target, src, n)
@@ -41,7 +41,7 @@ PUBLIC void* BoltMem_reverse_copy(void * dest, const void * src, size_t n);
  * @param new_size
  * @return
  */
-PUBLIC void* BoltMem_allocate(size_t new_size);
+SEABOLT_EXPORT void* BoltMem_allocate(size_t new_size);
 
 /**
  * Reallocate memory.
@@ -51,7 +51,7 @@ PUBLIC void* BoltMem_allocate(size_t new_size);
  * @param new_size
  * @return
  */
-PUBLIC void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size);
+SEABOLT_EXPORT void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size);
 
 /**
  * Deallocate memory.
@@ -60,7 +60,7 @@ PUBLIC void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size);
  * @param old_size
  * @return
  */
-PUBLIC void* BoltMem_deallocate(void* ptr, size_t old_size);
+SEABOLT_EXPORT void* BoltMem_deallocate(void* ptr, size_t old_size);
 
 /**
  * Allocate, reallocate or free memory for data storage.
@@ -72,7 +72,7 @@ PUBLIC void* BoltMem_deallocate(void* ptr, size_t old_size);
  * @param old_size the number of bytes already allocated
  * @param new_size the new number of bytes required
  */
-PUBLIC void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
+SEABOLT_EXPORT void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
 
 /**
 * Duplicates the memory region specified by ptr and ptr_size.
@@ -81,27 +81,27 @@ PUBLIC void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
 * @param ptr_size
 * @return
 */
-PUBLIC void* BoltMem_duplicate(const void *ptr, size_t ptr_size);
+SEABOLT_EXPORT void* BoltMem_duplicate(const void *ptr, size_t ptr_size);
 
 /**
  * Retrieve the amount of memory currently allocated.
  *
  * @return
  */
-PUBLIC size_t BoltMem_current_allocation();
+SEABOLT_EXPORT size_t BoltMem_current_allocation();
 
 /**
  *
  * @return
  */
-PUBLIC size_t BoltMem_peak_allocation();
+SEABOLT_EXPORT size_t BoltMem_peak_allocation();
 
 /**
  * Get an activity count for memory (de/re/-)allocation.
  *
  * @return
  */
-PUBLIC int64_t BoltMem_allocation_events();
+SEABOLT_EXPORT int64_t BoltMem_allocation_events();
 
 
 #endif // SEABOLT_MEM

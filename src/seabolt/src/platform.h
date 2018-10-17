@@ -27,7 +27,7 @@ typedef void * mutex_t;
 
 typedef void * rwlock_t;
 
-PUBLIC int BoltUtil_get_time(struct timespec* tp);
+SEABOLT_EXPORT int BoltUtil_get_time(struct timespec* tp);
 
 int64_t BoltUtil_get_time_ms();
 

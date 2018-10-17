@@ -24,6 +24,6 @@
 #include "config.h"
 #include "values.h"
 
-PUBLIC struct BoltValue* BoltAuth_basic(const char* username, const char* password, const char* realm);
+SEABOLT_EXPORT struct BoltValue* BoltAuth_basic(const char* username, const char* password, const char* realm);
 
 #endif // SEABOLT_AUTH

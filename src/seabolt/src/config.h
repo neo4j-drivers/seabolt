@@ -21,8 +21,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 
-
-#define PUBLIC
+#include "bolt-exports.h"
 
 #if USE_POSIXSOCK
 #include <netdb.h>
@@ -31,9 +30,7 @@
 #ifdef _WIN32
 typedef unsigned short in_port_t;
 typedef int socklen_t;
-#undef PUBLIC
-#define PUBLIC __declspec(dllexport)
-#endif // USE_WINSOCK
+#endif // _WIN32
 
 struct BoltLog;
 

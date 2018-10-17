@@ -29,20 +29,20 @@ struct BoltAddressSet {
 #define SIZE_OF_ADDRESS_SET sizeof(struct BoltAddressSet)
 #define SIZE_OF_ADDRESS_SET_PTR sizeof(struct BoltAddressSet*)
 
-PUBLIC struct BoltAddressSet* BoltAddressSet_create();
+SEABOLT_EXPORT struct BoltAddressSet* BoltAddressSet_create();
 
-PUBLIC void BoltAddressSet_destroy(struct BoltAddressSet* set);
+SEABOLT_EXPORT void BoltAddressSet_destroy(struct BoltAddressSet* set);
 
-PUBLIC int BoltAddressSet_size(struct BoltAddressSet* set);
+SEABOLT_EXPORT int BoltAddressSet_size(struct BoltAddressSet* set);
 
-PUBLIC int BoltAddressSet_index_of(struct BoltAddressSet* set, struct BoltAddress address);
+SEABOLT_EXPORT int BoltAddressSet_index_of(struct BoltAddressSet* set, struct BoltAddress address);
 
-PUBLIC int BoltAddressSet_add(struct BoltAddressSet* set, struct BoltAddress address);
+SEABOLT_EXPORT int BoltAddressSet_add(struct BoltAddressSet* set, struct BoltAddress address);
 
-PUBLIC int BoltAddressSet_remove(struct BoltAddressSet* set, struct BoltAddress address);
+SEABOLT_EXPORT int BoltAddressSet_remove(struct BoltAddressSet* set, struct BoltAddress address);
 
-PUBLIC void BoltAddressSet_replace(struct BoltAddressSet* destination, struct BoltAddressSet* source);
+SEABOLT_EXPORT void BoltAddressSet_replace(struct BoltAddressSet* destination, struct BoltAddressSet* source);
 
-PUBLIC void BoltAddressSet_add_all(struct BoltAddressSet* destination, struct BoltAddressSet* source);
+SEABOLT_EXPORT void BoltAddressSet_add_all(struct BoltAddressSet* destination, struct BoltAddressSet* source);
 
 #endif //SEABOLT_ALL_ADDRESS_SET_H

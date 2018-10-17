@@ -43,9 +43,9 @@ struct BoltLog {
     log_func debug_logger;
 };
 
-PUBLIC struct BoltLog* BoltLog_create();
+SEABOLT_EXPORT struct BoltLog* BoltLog_create();
 
-PUBLIC void BoltLog_destroy(struct BoltLog* log);
+SEABOLT_EXPORT void BoltLog_destroy(struct BoltLog* log);
 
 void BoltLog_error(const struct BoltLog* log, const char* format, ...);
 

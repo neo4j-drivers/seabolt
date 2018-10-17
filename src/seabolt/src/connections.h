@@ -147,12 +147,12 @@ struct BoltTrust {
  *
  * @return
  */
-PUBLIC struct BoltConnection* BoltConnection_create();
+SEABOLT_EXPORT struct BoltConnection* BoltConnection_create();
 
 /**
  * Destroy a connection.
  */
-PUBLIC void BoltConnection_destroy(struct BoltConnection* connection);
+SEABOLT_EXPORT void BoltConnection_destroy(struct BoltConnection* connection);
 
 /**
  * Open a connection to a Bolt server.
@@ -190,7 +190,7 @@ PUBLIC void BoltConnection_destroy(struct BoltConnection* connection);
  * @param address descriptor of the remote Bolt server address
  * @return 0 if the connection was opened successfully, -1 otherwise
  */
-PUBLIC int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transport,
+SEABOLT_EXPORT int BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transport,
         struct BoltAddress* address, struct BoltTrust* trust, struct BoltLog* log, struct BoltSocketOptions* sock_opts);
 
 /**
@@ -198,7 +198,7 @@ PUBLIC int BoltConnection_open(struct BoltConnection* connection, enum BoltTrans
  *
  * @param connection
  */
-PUBLIC void BoltConnection_close(struct BoltConnection* connection);
+SEABOLT_EXPORT void BoltConnection_close(struct BoltConnection* connection);
 
 /**
  * Initialise the connection and authenticate using the basic
@@ -209,7 +209,7 @@ PUBLIC void BoltConnection_close(struct BoltConnection* connection);
  * @param auth_token dictionary that contains user credentials
  * @return
  */
-PUBLIC int
+SEABOLT_EXPORT int
 BoltConnection_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token);
 
 /**
@@ -218,7 +218,7 @@ BoltConnection_init(struct BoltConnection* connection, const char* user_agent, c
  * @param connection
  * @return the latest request ID
  */
-PUBLIC int BoltConnection_send(struct BoltConnection* connection);
+SEABOLT_EXPORT int BoltConnection_send(struct BoltConnection* connection);
 
 /**
  * Take an exact amount of data from the receive buffer, deferring to
@@ -252,7 +252,7 @@ int BoltConnection_receive(struct BoltConnection* connection, char* buffer, int 
  *         -1 if an error occurs
  *
  */
-PUBLIC int BoltConnection_fetch(struct BoltConnection* connection, bolt_request request);
+SEABOLT_EXPORT int BoltConnection_fetch(struct BoltConnection* connection, bolt_request request);
 
 /**
  * Fetch values from the result stream for a given request, up to and
@@ -272,7 +272,7 @@ PUBLIC int BoltConnection_fetch(struct BoltConnection* connection, bolt_request 
  * @return >=0 the number of records discarded from this result
  *         -1 if an error occurs
  */
-PUBLIC int BoltConnection_fetch_summary(struct BoltConnection* connection, bolt_request request);
+SEABOLT_EXPORT int BoltConnection_fetch_summary(struct BoltConnection* connection, bolt_request request);
 
 /**
  * Load a transaction BEGIN request into the request queue.
@@ -280,13 +280,13 @@ PUBLIC int BoltConnection_fetch_summary(struct BoltConnection* connection, bolt_
  * @param connection
  * @return
  */
-PUBLIC int BoltConnection_clear_begin(struct BoltConnection* connection);
+SEABOLT_EXPORT int BoltConnection_clear_begin(struct BoltConnection* connection);
 
-PUBLIC int BoltConnection_set_begin_bookmarks(struct BoltConnection* connection, struct BoltValue* bookmark_list);
+SEABOLT_EXPORT int BoltConnection_set_begin_bookmarks(struct BoltConnection* connection, struct BoltValue* bookmark_list);
 
-PUBLIC int BoltConnection_set_begin_tx_timeout(struct BoltConnection* connection, int64_t timeout);
+SEABOLT_EXPORT int BoltConnection_set_begin_tx_timeout(struct BoltConnection* connection, int64_t timeout);
 
-PUBLIC int BoltConnection_set_begin_tx_metadata(struct BoltConnection* connection, struct BoltValue* metadata);
+SEABOLT_EXPORT int BoltConnection_set_begin_tx_metadata(struct BoltConnection* connection, struct BoltValue* metadata);
 
 /**
  * Load a transaction BEGIN request into the request queue.
@@ -294,7 +294,7 @@ PUBLIC int BoltConnection_set_begin_tx_metadata(struct BoltConnection* connectio
  * @param connection
  * @return
  */
-PUBLIC int BoltConnection_load_begin_request(struct BoltConnection* connection);
+SEABOLT_EXPORT int BoltConnection_load_begin_request(struct BoltConnection* connection);
 
 /**
  * Load a transaction COMMIT request into the request queue.
@@ -302,7 +302,7 @@ PUBLIC int BoltConnection_load_begin_request(struct BoltConnection* connection);
  * @param connection
  * @return
  */
-PUBLIC int BoltConnection_load_commit_request(struct BoltConnection* connection);
+SEABOLT_EXPORT int BoltConnection_load_commit_request(struct BoltConnection* connection);
 
 /**
  * Load a transaction ROLLBACK request into the request queue.
@@ -310,7 +310,7 @@ PUBLIC int BoltConnection_load_commit_request(struct BoltConnection* connection)
  * @param connection
  * @return
  */
-PUBLIC int BoltConnection_load_rollback_request(struct BoltConnection* connection);
+SEABOLT_EXPORT int BoltConnection_load_rollback_request(struct BoltConnection* connection);
 
 /**
  * Load a RUN request into the request queue.
@@ -318,23 +318,23 @@ PUBLIC int BoltConnection_load_rollback_request(struct BoltConnection* connectio
  * @param connection
  * @return
  */
-PUBLIC int BoltConnection_clear_run(struct BoltConnection* connection);
+SEABOLT_EXPORT int BoltConnection_clear_run(struct BoltConnection* connection);
 
-PUBLIC int BoltConnection_set_run_bookmarks(struct BoltConnection* connection, struct BoltValue* bookmark_list);
+SEABOLT_EXPORT int BoltConnection_set_run_bookmarks(struct BoltConnection* connection, struct BoltValue* bookmark_list);
 
-PUBLIC int BoltConnection_set_run_tx_timeout(struct BoltConnection* connection, int64_t timeout);
+SEABOLT_EXPORT int BoltConnection_set_run_tx_timeout(struct BoltConnection* connection, int64_t timeout);
 
-PUBLIC int BoltConnection_set_run_tx_metadata(struct BoltConnection* connection, struct BoltValue* metadata);
+SEABOLT_EXPORT int BoltConnection_set_run_tx_metadata(struct BoltConnection* connection, struct BoltValue* metadata);
 
-PUBLIC int
+SEABOLT_EXPORT int
 BoltConnection_set_run_cypher(struct BoltConnection* connection, const char* cypher, const size_t cypher_size,
         int32_t n_parameter);
 
-PUBLIC struct BoltValue*
+SEABOLT_EXPORT struct BoltValue*
 BoltConnection_set_run_cypher_parameter(struct BoltConnection* connection, int32_t index, const char* name,
         size_t name_size);
 
-PUBLIC int BoltConnection_load_run_request(struct BoltConnection* connection);
+SEABOLT_EXPORT int BoltConnection_load_run_request(struct BoltConnection* connection);
 
 /**
  * Load a DISCARD_ALL request into the request queue.
@@ -343,7 +343,7 @@ PUBLIC int BoltConnection_load_run_request(struct BoltConnection* connection);
  * @param n should always be -1
  * @return
  */
-PUBLIC int BoltConnection_load_discard_request(struct BoltConnection* connection, int32_t n);
+SEABOLT_EXPORT int BoltConnection_load_discard_request(struct BoltConnection* connection, int32_t n);
 
 /**
  * Load a PULL_ALL request into the request queue.
@@ -352,7 +352,7 @@ PUBLIC int BoltConnection_load_discard_request(struct BoltConnection* connection
  * @param n should always be -1
  * @return
  */
-PUBLIC int BoltConnection_load_pull_request(struct BoltConnection* connection, int32_t n);
+SEABOLT_EXPORT int BoltConnection_load_pull_request(struct BoltConnection* connection, int32_t n);
 
 /**
  * Load a RESET request into the request queue.
@@ -364,7 +364,7 @@ PUBLIC int BoltConnection_load_pull_request(struct BoltConnection* connection, i
  * @param connection
  * @return
  */
-PUBLIC int BoltConnection_load_reset_request(struct BoltConnection* connection);
+SEABOLT_EXPORT int BoltConnection_load_reset_request(struct BoltConnection* connection);
 
 /**
  * Obtain a handle to the last request sent to the server. This handle
@@ -373,7 +373,7 @@ PUBLIC int BoltConnection_load_reset_request(struct BoltConnection* connection);
  * @param connection
  * @return
  */
-PUBLIC bolt_request BoltConnection_last_request(struct BoltConnection* connection);
+SEABOLT_EXPORT bolt_request BoltConnection_last_request(struct BoltConnection* connection);
 
 /**
  * Obtain the latest bookmark sent by the server. This may return null if
@@ -385,7 +385,7 @@ PUBLIC bolt_request BoltConnection_last_request(struct BoltConnection* connectio
  * @param connection
  * @return
  */
-PUBLIC char* BoltConnection_last_bookmark(struct BoltConnection* connection);
+SEABOLT_EXPORT char* BoltConnection_last_bookmark(struct BoltConnection* connection);
 
 
 /**
@@ -393,7 +393,7 @@ PUBLIC char* BoltConnection_last_bookmark(struct BoltConnection* connection);
 * @param connection
 * @return
 */
-PUBLIC int BoltConnection_summary_success(struct BoltConnection* connection);
+SEABOLT_EXPORT int BoltConnection_summary_success(struct BoltConnection* connection);
 
 /**
  * Obtain the details of the latest server generated FAILURE message
@@ -401,7 +401,7 @@ PUBLIC int BoltConnection_summary_success(struct BoltConnection* connection);
  * @param connection
  * @return
  */
-PUBLIC struct BoltValue* BoltConnection_failure(struct BoltConnection* connection);
+SEABOLT_EXPORT struct BoltValue* BoltConnection_failure(struct BoltConnection* connection);
 
 /**
  * Return the fields available in the current result.
@@ -409,7 +409,7 @@ PUBLIC struct BoltValue* BoltConnection_failure(struct BoltConnection* connectio
  * @param connection
  * @return
  */
-PUBLIC struct BoltValue* BoltConnection_field_names(struct BoltConnection* connection);
+SEABOLT_EXPORT struct BoltValue* BoltConnection_field_names(struct BoltConnection* connection);
 
 /**
 * Obtain a value from the current record.
@@ -418,7 +418,7 @@ PUBLIC struct BoltValue* BoltConnection_field_names(struct BoltConnection* conne
 * @param field
 * @return pointer to a `BoltValue` data structure formatted as a BOLT_LIST
 */
-PUBLIC struct BoltValue* BoltConnection_field_values(struct BoltConnection* connection);
+SEABOLT_EXPORT struct BoltValue* BoltConnection_field_values(struct BoltConnection* connection);
 
 /**
  * Returns the metadata sent by the server.
@@ -426,8 +426,8 @@ PUBLIC struct BoltValue* BoltConnection_field_values(struct BoltConnection* conn
  * @param connection
  * @return
  */
-PUBLIC struct BoltValue* BoltConnection_metadata(struct BoltConnection* connection);
+SEABOLT_EXPORT struct BoltValue* BoltConnection_metadata(struct BoltConnection* connection);
 
-PUBLIC char* BoltConnection_server(struct BoltConnection* connection);
+SEABOLT_EXPORT char* BoltConnection_server(struct BoltConnection* connection);
 
 #endif // SEABOLT_CONNECT

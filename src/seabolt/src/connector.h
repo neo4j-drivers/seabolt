@@ -61,13 +61,13 @@ struct BoltConnectionResult {
     char* connection_error_ctx;
 };
 
-PUBLIC struct BoltConnector*
+SEABOLT_EXPORT struct BoltConnector*
 BoltConnector_create(struct BoltAddress* address, struct BoltValue* auth_token, struct BoltConfig* config);
 
-PUBLIC void BoltConnector_destroy(struct BoltConnector* connector);
+SEABOLT_EXPORT void BoltConnector_destroy(struct BoltConnector* connector);
 
-PUBLIC struct BoltConnectionResult BoltConnector_acquire(struct BoltConnector* connector, enum BoltAccessMode mode);
+SEABOLT_EXPORT struct BoltConnectionResult BoltConnector_acquire(struct BoltConnector* connector, enum BoltAccessMode mode);
 
-PUBLIC void BoltConnector_release(struct BoltConnector* connector, struct BoltConnection* connection);
+SEABOLT_EXPORT void BoltConnector_release(struct BoltConnector* connector, struct BoltConnection* connection);
 
 #endif //SEABOLT_ALL_CONNECTOR_H

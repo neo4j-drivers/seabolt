@@ -30,9 +30,9 @@ struct BoltAddressResolver {
     address_resolver_func resolver;
 };
 
-PUBLIC struct BoltAddressResolver* BoltAddressResolver_create();
+SEABOLT_EXPORT struct BoltAddressResolver* BoltAddressResolver_create();
 
-PUBLIC void BoltAddressResolver_destroy(struct BoltAddressResolver* resolver);
+SEABOLT_EXPORT void BoltAddressResolver_destroy(struct BoltAddressResolver* resolver);
 
 void BoltAddressResolver_resolve(struct BoltAddressResolver* resolver, struct BoltAddress* address,
         struct BoltAddressSet* resolved);

@@ -1,5 +1,4 @@
-target_sources(seabolt
-        PRIVATE
+list(APPEND private_source_files
         ${CMAKE_CURRENT_LIST_DIR}/address-resolver.c
         ${CMAKE_CURRENT_LIST_DIR}/address-set.h
         ${CMAKE_CURRENT_LIST_DIR}/address-set.c
@@ -37,8 +36,9 @@ target_sources(seabolt
         ${CMAKE_CURRENT_LIST_DIR}/v2.c
         ${CMAKE_CURRENT_LIST_DIR}/v3.h
         ${CMAKE_CURRENT_LIST_DIR}/v3.c
-        ${CMAKE_CURRENT_LIST_DIR}/values.c
-        PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/values.c)
+
+list(APPEND public_source_files
         ${CMAKE_CURRENT_LIST_DIR}/bolt.h
         ${CMAKE_CURRENT_LIST_DIR}/address-resolver.h
         ${CMAKE_CURRENT_LIST_DIR}/address.h
@@ -50,12 +50,13 @@ target_sources(seabolt
         ${CMAKE_CURRENT_LIST_DIR}/lifecycle.h
         ${CMAKE_CURRENT_LIST_DIR}/logging.h
         ${CMAKE_CURRENT_LIST_DIR}/mem.h
-        ${CMAKE_CURRENT_LIST_DIR}/values.h
-        )
+        ${CMAKE_CURRENT_LIST_DIR}/values.h)
 
-set_target_properties(seabolt
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1)
+target_sources(seabolt
+        PRIVATE
+        ${private_source_files}
+        PUBLIC
+        ${public_source_files})
 
 target_compile_definitions(seabolt
         PUBLIC
@@ -79,9 +80,9 @@ endif ()
 
 if (ON_WINDOWS)
     target_link_libraries(seabolt
-        PUBLIC
-        ws2_32)
-endif()
+            PUBLIC
+            ws2_32)
+endif ()
 
 if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
     if (NOT BUILD_SHARED_LIBS)
@@ -99,9 +100,9 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
             ${CMAKE_DL_LIBS})
     if (ON_WINDOWS)
         target_link_libraries(seabolt
-            PUBLIC
-            crypt32)
-    endif()
+                PUBLIC
+                crypt32)
+    endif ()
 
     target_include_directories(seabolt
             PRIVATE
@@ -110,6 +111,32 @@ endif ()
 
 if (CMAKE_C_COMPILER_ID MATCHES AppleClang)
     set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/platform.c
-        PROPERTIES
+            PROPERTIES
             COMPILE_FLAGS -Wno-deprecated-declarations)
-endif()
+endif ()
+
+
+include(GenerateExportHeader)
+generate_export_header(seabolt
+        EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt-exports.h"
+        DEFINE_NO_DEPRECATED)
+target_include_directories(seabolt
+        PUBLIC
+        ${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR})
+
+set_target_properties(seabolt
+        PROPERTIES
+        POSITION_INDEPENDENT_CODE 1
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN 1
+        SOVERSION 17
+        OUTPUT_NAME "seabolt"
+        DEBUG_POSTFIX "_d"
+        PUBLIC_HEADER "${public_source_files};${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt-exports.h"
+        MACOSX_RPATH ON)
+
+if (MSVC AND NOT BUILD_SHARED_LIBS)
+    set_target_properties(seabolt
+        PROPERTIES
+            OUTPUT_NAME "seabolt-static")
+endif ()

@@ -26,9 +26,9 @@
 #include "config.h"
 
 
-PUBLIC void Bolt_startup();
+SEABOLT_EXPORT void Bolt_startup();
 
-PUBLIC void Bolt_shutdown();
+SEABOLT_EXPORT void Bolt_shutdown();
 
 
 #endif // SEABOLT_BOLT
