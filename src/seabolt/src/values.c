@@ -93,7 +93,7 @@ void _resize(struct BoltValue* value, int32_t size, int multiplier)
 
 void _set_type(struct BoltValue* value, enum BoltType type, int16_t subtype, int32_t size)
 {
-    assert(type<0x80);
+    assert(((int)type)<0x80);
     value->type = (char) (type);
     value->subtype = subtype;
     value->size = size;

@@ -325,3 +325,4 @@ int BoltDirectPool_connections_in_use(struct BoltDirectPool* pool)
     }
     return count;
 }
+

@@ -168,3 +168,4 @@ void RoutingTable_forget_writer(struct RoutingTable* state, struct BoltAddress a
 {
     BoltAddressSet_remove(state->writers, address);
 }
+

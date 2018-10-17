@@ -24,6 +24,7 @@
 #ifdef __APPLE__
 #include <mach/clock.h>
 #include <mach/mach.h>
+#include <libkern/OSAtomic.h>
 #endif
 
 #ifndef _WIN32
@@ -32,9 +33,6 @@
 #include <assert.h>
 
 #endif
-
-#define NSEC_PER_SEC 1000000000
-#define NSEC_PER_MSEC 1000000
 
 int BoltUtil_get_time(struct timespec* tp)
 {

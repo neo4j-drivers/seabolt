@@ -59,3 +59,4 @@ void Bolt_shutdown()
     // we don't need any specific shutdown code for openssl
 #endif
 }
+

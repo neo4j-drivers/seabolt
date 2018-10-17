@@ -59,7 +59,7 @@
     int status_try = (code); \
     if (status_try != BOLT_SUCCESS) { \
         if (status_try == -1) { \
-            int last_error = _last_error_code(connection); \
+            int last_error = _last_error_code(); \
             _set_status_with_ctx(connection, BOLT_DEFUNCT, _transform_error(last_error), error_ctx_fmt, file, line, last_error); \
         } else if (status_try == BOLT_STATUS_SET) { \
             return -1; \
@@ -150,7 +150,7 @@ int _last_error_code_ssl(struct BoltConnection* connection, int ssl_ret, int* ss
 {
     // On windows, SSL_get_error resets WSAGetLastError so we're left without an error code after
     // asking error code - so we're saving it here in case.
-    int last_error_saved = _last_error_code(connection);
+    int last_error_saved = _last_error_code();
     *ssl_error_code = SSL_get_error(connection->ssl, ssl_ret);
     BoltLog_error(connection->log, "ssl error code: %d", ssl_error_code);
     switch (*ssl_error_code) {
@@ -159,7 +159,7 @@ int _last_error_code_ssl(struct BoltConnection* connection, int ssl_ret, int* ss
     case SSL_ERROR_SYSCALL:
     case SSL_ERROR_WANT_READ:
     case SSL_ERROR_WANT_WRITE: {
-        *last_error = _last_error_code(connection);
+        *last_error = _last_error_code();
         if (*last_error==0) {
             *last_error = last_error_saved;
         }
@@ -334,7 +334,7 @@ int _open(struct BoltConnection* connection, enum BoltTransport transport, const
     }
     connection->socket = (int) SOCKET(address->ss_family, SOCK_STREAM, IPPROTO_TCP);
     if (connection->socket==-1) {
-        int last_error_code = _last_error_code(connection);
+        int last_error_code = _last_error_code();
         _set_status_with_ctx(connection, BOLT_DEFUNCT, _transform_error(last_error_code),
                 "_open(%s:%d), socket error code: %d", __FILE__, __LINE__, last_error_code);
         return BOLT_STATUS_SET;
@@ -347,7 +347,7 @@ int _open(struct BoltConnection* connection, enum BoltTransport transport, const
         // initiate connection
         int status = CONNECT(connection->socket, (struct sockaddr*) (address), ADDR_SIZE(address));
         if (status==-1) {
-            int error_code = _last_error_code(connection);
+            int error_code = _last_error_code();
             switch (error_code) {
 #if USE_WINSOCK
                 case WSAEWOULDBLOCK: {
@@ -398,7 +398,7 @@ int _open(struct BoltConnection* connection, enum BoltTransport transport, const
                 break;
             }
             default: {
-                int last_error = _last_error_code(connection);
+                int last_error = _last_error_code();
                 _set_status_with_ctx(connection, BOLT_DEFUNCT, _transform_error(last_error),
                         "_open(%s:%d), select error code: %d", __FILE__, __LINE__, last_error);
                 return BOLT_STATUS_SET;
@@ -558,7 +558,7 @@ int _send(struct BoltConnection* connection, const char* data, int size)
         else {
             switch (connection->transport) {
             case BOLT_SOCKET: {
-                int last_error = _last_error_code(connection);
+                int last_error = _last_error_code();
                 _set_status_with_ctx(connection, BOLT_DEFUNCT, _transform_error(last_error),
                         "_send(%s:%d), send error code: %d", __FILE__, __LINE__, last_error);
                 BoltLog_error(connection->log, "Socket error %d on transmit", connection->error);
@@ -621,7 +621,7 @@ int _receive(struct BoltConnection* connection, char* buffer, int min_size, int 
         else {
             switch (connection->transport) {
             case BOLT_SOCKET: {
-                int last_error = _last_error_code(connection);
+                int last_error = _last_error_code();
                 _set_status_with_ctx(connection, BOLT_DEFUNCT, _transform_error(last_error),
                         "_receive(%s:%d), receive error code: %d", __FILE__, __LINE__, last_error);
                 BoltLog_error(connection->log, "Socket error %d on receive", connection->error);

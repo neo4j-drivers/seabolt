@@ -85,3 +85,4 @@ void push_to_transmission(struct BoltBuffer* msg_buffer, struct BoltBuffer* tx_b
     BoltBuffer_load(tx_buffer, &header[0], sizeof(header));
     BoltBuffer_compact(msg_buffer);
 }
+

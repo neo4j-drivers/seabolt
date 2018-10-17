@@ -106,3 +106,4 @@ void BoltProtocolV2_destroy_protocol(struct BoltProtocol* protocol)
 {
     BoltProtocolV1_destroy_protocol(protocol);
 }
+

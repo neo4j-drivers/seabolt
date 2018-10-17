@@ -42,3 +42,4 @@ void BoltAddressResolver_resolve(struct BoltAddressResolver* resolver, struct Bo
         resolver->resolver(resolver->state, address, resolved);
     }
 }
+

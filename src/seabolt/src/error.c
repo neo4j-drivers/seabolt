@@ -90,3 +90,4 @@ const char* BoltError_get_string(int code)
         return "UNKNOWN ERROR CODE";
     }
 }
+

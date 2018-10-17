@@ -107,3 +107,9 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
             PRIVATE
             ${OPENSSL_INCLUDE_DIR})
 endif ()
+
+if (CMAKE_C_COMPILER_ID MATCHES AppleClang)
+    set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/platform.c
+        PROPERTIES
+            COMPILE_FLAGS -Wno-deprecated-declarations)
+endif()
