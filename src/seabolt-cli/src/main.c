@@ -46,6 +46,8 @@
 #pragma  warning(disable:4204)
 #endif
 
+#define UNUSED(x) (void)(x)
+
 #ifdef __APPLE__
 #include <mach/clock.h>
 #include <mach/mach.h>
@@ -54,6 +56,7 @@
 
 void timespec_get(struct timespec *ts, int type)
 {
+    UNUSED(type);
     clock_serv_t cclock;
     mach_timespec_t mts;
     host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
@@ -63,8 +66,6 @@ void timespec_get(struct timespec *ts, int type)
     ts->tv_nsec = mts.tv_nsec;
 }
 #endif
-
-#define UNUSED(x) (void)(x)
 
 enum Command {
     CMD_NONE,
