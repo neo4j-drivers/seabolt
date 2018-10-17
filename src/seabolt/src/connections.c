@@ -56,17 +56,17 @@
 #endif
 
 #define TRY(code, error_ctx_fmt, file, line) { \
-    int status = (code); \
-    if (status != BOLT_SUCCESS) { \
-        if (status == -1) { \
+    int status_try = (code); \
+    if (status_try != BOLT_SUCCESS) { \
+        if (status_try == -1) { \
             int last_error = _last_error_code(connection); \
             _set_status_with_ctx(connection, BOLT_DEFUNCT, _transform_error(last_error), error_ctx_fmt, file, line, last_error); \
-        } else if (status == BOLT_STATUS_SET) { \
+        } else if (status_try == BOLT_STATUS_SET) { \
             return -1; \
         } else { \
-            _set_status_with_ctx(connection, BOLT_DEFUNCT, status, error_ctx_fmt, file, line, -1); \
+            _set_status_with_ctx(connection, BOLT_DEFUNCT, status_try, error_ctx_fmt, file, line, -1); \
         } \
-        return status; \
+        return status_try; \
     } \
 }
 
@@ -137,7 +137,7 @@ int _transform_error(int error_code)
 #endif
 }
 
-int _last_error_code(struct BoltConnection* connection)
+int _last_error_code()
 {
 #if USE_WINSOCK
     return WSAGetLastError();
@@ -727,7 +727,7 @@ BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transp
 
             char resolved_host[MAX_IPADDR_LEN], resolved_port[6];
             BoltAddress_copy_resolved_host(address, i, resolved_host, MAX_IPADDR_LEN);
-            sprintf(resolved_port, "%d", address->resolved_port);
+            sprintf_s(resolved_port, 6, "%d", address->resolved_port);
             connection->resolved_address = BoltAddress_create(resolved_host, resolved_port);
 
             _set_status(connection, BOLT_CONNECTED, BOLT_SUCCESS);

@@ -23,7 +23,6 @@
 #include "config.h"
 #include "platform.h"
 
-
 /**
  * The address of a Bolt server. This can carry both the original host
  * and port details, as supplied by the application, as well as one or
@@ -36,7 +35,7 @@ struct BoltAddress {
     const char* port;
 
     /// Number of resolved IP addresses
-    size_t n_resolved_hosts;
+    int n_resolved_hosts;
     /// Resolved IP address data
     struct sockaddr_storage* resolved_hosts;
     /// Resolved port number
@@ -50,9 +49,9 @@ struct BoltAddress {
 #define SIZE_OF_ADDRESS_PTR sizeof(struct BoltAddress *)
 
 #ifdef __cplusplus
-#define BoltAddress_of(host, port) { (const char *)host, (const char *)port }
+#define BoltAddress_of(host, port) { (const char *)host, (const char *)port, 0, nullptr, 0, nullptr }
 #else
-#define BoltAddress_of(host, port) (struct BoltAddress) { (const char *)host, (const char *)port }
+#define BoltAddress_of(host, port) (struct BoltAddress) { (const char *)host, (const char *)port, 0, NULL, 0, NULL }
 #endif
 
 
@@ -78,7 +77,7 @@ PUBLIC struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_s
  * @param address pointer to a BoltAddress structure
  * @return status of the internal getaddrinfo call
  */
-PUBLIC int BoltAddress_resolve(struct BoltAddress* address, struct BoltLog *log);
+PUBLIC int BoltAddress_resolve(struct BoltAddress* address, struct BoltLog* log);
 
 /**
  * Copy the textual representation of a resolved host IP address into a buffer.

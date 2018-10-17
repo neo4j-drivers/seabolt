@@ -62,8 +62,8 @@ target_compile_definitions(seabolt
         IS_BIG_ENDIAN=$<BOOL:${IS_BIG_ENDIAN}>
         USE_WINSOCK=$<BOOL:${ON_WINDOWS}>
         USE_POSIXSOCK=$<BOOL:${ON_POSIX}>
-        USE_WINSSPI=$<BOOL:${WITH_TLS_SUPPORT} AND ${WITH_TLS_SECURE_CHANNEL}>
-        USE_OPENSSL=$<BOOL:${WITH_TLS_SUPPORT} AND ${WITH_TLS_OPENSSL}>)
+        USE_WINSSPI=$<BOOL:${WITH_TLS_SECURE_CHANNEL}>
+        USE_OPENSSL=$<BOOL:${WITH_TLS_OPENSSL}>)
 
 target_include_directories(seabolt
         PUBLIC

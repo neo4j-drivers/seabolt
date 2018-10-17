@@ -321,13 +321,13 @@ struct BoltAddress* BoltRoutingPool_select_least_connected(struct BoltRoutingPoo
 struct BoltAddress* BoltRoutingPool_select_least_connected_reader(struct BoltRoutingPool* pool)
 {
     return BoltRoutingPool_select_least_connected(pool, pool->routing_table->readers,
-            BoltUtil_increment(&pool->readers_offset));
+            (int)BoltUtil_increment(&pool->readers_offset));
 }
 
 struct BoltAddress* BoltRoutingPool_select_least_connected_writer(struct BoltRoutingPool* pool)
 {
     return BoltRoutingPool_select_least_connected(pool, pool->routing_table->writers,
-            BoltUtil_increment(&pool->writers_offset));
+		(int)BoltUtil_increment(&pool->writers_offset));
 }
 
 void BoltRoutingPool_forget_server(struct BoltRoutingPool* pool, const struct BoltAddress* server)
@@ -404,7 +404,7 @@ void BoltRoutingPool_handle_connection_error_by_failure(struct BoltRoutingPool* 
     }
 
     char* code_str = (char*) BoltMem_allocate((code->size+1)*sizeof(char));
-    strncpy(code_str, BoltString_get(code), code->size);
+    strncpy_s(code_str, code->size+1, BoltString_get(code), code->size);
     code_str[code->size] = '\0';
 
     if (strcmp(code_str, "Neo.ClientError.General.ForbiddenOnReadOnlyDatabase")==0) {
@@ -501,7 +501,7 @@ BoltRoutingPool_acquire(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
         }
     }
 
-    struct BoltConnectionResult result;
+	struct BoltConnectionResult result = { NULL, BOLT_DISCONNECTED, BOLT_SUCCESS, NULL };
     if (status==BOLT_SUCCESS) {
         result = BoltDirectPool_acquire(pool->server_pools[server_pool_index]);
         if (result.connection!=NULL) {
@@ -526,7 +526,10 @@ BoltRoutingPool_acquire(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
         BoltRoutingPool_handle_connection_error_by_code(pool, server, status);
     }
 
-    return CONNECTION_RESULT_ERROR(status, NULL);
+	result.connection_error = status;
+	result.connection_error_ctx = NULL;
+
+    return result;
 }
 
 int BoltRoutingPool_release(struct BoltRoutingPool* pool, struct BoltConnection* connection)

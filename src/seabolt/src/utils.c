@@ -58,7 +58,7 @@ void StringBuilder_append(struct StringBuilder* builder, const char* string)
 void StringBuilder_append_n(struct StringBuilder* builder, const char* string, const size_t len)
 {
     StringBuilder_ensure_buffer(builder, len+1);
-    strncpy(builder->buffer+builder->buffer_pos, string, len);
+    strncpy_s(builder->buffer+builder->buffer_pos, len+1, string, len);
     builder->buffer_pos += len;
     builder->buffer[builder->buffer_pos] = 0;
 }

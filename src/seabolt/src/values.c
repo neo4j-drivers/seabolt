@@ -146,35 +146,35 @@ void _write_string(FILE* file, const char* data, size_t size)
         else if (ch0>=0) {
             _write_escaped_code_point(file, (uint32_t) (ch0));
         }
-        else if ((ch0 & 0b11100000)==0b11000000) {
+        else if ((ch0 & 0xE0)==0xC0) {
             if (i+1<size) {
                 char ch1 = data[++i];
-                uint32_t ch = ((ch0 & (uint32_t) (0b00011111)) << 6) | (ch1 & (uint32_t) (0b00111111));
+                uint32_t ch = ((ch0 & (uint32_t) (0x1F)) << 6) | (ch1 & (uint32_t) (0x3F));
                 _write_escaped_code_point(file, ch);
             }
             else {
                 fprintf(file, REPLACEMENT_CHARACTER);
             }
         }
-        else if ((ch0 & 0b11110000)==0b11100000) {
+        else if ((ch0 & 0xF0)==0xE0) {
             if (i+2<size) {
                 char ch1 = data[++i];
                 char ch2 = data[++i];
-                uint32_t ch = ((ch0 & (uint32_t) (0b00001111)) << 12) | ((ch1 & (uint32_t) (0b00111111)) << 6) |
-                        (ch2 & (uint32_t) (0b00111111));
+                uint32_t ch = ((ch0 & (uint32_t) (0x0F)) << 12) | ((ch1 & (uint32_t) (0x3F)) << 6) |
+                        (ch2 & (uint32_t) (0x3F));
                 _write_escaped_code_point(file, ch);
             }
             else {
                 fprintf(file, REPLACEMENT_CHARACTER);
             }
         }
-        else if ((ch0 & 0b11111000)==0b11110000) {
+        else if ((ch0 & 0xF8)==0xF0) {
             if (i+3<size) {
                 char ch1 = data[++i];
                 char ch2 = data[++i];
                 char ch3 = data[++i];
-                uint32_t ch = ((ch0 & (uint32_t) (0b00000111)) << 18) | ((ch1 & (uint32_t) (0b00111111)) << 12) |
-                        ((ch2 & (uint32_t) (0b00111111)) << 6) | (ch3 & (uint32_t) (0b00111111));
+                uint32_t ch = ((ch0 & (uint32_t) (0x07)) << 18) | ((ch1 & (uint32_t) (0x3F)) << 12) |
+                        ((ch2 & (uint32_t) (0x3F)) << 6) | (ch3 & (uint32_t) (0x3F));
                 _write_escaped_code_point(file, ch);
             }
             else {

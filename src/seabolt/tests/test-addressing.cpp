@@ -144,7 +144,7 @@ SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
     for (int i = 0; i<2; i++) {
         int status = BoltAddress_resolve(address, nullptr);
         if (status==0) {
-            for (size_t j = 0; j<address->n_resolved_hosts; j++) {
+            for (int j = 0; j<address->n_resolved_hosts; j++) {
                 char host_string[40];
                 int af = BoltAddress_copy_resolved_host(address, j, &host_string[0], sizeof(host_string));
                 switch (af) {

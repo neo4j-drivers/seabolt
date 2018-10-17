@@ -192,6 +192,7 @@ int BoltUtil_rwlock_create(rwlock_t* rwlock)
 int BoltUtil_rwlock_destroy(rwlock_t* rwlock)
 {
 #ifdef  _WIN32
+    UNUSED(rwlock);
     return 1;
 #else
     int status = pthread_rwlock_destroy(*rwlock)==0;

@@ -77,7 +77,7 @@ int BoltProtocolV1_compile_INIT(struct BoltMessage* message, const char* user_ag
 struct BoltMessage* create_run_message(const char* statement, size_t statement_size, int32_t n_parameters)
 {
     struct BoltMessage* message = BoltMessage_create(BOLT_V1_RUN, 2);
-    BoltValue_format_as_String(BoltMessage_param(message, 0), statement, statement_size);
+    BoltValue_format_as_String(BoltMessage_param(message, 0), statement, (int32_t)statement_size);
     BoltValue_format_as_Dictionary(BoltMessage_param(message, 1), n_parameters);
     return message;
 }
@@ -733,22 +733,29 @@ int BoltProtocolV1_fetch(struct BoltConnection* connection, bolt_request request
 
 int BoltProtocolV1_set_tx_timeout_unsupported(struct BoltConnection* connection, int64_t n)
 {
+    UNUSED(connection);
+    UNUSED(n);
     return BOLT_PROTOCOL_UNSUPPORTED;
 }
 
 int BoltProtocolV1_set_tx_bookmark_ignore(struct BoltConnection* connection, struct BoltValue* value)
 {
+    UNUSED(connection);
+    UNUSED(value);
     // we will ignore bookmarks with this version of the protocol
     return BOLT_SUCCESS;
 }
 
 int BoltProtocolV1_set_tx_metadata_unsupported(struct BoltConnection* connection, struct BoltValue* value)
 {
+    UNUSED(connection);
+    UNUSED(value);
     return BOLT_PROTOCOL_UNSUPPORTED;
 }
 
 int BoltProtocolV1_goodbye_noop(struct BoltConnection* connection)
 {
+    UNUSED(connection);
     return BOLT_SUCCESS;
 }
 

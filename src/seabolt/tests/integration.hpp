@@ -36,9 +36,9 @@
 
 #define VERBOSE() BoltLog_set_file(stderr)
 
-static struct BoltAddress BOLT_IPV6_ADDRESS{(char*) BOLT_IPV6_HOST, (char*) BOLT_PORT};
+static struct BoltAddress BOLT_IPV6_ADDRESS{(char*) BOLT_IPV6_HOST, (char*) BOLT_PORT, 0, NULL, 0, NULL};
 
-static struct BoltAddress BOLT_IPV4_ADDRESS{(char*) BOLT_IPV4_HOST, (char*) BOLT_PORT};
+static struct BoltAddress BOLT_IPV4_ADDRESS{(char*) BOLT_IPV4_HOST, (char*) BOLT_PORT, 0, NULL, 0, NULL};
 
 struct BoltAddress* bolt_get_address(const char* host, const char* port);
 

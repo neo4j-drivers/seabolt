@@ -23,22 +23,6 @@
 #include "common-impl.h"
 #include "error.h"
 
-#if defined(_WIN32) && _WIN32_WINNT<0x0600
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
-#endif
-
-#if defined(_WIN32) && _MSC_VER
-#pragma  warning(disable:4204)
-#pragma  warning(push)
-#pragma  warning(disable:4255)
-#pragma  warning(disable:4265)
-#pragma  warning(disable:4625)
-#pragma  warning(disable:4626)
-#pragma  warning(disable:4668)
-#pragma  warning(disable:4820)
-#endif
-
 #include <memory.h>
 #include <time.h>
 
@@ -76,9 +60,5 @@ extern int SSL_CTX_TRUST_INDEX;
 extern int SSL_CTX_LOG_INDEX;
 
 #endif // USE_OPENSSL
-
-#if defined(_WIN32) && _MSC_VER
-#pragma  warning(pop)
-#endif
 
 #endif // SEABOLT_CONFIG_IMPL

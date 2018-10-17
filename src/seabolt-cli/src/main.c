@@ -20,7 +20,10 @@
 
 #include <memory.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
+
+#include <inttypes.h>
 
 #include "auth.h"
 #include "connector.h"
@@ -59,6 +62,8 @@ void timespec_get(struct timespec *ts, int type)
     ts->tv_nsec = mts.tv_nsec;
 }
 #endif
+
+#define UNUSED(x) (void)(x)
 
 enum Command {
     CMD_NONE,
@@ -106,6 +111,7 @@ void timespec_diff(struct timespec* t, struct timespec* t0, struct timespec* t1)
 
 void log_to_stderr(int state, const char* message)
 {
+    UNUSED(state);
     fprintf(stderr, "%s\n", message);
 }
 
@@ -449,7 +455,7 @@ int main(int argc, char* argv[])
 
     if (with_allocation_report) {
         fprintf(stderr, "=====================================\n");
-        fprintf(stderr, "current allocation   : %" PRId64 " bytes\n", (int64_t) BoltMem_current_allocation());
+        fprintf(stderr, "current allocation   : %" PRIu64 " bytes\n", (int64_t) BoltMem_current_allocation());
         fprintf(stderr, "peak allocation      : %" PRId64 " bytes\n", (int64_t) BoltMem_peak_allocation());
         fprintf(stderr, "allocation events    : %" PRId64 "\n", BoltMem_allocation_events());
         fprintf(stderr, "=====================================\n");

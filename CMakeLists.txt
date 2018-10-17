@@ -5,7 +5,7 @@ project(seabolt LANGUAGES C CXX)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_EXTENSIONS ON)
+set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -46,10 +46,8 @@ endif ()
 
 include(CMakeDependentOption)
 option(WITH_TLS_SUPPORT "Build seabolt with TLS support" ON)
-cmake_dependent_option(WITH_TLS_LIBRESSL "Use LIBRESSL for TLS support" OFF "WITH_TLS_SUPPORT" ON)
-cmake_dependent_option(WITH_TLS_SECURE_CHANNEL "Use Windows Secure Channel for TLS support" OFF "WITH_TLS_SUPPORT" ON)
-cmake_dependent_option(WITH_TLS_SECURE_TRANSPORT "Use MacOS Secure Transport for TLS support " OFF "WITH_TLS_SUPPORT" ON)
-cmake_dependent_option(WITH_TLS_OPENSSL "Use OPENSSL for TLS support" ON "WITH_TLS_SUPPORT;NOT WITH_TLS_LIBRESSL;NOT WITH_TLS_SECURE_CHANNEL;NOT WITH_TLS_SECURE_TRANSPORT" OFF)
+cmake_dependent_option(WITH_TLS_SECURE_CHANNEL "Use Windows Secure Channel for TLS support" OFF "WITH_TLS_SUPPORT;ON_WINDOWS" ON)
+cmake_dependent_option(WITH_TLS_OPENSSL "Use OPENSSL for TLS support" ON "WITH_TLS_SUPPORT;NOT WITH_TLS_SECURE_CHANNEL" OFF)
 
 if (WITH_TLS_SUPPORT)
     message(STATUS "Building seabolt with TLS support")
@@ -58,26 +56,17 @@ if (WITH_TLS_SUPPORT)
         message(STATUS "Using OPENSSL for TLS")
     endif ()
 
-    if (WITH_TLS_LIBRESSL)
-        message(STATUS "Using LIBRESSL for TLS")
-    endif ()
-
     if (WITH_TLS_SECURE_CHANNEL)
         message(STATUS "Using Windows Secure Channel for TLS")
-    endif ()
-
-    if (WITH_TLS_SECURE_TRANSPORT)
-        message(STATUS "Using MacOS Secure Transport for TLS")
     endif ()
 
     if (WITH_TLS_SECURE_CHANNEL AND NOT ON_WINDOWS)
         message(FATAL_ERROR "Windows Secure Channel can only be enabled when building on Windows")
     endif ()
-
-    if (WITH_TLS_SECURE_TRANSPORT AND NOT ON_MACOS)
-        message(FATAL_ERROR "MacOS Secure Transport can only be enabled when building on MacOS")
-    endif ()
 endif ()
+
+include(Internals)
+fix_compiler_settings()
 
 enable_testing()
 add_subdirectory(src)

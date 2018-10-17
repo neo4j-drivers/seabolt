@@ -61,14 +61,6 @@ struct BoltConnectionResult {
     char* connection_error_ctx;
 };
 
-#ifdef __cplusplus
-#define CONNECTION_RESULT_SUCCESS(connection) { connection, BOLT_READY,  BOLT_SUCCESS, NULL }
-#define CONNECTION_RESULT_ERROR(code, context) { NULL, BOLT_DISCONNECTED, code, context }
-#else
-#define CONNECTION_RESULT_SUCCESS(connection) (struct BoltConnectionResult) { connection, BOLT_READY,  BOLT_SUCCESS, NULL }
-#define CONNECTION_RESULT_ERROR(code, context) (struct BoltConnectionResult) { NULL, BOLT_DISCONNECTED, code, context }
-#endif
-
 PUBLIC struct BoltConnector*
 BoltConnector_create(struct BoltAddress* address, struct BoltValue* auth_token, struct BoltConfig* config);
 

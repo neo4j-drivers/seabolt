@@ -20,5 +20,6 @@
 #define SEABOLT_ALL_COMMON_IMPL_H
 
 #define SIZE_OF_C_STRING(str) (sizeof(char)*(strlen(str)+1))
+#define UNUSED(x) (void)(x)
 
 #endif //SEABOLT_ALL_COMMON_IMPL_H
