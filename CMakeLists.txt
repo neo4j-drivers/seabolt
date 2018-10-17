@@ -5,11 +5,11 @@ project(seabolt LANGUAGES C CXX)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_C_EXTENSIONS ON)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_SHARED_LIBS "Build seabolt as a shared library" OFF)
@@ -46,7 +46,7 @@ endif ()
 
 include(CMakeDependentOption)
 option(WITH_TLS_SUPPORT "Build seabolt with TLS support" ON)
-cmake_dependent_option(WITH_TLS_SECURE_CHANNEL "Use Windows Secure Channel for TLS support" OFF "WITH_TLS_SUPPORT;ON_WINDOWS" ON)
+cmake_dependent_option(WITH_TLS_SECURE_CHANNEL "Use Windows Secure Channel for TLS support" OFF "WITH_TLS_SUPPORT;ON_WINDOWS;NOT WITH_TLS_OPENSSL" OFF)
 cmake_dependent_option(WITH_TLS_OPENSSL "Use OPENSSL for TLS support" ON "WITH_TLS_SUPPORT;NOT WITH_TLS_SECURE_CHANNEL" OFF)
 
 if (WITH_TLS_SUPPORT)

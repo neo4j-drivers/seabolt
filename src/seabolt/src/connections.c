@@ -727,7 +727,7 @@ BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transp
 
             char resolved_host[MAX_IPADDR_LEN], resolved_port[6];
             BoltAddress_copy_resolved_host(address, i, resolved_host, MAX_IPADDR_LEN);
-            sprintf_s(resolved_port, 6, "%d", address->resolved_port);
+            sprintf(resolved_port, "%d", address->resolved_port);
             connection->resolved_address = BoltAddress_create(resolved_host, resolved_port);
 
             _set_status(connection, BOLT_CONNECTED, BOLT_SUCCESS);

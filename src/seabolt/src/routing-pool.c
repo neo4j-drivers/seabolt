@@ -404,7 +404,7 @@ void BoltRoutingPool_handle_connection_error_by_failure(struct BoltRoutingPool* 
     }
 
     char* code_str = (char*) BoltMem_allocate((code->size+1)*sizeof(char));
-    strncpy_s(code_str, code->size+1, BoltString_get(code), code->size);
+    strncpy(code_str, BoltString_get(code), code->size);
     code_str[code->size] = '\0';
 
     if (strcmp(code_str, "Neo.ClientError.General.ForbiddenOnReadOnlyDatabase")==0) {
