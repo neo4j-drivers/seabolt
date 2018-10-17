@@ -1,5 +1,6 @@
 # IDE - CLion
 .idea
+cmake-build-debug
 
 # IDE - Visual Studio
 

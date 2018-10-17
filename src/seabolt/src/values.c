@@ -25,6 +25,7 @@
 #include "mem.h"
 #include "values.h"
 #include "v1.h"
+#include "string-builder.h"
 
 #define STRING_QUOTE '"'
 #define REPLACEMENT_CHARACTER "\xFF\xFD"

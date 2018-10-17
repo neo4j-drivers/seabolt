@@ -18,7 +18,8 @@ target_include_directories(seabolt-test
 target_link_libraries(seabolt-test
         PRIVATE
         seabolt
-        catch2)
+        catch2
+        string-builder)
 
 include(ParseAndAddCatchTests)
 set(PARSE_CATCH_TESTS_ADD_TO_CONFIGURE_DEPENDS ON)

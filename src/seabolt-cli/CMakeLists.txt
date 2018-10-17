@@ -6,4 +6,5 @@ target_sources(seabolt-cli
 
 target_link_libraries(seabolt-cli
         PRIVATE
-        seabolt)
+        seabolt
+        string-builder)

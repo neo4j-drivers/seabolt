@@ -34,6 +34,7 @@
 #include "platform.h"
 #include "logging.h"
 #include "protocol.h"
+#include "string-builder.h"
 
 #ifdef WIN32
 

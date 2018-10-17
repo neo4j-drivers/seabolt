@@ -58,6 +58,10 @@ target_sources(seabolt
         PUBLIC
         ${public_source_files})
 
+target_link_libraries(seabolt
+        PRIVATE
+        string-builder)
+
 target_compile_definitions(seabolt
         PUBLIC
         IS_BIG_ENDIAN=$<BOOL:${IS_BIG_ENDIAN}>
@@ -131,9 +135,9 @@ set_target_properties(seabolt
         VISIBILITY_INLINES_HIDDEN 1
         SOVERSION 17
         OUTPUT_NAME "seabolt"
-        DEBUG_POSTFIX "_d"
         PUBLIC_HEADER "${public_source_files};${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt-exports.h"
-        MACOSX_RPATH ON)
+        MACOSX_RPATH ON
+        WINDOWS_EXPORT_ALL_SYMBOLS OFF)
 
 if (MSVC AND NOT BUILD_SHARED_LIBS)
     set_target_properties(seabolt

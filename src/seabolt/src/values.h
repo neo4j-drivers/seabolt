@@ -29,7 +29,6 @@
 #include <stdint.h>
 
 #include "config.h"
-#include "utils.h"
 
 #if CHAR_BIT!=8
 #error "Cannot compile if `char` is not 8-bit"
@@ -54,12 +53,8 @@ static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
 
 #define to_bit(x) (char)((x) == 0 ? 0 : 1);
 
-#define BOLT_VALUE_TYPE_NODE 0x4E
-#define BOLT_VALUE_TYPE_RELATIONSHIP 0x52
-#define BOLT_VALUE_TYPE_UNBOUND_RELATIONSHIP 0x72
-#define BOLT_VALUE_TYPE_PATH 0x50
-
 struct BoltValue;
+struct StringBuilder;
 
 /**
  * Enumeration of the types available in the Bolt type system.

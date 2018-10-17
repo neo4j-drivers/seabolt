@@ -24,6 +24,7 @@
 #include "logging.h"
 #include "mem.h"
 #include "v1.h"
+#include "string-builder.h"
 
 struct BoltLog* BoltLog_create()
 {
