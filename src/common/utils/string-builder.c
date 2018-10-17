@@ -90,7 +90,7 @@ char* StringBuilder_get_string(struct StringBuilder* builder)
     return builder->buffer;
 }
 
-size_t StringBuilder_get_length(struct StringBuilder* builder)
+int64_t StringBuilder_get_length(struct StringBuilder* builder)
 {
     return builder->buffer_pos;
 }

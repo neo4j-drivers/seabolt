@@ -40,6 +40,6 @@ void StringBuilder_append_f(struct StringBuilder* builder, const char* format, .
 
 char* StringBuilder_get_string(struct StringBuilder* builder);
 
-size_t StringBuilder_get_length(struct StringBuilder* builder);
+int64_t StringBuilder_get_length(struct StringBuilder* builder);
 
 #endif //SEABOLT_STRING_BUILDER_H
