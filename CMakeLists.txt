@@ -40,7 +40,26 @@ if (NOT ON_WINDOWS)
     endif ()
 endif ()
 
-include(GNUInstallDirs)
+if (WIN32 AND NOT CYGWIN)
+    set(CMAKE_INSTALL_LIBDIR "lib")
+    set(CMAKE_INSTALL_BINDIR "bin")
+    set(CMAKE_INSTALL_INCLUDEDIR "include")
+    set(CMAKE_INSTALL_PKGCONFIGDIR ".")
+    set(CMAKE_INSTALL_CMAKEDIR "cmake")
+    set(INCLUDEDIR_RELATIVE_PKGCONFIGDIR "include/${SEABOLT_NAME}")
+    set(LIBDIR_RELATIVE_PKGCONFIGDIR "lib")
+else ()
+    include(GNUInstallDirs)
+    set(CMAKE_INSTALL_PKGCONFIGDIR share/pkgconfig)
+    set(CMAKE_INSTALL_CMAKEDIR share/cmake/${SEABOLT_NAME})
+    set(INCLUDEDIR_RELATIVE_PKGCONFIGDIR "../../include/${SEABOLT_NAME}")
+    set(LIBDIR_RELATIVE_PKGCONFIGDIR "../../lib")
+endif ()
+
+message(STATUS ${CMAKE_INSTALL_LIBDIR})
+message(STATUS ${CMAKE_INSTALL_BINDIR})
+message(STATUS ${CMAKE_INSTALL_INCLUDEDIR})
+
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
@@ -49,14 +68,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
 set(INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR} CACHE PATH "Installation directory for libraries")
 set(INSTALL_BINDIR ${CMAKE_INSTALL_BINDIR} CACHE PATH "Installation directory for executables")
 set(INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/${SEABOLT_NAME} CACHE PATH "Installation directory for header files")
-if (WIN32 AND NOT CYGWIN)
-    set(DEF_INSTALL_CMAKEDIR CMake)
-else ()
-    set(DEF_INSTALL_CMAKEDIR share/cmake/${SEABOLT_NAME})
-    set(DEF_INSTALL_PKGCONFIGDIR share/pkgconfig)
-endif ()
-set(INSTALL_CMAKEDIR ${DEF_INSTALL_CMAKEDIR} CACHE PATH "Installation directory for CMake files")
-set(INSTALL_PKGCONFIGDIR ${DEF_INSTALL_PKGCONFIGDIR} CACHE PATH "Installation directory for pkg-config files")
+set(INSTALL_CMAKEDIR ${CMAKE_INSTALL_CMAKEDIR} CACHE PATH "Installation directory for CMake files")
+set(INSTALL_PKGCONFIGDIR ${CMAKE_INSTALL_PKGCONFIGDIR} CACHE PATH "Installation directory for pkg-config files")
 
 file(RELATIVE_PATH _rel ${CMAKE_INSTALL_PREFIX}/${INSTALL_BINDIR} ${CMAKE_INSTALL_PREFIX})
 if (APPLE)
@@ -150,10 +163,8 @@ file(GENERATE
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}.pc
         CONTENT "\
 name=${SEABOLT_NAME}\n\
-prefix=\${pcfiledir}/../..\n\
-exec_prefix=\${pcfiledir}/../..\n\
-libdir=\${prefix}/lib\n\
-includedir=\${prefix}/include/${SEABOLT_NAME}\n\
+libdir=\${pcfiledir}/${LIBDIR_RELATIVE_PKGCONFIGDIR}\n\
+includedir=\${pcfiledir}/${INCLUDEDIR_RELATIVE_PKGCONFIGDIR}\n\
 \n\
 Name: ${SEABOLT_NAME}\n\
 Description: The C Connector Library for Neo4j\n\
@@ -166,18 +177,14 @@ Libs.private: $<TARGET_PROPERTY:${SEABOLT_SHARED},INTERFACE_LINK_LIBRARIES>\n\
 install(
         FILES
         ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}.pc
-        DESTINATION
-        ${INSTALL_PKGCONFIGDIR}
-        COMPONENT
-        dev
-)
+        DESTINATION ${INSTALL_PKGCONFIGDIR}
+        COMPONENT dev)
 
 install(
         FILES
         ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}Config.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}ConfigVersion.cmake
-        DESTINATION
-        ${INSTALL_CMAKEDIR}
-)
+        DESTINATION ${INSTALL_CMAKEDIR}
+        COMPONENT dev)
 
 include(CMakeCPack.cmake)
