@@ -50,11 +50,6 @@ macro(find_openssl_both)
 endmacro()
 
 macro(set_version)
-    unset(PROJECT_VERSION_MAJOR)
-    unset(PROJECT_VERSION_MINOR)
-    unset(PROJECT_VERSION_PATCH)
-    unset(PROJECT_VERSION_TWEAK)
-
     if (PROJECT_VERSION MATCHES "^v?([0-9]+).[0-9]+.[0-9]+")
         set(PROJECT_VERSION_MAJOR ${CMAKE_MATCH_1})
     endif ()

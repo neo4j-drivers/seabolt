@@ -102,6 +102,7 @@ enable_testing()
 include(src/CMakeLists.txt)
 
 # <<< Install and export targets >>>
+include(InstallRequiredSystemLibraries)
 
 install(
         TARGETS
@@ -126,6 +127,12 @@ install(
         NAMESPACE "${SEABOLT_NAME}::"
         DESTINATION ${INSTALL_CMAKEDIR}
         COMPONENT dev)
+
+INSTALL(
+        FILES
+        ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
+        DESTINATION ${INSTALL_BINDIR}
+        COMPONENT bin)
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
@@ -161,6 +168,8 @@ install(
         ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}.pc
         DESTINATION
         ${INSTALL_PKGCONFIGDIR}
+        COMPONENT
+        dev
 )
 
 install(

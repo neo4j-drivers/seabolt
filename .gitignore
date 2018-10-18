@@ -98,3 +98,5 @@ docs/doxygen/
 # Conan
 conanbuildinfo.*
 conaninfo.txt
+
+\.DS_Store
