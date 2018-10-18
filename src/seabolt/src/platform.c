@@ -242,7 +242,7 @@ int BoltUtil_rwlock_timedrdlock(rwlock_t* rwlock, int timeout_ms)
     int64_t end_at = BoltUtil_get_time_ms()+timeout_ms;
 
     while (1) {
-        if (BoltUtil_rwlock_tryrdlock(*rwlock)) {
+        if (BoltUtil_rwlock_tryrdlock(rwlock)) {
             return 1;
         }
 
@@ -259,7 +259,7 @@ int BoltUtil_rwlock_timedwrlock(rwlock_t* rwlock, int timeout_ms)
     int64_t end_at = BoltUtil_get_time_ms()+timeout_ms;
 
     while (1) {
-        if (BoltUtil_rwlock_trywrlock(*rwlock)) {
+        if (BoltUtil_rwlock_trywrlock(rwlock)) {
             return 1;
         }
 
