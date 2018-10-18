@@ -1,8 +1,15 @@
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
-project(seabolt LANGUAGES C CXX)
+project(seabolt
+        DESCRIPTION "The C Connector library for Neo4j"
+        LANGUAGES C CXX)
+
+set(PROJECT_VERSION "1.7.0-rc2" CACHE STRING "The version of seabolt being built")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(Internals)
+set_version()
+set_names()
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_EXTENSIONS ON)
@@ -12,7 +19,9 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(BUILD_SHARED_LIBS "Build seabolt as a shared library" OFF)
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+endif ()
 
 set(ON_WINDOWS OFF)
 set(ON_MACOS OFF)
@@ -24,17 +33,38 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif ()
 
 if (NOT ON_WINDOWS)
-include(CheckIncludeFile)
-check_include_file("unistd.h" HAVE_UNISTD_H)
-if (HAVE_UNISTD_H)
-    set(ON_POSIX ON)
+    include(CheckIncludeFile)
+    check_include_file("unistd.h" HAVE_UNISTD_H)
+    if (HAVE_UNISTD_H)
+        set(ON_POSIX ON)
+    endif ()
 endif ()
-endif()
 
 include(GNUInstallDirs)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
+
+# Offer the user the choice of overriding the installation directories
+set(INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR} CACHE PATH "Installation directory for libraries")
+set(INSTALL_BINDIR ${CMAKE_INSTALL_BINDIR} CACHE PATH "Installation directory for executables")
+set(INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/${SEABOLT_NAME} CACHE PATH "Installation directory for header files")
+if (WIN32 AND NOT CYGWIN)
+    set(DEF_INSTALL_CMAKEDIR CMake)
+else ()
+    set(DEF_INSTALL_CMAKEDIR share/cmake/${SEABOLT_NAME})
+    set(DEF_INSTALL_PKGCONFIGDIR share/pkgconfig)
+endif ()
+set(INSTALL_CMAKEDIR ${DEF_INSTALL_CMAKEDIR} CACHE PATH "Installation directory for CMake files")
+set(INSTALL_PKGCONFIGDIR ${DEF_INSTALL_PKGCONFIGDIR} CACHE PATH "Installation directory for pkg-config files")
+
+file(RELATIVE_PATH _rel ${CMAKE_INSTALL_PREFIX}/${INSTALL_BINDIR} ${CMAKE_INSTALL_PREFIX})
+if (APPLE)
+    set(_rpath "@loader_path/${_rel}")
+else ()
+    set(_rpath "\$ORIGIN/${_rel}")
+endif ()
+file(TO_NATIVE_PATH "${_rpath}/${INSTALL_LIBDIR}" LIB_RPATH)
 
 include(TestBigEndian)
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
@@ -69,4 +99,76 @@ include(Internals)
 fix_compiler_settings()
 
 enable_testing()
-add_subdirectory(src)
+include(src/CMakeLists.txt)
+
+# <<< Install and export targets >>>
+
+install(
+        TARGETS
+        ${SEABOLT_SHARED}
+        EXPORT
+        ${SEABOLT_NAME}Targets
+        ARCHIVE
+        DESTINATION ${INSTALL_LIBDIR}
+        COMPONENT lib
+        RUNTIME
+        DESTINATION ${INSTALL_BINDIR}
+        COMPONENT bin
+        LIBRARY
+        DESTINATION ${INSTALL_LIBDIR}
+        COMPONENT lib
+        PUBLIC_HEADER
+        DESTINATION ${INSTALL_INCLUDEDIR}/bolt
+        COMPONENT dev)
+
+install(
+        EXPORT ${SEABOLT_NAME}Targets
+        NAMESPACE "${SEABOLT_NAME}::"
+        DESTINATION ${INSTALL_CMAKEDIR}
+        COMPONENT dev)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}ConfigVersion.cmake
+        VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}
+        COMPATIBILITY SameMinorVersion)
+
+configure_package_config_file(
+        ${PROJECT_SOURCE_DIR}/cmake/seaboltConfig.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}Config.cmake
+        INSTALL_DESTINATION ${INSTALL_CMAKEDIR}
+)
+
+file(GENERATE
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}.pc
+        CONTENT "\
+name=${SEABOLT_NAME}\n\
+prefix=\${pcfiledir}/../..\n\
+exec_prefix=\${pcfiledir}/../..\n\
+libdir=\${prefix}/lib\n\
+includedir=\${prefix}/include/${SEABOLT_NAME}\n\
+\n\
+Name: ${SEABOLT_NAME}\n\
+Description: The C Connector Library for Neo4j\n\
+Version: ${PROJECT_VERSION}\n\
+CFlags: -I\${includedir}\n\
+Libs: -L\${libdir} -l\${name}\n\
+Libs.private: $<TARGET_PROPERTY:${SEABOLT_SHARED},INTERFACE_LINK_LIBRARIES>\n\
+")
+
+install(
+        FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}.pc
+        DESTINATION
+        ${INSTALL_PKGCONFIGDIR}
+)
+
+install(
+        FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}Config.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}ConfigVersion.cmake
+        DESTINATION
+        ${INSTALL_CMAKEDIR}
+)
+
+include(CMakeCPack.cmake)

@@ -22,6 +22,7 @@
 #include "address.h"
 #include "logging.h"
 #include "mem.h"
+#include "platform.h"
 
 #define DEFAULT_BOLT_PORT "7687"
 #define DEFAULT_BOLT_HOST "localhost"
@@ -154,13 +155,13 @@ int BoltAddress_resolve(struct BoltAddress* address, struct BoltLog* log)
 }
 
 int BoltAddress_copy_resolved_host(struct BoltAddress* address, size_t index, char* buffer,
-        socklen_t buffer_size)
+        int32_t buffer_size)
 {
     struct sockaddr_storage* resolved_host_storage = &address->resolved_hosts[index];
     const struct sockaddr* resolved_host = (const struct sockaddr*) resolved_host_storage;
     const socklen_t resolved_host_size =
             resolved_host_storage->ss_family==AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
-    const int status = getnameinfo(resolved_host, resolved_host_size, buffer, buffer_size,
+    const int status = getnameinfo(resolved_host, resolved_host_size, buffer, (socklen_t)buffer_size,
             NULL, 0, NI_NUMERICHOST);
     switch (status) {
     case 0:

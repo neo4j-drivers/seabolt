@@ -5,7 +5,7 @@ target_include_directories(catch2
         ${CMAKE_CURRENT_LIST_DIR}/tests)
 
 add_library(string-builder
-        STATIC
+        OBJECT
         ${CMAKE_CURRENT_LIST_DIR}/utils/string-builder.c)
 
 target_include_directories(string-builder

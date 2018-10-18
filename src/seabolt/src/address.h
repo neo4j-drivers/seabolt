@@ -21,7 +21,6 @@
 #define SEABOLT_ADDRESSING_H
 
 #include "config.h"
-#include "platform.h"
 
 /**
  * The address of a Bolt server. This can carry both the original host
@@ -39,10 +38,10 @@ struct BoltAddress {
     /// Resolved IP address data
     struct sockaddr_storage* resolved_hosts;
     /// Resolved port number
-    in_port_t resolved_port;
+    uint16_t resolved_port;
 
     // Lock to protect DNS resolution process
-    mutex_t lock;
+    void* lock;
 };
 
 #define SIZE_OF_ADDRESS sizeof(struct BoltAddress)
@@ -93,7 +92,7 @@ SEABOLT_EXPORT int BoltAddress_resolve(struct BoltAddress* address, struct BoltL
  * @return address family (AF_INET or AF_INET6) or -1 on error
  */
 SEABOLT_EXPORT int
-BoltAddress_copy_resolved_host(struct BoltAddress* address, size_t index, char* buffer, socklen_t buffer_size);
+BoltAddress_copy_resolved_host(struct BoltAddress* address, size_t index, char* buffer, int32_t buffer_size);
 
 /**
  * Destroy an address structure and deallocate any associated memory.

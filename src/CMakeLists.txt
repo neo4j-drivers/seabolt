@@ -1,7 +1,7 @@
 if (MSVC)
     add_compile_options(/W4 /WX)
 else()
-    add_compile_options(-Wall -Wextra -pedantic -Werror)
+    add_compile_options(-Wall -Wextra -pedantic -Werror -fPIC)
 endif()
 
 if (ON_WINDOWS)
@@ -10,6 +10,6 @@ if (ON_WINDOWS)
     endif()
 endif()
 
-add_subdirectory(common)
-add_subdirectory(seabolt)
-add_subdirectory(seabolt-cli)
+include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/seabolt/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/seabolt-cli/CMakeLists.txt)

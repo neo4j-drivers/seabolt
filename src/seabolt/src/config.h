@@ -21,6 +21,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 
+#include "bolt-version.h"
 #include "bolt-exports.h"
 
 #if USE_POSIXSOCK

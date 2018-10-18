@@ -24,6 +24,7 @@
 #include "address-set.h"
 #include "mem.h"
 #include "routing-table.h"
+#include "platform.h"
 
 #define READ_ROLE "READ"
 #define WRITE_ROLE "WRITE"

@@ -1,5 +1,5 @@
-add_executable(seabolt-test
-        ${CMAKE_CURRENT_LIST_DIR}/integration.hpp
+target_sources(seabolt-test
+        PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/main.cpp
         ${CMAKE_CURRENT_LIST_DIR}/seabolt.cpp
         ${CMAKE_CURRENT_LIST_DIR}/test-address-set.cpp
@@ -8,8 +8,7 @@ add_executable(seabolt-test
         ${CMAKE_CURRENT_LIST_DIR}/test-direct.cpp
         ${CMAKE_CURRENT_LIST_DIR}/test-pooling.cpp
         ${CMAKE_CURRENT_LIST_DIR}/test-values.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/test-warden.cpp
-        )
+        ${CMAKE_CURRENT_LIST_DIR}/test-warden.cpp)
 
 target_include_directories(seabolt-test
         PRIVATE
@@ -17,9 +16,8 @@ target_include_directories(seabolt-test
 
 target_link_libraries(seabolt-test
         PRIVATE
-        seabolt
-        catch2
-        string-builder)
+        ${SEABOLT_SHARED}
+        catch2)
 
 include(ParseAndAddCatchTests)
 set(PARSE_CATCH_TESTS_ADD_TO_CONFIGURE_DEPENDS ON)
