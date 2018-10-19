@@ -1,6 +1,5 @@
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "neo4j")
-set(CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/INSTALL.md")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "seabolt: The C Connector Library for Neo4j")
 set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/neo4j-drivers/seabolt")
 
