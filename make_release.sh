@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 
 BASE=$(dirname $0)
+BUILD=${BASE}/build
 
-pushd ${BASE} 1> /dev/null
-cmake -DCMAKE_BUILD_TYPE=Release .
+mkdir -p ${BUILD} 1>/dev/null
+
+pushd ${BUILD} 1> /dev/null
+cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=dist  ..
 EXIT_STATUS=$?
 if [ "${EXIT_STATUS}" -eq "0" ]
 then
-    make
+    cmake --build . --target install
     EXIT_STATUS=$?
 fi
 popd 1> /dev/null

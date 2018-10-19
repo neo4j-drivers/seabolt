@@ -46,18 +46,8 @@ function check_boltkit
 
 function compile_debug
 {
-    if [ "${OPT_QUICK}" == "0" ]
-    then
-        make clean
-    fi
     echo "Compiling for debug"
-    cmake -DCMAKE_BUILD_TYPE=Debug .
-    if [ "$?" -ne "0" ]
-    then
-        echo "FATAL: Compilation failed."
-        exit ${COMPILATION_FAILED}
-    fi
-    make
+    ${BASE}/make_debug.sh
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Compilation failed."
@@ -68,14 +58,7 @@ function compile_debug
 function compile_release
 {
     echo "Compiling for release"
-    make clean
-    cmake -DCMAKE_BUILD_TYPE=Release .
-    if [ "$?" -ne "0" ]
-    then
-        echo "FATAL: Compilation failed."
-        exit ${COMPILATION_FAILED}
-    fi
-    make
+    ${BASE}/make_release.sh
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Compilation failed."
@@ -167,7 +150,7 @@ function run_tests
     if [ "${OPT_QUICK}" == "0" ]
     then
         echo "-- Checking server"
-        BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/bolt debug -a "UNWIND range(1, 10000) AS n RETURN n"
+        BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt-cli debug -a "UNWIND range(1, 10000) AS n RETURN n"
         if [ "$?" -ne "0" ]
         then
             echo "FATAL: Server checks failed."
@@ -176,7 +159,7 @@ function run_tests
     fi
 
     echo "-- Running tests"
-    BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt-integration-test ${TEST_ARGS}
+    BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt-test ${TEST_ARGS}
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Test execution failed."
