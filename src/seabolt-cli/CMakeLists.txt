@@ -17,6 +17,4 @@ set_target_properties(seabolt-cli
         PROPERTIES
         MACOSX_RPATH ON
         SKIP_BUILD_RPATH OFF
-        BUILD_WITH_INSTALL_RPATH OFF
-        INSTALL_RPATH "${LIB_RPATH}"
-        INSTALL_RPATH_USE_LINK_PATH ON)
+        BUILD_WITH_INSTALL_RPATH OFF)
