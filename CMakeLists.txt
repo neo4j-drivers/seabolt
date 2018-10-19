@@ -67,14 +67,6 @@ set(INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/${SEABOLT_NAME} CACHE PATH "I
 set(INSTALL_CMAKEDIR ${CMAKE_INSTALL_CMAKEDIR} CACHE PATH "Installation directory for CMake files")
 set(INSTALL_PKGCONFIGDIR ${CMAKE_INSTALL_PKGCONFIGDIR} CACHE PATH "Installation directory for pkg-config files")
 
-file(RELATIVE_PATH _rel ${CMAKE_INSTALL_PREFIX}/${INSTALL_BINDIR} ${CMAKE_INSTALL_PREFIX})
-if (APPLE)
-    set(_rpath "@loader_path/${_rel}")
-else ()
-    set(_rpath "\$ORIGIN/${_rel}")
-endif ()
-file(TO_NATIVE_PATH "${_rpath}/${INSTALL_LIBDIR}" LIB_RPATH)
-
 include(TestBigEndian)
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
 if (IS_BIG_ENDIAN)
