@@ -1,7 +1,7 @@
 # Seabolt
 
-Seabolt is a Neo4j connector library for C.
-The library will support multiple versions of the Bolt protocol through the new _Connector API_ and will provide a base layer for a number of language drivers.
+Seabolt is the C Connector Library for Neo4j.
+The library supports multiple versions of the Bolt protocol through the new _Connector API_ and will provide a base layer for a number of language drivers.
 
 This project is a work in progress, so we're not yet able to accept issues or contributions. Sorry!
 
@@ -9,7 +9,7 @@ This project is a work in progress, so we're not yet able to accept issues or co
 
 This project requires the following tools/libraries to be installed in order to be built. General installation instructions can be found in the following sections.
 
-1. CMake 3.9.1
+1. CMake >= 3.12
 2. OpenSSL Development Libraries
 
 ### Linux (Ubuntu)
@@ -22,7 +22,7 @@ This project requires the following tools/libraries to be installed in order to 
 2. Install XCode Command Line Tools via `xcode-select --install`
 3. Install CMake `brew install cmake`
 4. Install OpenSSL `brew install openssl`
-5. Create an environment variable named `OPENSSL_LIB_ROOT` that points to the openssl library installation path (default is `/usr/local/opt/openssl`)
+5. Create an environment variable named `OPENSSL_ROOT_DIR` that points to the openssl library installation path (default is `/usr/local/opt/openssl`)
 
 ### Windows
 
@@ -32,37 +32,38 @@ Currently windows builds also depend on OpenSSL, however support for windows sec
 
 1. Install Visual Studio 2017 with VC++ support
 2. Install CMake via `choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'`
-3. Install OpenSSL Win32 using `https://slproweb.com/download/Win32OpenSSL-1_1_0g.exe` 
-4. Install OpenSSL Win64 using `https://slproweb.com/download/Win64OpenSSL-1_1_0g.exe`
-5. Create an environment variable named `OPENSSL_LIB_ROOT` that points to the openssl library installation path (default is `C:/OpenSSL-Win64`).
+3. Install OpenSSL Win64 using one of the recent and stable _**64-Bit**_ binary builds _**(full version instead of light)**_ listed at `https://slproweb.com/products/Win32OpenSSL.html` _**on a path with no spaces on it**_.
 
 #### MINGW
 
 1. Install MSYS2 from `https://www.msys2.org/`
     * Be sure to install a mingw toolchain into MSYS2 (you can use the following command `pacman -S --needed base-devel mingw-w64-i686-toolchain mingw-w64-x86_64-toolchain git subversion mercurial mingw-w64-i686-cmake mingw-w64-x86_64-cmake`)
-2. Install OpenSSL Win32 using `https://slproweb.com/download/Win32OpenSSL-1_1_0g.exe` 
-3. Install OpenSSL Win64 using `https://slproweb.com/download/Win64OpenSSL-1_1_0g.exe`
-4. Create an environment variable named `OPENSSL_LIB_ROOT` that points to the openssl library installation path (default is `C:/OpenSSL-Win64`).
+2. Install OpenSSL Win64 using one of the recent and stable _**64-Bit**_ binary builds _**(full version instead of light)**_ listed at `https://slproweb.com/products/Win32OpenSSL.html` _**on a path with no spaces on it**_.
 
 ## Building
 
 ### Linux / MacOS X
 
 To build the project, run either the `make_debug.sh` or the `make_release.sh` script from the project root directory.
-This will compile and deposit project artifacts in the `build/bin` and `build/lib` directories.
-To create distributable packages, use `make_packages.sh` instead.
+This will compile and deposit project artifacts in the `build/dist` directory.
+
+To create distributable packages, invoke `cpack` in `build` directory (after `make_debug.sh` or `make_release.sh` is completed) and all binary package artifacts will be placed in `build/dist-package` directory.
 
 ### Windows
 
 #### MINGW
 
 To build the project, run either the `make_debug.cmd` or the `make_release.cmd` script from the project root directory with `MINGW` as its first argument.
-This will compile and deposit project artifacts in the `build/bin` and `build/lib` directories.
+This will compile and deposit project artifacts in the `build/dist` directories.
+
+To create distributable packages, invoke `cpack` in `build` directory (after `make_debug.cmd` or `make_release.cmd` is completed) and all binary package artifacts will be placed in `build/dist-package` directory.
 
 #### MSVC
 
 To build the project, run either the `make_debug.cmd` or the `make_release.cmd` script from the project root directory with `MSVC` as its first argument.
-This will compile and deposit project artifacts in the `build/bin` and `build/lib` directories.
+This will compile and deposit project artifacts in the `build/dist` directories.
+
+To create distributable packages, invoke `cpack` in `build` directory (after `make_debug.cmd` or `make_release.cmd` is completed) and all binary package artifacts will be placed in `build/dist-package` directory.
 
 ## Docs 
 
@@ -85,12 +86,14 @@ $ pip install --user sphinx breathe
 
 To run a query, use the following...
 ```
-BOLT_PASSWORD=password build/bin/bolt run "UNWIND range(1, 1000000) AS n RETURN n"
+BOLT_PASSWORD=password build/bin/seabolt-cli run "UNWIND range(1, 1000000) AS n RETURN n"
 ```
 
 By default, this will simply display stats for the query execution.
 The following environment variables can be used:
 ```
+BOLT_ROUTING=0|1
+BOLT_ACCESS_MODE=WRITE|READ
 BOLT_SECURE=0|1
 BOLT_HOST=<host name, IPv4 or IPv6 address>
 BOLT_PORT=7687
@@ -104,12 +107,14 @@ BOLT_LOG=0|1|2
 To run a query, use the following...
 ```
 $env:BOLT_PASSWORD=password
-build/bin/bolt.exe run "UNWIND range(1, 1000000) AS n RETURN n"
+build/bin/(Debug|Release)\seabolt-cli.exe run "UNWIND range(1, 1000000) AS n RETURN n"
 ```
 
 By default, this will simply display stats for the query execution.
-The following environment variables can be used:
+The following environment variables can be used (with Powershell syntax):
 ```
+$env:BOLT_ROUTING=0|1
+$env:BOLT_ACCESS_MODE=WRITE|READ
 $env:BOLT_SECURE=0|1
 $env:BOLT_HOST=<host name, IPv4 or IPv6 address>
 $env:BOLT_PORT=7687
