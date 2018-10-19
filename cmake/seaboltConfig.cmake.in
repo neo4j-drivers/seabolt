@@ -1,0 +1,44 @@
+# seaboltConfig.cmake
+# -------------------
+#
+# seabolt cmake module.
+# This module sets the following variables in your project:
+#
+# ::
+#
+#   seabolt_FOUND - true if seabolt found on the system
+#   seabolt_VERSION - seabolt version in format Major.Minor.Release
+#
+#
+# Exported targets:
+#
+# ::
+#
+# If message is found, this module defines the following :prop_tgt:`IMPORTED`
+# targets. ::
+#   @SEABOLT_NAME@::seabolt-shared - the seabolt shared library with header & defs attached.
+#   @SEABOLT_NAME@::seabolt-static - the seabolt static library with header & defs attached.
+#
+#
+# Suggested usage:
+#
+# ::
+#
+#   find_package(@SEABOLT_NAME@)
+#   find_package(@SEABOLT_NAME@ 1.7.0 CONFIG REQUIRED)
+#
+#
+# The following variables can be set to guide the search for this package:
+#
+# ::
+#
+#   @SEABOLT_NAME@_DIR - CMake variable, set to directory containing this Config file
+#   CMAKE_PREFIX_PATH - CMake variable, set to root directory of this package
+#   PATH - environment variable, set to bin directory of this package
+
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/@SEABOLT_NAME@Targets.cmake")
+check_required_components(
+  "seabolt-shared"
+  )

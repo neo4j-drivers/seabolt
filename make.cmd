@@ -28,38 +28,10 @@ Set "CMAKE_BUILD=%~2"
 
 If "%~1" == "MSVC" (
     Set "CMAKE_GENERATOR=Visual Studio 15 2017 Win64"
-    Set "VS_TOOLS_ARCH=x64"
-    Set "VS_TARGET_PLATFORM=x64"
 
     If "%~3" == "x86" (
         Set "CMAKE_GENERATOR=Visual Studio 15 2017"
-        Set "VS_TOOLS_ARCH=x86"
-        Set "VS_TARGET_PLATFORM=Win32"
     )
-)
-
-If "%~1" == "MSVC" (
-	REM Check if in Visual Studio Developer Command Prompt
-	If Not Defined VCINSTALLDIR (
-		For %%D In (Enterprise Professional Community BuildTools) Do (
-			If Exist "C:\Program Files (x86)\Microsoft Visual Studio\2017\%%D\VC\Auxiliary\Build\vcvarsall.bat" (
-				Pushd %cd%
-				Call "C:\Program Files (x86)\Microsoft Visual Studio\2017\%%D\VC\Auxiliary\Build\vcvarsall.bat" %VS_TOOLS_ARCH%
-				If ERRORLEVEL 0 (
-					Popd
-					Goto :FoundVS
-				)
-				Popd
-			)
-		)
-	)
-
-	:FoundVS
-	If Not Defined VCINSTALLDIR (
-		Echo "Visual Studio 2017 Installation Location could not be determined."
-		Echo "Ensure you've it installed and run this script in Visual Studio Developer Command Prompt."
-		Goto :Failure
-	)
 )
 
 If "%~1" == "MINGW" (
@@ -67,15 +39,12 @@ If "%~1" == "MINGW" (
 )
 
 Set SEABOLTDIR=%~dp0
-Pushd %SEABOLTDIR%
+Set BUILDDIR=%SEABOLTDIR%\build
+Mkdir %BUILDDIR%
+Pushd %BUILDDIR%
 
-cmake.exe -G "%CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CMAKE_BUILD% || Goto :Failure
-
-If "%~1" == "MSVC" (
-	msbuild.exe seabolt-all.sln /p:Platform=%VS_TARGET_PLATFORM% || Goto :Failure
-) Else (
-	mingw32-make.exe || Goto :Failure
-)
+cmake.exe -G "%CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CMAKE_BUILD% -DCMAKE_INSTALL_PREFIX=dist .. || Goto :Failure
+cmake.exe --build . --target install || Goto :Failure
 
 Popd
 Exit /b 0

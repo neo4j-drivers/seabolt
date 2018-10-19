@@ -1,5 +1,7 @@
 # IDE - CLion
 .idea
+cmake-build-*
+build-*
 
 # IDE - Visual Studio
 
@@ -96,3 +98,5 @@ docs/doxygen/
 # Conan
 conanbuildinfo.*
 conaninfo.txt
+
+\.DS_Store

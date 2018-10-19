@@ -1,0 +1,15 @@
+if (MSVC)
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(-Wall -Wextra -pedantic -Werror -fPIC)
+endif()
+
+if (ON_WINDOWS)
+    if (CMAKE_C_COMPILER_ID MATCHES GNU OR CMAKE_CXX_COMPILER_ID MATCHES GNU)
+        add_compile_options(-Wno-pedantic-ms-format)
+    endif()
+endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/seabolt/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/seabolt-cli/CMakeLists.txt)

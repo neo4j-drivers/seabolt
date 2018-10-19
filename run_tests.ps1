@@ -150,7 +150,7 @@ Function RunTests($Version)
         Write-Host "-- Checking server"
         $env:BOLT_PASSWORD=$Password
         $env:BOLT_PORT=$Port
-        & $BaseDir\build\bin\bolt.exe debug "UNWIND range(1, 10000) AS n RETURN n"
+        & $BaseDir\build\bin\Debug\seabolt-cli.exe debug "UNWIND range(1, 10000) AS n RETURN n"
         if ( $LASTEXITCODE -ne 0 )
         {
             throw @{ 
@@ -160,7 +160,7 @@ Function RunTests($Version)
         }
 
         Write-Host "-- Running tests"
-        & $BaseDir\build\bin\seabolt-integration-test.exe $TestArgs
+        & $BaseDir\build\bin\Debug\seabolt-test.exe $TestArgs
         if ( $LASTEXITCODE -ne 0 )
         {
             throw @{ 
