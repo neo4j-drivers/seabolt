@@ -10,6 +10,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(Internals)
 set_version()
 set_names()
+configure_rpath()
+fix_compiler_settings()
+
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_EXTENSIONS ON)
@@ -95,9 +98,6 @@ if (WITH_TLS_SUPPORT)
         message(FATAL_ERROR "Windows Secure Channel can only be enabled when building on Windows")
     endif ()
 endif ()
-
-include(Internals)
-fix_compiler_settings()
 
 enable_testing()
 include(src/CMakeLists.txt)

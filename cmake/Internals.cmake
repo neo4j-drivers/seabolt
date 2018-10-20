@@ -90,3 +90,8 @@ macro(set_names)
     set(SEABOLT_STATIC "seabolt-static")
     set(SEABOLT_TEST "seabolt-test")
 endmacro()
+
+macro(configure_rpath)
+    set(CMAKE_SKIP_RPATH ON)
+    set(CMAKE_MACOSX_RPATH ON)
+endmacro()

@@ -137,7 +137,4 @@ set_target_properties(${SEABOLT_SHARED}
         SOVERSION 1
         OUTPUT_NAME "${SEABOLT_NAME}"
         PUBLIC_HEADER "${public_header_files};${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt-exports.h;${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt-version.h"
-        MACOSX_RPATH ON
-        SKIP_BUILD_RPATH OFF
-        BUILD_WITH_INSTALL_RPATH OFF
         WINDOWS_EXPORT_ALL_SYMBOLS OFF)
