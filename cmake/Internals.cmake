@@ -93,6 +93,7 @@ macro(set_names)
 endmacro()
 
 macro(configure_rpath)
-    set(CMAKE_SKIP_RPATH ON)
+    set(CMAKE_SKIP_RPATH OFF)
+    set(CMAKE_BUILD_RPATH ${CMAKE_CURRENT_BINARY_DIR}/lib)
     set(CMAKE_MACOSX_RPATH ON)
 endmacro()
