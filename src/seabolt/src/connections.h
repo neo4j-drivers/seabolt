@@ -96,7 +96,9 @@ struct BoltConnection {
     const struct BoltSocketOptions* sock_opts;
 
     const struct BoltAddress* address;
+    const struct BoltAddress* local_address;
     const struct BoltAddress* resolved_address;
+    char* id;
 
     const struct BoltLog* log;
 
@@ -282,7 +284,8 @@ SEABOLT_EXPORT int BoltConnection_fetch_summary(struct BoltConnection* connectio
  */
 SEABOLT_EXPORT int BoltConnection_clear_begin(struct BoltConnection* connection);
 
-SEABOLT_EXPORT int BoltConnection_set_begin_bookmarks(struct BoltConnection* connection, struct BoltValue* bookmark_list);
+SEABOLT_EXPORT int
+BoltConnection_set_begin_bookmarks(struct BoltConnection* connection, struct BoltValue* bookmark_list);
 
 SEABOLT_EXPORT int BoltConnection_set_begin_tx_timeout(struct BoltConnection* connection, int64_t timeout);
 
@@ -375,6 +378,10 @@ SEABOLT_EXPORT int BoltConnection_load_reset_request(struct BoltConnection* conn
  */
 SEABOLT_EXPORT bolt_request BoltConnection_last_request(struct BoltConnection* connection);
 
+SEABOLT_EXPORT char* BoltConnection_server(struct BoltConnection* connection);
+
+SEABOLT_EXPORT char* BoltConnection_id(struct BoltConnection* connection);
+
 /**
  * Obtain the latest bookmark sent by the server. This may return null if
  * server did not return any bookmark data for this connection. This pointer is
@@ -427,7 +434,5 @@ SEABOLT_EXPORT struct BoltValue* BoltConnection_field_values(struct BoltConnecti
  * @return
  */
 SEABOLT_EXPORT struct BoltValue* BoltConnection_metadata(struct BoltConnection* connection);
-
-SEABOLT_EXPORT char* BoltConnection_server(struct BoltConnection* connection);
 
 #endif // SEABOLT_CONNECT

@@ -32,6 +32,7 @@
  */
 struct BoltDirectPool {
     mutex_t mutex;
+    char *id;
     struct BoltAddress* address;
     const struct BoltValue* auth_token;
     const struct BoltConfig* config;

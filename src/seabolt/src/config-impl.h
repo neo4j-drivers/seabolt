@@ -58,6 +58,7 @@
 
 extern int SSL_CTX_TRUST_INDEX;
 extern int SSL_CTX_LOG_INDEX;
+extern int SSL_CTX_ID_INDEX;
 
 #endif // USE_OPENSSL
 

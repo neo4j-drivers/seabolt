@@ -28,6 +28,7 @@ int verify_callback(int preverify_ok, X509_STORE_CTX* ctx)
     SSL_CTX* context = SSL_get_SSL_CTX(ssl);
     struct BoltTrust* trust = (struct BoltTrust*) SSL_CTX_get_ex_data(context, SSL_CTX_TRUST_INDEX);
     struct BoltLog* log = (struct BoltLog*) SSL_CTX_get_ex_data(context, SSL_CTX_LOG_INDEX);
+    char* id = (char*) SSL_CTX_get_ex_data(context, SSL_CTX_ID_INDEX);
 
     // check if preverify is successful or not
     if (!preverify_ok) {
@@ -39,37 +40,39 @@ int verify_callback(int preverify_ok, X509_STORE_CTX* ctx)
         case X509_V_ERR_HOSTNAME_MISMATCH:
             if (trust!=NULL && trust->skip_verify_hostname) {
                 BoltLog_warning(log,
-                        "Openssl reported failure of hostname verification due to a mismatch, but resuming handshake since hostname verification is set to be skipped");
+                        "[%s]: Openssl reported failure of hostname verification due to a mismatch, but resuming handshake since hostname verification is set to be skipped",
+                        id);
                 return 1;
             }
             else {
                 BoltLog_debug(log,
-                        "Openssl reported failure of hostname verification due to a mismatch, aborting handshake");
+                        "[%s]: Openssl reported failure of hostname verification due to a mismatch, aborting handshake",
+                        id);
                 return 0;
             }
         default:
             if (trust!=NULL && trust->skip_verify) {
                 BoltLog_warning(log,
-                        "Openssl reported error '%s' with code '%d' when establishing trust, but resuming handshake since trust verification is set to be skipped",
-                        X509_verify_cert_error_string(error), error);
+                        "[%s]: Openssl reported error '%s' with code '%d' when establishing trust, but resuming handshake since trust verification is set to be skipped",
+                        id, X509_verify_cert_error_string(error), error);
                 return 1;
             }
             else {
                 BoltLog_debug(log,
-                        "Openssl reported error '%s' with code '%d' when establishing trust, aborting handshake",
-                        X509_verify_cert_error_string(error), error);
+                        "[%s]: Openssl reported error '%s' with code '%d' when establishing trust, aborting handshake",
+                        id, X509_verify_cert_error_string(error), error);
                 return 0;
             }
         }
     }
     else {
-        BoltLog_debug(log, "Openssl established trust");
+        BoltLog_debug(log, "[%s]: Openssl established trust", id);
     }
 
     return 1;
 }
 
-SSL_CTX* create_ssl_ctx(struct BoltTrust* trust, const char* hostname, const struct BoltLog* log)
+SSL_CTX* create_ssl_ctx(struct BoltTrust* trust, const char* hostname, const struct BoltLog* log, const char* id)
 {
     SSL_CTX* context = NULL;
     X509_STORE* store = NULL;
@@ -131,6 +134,7 @@ SSL_CTX* create_ssl_ctx(struct BoltTrust* trust, const char* hostname, const str
     // Store BoltTrust and BoltLog objects into the context to be used in verification callback
     SSL_CTX_set_ex_data(context, SSL_CTX_TRUST_INDEX, trust);
     SSL_CTX_set_ex_data(context, SSL_CTX_LOG_INDEX, (void*) log);
+    SSL_CTX_set_ex_data(context, SSL_CTX_ID_INDEX, (void*) id);
 
     // Enable hostname verification
     X509_VERIFY_PARAM* param = SSL_CTX_get0_param(context);
