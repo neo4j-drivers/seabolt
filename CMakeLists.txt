@@ -4,7 +4,9 @@ project(seabolt
         DESCRIPTION "The C Connector library for Neo4j"
         LANGUAGES C CXX)
 
-set(PROJECT_VERSION "1.7.0-rc2" CACHE STRING "The version of seabolt being built")
+set(SEABOLT_VERSION "1.7.0-rc03" CACHE STRING "The version of seabolt being built")
+
+message(STATUS ${SEABOLT_VERSION})
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(Internals)
