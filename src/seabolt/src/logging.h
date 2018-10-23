@@ -56,10 +56,10 @@ void BoltLog_info(const struct BoltLog* log, const char* format, ...);
 void BoltLog_debug(const struct BoltLog* log, const char* format, ...);
 
 void
-BoltLog_value(const struct BoltLog* log, const char* format, struct BoltValue* value,
+BoltLog_value(const struct BoltLog* log, const char* format, const char* id, struct BoltValue* value,
         name_resolver_func struct_name_resolver);
 
-void BoltLog_message(const struct BoltLog* log, const char* peer, bolt_request request_id, int16_t code,
+void BoltLog_message(const struct BoltLog* log, const char* id, const char* peer, bolt_request request_id, int16_t code,
         struct BoltValue* fields, name_resolver_func struct_name_resolver, name_resolver_func message_name_resolver);
 
 #endif // SEABOLT_LOGGING

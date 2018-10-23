@@ -132,6 +132,7 @@ struct BoltProtocol {
     short_func last_data_type;
     char_func last_bookmark;
     char_func server;
+    char_func id;
 
     fetch_func fetch;
 };

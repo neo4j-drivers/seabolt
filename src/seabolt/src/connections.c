@@ -36,6 +36,7 @@
 #define ERROR_CTX_SIZE 1024
 
 #define MAX_IPADDR_LEN 64
+#define MAX_ID_LEN 32
 
 #define SOCKET(domain, type, protocol) socket(domain, type, protocol)
 #define CONNECT(socket, address, address_size) connect(socket, address, address_size)
@@ -73,6 +74,8 @@
 #ifndef SHUT_RDWR
 #define SHUT_RDWR SD_BOTH
 #endif
+
+static int64_t id_seq = 0;
 
 int _transform_error(int error_code)
 {
@@ -152,7 +155,6 @@ int _last_error_code_ssl(struct BoltConnection* connection, int ssl_ret, int* ss
     // asking error code - so we're saving it here in case.
     int last_error_saved = _last_error_code();
     *ssl_error_code = SSL_get_error(connection->ssl, ssl_ret);
-    BoltLog_error(connection->log, "ssl error code: %d", ssl_error_code);
     switch (*ssl_error_code) {
     case SSL_ERROR_NONE:
         return BOLT_SUCCESS;
@@ -192,10 +194,11 @@ void _status_changed(struct BoltConnection* connection)
     }
 
     if (connection->error_ctx[0]!=0) {
-        BoltLog_info(connection->log, "%s [%s]", status_text, connection->error_ctx);
+        BoltLog_info(connection->log, "[%s]: %s [%s]", BoltConnection_id(connection), status_text,
+                connection->error_ctx);
     }
     else {
-        BoltLog_info(connection->log, "%s", status_text);
+        BoltLog_info(connection->log, "[%s]: %s", BoltConnection_id(connection), status_text);
     }
 
     if (connection->status==BOLT_DEFUNCT || connection->status==BOLT_FAILED) {
@@ -323,12 +326,13 @@ int _open(struct BoltConnection* connection, enum BoltTransport transport, const
         char port_string[NI_MAXSERV];
         getnameinfo((const struct sockaddr*) (address), ADDR_SIZE(address),
                 host_string, NI_MAXHOST, port_string, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
-        BoltLog_info(connection->log, "Opening %s connection to %s at port %s",
+        BoltLog_info(connection->log, "[%s]: Opening %s connection to %s at port %s", BoltConnection_id(connection),
                 address->ss_family==AF_INET ? "IPv4" : "IPv6", &host_string, &port_string);
         break;
     }
     default:
-        BoltLog_error(connection->log, "Unsupported address family %d", address->ss_family);
+        BoltLog_error(connection->log, "[%s]: Unsupported address family %d", BoltConnection_id(connection),
+                address->ss_family);
         _set_status_with_ctx(connection, BOLT_DEFUNCT, BOLT_UNSUPPORTED, "_open(%s:%d)", __FILE__, __LINE__);
         return BOLT_STATUS_SET;
     }
@@ -379,7 +383,7 @@ int _open(struct BoltConnection* connection, enum BoltTransport transport, const
             switch (status) {
             case 0: {
                 //timeout expired
-                BoltLog_info(connection->log, "Connect timed out");
+                BoltLog_info(connection->log, "[%s]: Connect timed out", BoltConnection_id(connection));
                 _set_status_with_ctx(connection, BOLT_DEFUNCT, BOLT_TIMED_OUT, "_open(%s:%d)", __FILE__, __LINE__);
                 return BOLT_STATUS_SET;
             }
@@ -425,10 +429,10 @@ int _secure(struct BoltConnection* connection, struct BoltTrust* trust)
 {
     int status = 1;
 
-    BoltLog_info(connection->log, "Securing socket");
+    BoltLog_info(connection->log, "[%s]: Securing socket", BoltConnection_id(connection));
 
     if (connection->ssl_context==NULL) {
-        connection->ssl_context = create_ssl_ctx(trust, connection->address->host, connection->log);
+        connection->ssl_context = create_ssl_ctx(trust, connection->address->host, connection->log, connection->id);
         connection->owns_ssl_context = 1;
     }
 
@@ -479,13 +483,10 @@ int _secure(struct BoltConnection* connection, struct BoltTrust* trust)
 
 void _close(struct BoltConnection* connection)
 {
-    BoltLog_info(connection->log, "Closing connection");
+    BoltLog_info(connection->log, "[%s]: Closing connection", BoltConnection_id(connection));
 
     if (connection->protocol!=NULL) {
-        int status = connection->protocol->goodbye(connection);
-        if (status!=BOLT_SUCCESS) {
-            BoltLog_warning(connection->log, "Unable to complete GOODBYE, status is %d", status);
-        }
+        connection->protocol->goodbye(connection);
 
         switch (connection->protocol_version) {
         case 1:
@@ -561,7 +562,8 @@ int _send(struct BoltConnection* connection, const char* data, int size)
                 int last_error = _last_error_code();
                 _set_status_with_ctx(connection, BOLT_DEFUNCT, _transform_error(last_error),
                         "_send(%s:%d), send error code: %d", __FILE__, __LINE__, last_error);
-                BoltLog_error(connection->log, "Socket error %d on transmit", connection->error);
+                BoltLog_error(connection->log, "[%s]: Socket error %d on transmit", BoltConnection_id(connection),
+                        connection->error);
                 break;
             }
             case BOLT_SECURE_SOCKET: {
@@ -570,14 +572,15 @@ int _send(struct BoltConnection* connection, const char* data, int size)
                 _set_status_with_ctx(connection, BOLT_DEFUNCT, last_error_transformed,
                         "_send(%s:%d), send_s error code: %d, underlying error code: %d", __FILE__, __LINE__, ssl_error,
                         last_error);
-                BoltLog_error(connection->log, "SSL error %d on transmit", connection->error);
+                BoltLog_error(connection->log, "[%s]: SSL error %d on transmit", BoltConnection_id(connection),
+                        connection->error);
                 break;
             }
             }
             return BOLT_TRANSPORT_UNSUPPORTED;
         }
     }
-    BoltLog_info(connection->log, "(Sent %d of %d bytes)", total_sent, size);
+    BoltLog_info(connection->log, "[%s]: (Sent %d of %d bytes)", BoltConnection_id(connection), total_sent, size);
     return BOLT_SUCCESS;
 }
 
@@ -613,7 +616,7 @@ int _receive(struct BoltConnection* connection, char* buffer, int min_size, int 
             max_remaining -= single_received;
         }
         else if (single_received==0) {
-            BoltLog_info(connection->log, "Detected end of transmission");
+            BoltLog_info(connection->log, "[%s]: Detected end of transmission", BoltConnection_id(connection));
             _set_status_with_ctx(connection, BOLT_DISCONNECTED, BOLT_END_OF_TRANSMISSION,
                     "_receive(%s:%d), receive returned 0", __FILE__, __LINE__);
             return BOLT_STATUS_SET;
@@ -624,7 +627,8 @@ int _receive(struct BoltConnection* connection, char* buffer, int min_size, int 
                 int last_error = _last_error_code();
                 _set_status_with_ctx(connection, BOLT_DEFUNCT, _transform_error(last_error),
                         "_receive(%s:%d), receive error code: %d", __FILE__, __LINE__, last_error);
-                BoltLog_error(connection->log, "Socket error %d on receive", connection->error);
+                BoltLog_error(connection->log, "[%s]: Socket error %d on receive", BoltConnection_id(connection),
+                        connection->error);
                 break;
             }
             case BOLT_SECURE_SOCKET: {
@@ -633,7 +637,8 @@ int _receive(struct BoltConnection* connection, char* buffer, int min_size, int 
                 _set_status_with_ctx(connection, BOLT_DEFUNCT, last_error_transformed,
                         "_receive(%s:%d), receive_s error code: %d, underlying error code: %d", __FILE__, __LINE__,
                         ssl_error, last_error);
-                BoltLog_error(connection->log, "SSL error %d on receive", connection->error);
+                BoltLog_error(connection->log, "[%s]: SSL error %d on receive", BoltConnection_id(connection),
+                        connection->error);
                 break;
             }
             }
@@ -641,10 +646,12 @@ int _receive(struct BoltConnection* connection, char* buffer, int min_size, int 
         }
     }
     if (min_size==max_size) {
-        BoltLog_info(connection->log, "(Received %d of %d bytes)", total_received, max_size);
+        BoltLog_info(connection->log, "[%s]: Received %d of %d bytes", BoltConnection_id(connection), total_received,
+                max_size);
     }
     else {
-        BoltLog_info(connection->log, "(Received %d of %d..%d bytes)", total_received, min_size, max_size);
+        BoltLog_info(connection->log, "[%s]: Received %d of %d..%d bytes", BoltConnection_id(connection),
+                total_received, min_size, max_size);
     }
     *received = total_received;
     return BOLT_SUCCESS;
@@ -652,7 +659,7 @@ int _receive(struct BoltConnection* connection, char* buffer, int min_size, int 
 
 int handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int32_t _3, int32_t _4)
 {
-    BoltLog_info(connection->log, "Performing handshake");
+    BoltLog_info(connection->log, "[%s]: Performing handshake", BoltConnection_id(connection));
     char handshake[20];
     memcpy(&handshake[0x00], "\x60\x60\xB0\x17", 4);
     memcpy_be(&handshake[0x04], &_1, 4);
@@ -664,16 +671,17 @@ int handshake_b(struct BoltConnection* connection, int32_t _1, int32_t _2, int32
     TRY(_receive(connection, &handshake[0], 4, 4, &received), "handshake_b(%s:%d), _receive error code: %d", __FILE__,
             __LINE__);
     memcpy_be(&connection->protocol_version, &handshake[0], 4);
-    BoltLog_info(connection->log, "<SET protocol_version=%d>", connection->protocol_version);
+    BoltLog_info(connection->log, "[%s]: <SET protocol_version=%d>", BoltConnection_id(connection),
+            connection->protocol_version);
     switch (connection->protocol_version) {
     case 1:
-        connection->protocol = BoltProtocolV1_create_protocol();
+        connection->protocol = BoltProtocolV1_create_protocol(connection);
         return BOLT_SUCCESS;
     case 2:
-        connection->protocol = BoltProtocolV2_create_protocol();
+        connection->protocol = BoltProtocolV2_create_protocol(connection);
         return BOLT_SUCCESS;
     case 3:
-        connection->protocol = BoltProtocolV3_create_protocol();
+        connection->protocol = BoltProtocolV3_create_protocol(connection);
         return BOLT_SUCCESS;
     default:
         _close(connection);
@@ -701,6 +709,9 @@ BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transp
     if (connection->status!=BOLT_DISCONNECTED) {
         BoltConnection_close(connection);
     }
+    // Id buffer composed of local&remote Endpoints
+    connection->id = BoltMem_allocate(MAX_ID_LEN);
+    snprintf(connection->id, MAX_ID_LEN, "conn-%" PRId64, BoltUtil_increment(&id_seq));
     connection->error_ctx = (char*) BoltMem_allocate(ERROR_CTX_SIZE);
     connection->log = log;
     // Store connection info
@@ -726,9 +737,25 @@ BoltConnection_open(struct BoltConnection* connection, enum BoltTransport transp
             }
 
             char resolved_host[MAX_IPADDR_LEN], resolved_port[6];
-            BoltAddress_copy_resolved_host(address, i, resolved_host, MAX_IPADDR_LEN);
+            int resolved_family = BoltAddress_copy_resolved_host(address, i, resolved_host, MAX_IPADDR_LEN);
             sprintf(resolved_port, "%d", address->resolved_port);
             connection->resolved_address = BoltAddress_create(resolved_host, resolved_port);
+            BoltLog_info(connection->log, "[%s]: Remote endpoint is %s:%s", BoltConnection_id(connection),
+                    resolved_host, resolved_port);
+
+            struct sockaddr_storage local_addr;
+            socklen_t local_addr_size =
+                    resolved_family==AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
+            TRY(getsockname(connection->socket, (struct sockaddr*) &local_addr, &local_addr_size),
+                    "BoltConnection_open(%s:%d), getsockname error code: %d", __FILE__, __LINE__);
+
+            char local_host[MAX_IPADDR_LEN], local_port[6];
+            TRY(getnameinfo((const struct sockaddr*) &local_addr, local_addr_size, local_host, MAX_IPADDR_LEN,
+                    local_port, 6, NI_NUMERICHOST | NI_NUMERICSERV),
+                    "BoltConnection_open(%s:%d), getnameinfo error code: %d", __FILE__, __LINE__);
+            connection->local_address = BoltAddress_create(local_host, local_port);
+            BoltLog_info(connection->log, "[%s]: Local endpoint is %s:%s", BoltConnection_id(connection), local_host,
+                    local_port);
 
             _set_status(connection, BOLT_CONNECTED, BOLT_SUCCESS);
             break;
@@ -765,6 +792,14 @@ void BoltConnection_close(struct BoltConnection* connection)
     if (connection->resolved_address!=NULL) {
         BoltAddress_destroy((struct BoltAddress*) connection->resolved_address);
         connection->resolved_address = NULL;
+    }
+    if (connection->local_address!=NULL) {
+        BoltAddress_destroy((struct BoltAddress*) connection->local_address);
+        connection->local_address = NULL;
+    }
+    if (connection->id!=NULL) {
+        BoltMem_deallocate(connection->id, MAX_ID_LEN);
+        connection->id = NULL;
     }
 }
 
@@ -822,8 +857,8 @@ int BoltConnection_fetch(struct BoltConnection* connection, bolt_request request
                     "BoltConnection_fetch(%s:%d), failure message", __FILE__, __LINE__);
         }
         else {
-            BoltLog_error(connection->log, "Protocol violation (received summary code %d)",
-                    connection->protocol->last_data_type(connection));
+            BoltLog_error(connection->log, "[%s]: Protocol violation (received summary code %d)",
+                    BoltConnection_id(connection), connection->protocol->last_data_type(connection));
             _set_status_with_ctx(connection, BOLT_DEFUNCT, BOLT_PROTOCOL_VIOLATION,
                     "BoltConnection_fetch(%s:%d), received summary code: %d", __FILE__, __LINE__,
                     connection->protocol->last_data_type(connection));
@@ -866,7 +901,7 @@ int BoltConnection_summary_failure(struct BoltConnection* connection)
 int
 BoltConnection_init(struct BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token)
 {
-    BoltLog_info(connection->log, "Initialising connection");
+    BoltLog_info(connection->log, "[%s]: Initialising connection", BoltConnection_id(connection));
     switch (connection->protocol_version) {
     case 1:
     case 2:
@@ -881,7 +916,8 @@ BoltConnection_init(struct BoltConnection* connection, const char* user_agent, c
                     "BoltConnection_init(%s:%d), failure message", __FILE__, __LINE__);
             return -1;
         default:
-            BoltLog_error(connection->log, "Protocol violation (received summary code %d)", code);
+            BoltLog_error(connection->log, "[%s]: Protocol violation (received summary code %d)",
+                    BoltConnection_id(connection), code);
             _set_status_with_ctx(connection, BOLT_DEFUNCT, BOLT_PROTOCOL_VIOLATION,
                     "BoltConnection_init(%s:%d), received summary code: %d", __FILE__, __LINE__, code);
             return -1;
@@ -1023,6 +1059,20 @@ bolt_request BoltConnection_last_request(struct BoltConnection* connection)
     return connection->protocol->last_request(connection);
 }
 
+char* BoltConnection_server(struct BoltConnection* connection)
+{
+    return connection->protocol->server(connection);
+}
+
+char* BoltConnection_id(struct BoltConnection* connection)
+{
+    if (connection->protocol!=NULL && connection->protocol->id!=NULL) {
+        return connection->protocol->id(connection);
+    }
+
+    return connection->id;
+}
+
 char* BoltConnection_last_bookmark(struct BoltConnection* connection)
 {
     return connection->protocol->last_bookmark(connection);
@@ -1041,9 +1091,4 @@ struct BoltValue* BoltConnection_metadata(struct BoltConnection* connection)
 struct BoltValue* BoltConnection_failure(struct BoltConnection* connection)
 {
     return connection->protocol->failure(connection);
-}
-
-char* BoltConnection_server(struct BoltConnection* connection)
-{
-    return connection->protocol->server(connection);
 }

@@ -23,6 +23,7 @@
 
 int SSL_CTX_TRUST_INDEX = -1;
 int SSL_CTX_LOG_INDEX = -1;
+int SSL_CTX_ID_INDEX = -1;
 
 void Bolt_startup()
 {
@@ -46,6 +47,7 @@ void Bolt_startup()
     // BoltTrust and BoltLog instances
     SSL_CTX_TRUST_INDEX = SSL_CTX_get_ex_new_index(0, NULL, NULL, NULL, NULL);
     SSL_CTX_LOG_INDEX = SSL_CTX_get_ex_new_index(0, NULL, NULL, NULL, NULL);
+    SSL_CTX_ID_INDEX = SSL_CTX_get_ex_new_index(0, NULL, NULL, NULL, NULL);
 #endif
 }
 

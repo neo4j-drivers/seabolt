@@ -26,6 +26,10 @@
 #include "direct-pool.h"
 #include "protocol.h"
 
+#define MAX_ID_LEN 16
+
+static int64_t pool_seq = 0;
+
 void close_pool_entry(struct BoltDirectPool* pool, int index)
 {
     struct BoltConnection* connection = &pool->connections[index];
@@ -35,8 +39,8 @@ void close_pool_entry(struct BoltDirectPool* pool, int index)
             struct timespec diff;
             BoltUtil_get_time(&now);
             BoltUtil_diff_time(&diff, &now, &connection->metrics.time_opened);
-            BoltLog_info(pool->config->log, "Connection alive for %lds %09ldns", (long) (diff.tv_sec),
-                    diff.tv_nsec);
+            BoltLog_info(pool->config->log, "[%s]: Connection alive for %lds %09ldns", BoltConnection_id(connection),
+                    (long) (diff.tv_sec), diff.tv_nsec);
         }
 
         BoltConnection_close(connection);
@@ -52,11 +56,14 @@ int find_unused_connection(struct BoltDirectPool* pool)
             // check for max lifetime and close existing connection if required
             if (connection->status!=BOLT_DISCONNECTED && connection->status!=BOLT_DEFUNCT) {
                 if (pool->config->max_connection_lifetime>0) {
-                    int64_t now = BoltUtil_get_time_ms();
-                    int64_t created = BoltUtil_get_time_ms_from(&connection->metrics.time_opened);
+                    int64_t
+                    now = BoltUtil_get_time_ms();
+                    int64_t
+                    created = BoltUtil_get_time_ms_from(&connection->metrics.time_opened);
 
                     if (now-created>pool->config->max_connection_lifetime) {
-                        BoltLog_info(pool->config->log, "Connection reached its maximum lifetime, force closing.");
+                        BoltLog_info(pool->config->log, "[%s]: Connection reached its maximum lifetime, force closing.",
+                                BoltConnection_id(connection));
 
                         close_pool_entry(pool, i);
                     }
@@ -96,7 +103,8 @@ int reset(struct BoltDirectPool* pool, int index)
     struct BoltConnection* connection = &pool->connections[index];
     switch (BoltConnection_load_reset_request(connection)) {
     case 0: {
-        bolt_request request_id = BoltConnection_last_request(connection);
+        bolt_request
+        request_id = BoltConnection_last_request(connection);
         if (BoltConnection_send(connection)<0) {
             return -1;
         }
@@ -160,9 +168,12 @@ void reset_or_close(struct BoltDirectPool* pool, int index)
 struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, const struct BoltValue* auth_token,
         const struct BoltConfig* config)
 {
-    BoltLog_info(config->log, "creating pool");
+    char* id = BoltMem_allocate(MAX_ID_LEN);
+    snprintf(id, MAX_ID_LEN, "pool-%" PRId64, BoltUtil_increment(&pool_seq));
+    BoltLog_info(config->log, "[%s]: Creating pool towards %s:%s", id, address->host, address->port);
     struct BoltDirectPool* pool = (struct BoltDirectPool*) BoltMem_allocate(SIZE_OF_DIRECT_POOL);
     BoltUtil_mutex_create(&pool->mutex);
+    pool->id = id;
     pool->config = config;
     pool->address = BoltAddress_create(address->host, address->port);
     pool->auth_token = auth_token;
@@ -170,7 +181,7 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
     pool->connections = (struct BoltConnection*) BoltMem_allocate(config->max_pool_size*sizeof(struct BoltConnection));
     memset(pool->connections, 0, config->max_pool_size*sizeof(struct BoltConnection));
     if (config->transport==BOLT_SECURE_SOCKET) {
-        pool->ssl_context = create_ssl_ctx(config->trust, address->host, config->log);
+        pool->ssl_context = create_ssl_ctx(config->trust, address->host, config->log, id);
 
         // assign ssl_context to all connections
         for (int i = 0; i<config->max_pool_size; i++) {
@@ -186,7 +197,8 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
 
 void BoltDirectPool_destroy(struct BoltDirectPool* pool)
 {
-    BoltLog_info(pool->config->log, "destroying pool");
+    BoltLog_info(pool->config->log, "[%s]: Destroying pool towards %s:%s", pool->id, pool->address->host,
+            pool->address->port);
     for (int index = 0; index<pool->size; index++) {
         close_pool_entry(pool, index);
     }
@@ -195,6 +207,7 @@ void BoltDirectPool_destroy(struct BoltDirectPool* pool)
         free_ssl_context(pool->ssl_context);
     }
     BoltAddress_destroy(pool->address);
+    BoltMem_deallocate(pool->id, MAX_ID_LEN);
     BoltUtil_mutex_destroy(&pool->mutex);
     BoltMem_deallocate(pool, SIZE_OF_DIRECT_POOL);
 }
@@ -205,8 +218,10 @@ struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
     int index = 0;
     int pool_error = BOLT_SUCCESS;
 
-    int64_t started_at = BoltUtil_get_time_ms();
-    BoltLog_info(pool->config->log, "acquiring connection from the pool");
+    int64_t
+    started_at = BoltUtil_get_time_ms();
+    BoltLog_info(pool->config->log, "[%s]: Acquiring connection from the pool towards %s:%s", pool->id,
+            pool->address->host, pool->address->port);
 
     while (1) {
         BoltUtil_mutex_lock(&pool->mutex);
@@ -283,7 +298,9 @@ struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
                 break;
             }
             else {
-                BoltLog_info(pool->config->log, "Pool is full, will retry acquiring a connection from the pool.");
+                BoltLog_info(pool->config->log,
+                        "[%s]: Pool towards %s:%s is full, will retry acquiring a connection from the pool.", pool->id,
+                        pool->address->host, pool->address->port);
 
                 BoltUtil_sleep(250);
 
@@ -300,7 +317,8 @@ struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
 
 int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* connection)
 {
-    BoltLog_info(pool->config->log, "releasing connection to pool");
+    BoltLog_info(pool->config->log, "[%s]: Releasing connection to pool towards %s:%s", pool->id, pool->address->host,
+            pool->address->port);
     BoltUtil_mutex_lock(&pool->mutex);
     int index = find_connection(pool, connection);
     if (index>=0) {

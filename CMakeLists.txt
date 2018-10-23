@@ -4,7 +4,9 @@ project(seabolt
         DESCRIPTION "The C Connector library for Neo4j"
         LANGUAGES C CXX)
 
-set(PROJECT_VERSION "1.7.0-rc2" CACHE STRING "The version of seabolt being built")
+set(SEABOLT_VERSION "1.7.0-rc03" CACHE STRING "The version of seabolt being built")
+
+message(STATUS ${SEABOLT_VERSION})
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(Internals)
@@ -148,7 +150,7 @@ configure_package_config_file(
 )
 
 file(GENERATE
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}.pc
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}.pc
         CONTENT "\
 name=${SEABOLT_NAME}\n\
 libdir=\${pcfiledir}/${LIBDIR_RELATIVE_PKGCONFIGDIR}\n\
@@ -164,7 +166,7 @@ Libs.private: $<TARGET_PROPERTY:${SEABOLT_SHARED},INTERFACE_LINK_LIBRARIES>\n\
 
 install(
         FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}.pc
+        ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}.pc
         DESTINATION ${INSTALL_PKGCONFIGDIR}
         COMPONENT dev)
 

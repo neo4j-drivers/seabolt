@@ -174,8 +174,8 @@ int BoltRoutingPool_update_routing_table(struct BoltRoutingPool* pool)
 
     // Try each in turn until successful
     for (int i = 0; i<routers->size; i++) {
-        BoltLog_debug(pool->config->log, "trying routing table update from server '%s:%s'", routers->elements[i]->host,
-                routers->elements[i]->port);
+        BoltLog_debug(pool->config->log, "[routing]: trying routing table update from server '%s:%s'",
+                routers->elements[i]->host, routers->elements[i]->port);
 
         int status = BoltRoutingPool_update_routing_table_from(pool, routers->elements[i]);
         if (status==BOLT_SUCCESS) {
@@ -257,18 +257,19 @@ int BoltRoutingPool_ensure_routing_table(struct BoltRoutingPool* pool, enum Bolt
 
             // Check once more if routing table is still stale
             if (RoutingTable_is_expired(pool->routing_table, mode)) {
-                BoltLog_debug(pool->config->log, "routing table is expired, starting refresh");
+                BoltLog_debug(pool->config->log, "[routing]: routing table is expired, starting refresh");
 
                 status = BoltRoutingPool_update_routing_table(pool);
                 if (status==BOLT_SUCCESS) {
-                    BoltLog_debug(pool->config->log, "routing table is updated, calling cleanup on server pools");
+                    BoltLog_debug(pool->config->log,
+                            "[routing]: routing table is updated, calling cleanup on server pools");
 
                     BoltRoutingPool_cleanup(pool);
 
-                    BoltLog_debug(pool->config->log, "server pools cleanup completed");
+                    BoltLog_debug(pool->config->log, "[routing]: server pools cleanup completed");
                 }
                 else {
-                    BoltLog_debug(pool->config->log, "routing table update failed with code %d", status);
+                    BoltLog_debug(pool->config->log, "[routing]: routing table update failed with code %d", status);
                 }
             }
 
@@ -321,13 +322,13 @@ struct BoltAddress* BoltRoutingPool_select_least_connected(struct BoltRoutingPoo
 struct BoltAddress* BoltRoutingPool_select_least_connected_reader(struct BoltRoutingPool* pool)
 {
     return BoltRoutingPool_select_least_connected(pool, pool->routing_table->readers,
-            (int)BoltUtil_increment(&pool->readers_offset));
+            (int) BoltUtil_increment(&pool->readers_offset));
 }
 
 struct BoltAddress* BoltRoutingPool_select_least_connected_writer(struct BoltRoutingPool* pool)
 {
     return BoltRoutingPool_select_least_connected(pool, pool->routing_table->writers,
-		(int)BoltUtil_increment(&pool->writers_offset));
+            (int) BoltUtil_increment(&pool->writers_offset));
 }
 
 void BoltRoutingPool_forget_server(struct BoltRoutingPool* pool, const struct BoltAddress* server)
@@ -501,7 +502,7 @@ BoltRoutingPool_acquire(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
         }
     }
 
-	struct BoltConnectionResult result = { NULL, BOLT_DISCONNECTED, BOLT_SUCCESS, NULL };
+    struct BoltConnectionResult result = {NULL, BOLT_DISCONNECTED, BOLT_SUCCESS, NULL};
     if (status==BOLT_SUCCESS) {
         result = BoltDirectPool_acquire(pool->server_pools[server_pool_index]);
         if (result.connection!=NULL) {
@@ -526,8 +527,8 @@ BoltRoutingPool_acquire(struct BoltRoutingPool* pool, enum BoltAccessMode mode)
         BoltRoutingPool_handle_connection_error_by_code(pool, server, status);
     }
 
-	result.connection_error = status;
-	result.connection_error_ctx = NULL;
+    result.connection_error = status;
+    result.connection_error_ctx = NULL;
 
     return result;
 }

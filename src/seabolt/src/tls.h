@@ -22,7 +22,8 @@
 #include "config-impl.h"
 #include "logging.h"
 
-SEABOLT_EXPORT struct ssl_ctx_st* create_ssl_ctx(struct BoltTrust* trust, const char* hostname, const struct BoltLog* log);
+SEABOLT_EXPORT struct ssl_ctx_st*
+create_ssl_ctx(struct BoltTrust* trust, const char* hostname, const struct BoltLog* log, const char* id);
 
 SEABOLT_EXPORT void free_ssl_context(struct ssl_ctx_st* ctx);
 
