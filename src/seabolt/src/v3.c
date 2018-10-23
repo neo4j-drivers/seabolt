@@ -883,7 +883,7 @@ void BoltProtocolV3_extract_metadata(struct BoltConnection* connection, struct B
                 struct BoltValue* value = BoltDictionary_value(metadata, i);
                 switch (BoltValue_type(value)) {
                 case BOLT_STRING: {
-                    char new_connection_id[value->size+1];
+                    char new_connection_id[MAX_CONNECTION_ID_SIZE];
                     strncpy(new_connection_id, BoltString_get(value), (size_t) value->size);
                     char* old_connection_id = BoltConnection_id(connection);
                     snprintf(state->connection_id, MAX_CONNECTION_ID_SIZE, "%s, %s", old_connection_id,
