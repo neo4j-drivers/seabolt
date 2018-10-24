@@ -17,13 +17,10 @@
  * limitations under the License.
  */
 
+#include "bolt-private.h"
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "logging.h"
 #include "mem.h"
+#include "platform.h"
 
 void* BoltMem_reverse_copy(void* dest, const void* src, size_t n)
 {
@@ -35,25 +32,28 @@ void* BoltMem_reverse_copy(void* dest, const void* src, size_t n)
     return dest;
 }
 
-static size_t __allocation = 0;
-static size_t __peak_allocation = 0;
+static int64_t __allocation = 0;
+static int64_t __peak_allocation = 0;
 static int64_t __allocation_events = 0;
 
 void* BoltMem_allocate(size_t new_size)
 {
     void* p = malloc(new_size);
-    __allocation += new_size;
-    if (__allocation>__peak_allocation) __peak_allocation = __allocation;
-    __allocation_events += 1;
+    int64_t new_allocation = BoltUtil_add(&__allocation, new_size);
+    int64_t peak_allocation = BoltUtil_add(&__peak_allocation, 0);
+    if (new_allocation>peak_allocation) BoltUtil_add(&__peak_allocation, new_allocation-peak_allocation);
+    BoltUtil_increment(&__allocation_events);
     return p;
 }
 
 void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size)
 {
     void* p = realloc(ptr, new_size);
-    __allocation = __allocation-old_size+new_size;
-    if (__allocation>__peak_allocation) __peak_allocation = __allocation;
-    __allocation_events += 1;
+
+    int64_t new_allocation = BoltUtil_add(&__allocation, -old_size+new_size);
+    int64_t peak_allocation = BoltUtil_add(&__peak_allocation, 0);
+    if (__allocation>__peak_allocation) BoltUtil_add(&__peak_allocation, new_allocation-peak_allocation);
+    BoltUtil_increment(&__allocation_events);
     return p;
 }
 
@@ -64,8 +64,8 @@ void* BoltMem_deallocate(void* ptr, size_t old_size)
     }
 
     free(ptr);
-    __allocation -= old_size;
-    __allocation_events += 1;
+    BoltUtil_add(&__allocation, -old_size);
+    BoltUtil_increment(&__allocation_events);
     return NULL;
 }
 
@@ -105,7 +105,7 @@ void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size)
 
 void* BoltMem_duplicate(const void* ptr, size_t ptr_size)
 {
-    if (ptr == NULL) {
+    if (ptr==NULL) {
         return NULL;
     }
     void* p = BoltMem_allocate(ptr_size);
@@ -113,12 +113,12 @@ void* BoltMem_duplicate(const void* ptr, size_t ptr_size)
     return p;
 }
 
-size_t BoltMem_current_allocation()
+int64_t BoltMem_current_allocation()
 {
     return __allocation;
 }
 
-size_t BoltMem_peak_allocation()
+int64_t BoltMem_peak_allocation()
 {
     return __peak_allocation;
 }

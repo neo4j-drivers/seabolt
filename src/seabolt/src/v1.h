@@ -26,7 +26,7 @@
 
 #include <stdint.h>
 
-#include "connections.h"
+#include "connection.h"
 #include "protocol.h"
 
 #define BOLT_V1_INIT        0x01
@@ -62,8 +62,8 @@ struct BoltProtocolV1State {
     /// The last bookmark received from the server
     char* last_bookmark;
 
-    bolt_request next_request_id;
-    bolt_request response_counter;
+    BoltRequest next_request_id;
+    BoltRequest response_counter;
     unsigned long long record_counter;
 
     struct BoltMessage* run_request;

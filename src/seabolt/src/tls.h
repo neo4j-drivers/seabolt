@@ -19,8 +19,8 @@
 #ifndef SEABOLT_ALL_TLS_H
 #define SEABOLT_ALL_TLS_H
 
-#include "config-impl.h"
-#include "logging.h"
+#include "bolt-private.h"
+#include "log.h"
 
 SEABOLT_EXPORT struct ssl_ctx_st*
 create_ssl_ctx(struct BoltTrust* trust, const char* hostname, const struct BoltLog* log, const char* id);

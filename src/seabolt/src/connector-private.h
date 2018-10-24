@@ -16,10 +16,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef SEABOLT_ALL_COMMON_IMPL_H
-#define SEABOLT_ALL_COMMON_IMPL_H
+#ifndef SEABOLT_CONNECTOR_PRIVATE_H
+#define SEABOLT_CONNECTOR_PRIVATE_H
 
-#define SIZE_OF_C_STRING(str) (sizeof(char)*(strlen(str)+1))
-#define UNUSED(x) (void)(x)
+#include "connector.h"
 
-#endif //SEABOLT_ALL_COMMON_IMPL_H
+struct BoltConnector {
+    const struct BoltAddress* address;
+    const struct BoltValue* auth_token;
+    const struct BoltConfig* config;
+
+    void* pool_state;
+};
+
+#endif //SEABOLT_CONNECTOR_PRIVATE_H

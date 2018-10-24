@@ -16,31 +16,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef SEABOLT_BOLT_H
-#define SEABOLT_BOLT_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+
+#ifndef SEABOLT_LOG
+#define SEABOLT_LOG
 
 #include "bolt-public.h"
-
-#include "address.h"
-#include "address-resolver.h"
-#include "auth.h"
-#include "config.h"
-#include "connector.h"
 #include "connection.h"
-#include "error.h"
-#include "lifecycle.h"
-#include "log.h"
-#include "stats.h"
-#include "status.h"
 #include "values.h"
 
-#ifdef __cplusplus
-}
-#endif
+typedef void (* log_func)(int state, const char* message);
 
-#endif //SEABOLT_BOLT_H
+typedef struct BoltLog BoltLog;
+
+SEABOLT_EXPORT struct BoltLog* BoltLog_create(int state);
+
+SEABOLT_EXPORT void BoltLog_destroy(struct BoltLog* log);
+
+SEABOLT_EXPORT void BoltLog_set_error_func(BoltLog* log, log_func func);
+
+SEABOLT_EXPORT void BoltLog_set_warning_func(BoltLog* log, log_func func);
+
+SEABOLT_EXPORT void BoltLog_set_info_func(BoltLog* log, log_func func);
+
+SEABOLT_EXPORT void BoltLog_set_debug_func(BoltLog* log, log_func func);
+
+#endif // SEABOLT_LOG

@@ -19,7 +19,7 @@
 #ifndef SEABOLT_ALL_ERROR_H
 #define SEABOLT_ALL_ERROR_H
 
-#include "config.h"
+#include "bolt-public.h"
 
 #define BOLT_SUCCESS 0
 #define BOLT_UNKNOWN_ERROR   1

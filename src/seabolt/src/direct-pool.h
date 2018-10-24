@@ -38,7 +38,7 @@ struct BoltDirectPool {
     const struct BoltConfig* config;
     struct ssl_ctx_st *ssl_context;
     int size;
-    struct BoltConnection* connections;
+    BoltConnection** connections;
 };
 
 #define SIZE_OF_DIRECT_POOL sizeof(struct BoltDirectPool)

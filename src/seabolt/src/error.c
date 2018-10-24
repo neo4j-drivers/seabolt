@@ -17,7 +17,7 @@
  * limitations under the License
  */
 
-#include "config-impl.h"
+#include "bolt-private.h"
 
 const char* BoltError_get_string(int code)
 {

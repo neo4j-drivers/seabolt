@@ -39,7 +39,7 @@ void StringBuilder_destroy(struct StringBuilder* builder)
     free(builder);
 }
 
-void StringBuilder_ensure_buffer(struct StringBuilder* builder, int64_t size_to_add)
+void StringBuilder_ensure_buffer(struct StringBuilder* builder, int32_t size_to_add)
 {
     if (builder->buffer_size-builder->buffer_pos>size_to_add) {
         return;
@@ -55,7 +55,7 @@ void StringBuilder_append(struct StringBuilder* builder, const char* string)
     StringBuilder_append_n(builder, string, strlen(string));
 }
 
-void StringBuilder_append_n(struct StringBuilder* builder, const char* string, const int64_t len)
+void StringBuilder_append_n(struct StringBuilder* builder, const char* string, const int32_t len)
 {
     StringBuilder_ensure_buffer(builder, len+1);
     strncpy(builder->buffer+builder->buffer_pos, string, len);
@@ -90,7 +90,7 @@ char* StringBuilder_get_string(struct StringBuilder* builder)
     return builder->buffer;
 }
 
-int64_t StringBuilder_get_length(struct StringBuilder* builder)
+int32_t StringBuilder_get_length(struct StringBuilder* builder)
 {
     return builder->buffer_pos;
 }

@@ -22,7 +22,7 @@
 #include <stdint.h>
 
 #include "buffering.h"
-#include "logging.h"
+#include "log.h"
 #include "values.h"
 
 enum PackStreamType {

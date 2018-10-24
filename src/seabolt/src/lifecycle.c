@@ -17,9 +17,7 @@
  * limitations under the License.
  */
 
-#include "config-impl.h"
-#include "lifecycle.h"
-#include "logging.h"
+#include "bolt-private.h"
 
 int SSL_CTX_TRUST_INDEX = -1;
 int SSL_CTX_LOG_INDEX = -1;

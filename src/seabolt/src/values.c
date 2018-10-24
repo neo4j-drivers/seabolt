@@ -18,14 +18,11 @@
  */
 
 
-#include <assert.h>
-#include <memory.h>
-#include <string.h>
-
+#include "bolt-private.h"
+#include "values-private.h"
+#include "connection-private.h"
 #include "mem.h"
-#include "values.h"
-#include "v1.h"
-#include "string-builder.h"
+#include "protocol.h"
 
 #define STRING_QUOTE '"'
 #define REPLACEMENT_CHARACTER "\xFF\xFD"
@@ -94,7 +91,7 @@ void _resize(struct BoltValue* value, int32_t size, int multiplier)
 
 void _set_type(struct BoltValue* value, enum BoltType type, int16_t subtype, int32_t size)
 {
-    assert(((int)type)<0x80);
+    assert(((int) type)<0x80);
     value->type = (char) (type);
     value->subtype = subtype;
     value->size = size;
@@ -279,9 +276,35 @@ void BoltValue_copy(struct BoltValue* dest, const struct BoltValue* src)
     }
 }
 
+int32_t BoltValue_size(const struct BoltValue* value)
+{
+    return value->size;
+}
+
 enum BoltType BoltValue_type(const struct BoltValue* value)
 {
     return (enum BoltType) (value->type);
+}
+
+int32_t BoltValue_string(const struct BoltValue* value, char* dest, int32_t length, struct BoltConnection* connection)
+{
+    name_resolver_func name_resolver = NULL;
+    struct StringBuilder* builder = StringBuilder_create();
+    if (connection!=NULL && connection->protocol!=NULL) {
+        name_resolver = connection->protocol->structure_name;
+    }
+
+    int32_t result = BoltValue_write(builder, value, name_resolver);
+    if (result==BOLT_SUCCESS) {
+        int32_t builder_length = StringBuilder_get_length(builder);
+        int32_t copy_length = builder_length>length ? length : builder_length;
+        strncpy(dest, StringBuilder_get_string(builder), copy_length);
+        result = builder_length;
+    }
+
+    StringBuilder_destroy(builder);
+
+    return result;
 }
 
 void BoltValue_format_as_Null(struct BoltValue* value)
@@ -525,7 +548,8 @@ struct BoltValue* BoltStructure_value(const struct BoltValue* value, int32_t ind
     return &value->data.extended.as_value[index];
 }
 
-int BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, name_resolver_func struct_name_resolver)
+int
+BoltValue_write(struct StringBuilder* builder, const struct BoltValue* value, name_resolver_func struct_name_resolver)
 {
     switch (BoltValue_type(value)) {
     case BOLT_NULL: {
@@ -547,7 +571,7 @@ int BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, name
     case BOLT_STRING: {
         char* data = BoltString_get(value);
         if (value->size>=0) {
-            StringBuilder_append_n(builder, data, (size_t) (value->size));
+            StringBuilder_append_n(builder, data, value->size);
             return 0;
         }
         else {
@@ -561,7 +585,7 @@ int BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, name
             struct BoltValue* key = BoltDictionary_key(value, i);
             if (key!=NULL) {
                 if (comma) StringBuilder_append(builder, ", ");
-                StringBuilder_append_n(builder, BoltString_get(key), (size_t) key->size);
+                StringBuilder_append_n(builder, BoltString_get(key), key->size);
                 StringBuilder_append(builder, ": ");
                 BoltValue_write(builder, BoltDictionary_value(value, i), struct_name_resolver);
                 comma = 1;

@@ -27,14 +27,13 @@
 
 #include "auth.h"
 #include "connector.h"
-#include "connections.h"
+#include "connection.h"
 #include "lifecycle.h"
 #include "mem.h"
 #include "values.h"
 #include "platform.h"
-#include "logging.h"
+#include "log.h"
 #include "protocol.h"
-#include "string-builder.h"
 
 #ifdef WIN32
 
@@ -78,7 +77,7 @@ enum Command {
 struct Application {
     struct BoltConnector* connector;
     struct BoltConnection* connection;
-    enum BoltAccessMode access_mode;
+    BoltAccessMode access_mode;
     struct {
         struct timespec connect_time;
         struct timespec init_time;
@@ -117,18 +116,21 @@ void log_to_stderr(int state, const char* message)
     fprintf(stderr, "%s\n", message);
 }
 
-struct BoltLog* create_logger()
+struct BoltLog* create_logger(int enabled)
 {
-    struct BoltLog* log = BoltLog_create();
-    log->state = 0;
-    log->debug_enabled = 0;
-    log->info_enabled = 0;
-    log->warning_enabled = 0;
-    log->error_enabled = 0;
-    log->debug_logger = log_to_stderr;
-    log->info_logger = log_to_stderr;
-    log->warning_logger = log_to_stderr;
-    log->error_logger = log_to_stderr;
+    struct BoltLog* log = BoltLog_create(0);
+    BoltLog_set_debug_func(log, enabled ? log_to_stderr : NULL);
+    BoltLog_set_warning_func(log, enabled ? log_to_stderr : NULL);
+    BoltLog_set_info_func(log, enabled ? log_to_stderr : NULL);
+    BoltLog_set_error_func(log, log_to_stderr);
+//    log->debug_enabled = enabled;
+//    log->info_enabled = enabled;
+//    log->warning_enabled = enabled;
+//    log->error_enabled = enabled;
+//    log->debug_logger = log_to_stderr;
+//    log->info_logger = log_to_stderr;
+//    log->warning_logger = log_to_stderr;
+//    log->error_logger = log_to_stderr;
     return log;
 }
 
@@ -143,25 +145,6 @@ struct Application* app_create(int argc, char** argv)
     const char* BOLT_CONFIG_PASSWORD = getenv("BOLT_PASSWORD");
 
     struct Application* app = BoltMem_allocate(sizeof(struct Application));
-
-    struct BoltConfig config;
-    config.mode = (strcmp(BOLT_CONFIG_ROUTING, "1")==0 ? BOLT_ROUTING : BOLT_DIRECT);
-    config.transport = (strcmp(BOLT_CONFIG_SECURE, "1")==0) ? BOLT_SECURE_SOCKET : BOLT_SOCKET;
-    config.routing_context = NULL;
-    config.user_agent = "seabolt/1.0.0a";
-    config.max_pool_size = 10;
-    config.log = create_logger();
-    config.address_resolver = NULL;
-    config.trust = NULL;
-    config.sock_opts = NULL;
-
-    struct BoltValue* auth_token = BoltAuth_basic(BOLT_CONFIG_USER, BOLT_CONFIG_PASSWORD, NULL);
-
-    app->connector = BoltConnector_create(&BoltAddress_of((char*) BOLT_CONFIG_HOST, (char*) BOLT_CONFIG_PORT),
-            auth_token, &config);
-
-    BoltValue_destroy(auth_token);
-    BoltLog_destroy(config.log);
 
     app->access_mode = (strcmp(BOLT_CONFIG_ACCESS_MODE, "WRITE")==0 ? BOLT_ACCESS_MODE_WRITE : BOLT_ACCESS_MODE_READ);
     app->with_allocation_report = 0;
@@ -212,6 +195,25 @@ struct Application* app_create(int argc, char** argv)
         }
     }
 
+    BoltLog* log = create_logger(app->command==CMD_DEBUG);
+    BoltConfig* config = BoltConfig_create();
+    BoltConfig_set_mode(config, (strcmp(BOLT_CONFIG_ROUTING, "1")==0) ? BOLT_MODE_ROUTING : BOLT_MODE_DIRECT);
+    BoltConfig_set_transport(config,
+            (strcmp(BOLT_CONFIG_SECURE, "1")==0) ? BOLT_TRANSPORT_ENCRYPTED : BOLT_TRANSPORT_PLAINTEXT);
+    BoltConfig_set_user_agent(config, "seabolt/" SEABOLT_VERSION);
+    BoltConfig_set_max_pool_size(config, 10);
+    BoltConfig_set_log(config, log);
+
+    struct BoltValue* auth_token = BoltAuth_basic(BOLT_CONFIG_USER, BOLT_CONFIG_PASSWORD, NULL);
+    struct BoltAddress* address = BoltAddress_create((char*) BOLT_CONFIG_HOST, (char*) BOLT_CONFIG_PORT);
+
+    app->connector = BoltConnector_create(address, auth_token, config);
+
+    BoltValue_destroy(auth_token);
+    BoltAddress_destroy(address);
+    BoltLog_destroy(log);
+    BoltConfig_destroy(config);
+
     return app;
 }
 
@@ -242,11 +244,6 @@ int app_debug(struct Application* app, const char* cypher)
 
     BoltUtil_get_time(&t[1]);    // Checkpoint 1 - right at the start
 
-    app->connector->config->log->debug_enabled = 1;
-    app->connector->config->log->info_enabled = 1;
-    app->connector->config->log->warning_enabled = 1;
-    app->connector->config->log->error_enabled = 1;
-
     app_connect(app);
 
     BoltUtil_get_time(&t[2]);    // Checkpoint 2 - after handshake and initialisation
@@ -255,11 +252,11 @@ int app_debug(struct Application* app, const char* cypher)
     BoltConnection_load_begin_request(app->connection);
     BoltConnection_set_run_cypher(app->connection, cypher, strlen(cypher), 0);
     BoltConnection_load_run_request(app->connection);
-    bolt_request run = BoltConnection_last_request(app->connection);
+    BoltRequest run = BoltConnection_last_request(app->connection);
     BoltConnection_load_pull_request(app->connection, -1);
-    bolt_request pull = BoltConnection_last_request(app->connection);
+    BoltRequest pull = BoltConnection_last_request(app->connection);
     BoltConnection_load_commit_request(app->connection);
-    bolt_request commit = BoltConnection_last_request(app->connection);
+    BoltRequest commit = BoltConnection_last_request(app->connection);
 
     BoltConnection_send(app->connection);
 
@@ -319,38 +316,39 @@ int app_run(struct Application* app, const char* cypher)
 
     BoltConnection_set_run_cypher(app->connection, cypher, strlen(cypher), 0);
     BoltConnection_load_run_request(app->connection);
-    bolt_request run = BoltConnection_last_request(app->connection);
+    BoltRequest run = BoltConnection_last_request(app->connection);
     BoltConnection_load_pull_request(app->connection, -1);
-    bolt_request pull = BoltConnection_last_request(app->connection);
+    BoltRequest pull = BoltConnection_last_request(app->connection);
 
     BoltConnection_send(app->connection);
 
     BoltConnection_fetch_summary(app->connection, run);
+    char string_buffer[4096];
     if (app->with_header) {
         const struct BoltValue* fields = BoltConnection_field_names(app->connection);
-        for (int i = 0; i<fields->size; i++) {
+        for (int i = 0; i<BoltValue_size(fields); i++) {
             if (i>0) {
                 putc('\t', stdout);
             }
-            struct StringBuilder* builder = StringBuilder_create();
-            BoltValue_write(builder, BoltList_value(fields, i), app->connection->protocol->structure_name);
-            fprintf(stdout, "%s", StringBuilder_get_string(builder));
-            StringBuilder_destroy(builder);
+            if (BoltValue_string(BoltList_value(fields, i), string_buffer, 4096, app->connection)>4096) {
+                string_buffer[4095] = 0;
+            }
+            fprintf(stdout, "%s", string_buffer);
         }
         putc('\n', stdout);
     }
 
     while (BoltConnection_fetch(app->connection, pull)) {
         const struct BoltValue* field_values = BoltConnection_field_values(app->connection);
-        for (int i = 0; i<field_values->size; i++) {
+        for (int i = 0; i<BoltValue_size(field_values); i++) {
             struct BoltValue* value = BoltList_value(field_values, i);
             if (i>0) {
                 putc('\t', stdout);
             }
-            struct StringBuilder* builder = StringBuilder_create();
-            BoltValue_write(builder, value, app->connection->protocol->structure_name);
-            fprintf(stdout, "%s", StringBuilder_get_string(builder));
-            StringBuilder_destroy(builder);
+            if (BoltValue_string(value, string_buffer, 4096, app->connection)>4096) {
+                string_buffer[4095] = 0;
+            }
+            fprintf(stdout, "%s", string_buffer);
         }
         putc('\n', stdout);
     }
@@ -367,11 +365,11 @@ long run_fetch(const struct Application* app, const char* cypher)
     BoltConnection_load_begin_request(app->connection);
     BoltConnection_set_run_cypher(app->connection, cypher, strlen(cypher), 0);
     BoltConnection_load_run_request(app->connection);
-    bolt_request run = BoltConnection_last_request(app->connection);
+    BoltRequest run = BoltConnection_last_request(app->connection);
     BoltConnection_load_pull_request(app->connection, -1);
-    bolt_request pull = BoltConnection_last_request(app->connection);
+    BoltRequest pull = BoltConnection_last_request(app->connection);
     BoltConnection_load_commit_request(app->connection);
-    bolt_request commit = BoltConnection_last_request(app->connection);
+    BoltRequest commit = BoltConnection_last_request(app->connection);
 
     BoltConnection_send(app->connection);
 

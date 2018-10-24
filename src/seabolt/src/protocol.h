@@ -20,7 +20,7 @@
 #ifndef SEABOLT_ALL_PROTOCOL_H
 #define SEABOLT_ALL_PROTOCOL_H
 
-#include "config.h"
+#include "bolt-public.h"
 #include "packstream.h"
 
 #define FETCH_ERROR -1
@@ -79,9 +79,9 @@ typedef int (* load_pull_func)(struct BoltConnection*, int32_t);
 
 typedef int (* load_reset_func)(struct BoltConnection*);
 
-typedef bolt_request (* last_request_func)(struct BoltConnection*);
+typedef BoltRequest (* last_request_func)(struct BoltConnection*);
 
-typedef int (* fetch_func)(struct BoltConnection*, bolt_request);
+typedef int (* fetch_func)(struct BoltConnection*, BoltRequest);
 
 struct BoltProtocol {
     void* proto_state;

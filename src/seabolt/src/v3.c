@@ -17,14 +17,13 @@
  * limitations under the License.
  */
 
-#include <string.h>
-
-#include "config-impl.h"
-#include "buffering.h"
-#include "logging.h"
+#include "bolt-private.h"
+#include "connection-private.h"
+#include "log-private.h"
 #include "mem.h"
 #include "protocol.h"
 #include "v3.h"
+#include "values-private.h"
 
 #define MASK "********"
 #define MASK_SIZE 8
@@ -80,8 +79,8 @@ struct BoltProtocolV3State {
     /// A connection identifier assigned by the server
     char* connection_id;
 
-    bolt_request next_request_id;
-    bolt_request response_counter;
+    BoltRequest next_request_id;
+    BoltRequest response_counter;
     unsigned long long record_counter;
 
     struct BoltMessage* run_request;
@@ -401,7 +400,7 @@ int BoltProtocolV3_hello(struct BoltConnection* connection, const char* user_age
             hello->fields, connection->protocol->structure_name, connection->protocol->message_name);
     TRY(BoltProtocolV3_compile_HELLO(hello, user_agent, auth_token, 0));
     TRY(BoltProtocolV3_load_message(connection, hello, 1));
-    bolt_request hello_request = BoltConnection_last_request(connection);
+    BoltRequest hello_request = BoltConnection_last_request(connection);
     BoltMessage_destroy(hello);
     TRY(BoltConnection_send(connection));
     TRY(BoltConnection_fetch_summary(connection, hello_request));
@@ -744,7 +743,7 @@ char* BoltProtocolV3_id(struct BoltConnection* connection)
         return state->connection_id;
 }
 
-bolt_request BoltProtocolV3_last_request(struct BoltConnection* connection)
+BoltRequest BoltProtocolV3_last_request(struct BoltConnection* connection)
 {
     struct BoltProtocolV3State* state = BoltProtocolV3_state(connection);
     return state->next_request_id-1;
@@ -884,7 +883,7 @@ void BoltProtocolV3_extract_metadata(struct BoltConnection* connection, struct B
                 switch (BoltValue_type(value)) {
                 case BOLT_STRING: {
                     char new_connection_id[MAX_CONNECTION_ID_SIZE];
-                    strncpy(new_connection_id, BoltString_get(value), (size_t) value->size);
+                    strncpy(new_connection_id, BoltString_get(value), (size_t) value->size+1);
                     char* old_connection_id = BoltConnection_id(connection);
                     snprintf(state->connection_id, MAX_CONNECTION_ID_SIZE, "%s, %s", old_connection_id,
                             new_connection_id);
@@ -957,10 +956,10 @@ void BoltProtocolV3_extract_metadata(struct BoltConnection* connection, struct B
     }
 }
 
-int BoltProtocolV3_fetch(struct BoltConnection* connection, bolt_request request_id)
+int BoltProtocolV3_fetch(struct BoltConnection* connection, BoltRequest request_id)
 {
     struct BoltProtocolV3State* state = BoltProtocolV3_state(connection);
-    bolt_request response_id;
+    BoltRequest response_id;
     do {
         char header[2];
         int status = BoltConnection_receive(connection, &header[0], 2);

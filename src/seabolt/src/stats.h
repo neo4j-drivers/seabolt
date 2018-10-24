@@ -16,31 +16,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef SEABOLT_BOLT_H
-#define SEABOLT_BOLT_H
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#ifndef SEABOLT_STATS_H
+#define SEABOLT_STATS_H
 
 #include "bolt-public.h"
 
-#include "address.h"
-#include "address-resolver.h"
-#include "auth.h"
-#include "config.h"
-#include "connector.h"
-#include "connection.h"
-#include "error.h"
-#include "lifecycle.h"
-#include "log.h"
-#include "stats.h"
-#include "status.h"
-#include "values.h"
+SEABOLT_EXPORT size_t BoltStat_memory_allocation_current();
 
-#ifdef __cplusplus
-}
-#endif
+SEABOLT_EXPORT size_t BoltStat_memory_allocation_peak();
 
-#endif //SEABOLT_BOLT_H
+SEABOLT_EXPORT int64_t BoltStat_memory_allocation_events();
+
+#endif //SEABOLT_STATS_H

@@ -17,9 +17,9 @@
 * limitations under the License.
 */
 
-#include "config-impl.h"
-#include "mem.h"
+#include "bolt-private.h"
 #include "platform.h"
+#include "mem.h"
 
 #ifdef __APPLE__
 #include <mach/clock.h>
@@ -88,6 +88,17 @@ int64_t BoltUtil_decrement(volatile int64_t* ref)
     return _InterlockedDecrement64(ref);
 #else
     return __sync_add_and_fetch(ref, -1);
+#endif
+}
+
+int64_t BoltUtil_add(volatile int64_t* ref, int64_t by)
+{
+#if defined(__APPLE__)
+    return OSAtomicAdd64(by, ref);
+#elif defined(_WIN32)
+    return _InterlockedAdd64(ref, by);
+#else
+    return __sync_add_and_fetch(ref, by);
 #endif
 }
 

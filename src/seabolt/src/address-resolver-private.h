@@ -16,31 +16,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef SEABOLT_BOLT_H
-#define SEABOLT_BOLT_H
+#ifndef SEABOLT_ADDRESS_RESOLVER_PRIVATE_H
+#define SEABOLT_ADDRESS_RESOLVER_PRIVATE_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include "bolt-public.h"
-
-#include "address.h"
 #include "address-resolver.h"
-#include "auth.h"
-#include "config.h"
-#include "connector.h"
-#include "connection.h"
-#include "error.h"
-#include "lifecycle.h"
-#include "log.h"
-#include "stats.h"
-#include "status.h"
-#include "values.h"
 
-#ifdef __cplusplus
-}
-#endif
+struct BoltAddressResolver {
+    int state;
+    address_resolver_func resolver;
+};
 
-#endif //SEABOLT_BOLT_H
+BoltAddressResolver* BoltAddressResolver_clone(BoltAddressResolver* resolver);
+
+#endif //SEABOLT_ADDRESS_RESOLVER_PRIVATE_H

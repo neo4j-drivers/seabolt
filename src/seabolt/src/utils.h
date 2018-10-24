@@ -20,7 +20,7 @@
 #ifndef SEABOLT_ALL_UTILS_H
 #define SEABOLT_ALL_UTILS_H
 
-#include "config.h"
+#include "bolt-public.h"
 #include <time.h>
 
 void BoltUtil_diff_time(struct timespec* t, struct timespec* t0, struct timespec* t1);

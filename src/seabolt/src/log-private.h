@@ -16,18 +16,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef SEABOLT_LOG_PRIVATE_H
+#define SEABOLT_LOG_PRIVATE_H
 
-
-#ifndef SEABOLT_LOGGING
-#define SEABOLT_LOGGING
-
-#include <stdio.h>
-
-#include "config.h"
-#include "connections.h"
-#include "values.h"
-
-typedef void (* log_func)(int state, const char* message);
+#include "log.h"
 
 struct BoltLog {
     int state;
@@ -43,9 +35,7 @@ struct BoltLog {
     log_func debug_logger;
 };
 
-SEABOLT_EXPORT struct BoltLog* BoltLog_create();
-
-SEABOLT_EXPORT void BoltLog_destroy(struct BoltLog* log);
+BoltLog* BoltLog_clone(BoltLog *log);
 
 void BoltLog_error(const struct BoltLog* log, const char* format, ...);
 
@@ -59,7 +49,7 @@ void
 BoltLog_value(const struct BoltLog* log, const char* format, const char* id, struct BoltValue* value,
         name_resolver_func struct_name_resolver);
 
-void BoltLog_message(const struct BoltLog* log, const char* id, const char* peer, bolt_request request_id, int16_t code,
+void BoltLog_message(const struct BoltLog* log, const char* id, const char* peer, BoltRequest request_id, int16_t code,
         struct BoltValue* fields, name_resolver_func struct_name_resolver, name_resolver_func message_name_resolver);
 
-#endif // SEABOLT_LOGGING
+#endif //SEABOLT_LOG_PRIVATE_H

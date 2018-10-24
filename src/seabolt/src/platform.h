@@ -20,7 +20,7 @@
 #ifndef SEABOLT_UTILS_H
 #define SEABOLT_UTILS_H
 
-#include "config.h"
+#include "bolt-public.h"
 #include <time.h>
 
 typedef void * mutex_t;
@@ -36,6 +36,8 @@ int64_t BoltUtil_get_time_ms_from(struct timespec* tp);
 int64_t BoltUtil_increment(volatile int64_t* ref);
 
 int64_t BoltUtil_decrement(volatile int64_t* ref);
+
+int64_t BoltUtil_add(volatile int64_t* ref, int64_t by);
 
 void BoltUtil_sleep(int milliseconds);
 

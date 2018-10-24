@@ -19,55 +19,31 @@
 #ifndef SEABOLT_ALL_CONNECTOR_H
 #define SEABOLT_ALL_CONNECTOR_H
 
-#include "logging.h"
-#include "connections.h"
+#include "bolt-public.h"
+#include "log.h"
+#include "connection.h"
 #include "address-resolver.h"
 
-enum BoltConnectorMode {
-    BOLT_DIRECT = 0,
-    BOLT_ROUTING = 1
-};
-
-enum BoltAccessMode {
-    BOLT_ACCESS_MODE_READ = 1,
-    BOLT_ACCESS_MODE_WRITE = 2
-};
-
-struct BoltConfig {
-    enum BoltConnectorMode mode;
-    enum BoltTransport transport;
-    struct BoltTrust* trust;
-    char* user_agent;
-    struct BoltValue* routing_context;
-    struct BoltAddressResolver* address_resolver;
-    struct BoltLog* log;
-    int max_pool_size;
-    int max_connection_lifetime;
-    int max_connection_acquire_time;
-    struct BoltSocketOptions* sock_opts;
-};
-
-struct BoltConnector {
-    const struct BoltAddress* address;
-    const struct BoltValue* auth_token;
-    const struct BoltConfig* config;
-    void* pool_state;
-};
+typedef int BoltAccessMode;
+#define BOLT_ACCESS_MODE_WRITE  0
+#define BOLT_ACCESS_MODE_READ   1
 
 struct BoltConnectionResult {
-    struct BoltConnection* connection;
-    enum BoltConnectionStatus connection_status;
+    BoltConnection* connection;
+    BoltConnectionState connection_status;
     int connection_error;
     char* connection_error_ctx;
 };
 
-SEABOLT_EXPORT struct BoltConnector*
+typedef struct BoltConnector BoltConnector;
+
+SEABOLT_EXPORT BoltConnector*
 BoltConnector_create(struct BoltAddress* address, struct BoltValue* auth_token, struct BoltConfig* config);
 
-SEABOLT_EXPORT void BoltConnector_destroy(struct BoltConnector* connector);
+SEABOLT_EXPORT void BoltConnector_destroy(BoltConnector* connector);
 
-SEABOLT_EXPORT struct BoltConnectionResult BoltConnector_acquire(struct BoltConnector* connector, enum BoltAccessMode mode);
+SEABOLT_EXPORT struct BoltConnectionResult BoltConnector_acquire(BoltConnector* connector, BoltAccessMode mode);
 
-SEABOLT_EXPORT void BoltConnector_release(struct BoltConnector* connector, struct BoltConnection* connection);
+SEABOLT_EXPORT void BoltConnector_release(BoltConnector* connector, struct BoltConnection* connection);
 
 #endif //SEABOLT_ALL_CONNECTOR_H

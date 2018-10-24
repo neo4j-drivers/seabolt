@@ -17,9 +17,9 @@
  * limitations under the License.
  */
 
-#include "connections.h"
-#include "logging.h"
-#include "tls.h"
+#include "bolt-private.h"
+#include "config-private.h"
+#include "log-private.h"
 
 int verify_callback(int preverify_ok, X509_STORE_CTX* ctx)
 {

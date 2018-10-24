@@ -17,12 +17,12 @@
  * limitations under the License.
  */
 
-#include <string.h>
-
-#include "address-set.h"
+#include "bolt-private.h"
+#include "address-private.h"
+#include "address-set-private.h"
 #include "mem.h"
 
-struct BoltAddressSet* BoltAddressSet_create()
+BoltAddressSet* BoltAddressSet_create()
 {
     struct BoltAddressSet* set = (struct BoltAddressSet*) BoltMem_allocate(SIZE_OF_ADDRESS_SET);
     set->size = 0;
@@ -30,26 +30,26 @@ struct BoltAddressSet* BoltAddressSet_create()
     return set;
 }
 
-void BoltAddressSet_destroy(struct BoltAddressSet* set)
+void BoltAddressSet_destroy(BoltAddressSet* set)
 {
     for (int i = 0; i<set->size; i++) {
         BoltAddress_destroy(set->elements[i]);
     }
-    BoltMem_deallocate(set->elements, set->size*SIZE_OF_ADDRESS_PTR);
+    BoltMem_deallocate(set->elements, set->size*sizeof(BoltAddress*));
     BoltMem_deallocate(set, SIZE_OF_ADDRESS_SET);
 }
 
-int BoltAddressSet_size(struct BoltAddressSet* set)
+int BoltAddressSet_size(BoltAddressSet* set)
 {
     return set->size;
 }
 
-int BoltAddressSet_index_of(struct BoltAddressSet* set, struct BoltAddress address)
+int BoltAddressSet_index_of(BoltAddressSet* set, const BoltAddress* address)
 {
     for (int i = 0; i<set->size; i++) {
         struct BoltAddress* current = set->elements[i];
 
-        if (strcmp(address.host, current->host)==0 && strcmp(address.port, current->port)==0) {
+        if (strcmp(address->host, current->host)==0 && strcmp(address->port, current->port)==0) {
             return i;
         }
     }
@@ -57,12 +57,12 @@ int BoltAddressSet_index_of(struct BoltAddressSet* set, struct BoltAddress addre
     return -1;
 }
 
-int BoltAddressSet_add(struct BoltAddressSet* set, struct BoltAddress address)
+int BoltAddressSet_add(BoltAddressSet* set, const BoltAddress* address)
 {
     if (BoltAddressSet_index_of(set, address)==-1) {
-        set->elements = (struct BoltAddress**) BoltMem_reallocate(set->elements, set->size*SIZE_OF_ADDRESS_PTR,
-                (set->size+1)*SIZE_OF_ADDRESS_PTR);
-        set->elements[set->size] = BoltAddress_create(address.host, address.port);
+        set->elements = (struct BoltAddress**) BoltMem_reallocate(set->elements, set->size*sizeof(BoltAddress*),
+                (set->size+1)*sizeof(BoltAddress*));
+        set->elements[set->size] = BoltAddress_create(address->host, address->port);
         set->size++;
         return set->size-1;
     }
@@ -70,12 +70,12 @@ int BoltAddressSet_add(struct BoltAddressSet* set, struct BoltAddress address)
     return -1;
 }
 
-int BoltAddressSet_remove(struct BoltAddressSet* set, struct BoltAddress address)
+int BoltAddressSet_remove(BoltAddressSet* set, const BoltAddress* address)
 {
     int index = BoltAddressSet_index_of(set, address);
     if (index>=0) {
         struct BoltAddress** old_elements = set->elements;
-        struct BoltAddress** new_elements = (struct BoltAddress**) BoltMem_allocate((set->size-1)*SIZE_OF_ADDRESS_PTR);
+        struct BoltAddress** new_elements = (struct BoltAddress**) BoltMem_allocate((set->size-1)*sizeof(BoltAddress*));
         int new_elements_index = 0;
         for (int i = 0; i<set->size; i++) {
             if (i==index) {
@@ -86,7 +86,7 @@ int BoltAddressSet_remove(struct BoltAddressSet* set, struct BoltAddress address
         }
 
         BoltAddress_destroy(set->elements[index]);
-        BoltMem_deallocate(old_elements, set->size*SIZE_OF_ADDRESS_PTR);
+        BoltMem_deallocate(old_elements, set->size*sizeof(BoltAddress*));
         set->elements = new_elements;
         set->size--;
         return index;
@@ -94,23 +94,23 @@ int BoltAddressSet_remove(struct BoltAddressSet* set, struct BoltAddress address
     return -1;
 }
 
-void BoltAddressSet_replace(struct BoltAddressSet* dest, struct BoltAddressSet* source)
+void BoltAddressSet_replace(BoltAddressSet* dest, BoltAddressSet* source)
 {
     for (int i = 0; i<dest->size; i++) {
         BoltAddress_destroy(dest->elements[i]);
     }
 
-    dest->elements = (struct BoltAddress**) BoltMem_reallocate(dest->elements, dest->size*SIZE_OF_ADDRESS_PTR,
-            source->size*SIZE_OF_ADDRESS_PTR);
+    dest->elements = (struct BoltAddress**) BoltMem_reallocate(dest->elements, dest->size*sizeof(BoltAddress*),
+            source->size*sizeof(BoltAddress*));
     for (int i = 0; i<source->size; i++) {
         dest->elements[i] = BoltAddress_create(source->elements[i]->host, source->elements[i]->port);
     }
     dest->size = source->size;
 }
 
-void BoltAddressSet_add_all(struct BoltAddressSet* destination, struct BoltAddressSet* source)
+void BoltAddressSet_add_all(BoltAddressSet* destination, BoltAddressSet* source)
 {
     for (int i = 0; i<source->size; i++) {
-        BoltAddressSet_add(destination, *source->elements[i]);
+        BoltAddressSet_add(destination, source->elements[i]);
     }
 }

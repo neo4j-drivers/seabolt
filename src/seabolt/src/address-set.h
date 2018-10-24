@@ -19,30 +19,25 @@
 #ifndef SEABOLT_ALL_ADDRESS_SET_H
 #define SEABOLT_ALL_ADDRESS_SET_H
 
+#include "bolt-public.h"
 #include "address.h"
 
-struct BoltAddressSet {
-    int size;
-    struct BoltAddress** elements;
-};
+typedef struct BoltAddressSet BoltAddressSet;
 
-#define SIZE_OF_ADDRESS_SET sizeof(struct BoltAddressSet)
-#define SIZE_OF_ADDRESS_SET_PTR sizeof(struct BoltAddressSet*)
+SEABOLT_EXPORT BoltAddressSet* BoltAddressSet_create();
 
-SEABOLT_EXPORT struct BoltAddressSet* BoltAddressSet_create();
+SEABOLT_EXPORT void BoltAddressSet_destroy(BoltAddressSet* set);
 
-SEABOLT_EXPORT void BoltAddressSet_destroy(struct BoltAddressSet* set);
+SEABOLT_EXPORT int BoltAddressSet_size(BoltAddressSet* set);
 
-SEABOLT_EXPORT int BoltAddressSet_size(struct BoltAddressSet* set);
+SEABOLT_EXPORT int BoltAddressSet_index_of(BoltAddressSet* set, const BoltAddress* address);
 
-SEABOLT_EXPORT int BoltAddressSet_index_of(struct BoltAddressSet* set, struct BoltAddress address);
+SEABOLT_EXPORT int BoltAddressSet_add(BoltAddressSet* set, const BoltAddress* address);
 
-SEABOLT_EXPORT int BoltAddressSet_add(struct BoltAddressSet* set, struct BoltAddress address);
+SEABOLT_EXPORT int BoltAddressSet_remove(BoltAddressSet* set, const BoltAddress* address);
 
-SEABOLT_EXPORT int BoltAddressSet_remove(struct BoltAddressSet* set, struct BoltAddress address);
+SEABOLT_EXPORT void BoltAddressSet_replace(BoltAddressSet* destination, BoltAddressSet* source);
 
-SEABOLT_EXPORT void BoltAddressSet_replace(struct BoltAddressSet* destination, struct BoltAddressSet* source);
-
-SEABOLT_EXPORT void BoltAddressSet_add_all(struct BoltAddressSet* destination, struct BoltAddressSet* source);
+SEABOLT_EXPORT void BoltAddressSet_add_all(BoltAddressSet* destination, BoltAddressSet* source);
 
 #endif //SEABOLT_ALL_ADDRESS_SET_H

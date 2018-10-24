@@ -19,7 +19,7 @@
 
 #include <string.h>
 
-#include "config-impl.h"
+#include "bolt-private.h"
 #include "mem.h"
 #include "utils.h"
 

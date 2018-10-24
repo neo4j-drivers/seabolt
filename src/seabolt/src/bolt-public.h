@@ -16,19 +16,19 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#ifndef SEABOLT_BOLT_PUBLIC
+#define SEABOLT_BOLT_PUBLIC
 
-#ifndef SEABOLT_BOLT
-#define SEABOLT_BOLT
-
-
+#include <inttypes.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <stdlib.h>
 
-#include "bolt-public.h"
+#include "bolt-version.h"
+#include "bolt-exports.h"
 
+typedef struct BoltLog BoltLog;
+typedef struct BoltConnection BoltConnection;
 
-SEABOLT_EXPORT void Bolt_startup();
-
-SEABOLT_EXPORT void Bolt_shutdown();
-
-
-#endif // SEABOLT_BOLT
+#endif // SEABOLT_BOLT_PUBLIC

@@ -21,9 +21,8 @@
 #ifndef SEABOLT_AUTH
 #define SEABOLT_AUTH
 
-#include "config.h"
 #include "values.h"
 
-SEABOLT_EXPORT struct BoltValue* BoltAuth_basic(const char* username, const char* password, const char* realm);
+SEABOLT_EXPORT BoltValue* BoltAuth_basic(const char* username, const char* password, const char* realm);
 
 #endif // SEABOLT_AUTH

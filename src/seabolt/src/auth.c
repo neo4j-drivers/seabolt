@@ -22,7 +22,7 @@
 
 #include "auth.h"
 
-struct BoltValue* BoltAuth_basic(const char* username, const char* password, const char* realm)
+BoltValue* BoltAuth_basic(const char* username, const char* password, const char* realm)
 {
     struct BoltValue* auth_token = BoltValue_create();
     BoltValue_format_as_Dictionary(auth_token, realm==NULL ? 3 : 4);

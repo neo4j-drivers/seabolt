@@ -23,6 +23,8 @@
 
 #if USE_WINSOCK
 #include <winsock2.h>
+#else
+#include <netdb.h>
 #endif
 
 SCENARIO("Test address construction", "")
@@ -98,7 +100,7 @@ SCENARIO("Test address resolution (IPv4)", "[dns]")
     REQUIRE(address->n_resolved_hosts==0);
     REQUIRE(address->resolved_port==0);
     for (int i = 0; i<2; i++) {
-        BoltAddress_resolve(address, nullptr);
+        BoltAddress_resolve(address, nullptr, nullptr);
         REQUIRE(address->n_resolved_hosts==1);
         char host_string[40];
         int af = BoltAddress_copy_resolved_host(address, 0, &host_string[0], sizeof(host_string));
@@ -119,7 +121,7 @@ SCENARIO("Test address resolution (IPv6)", "[dns]")
     REQUIRE(address->n_resolved_hosts==0);
     REQUIRE(address->resolved_port==0);
     for (int i = 0; i<2; i++) {
-        int status = BoltAddress_resolve(address, nullptr);
+        int status = BoltAddress_resolve(address, nullptr, nullptr);
         if (status==0) {
             REQUIRE(address->n_resolved_hosts==1);
             char host_string[40];
@@ -142,7 +144,7 @@ SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
     REQUIRE(address->n_resolved_hosts==0);
     REQUIRE(address->resolved_port==0);
     for (int i = 0; i<2; i++) {
-        int status = BoltAddress_resolve(address, nullptr);
+        int status = BoltAddress_resolve(address, nullptr, nullptr);
         if (status==0) {
             for (int j = 0; j<address->n_resolved_hosts; j++) {
                 char host_string[40];

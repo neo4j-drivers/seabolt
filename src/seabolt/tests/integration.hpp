@@ -25,6 +25,14 @@
 #include <cstdlib>
 #include "bolt.h"
 
+extern "C"
+{
+#include "address-private.h"
+#include "config-private.h"
+#include "connection-private.h"
+#include "values-private.h"
+}
+
 #define SETTING(name, default_value) ((char*)((getenv(name) == nullptr) ? (default_value) : getenv(name)))
 
 #define BOLT_IPV4_HOST  SETTING("BOLT_IPV4_HOST", "127.0.0.1")
@@ -34,17 +42,15 @@
 #define BOLT_PASSWORD   SETTING("BOLT_PASSWORD", "password")
 #define BOLT_USER_AGENT SETTING("BOLT_USER_AGENT", "seabolt/1.0.0a")
 
-#define VERBOSE() BoltLog_set_file(stderr)
-
 static struct BoltAddress BOLT_IPV6_ADDRESS{(char*) BOLT_IPV6_HOST, (char*) BOLT_PORT, 0, NULL, 0, NULL};
 
 static struct BoltAddress BOLT_IPV4_ADDRESS{(char*) BOLT_IPV4_HOST, (char*) BOLT_PORT, 0, NULL, 0, NULL};
 
 struct BoltAddress* bolt_get_address(const char* host, const char* port);
 
-struct BoltConnection* bolt_open_b(enum BoltTransport transport, const char* host, const char* port);
+struct BoltConnection* bolt_open_b(BoltTransport transport, const char* host, const char* port);
 
-struct BoltConnection* bolt_open_init_b(enum BoltTransport transport, const char* host, const char* port,
+struct BoltConnection* bolt_open_init_b(BoltTransport transport, const char* host, const char* port,
         const char* user_agent, const struct BoltValue* auth_token);
 
 struct BoltConnection* bolt_open_init_default();

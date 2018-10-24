@@ -19,22 +19,19 @@
 #ifndef SEABOLT_ALL_SERVER_ADDRESS_RESOLVER_H
 #define SEABOLT_ALL_SERVER_ADDRESS_RESOLVER_H
 
-#include "config.h"
+#include "bolt-public.h"
 #include "address.h"
 #include "address-set.h"
 
 typedef void (* address_resolver_func)(int state, struct BoltAddress*, struct BoltAddressSet*);
 
-struct BoltAddressResolver {
-    int state;
-    address_resolver_func resolver;
-};
+typedef struct BoltAddressResolver BoltAddressResolver;
 
-SEABOLT_EXPORT struct BoltAddressResolver* BoltAddressResolver_create();
+SEABOLT_EXPORT BoltAddressResolver* BoltAddressResolver_create(int state, address_resolver_func resolver_func);
 
-SEABOLT_EXPORT void BoltAddressResolver_destroy(struct BoltAddressResolver* resolver);
+SEABOLT_EXPORT void BoltAddressResolver_destroy(BoltAddressResolver* resolver);
 
-void BoltAddressResolver_resolve(struct BoltAddressResolver* resolver, struct BoltAddress* address,
-        struct BoltAddressSet* resolved);
+void BoltAddressResolver_resolve(BoltAddressResolver* resolver, BoltAddress* address,
+        BoltAddressSet* resolved);
 
 #endif //SEABOLT_ALL_SERVER_ADDRESS_RESOLVER_H

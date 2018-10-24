@@ -17,18 +17,13 @@
  * limitations under the License.
  */
 
-#include <assert.h>
-#include <memory.h>
-#include <string.h>
-#include <stdlib.h>
-
-#include "config-impl.h"
-#include "buffering.h"
-#include "connections.h"
-#include "logging.h"
+#include "bolt-private.h"
+#include "connection-private.h"
+#include "log-private.h"
 #include "mem.h"
-#include "packstream.h"
+#include "protocol.h"
 #include "v1.h"
+#include "values-private.h"
 
 #define BOOKMARKS_KEY "bookmarks"
 #define BOOKMARKS_KEY_SIZE 9
@@ -214,7 +209,7 @@ int BoltProtocolV1_init(struct BoltConnection* connection, const char* user_agen
             init->fields, connection->protocol->structure_name, connection->protocol->message_name);
     TRY(BoltProtocolV1_compile_INIT(init, user_agent, auth_token, 0));
     TRY(BoltProtocolV1_load_message(connection, init, 1));
-    bolt_request init_request = BoltConnection_last_request(connection);
+    BoltRequest init_request = BoltConnection_last_request(connection);
     BoltMessage_destroy(init);
     TRY(BoltConnection_send(connection));
     TRY(BoltConnection_fetch_summary(connection, init_request));
@@ -425,7 +420,7 @@ char* BoltProtocolV1_server(struct BoltConnection* connection)
     return state->server;
 }
 
-bolt_request BoltProtocolV1_last_request(struct BoltConnection* connection)
+BoltRequest BoltProtocolV1_last_request(struct BoltConnection* connection)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     return state->next_request_id-1;
@@ -687,10 +682,10 @@ void BoltProtocolV1_extract_metadata(struct BoltConnection* connection, struct B
     }
 }
 
-int BoltProtocolV1_fetch(struct BoltConnection* connection, bolt_request request_id)
+int BoltProtocolV1_fetch(struct BoltConnection* connection, BoltRequest request_id)
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
-    bolt_request response_id;
+    BoltRequest response_id;
     do {
         char header[2];
         int status = BoltConnection_receive(connection, &header[0], 2);

@@ -4,18 +4,22 @@ list(APPEND private_source_files
         ${CMAKE_CURRENT_LIST_DIR}/address.c
         ${CMAKE_CURRENT_LIST_DIR}/auth.c
         ${CMAKE_CURRENT_LIST_DIR}/buffering.c
-        ${CMAKE_CURRENT_LIST_DIR}/connections.c
+        ${CMAKE_CURRENT_LIST_DIR}/config.c
+        ${CMAKE_CURRENT_LIST_DIR}/connection.c
         ${CMAKE_CURRENT_LIST_DIR}/connector.c
         ${CMAKE_CURRENT_LIST_DIR}/direct-pool.c
         ${CMAKE_CURRENT_LIST_DIR}/error.c
         ${CMAKE_CURRENT_LIST_DIR}/lifecycle.c
-        ${CMAKE_CURRENT_LIST_DIR}/logging.c
+        ${CMAKE_CURRENT_LIST_DIR}/log.c
         ${CMAKE_CURRENT_LIST_DIR}/mem.c
         ${CMAKE_CURRENT_LIST_DIR}/packstream.c
         ${CMAKE_CURRENT_LIST_DIR}/platform.c
         ${CMAKE_CURRENT_LIST_DIR}/protocol.c
         ${CMAKE_CURRENT_LIST_DIR}/routing-pool.c
         ${CMAKE_CURRENT_LIST_DIR}/routing-table.c
+        ${CMAKE_CURRENT_LIST_DIR}/stats.c
+        ${CMAKE_CURRENT_LIST_DIR}/status.c
+        ${CMAKE_CURRENT_LIST_DIR}/string-builder.c
         ${CMAKE_CURRENT_LIST_DIR}/tls.c
         ${CMAKE_CURRENT_LIST_DIR}/utils.c
         ${CMAKE_CURRENT_LIST_DIR}/v1.c
@@ -29,23 +33,20 @@ list(APPEND public_header_files
         ${CMAKE_CURRENT_LIST_DIR}/address-set.h
         ${CMAKE_CURRENT_LIST_DIR}/address-resolver.h
         ${CMAKE_CURRENT_LIST_DIR}/auth.h
+        ${CMAKE_CURRENT_LIST_DIR}/bolt-public.h
         ${CMAKE_CURRENT_LIST_DIR}/config.h
-        ${CMAKE_CURRENT_LIST_DIR}/connections.h
+        ${CMAKE_CURRENT_LIST_DIR}/connection.h
         ${CMAKE_CURRENT_LIST_DIR}/connector.h
         ${CMAKE_CURRENT_LIST_DIR}/error.h
         ${CMAKE_CURRENT_LIST_DIR}/lifecycle.h
-        ${CMAKE_CURRENT_LIST_DIR}/logging.h
-        ${CMAKE_CURRENT_LIST_DIR}/mem.h
+        ${CMAKE_CURRENT_LIST_DIR}/log.h
+        ${CMAKE_CURRENT_LIST_DIR}/stats.h
+        ${CMAKE_CURRENT_LIST_DIR}/status.h
         ${CMAKE_CURRENT_LIST_DIR}/values.h)
 
 target_sources(${SEABOLT_SHARED}
         PRIVATE
-        ${private_source_files}
-        $<TARGET_OBJECTS:string-builder>)
-
-target_include_directories(${SEABOLT_SHARED}
-        PRIVATE
-        $<TARGET_PROPERTY:string-builder,INTERFACE_INCLUDE_DIRECTORIES>)
+        ${private_source_files})
 
 target_compile_definitions(${SEABOLT_SHARED}
         PUBLIC

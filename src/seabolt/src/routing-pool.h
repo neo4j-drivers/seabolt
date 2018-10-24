@@ -22,6 +22,7 @@
 #include "connector.h"
 #include "address.h"
 #include "values.h"
+#include "platform.h"
 
 struct BoltRoutingPool {
     struct BoltAddress* address;
@@ -47,7 +48,7 @@ BoltRoutingPool_create(struct BoltAddress* address, const struct BoltValue* auth
 void BoltRoutingPool_destroy(struct BoltRoutingPool* pool);
 
 struct BoltConnectionResult
-BoltRoutingPool_acquire(struct BoltRoutingPool* pool, enum BoltAccessMode mode);
+BoltRoutingPool_acquire(struct BoltRoutingPool* pool, BoltAccessMode mode);
 
 int BoltRoutingPool_release(struct BoltRoutingPool* pool, struct BoltConnection* connection);
 

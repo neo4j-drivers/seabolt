@@ -20,39 +20,14 @@
 #ifndef SEABOLT_ADDRESSING_H
 #define SEABOLT_ADDRESSING_H
 
-#include "config.h"
+#include "bolt-public.h"
 
 /**
  * The address of a Bolt server. This can carry both the original host
  * and port details, as supplied by the application, as well as one or
  * more resolved IP addresses and port number.
  */
-struct BoltAddress {
-    /// Original host name or IP address string
-    const char* host;
-    /// Original service name or port number string
-    const char* port;
-
-    /// Number of resolved IP addresses
-    int n_resolved_hosts;
-    /// Resolved IP address data
-    struct sockaddr_storage* resolved_hosts;
-    /// Resolved port number
-    uint16_t resolved_port;
-
-    // Lock to protect DNS resolution process
-    void* lock;
-};
-
-#define SIZE_OF_ADDRESS sizeof(struct BoltAddress)
-#define SIZE_OF_ADDRESS_PTR sizeof(struct BoltAddress *)
-
-#ifdef __cplusplus
-#define BoltAddress_of(host, port) { (const char *)host, (const char *)port, 0, nullptr, 0, nullptr }
-#else
-#define BoltAddress_of(host, port) (struct BoltAddress) { (const char *)host, (const char *)port, 0, NULL, 0, NULL }
-#endif
-
+typedef struct BoltAddress BoltAddress;
 
 /**
  * Create a new address structure for a given host and port. No name
@@ -62,21 +37,23 @@ struct BoltAddress {
  *
  * @param host host name for this address, e.g. "www.example.com"
  * @param port port name or numeric string, e.g. "7687" or "http"
- * @return pointer to a new BoltAddress structure
+ * @return pointer to a new BoltAddress
  */
 SEABOLT_EXPORT struct BoltAddress* BoltAddress_create(const char* host, const char* port);
 
-SEABOLT_EXPORT struct BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int32_t endpoint_len);
+SEABOLT_EXPORT const char* BoltAddress_host(BoltAddress* address);
 
+SEABOLT_EXPORT const char* BoltAddress_port(BoltAddress* address);
 /**
  * Resolve the original host and port into one or more IP addresses and
  * a port number. This can be carried out more than once on the same
- * address any newly-resolved addresses will replace any previously stored.
+ * address. Any newly-resolved addresses will replace any previously stored.
  *
- * @param address pointer to a BoltAddress structure
+ * @param address pointer to a BoltAddress
+ * @param n_resolved pointer to an int value where number of resolved addresses will be saved
  * @return status of the internal getaddrinfo call
  */
-SEABOLT_EXPORT int BoltAddress_resolve(struct BoltAddress* address, struct BoltLog* log);
+SEABOLT_EXPORT int BoltAddress_resolve(BoltAddress* address, int* n_resolved, struct BoltLog* log);
 
 /**
  * Copy the textual representation of a resolved host IP address into a buffer.
@@ -92,13 +69,13 @@ SEABOLT_EXPORT int BoltAddress_resolve(struct BoltAddress* address, struct BoltL
  * @return address family (AF_INET or AF_INET6) or -1 on error
  */
 SEABOLT_EXPORT int
-BoltAddress_copy_resolved_host(struct BoltAddress* address, size_t index, char* buffer, int32_t buffer_size);
+BoltAddress_copy_resolved_host(BoltAddress* address, size_t index, char* buffer, int32_t buffer_size);
 
 /**
  * Destroy an address structure and deallocate any associated memory.
  *
  * @param address pointer to a BoltAddress structure
  */
-SEABOLT_EXPORT void BoltAddress_destroy(struct BoltAddress* address);
+SEABOLT_EXPORT void BoltAddress_destroy(BoltAddress* address);
 
 #endif // SEABOLT_ADDRESSING_H

@@ -17,11 +17,10 @@
  * limitations under the License.
  */
 
-#include "config-impl.h"
-#include "buffering.h"
-#include "connections.h"
-#include "logging.h"
+#include "bolt-private.h"
+#include "log-private.h"
 #include "packstream.h"
+#include "values-private.h"
 
 #define TRY(code) { int status_try = (code); if (status_try != BOLT_SUCCESS) { return status_try; } }
 

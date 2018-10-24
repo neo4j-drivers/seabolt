@@ -19,7 +19,7 @@
 #ifndef SEABOLT_ALL_V3_H
 #define SEABOLT_ALL_V3_H
 
-#include "connections.h"
+#include "connection.h"
 
 #define BOLT_V3_HELLO 0x01
 #define BOLT_V3_GOODBYE 0x02

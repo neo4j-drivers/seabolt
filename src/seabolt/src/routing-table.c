@@ -17,14 +17,13 @@
  * limitations under the License.
  */
 
-#include <assert.h>
-#include <string.h>
-
-#include "config-impl.h"
-#include "address-set.h"
+#include "bolt-private.h"
+#include "address-private.h"
+#include "address-set-private.h"
 #include "mem.h"
-#include "routing-table.h"
 #include "platform.h"
+#include "routing-table.h"
+#include "values-private.h"
 
 #define READ_ROLE "READ"
 #define WRITE_ROLE "WRITE"
@@ -119,13 +118,13 @@ int RoutingTable_update(struct RoutingTable* table, struct BoltValue* response)
                         address_value->size);
 
                 if (strcmp(role, READ_ROLE)==0) {
-                    BoltAddressSet_add(readers, *address);
+                    BoltAddressSet_add(readers, address);
                 }
                 else if (strcmp(role, WRITE_ROLE)==0) {
-                    BoltAddressSet_add(writers, *address);
+                    BoltAddressSet_add(writers, address);
                 }
                 else if (strcmp(role, ROUTE_ROLE)==0) {
-                    BoltAddressSet_add(routers, *address);
+                    BoltAddressSet_add(routers, address);
                 }
                 else {
                     status = BOLT_ROUTING_UNEXPECTED_DISCOVERY_RESPONSE;
@@ -151,21 +150,21 @@ int RoutingTable_update(struct RoutingTable* table, struct BoltValue* response)
     return status;
 }
 
-int RoutingTable_is_expired(struct RoutingTable* state, enum BoltAccessMode mode)
+int RoutingTable_is_expired(struct RoutingTable* state, BoltAccessMode mode)
 {
     return state->routers->size==0
             || (mode==BOLT_ACCESS_MODE_READ ? state->readers->size==0 : state->writers->size==0)
             || state->expires<=BoltUtil_get_time_ms();
 }
 
-void RoutingTable_forget_server(struct RoutingTable* state, struct BoltAddress address)
+void RoutingTable_forget_server(struct RoutingTable* state, const struct BoltAddress* address)
 {
     BoltAddressSet_remove(state->routers, address);
     BoltAddressSet_remove(state->readers, address);
     BoltAddressSet_remove(state->writers, address);
 }
 
-void RoutingTable_forget_writer(struct RoutingTable* state, struct BoltAddress address)
+void RoutingTable_forget_writer(struct RoutingTable* state, const struct BoltAddress* address)
 {
     BoltAddressSet_remove(state->writers, address);
 }

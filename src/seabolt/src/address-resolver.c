@@ -17,26 +17,34 @@
  * limitations under the License.
  */
 
-#include "config-impl.h"
-#include "address-resolver.h"
+#include "bolt-private.h"
+#include "address-resolver-private.h"
 #include "mem.h"
 
-struct BoltAddressResolver* BoltAddressResolver_create()
+BoltAddressResolver* BoltAddressResolver_create(int state, address_resolver_func resolver_func)
 {
-    struct BoltAddressResolver* resolver = (struct BoltAddressResolver*) BoltMem_allocate(
-            sizeof(struct BoltAddressResolver));
-    resolver->state = 0;
-    resolver->resolver = NULL;
+    BoltAddressResolver* resolver = (struct BoltAddressResolver*) BoltMem_allocate(sizeof(BoltAddressResolver));
+    resolver->state = state;
+    resolver->resolver = resolver_func;
     return resolver;
 }
 
-void BoltAddressResolver_destroy(struct BoltAddressResolver* resolver)
+BoltAddressResolver* BoltAddressResolver_clone(BoltAddressResolver* resolver)
 {
-    BoltMem_deallocate(resolver, sizeof(struct BoltAddressResolver));
+    if (resolver==NULL) {
+        return NULL;
+    }
+
+    BoltAddressResolver* clone = BoltAddressResolver_create(resolver->state, resolver->resolver);
+    return clone;
 }
 
-void BoltAddressResolver_resolve(struct BoltAddressResolver* resolver, struct BoltAddress* address,
-        struct BoltAddressSet* resolved)
+void BoltAddressResolver_destroy(BoltAddressResolver* resolver)
+{
+    BoltMem_deallocate(resolver, sizeof(BoltAddressResolver));
+}
+
+void BoltAddressResolver_resolve(BoltAddressResolver* resolver, BoltAddress* address, struct BoltAddressSet* resolved)
 {
     if (resolver!=NULL && resolver->resolver!=NULL) {
         resolver->resolver(resolver->state, address, resolved);

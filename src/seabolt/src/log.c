@@ -18,18 +18,16 @@
  */
 
 
-#include <stdarg.h>
-#include <stdlib.h>
-
-#include "logging.h"
+#include "bolt-private.h"
+#include "log-private.h"
 #include "mem.h"
-#include "v1.h"
 #include "string-builder.h"
+#include "values-private.h"
 
-struct BoltLog* BoltLog_create()
+struct BoltLog* BoltLog_create(int state)
 {
     struct BoltLog* log = (struct BoltLog*) BoltMem_allocate(sizeof(struct BoltLog));
-    log->state = 0;
+    log->state = state;
     log->debug_logger = NULL;
     log->info_logger = NULL;
     log->warning_logger = NULL;
@@ -41,9 +39,51 @@ struct BoltLog* BoltLog_create()
     return log;
 }
 
+BoltLog* BoltLog_clone(BoltLog* log)
+{
+    if (log==NULL) {
+        return NULL;
+    }
+
+    BoltLog* clone = BoltLog_create(log->state);
+    clone->debug_logger = log->debug_logger;
+    clone->debug_enabled = log->debug_enabled;
+    clone->info_logger = log->info_logger;
+    clone->info_enabled = log->info_enabled;
+    clone->warning_logger = log->warning_logger;
+    clone->warning_enabled = log->warning_enabled;
+    clone->error_logger = log->error_logger;
+    clone->error_enabled = log->error_enabled;
+    return clone;
+}
+
 void BoltLog_destroy(struct BoltLog* log)
 {
     BoltMem_deallocate(log, sizeof(struct BoltLog));
+}
+
+void BoltLog_set_error_func(BoltLog* log, log_func func)
+{
+    log->error_enabled = func!=NULL;
+    log->error_logger = func;
+}
+
+void BoltLog_set_warning_func(BoltLog* log, log_func func)
+{
+    log->warning_enabled = func!=NULL;
+    log->warning_logger = func;
+}
+
+void BoltLog_set_info_func(BoltLog* log, log_func func)
+{
+    log->info_enabled = func!=NULL;
+    log->info_logger = func;
+}
+
+void BoltLog_set_debug_func(BoltLog* log, log_func func)
+{
+    log->debug_enabled = func!=NULL;
+    log->debug_logger = func;
 }
 
 void _perform_log_call(log_func func, int state, const char* format, va_list args)
@@ -123,7 +163,7 @@ BoltLog_value(const struct BoltLog* log, const char* format, const char* id, str
     }
 }
 
-void BoltLog_message(const struct BoltLog* log, const char* id, const char* peer, bolt_request request_id, int16_t code,
+void BoltLog_message(const struct BoltLog* log, const char* id, const char* peer, BoltRequest request_id, int16_t code,
         struct BoltValue* fields, name_resolver_func struct_name_resolver, name_resolver_func message_name_resolver)
 {
     if (log!=NULL && log->debug_enabled) {

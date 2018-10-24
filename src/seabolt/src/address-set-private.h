@@ -16,31 +16,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef SEABOLT_BOLT_H
-#define SEABOLT_BOLT_H
+#ifndef SEABOLT_ADDRESS_SET_PRIVATE_H
+#define SEABOLT_ADDRESS_SET_PRIVATE_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include "address-set.h"
 
-#include "bolt-public.h"
+struct BoltAddressSet {
+    int size;
+    struct BoltAddress** elements;
+};
 
-#include "address.h"
-#include "address-resolver.h"
-#include "auth.h"
-#include "config.h"
-#include "connector.h"
-#include "connection.h"
-#include "error.h"
-#include "lifecycle.h"
-#include "log.h"
-#include "stats.h"
-#include "status.h"
-#include "values.h"
+#define SIZE_OF_ADDRESS_SET sizeof(struct BoltAddressSet)
+#define SIZE_OF_ADDRESS_SET_PTR sizeof(struct BoltAddressSet*)
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif //SEABOLT_BOLT_H
+#endif //SEABOLT_ADDRESS_SET_PRIVATE_H

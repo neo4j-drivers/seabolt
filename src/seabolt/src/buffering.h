@@ -24,24 +24,17 @@
 #ifndef SEABOLT_BUFFERING
 #define SEABOLT_BUFFERING
 
-
-#include "config.h"
-
-#include <stddef.h>
-#include <stdint.h>
-
+#include "bolt-public.h"
 
 /**
  * General purpose data buffer.
  */
-struct BoltBuffer
-{
+typedef struct BoltBuffer {
     int size;
     int extent;
     int cursor;
-    char * data;
-};
-
+    char* data;
+} BoltBuffer;
 
 /**
  * Create a buffer.
@@ -49,21 +42,21 @@ struct BoltBuffer
  * @param size
  * @return
  */
-struct BoltBuffer * BoltBuffer_create(int size);
+BoltBuffer* BoltBuffer_create(int size);
 
 /**
  * Destroy a buffer.
  *
  * @param buffer
  */
-void BoltBuffer_destroy(struct BoltBuffer * buffer);
+void BoltBuffer_destroy(BoltBuffer* buffer);
 
 /**
  * Compact a buffer by removing unused space.
  *
  * @param buffer
  */
-void BoltBuffer_compact(struct BoltBuffer * buffer);
+void BoltBuffer_compact(BoltBuffer* buffer);
 
 /**
  * Return the amount of loadable space in a buffer, in bytes.
@@ -71,7 +64,7 @@ void BoltBuffer_compact(struct BoltBuffer * buffer);
  * @param buffer
  * @return
  */
-int BoltBuffer_loadable(struct BoltBuffer * buffer);
+int BoltBuffer_loadable(BoltBuffer* buffer);
 
 /**
  * Allocate space in a buffer for loading data and return a pointer to that space.
@@ -80,7 +73,7 @@ int BoltBuffer_loadable(struct BoltBuffer * buffer);
  * @param size
  * @return
  */
-char * BoltBuffer_load_pointer(struct BoltBuffer * buffer, int size);
+char* BoltBuffer_load_pointer(BoltBuffer* buffer, int size);
 
 /**
  * Load data into a buffer.
@@ -89,7 +82,7 @@ char * BoltBuffer_load_pointer(struct BoltBuffer * buffer, int size);
  * @param data
  * @param size
  */
-void BoltBuffer_load(struct BoltBuffer * buffer, const char * data, int size);
+void BoltBuffer_load(BoltBuffer* buffer, const char* data, int size);
 
 /**
  * Load an unsigned 8-bit integer into a buffer.
@@ -97,7 +90,7 @@ void BoltBuffer_load(struct BoltBuffer * buffer, const char * data, int size);
  * @param buffer
  * @param x
  */
-void BoltBuffer_load_u8(struct BoltBuffer * buffer, uint8_t x);
+void BoltBuffer_load_u8(BoltBuffer* buffer, uint8_t x);
 
 /**
  * Load an unsigned 16-bit integer (big-endian) into a buffer.
@@ -105,7 +98,7 @@ void BoltBuffer_load_u8(struct BoltBuffer * buffer, uint8_t x);
  * @param buffer
  * @param x
  */
-void BoltBuffer_load_u16be(struct BoltBuffer * buffer, uint16_t x);
+void BoltBuffer_load_u16be(BoltBuffer* buffer, uint16_t x);
 
 /**
  * Load a signed 8-bit integer into a buffer.
@@ -113,7 +106,7 @@ void BoltBuffer_load_u16be(struct BoltBuffer * buffer, uint16_t x);
  * @param buffer
  * @param x
  */
-void BoltBuffer_load_i8(struct BoltBuffer * buffer, int8_t x);
+void BoltBuffer_load_i8(BoltBuffer* buffer, int8_t x);
 
 /**
  * Load a signed 16-bit integer (big-endian) into a buffer.
@@ -121,7 +114,7 @@ void BoltBuffer_load_i8(struct BoltBuffer * buffer, int8_t x);
  * @param buffer
  * @param x
  */
-void BoltBuffer_load_i16be(struct BoltBuffer * buffer, int16_t x);
+void BoltBuffer_load_i16be(BoltBuffer* buffer, int16_t x);
 
 /**
  * Load a signed 32-bit integer (big-endian) into a buffer.
@@ -129,7 +122,7 @@ void BoltBuffer_load_i16be(struct BoltBuffer * buffer, int16_t x);
  * @param buffer
  * @param x
  */
-void BoltBuffer_load_i32be(struct BoltBuffer * buffer, int32_t x);
+void BoltBuffer_load_i32be(BoltBuffer* buffer, int32_t x);
 
 /**
  * Load a signed 64-bit integer (big-endian) into a buffer.
@@ -137,7 +130,7 @@ void BoltBuffer_load_i32be(struct BoltBuffer * buffer, int32_t x);
  * @param buffer
  * @param x
  */
-void BoltBuffer_load_i64be(struct BoltBuffer * buffer, int64_t x);
+void BoltBuffer_load_i64be(BoltBuffer* buffer, int64_t x);
 
 /**
  * Load a double precision floating point number (big-endian) into a buffer.
@@ -145,7 +138,7 @@ void BoltBuffer_load_i64be(struct BoltBuffer * buffer, int64_t x);
  * @param buffer
  * @param x
  */
-void BoltBuffer_load_f64be(struct BoltBuffer * buffer, double x);
+void BoltBuffer_load_f64be(BoltBuffer* buffer, double x);
 
 /**
  * Return the amount of unloadable data in a buffer, in bytes.
@@ -153,7 +146,7 @@ void BoltBuffer_load_f64be(struct BoltBuffer * buffer, double x);
  * @param buffer
  * @return
  */
-int BoltBuffer_unloadable(struct BoltBuffer * buffer);
+int BoltBuffer_unloadable(BoltBuffer* buffer);
 
 /**
  * Mark data in a buffer for unloading and return a pointer to that data.
@@ -162,7 +155,7 @@ int BoltBuffer_unloadable(struct BoltBuffer * buffer);
  * @param size
  * @return
  */
-char * BoltBuffer_unload_pointer(struct BoltBuffer * buffer, int size);
+char* BoltBuffer_unload_pointer(BoltBuffer* buffer, int size);
 
 /**
  * Unload data from a buffer.
@@ -172,7 +165,7 @@ char * BoltBuffer_unload_pointer(struct BoltBuffer * buffer, int size);
  * @param size
  * @return
  */
-int BoltBuffer_unload(struct BoltBuffer * buffer, char * data, int size);
+int BoltBuffer_unload(BoltBuffer* buffer, char* data, int size);
 
 /**
  * Return the next unloadable byte in a buffer as an unsigned 8-bit integer.
@@ -181,7 +174,7 @@ int BoltBuffer_unload(struct BoltBuffer * buffer, char * data, int size);
  * @param x
  * @return
  */
-int BoltBuffer_peek_u8(struct BoltBuffer * buffer, uint8_t * x);
+int BoltBuffer_peek_u8(BoltBuffer* buffer, uint8_t* x);
 
 /**
  * Unload an unsigned 8-bit integer from a buffer.
@@ -190,8 +183,7 @@ int BoltBuffer_peek_u8(struct BoltBuffer * buffer, uint8_t * x);
  * @param x
  * @return
  */
-int BoltBuffer_unload_u8(struct BoltBuffer * buffer, uint8_t * x);
-
+int BoltBuffer_unload_u8(BoltBuffer* buffer, uint8_t* x);
 
 /**
  * Unload an unsigned 16-bit integer (big endian) from a buffer.
@@ -200,7 +192,7 @@ int BoltBuffer_unload_u8(struct BoltBuffer * buffer, uint8_t * x);
  * @param x
  * @return
  */
-int BoltBuffer_unload_u16be(struct BoltBuffer * buffer, uint16_t * x);
+int BoltBuffer_unload_u16be(BoltBuffer* buffer, uint16_t* x);
 
 /**
  * Unload a signed 8-bit integer from a buffer.
@@ -209,7 +201,7 @@ int BoltBuffer_unload_u16be(struct BoltBuffer * buffer, uint16_t * x);
  * @param x
  * @return
  */
-int BoltBuffer_unload_i8(struct BoltBuffer * buffer, int8_t * x);
+int BoltBuffer_unload_i8(BoltBuffer* buffer, int8_t* x);
 
 /**
  * Unload a signed 16-bit integer (big endian) from a buffer.
@@ -218,7 +210,7 @@ int BoltBuffer_unload_i8(struct BoltBuffer * buffer, int8_t * x);
  * @param x
  * @return
  */
-int BoltBuffer_unload_i16be(struct BoltBuffer * buffer, int16_t * x);
+int BoltBuffer_unload_i16be(BoltBuffer* buffer, int16_t* x);
 
 /**
  * Unload a signed 32-bit integer (big endian) from a buffer.
@@ -227,7 +219,7 @@ int BoltBuffer_unload_i16be(struct BoltBuffer * buffer, int16_t * x);
  * @param x
  * @return
  */
-int BoltBuffer_unload_i32be(struct BoltBuffer * buffer, int32_t * x);
+int BoltBuffer_unload_i32be(BoltBuffer* buffer, int32_t* x);
 
 /**
  * Unload a signed 64-bit integer (big endian) from a buffer.
@@ -236,7 +228,7 @@ int BoltBuffer_unload_i32be(struct BoltBuffer * buffer, int32_t * x);
  * @param x
  * @return
  */
-int BoltBuffer_unload_i64be(struct BoltBuffer * buffer, int64_t * x);
+int BoltBuffer_unload_i64be(BoltBuffer* buffer, int64_t* x);
 
 /**
  * Unload a double precision floating point number (big endian) from a buffer.
@@ -245,7 +237,6 @@ int BoltBuffer_unload_i64be(struct BoltBuffer * buffer, int64_t * x);
  * @param x
  * @return
  */
-int BoltBuffer_unload_f64be(struct BoltBuffer * buffer, double * x);
-
+int BoltBuffer_unload_f64be(BoltBuffer* buffer, double* x);
 
 #endif // SEABOLT_BUFFERING

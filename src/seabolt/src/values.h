@@ -28,33 +28,11 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "config.h"
+#include "bolt-public.h"
 
 #if CHAR_BIT!=8
 #error "Cannot compile if `char` is not 8-bit"
 #endif
-
-static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
-                                  '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-
-#define hex5(mem, offset) HEX_DIGITS[((mem)[offset] >> 20) & 0x0F]
-
-#define hex4(mem, offset) HEX_DIGITS[((mem)[offset] >> 16) & 0x0F]
-
-#define hex3(mem, offset) HEX_DIGITS[((mem)[offset] >> 12) & 0x0F]
-
-#define hex2(mem, offset) HEX_DIGITS[((mem)[offset] >> 8) & 0x0F]
-
-#define hex1(mem, offset) HEX_DIGITS[((mem)[offset] >> 4) & 0x0F]
-
-#define hex0(mem, offset) HEX_DIGITS[(mem)[offset] & 0x0F]
-
-#define sizeof_n(type, n) (size_t)((n) >= 0 ? sizeof(type) * (n) : 0)
-
-#define to_bit(x) (char)((x) == 0 ? 0 : 1);
-
-struct BoltValue;
-struct StringBuilder;
 
 /**
  * Enumeration of the types available in the Bolt type system.
@@ -72,15 +50,6 @@ enum BoltType {
 };
 
 /**
- * For holding extended values that exceed the size of a single BoltValue.
- */
-union BoltExtendedValue {
-    void* as_ptr;
-    char* as_char;
-    struct BoltValue* as_value;
-};
-
-/**
  * A BoltValue consists of a 128-bit header followed by a 128-byte data block. For
  * values that require more space than 128 bits, external memory is allocated and
  * a pointer to this is held in the inline data field.
@@ -94,37 +63,7 @@ union BoltExtendedValue {
  * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
  * ```
  */
-struct BoltValue {
-    /// Type of this value, as defined in BoltType.
-    int16_t type;
-
-    /// Subtype tag, for use with Structure values.
-    int16_t subtype;
-
-    /// Logical size of this value.
-    /// For portability between platforms, the logical
-    /// size of a value (e.g. string length or list size)
-    /// cannot exceed 2^31, therefore an int32_t is safe
-    /// here.
-    int32_t size;
-
-    /// Physical size of this value, in bytes.
-    uint64_t data_size;
-
-    /// Data content of the value, or a pointer to
-    /// extended content.
-    union {
-        char as_char[16];
-        uint32_t as_uint32[4];
-        int8_t as_int8[16];
-        int16_t as_int16[8];
-        int32_t as_int32[4];
-        int64_t as_int64[2];
-        double as_double[2];
-        union BoltExtendedValue extended;
-    } data;
-
-};
+typedef struct BoltValue BoltValue;
 
 typedef const char* (* name_resolver_func)(int16_t code);
 
@@ -160,6 +99,14 @@ SEABOLT_EXPORT struct BoltValue* BoltValue_duplicate(const struct BoltValue* val
 SEABOLT_EXPORT void BoltValue_copy(struct BoltValue* dest, const struct BoltValue* src);
 
 /**
+ * Return the size of a BoltValue.
+ *
+ * @param value
+ * @return
+ */
+SEABOLT_EXPORT int32_t BoltValue_size(const struct BoltValue* value);
+
+/**
  * Return the type of a BoltValue.
  *
  * @param value
@@ -167,17 +114,7 @@ SEABOLT_EXPORT void BoltValue_copy(struct BoltValue* dest, const struct BoltValu
  */
 SEABOLT_EXPORT enum BoltType BoltValue_type(const struct BoltValue* value);
 
-/**
- * Write a textual representation of a BoltValue to a FILE.
- *
- * @param value
- * @param file
- * @param protocol_version
- * @return
- */
-SEABOLT_EXPORT int
-BoltValue_write(struct StringBuilder* builder, struct BoltValue* value, name_resolver_func struct_name_resolver);
-
+SEABOLT_EXPORT int32_t BoltValue_string(const struct BoltValue* value, char *dest, int32_t length, struct BoltConnection* connection);
 /**
  * Set a BoltValue instance to null.
  *
@@ -201,8 +138,6 @@ SEABOLT_EXPORT void BoltValue_format_as_String(struct BoltValue* value, const ch
 
 SEABOLT_EXPORT char* BoltString_get(const struct BoltValue* value);
 
-SEABOLT_EXPORT int BoltString_equals(struct BoltValue* value, const char* data, const size_t data_size);
-
 SEABOLT_EXPORT void BoltValue_format_as_Dictionary(struct BoltValue* value, int32_t length);
 
 SEABOLT_EXPORT struct BoltValue* BoltDictionary_key(const struct BoltValue* value, int32_t index);
@@ -219,7 +154,6 @@ SEABOLT_EXPORT int BoltDictionary_set_key(struct BoltValue* value, int32_t index
 SEABOLT_EXPORT struct BoltValue* BoltDictionary_value(const struct BoltValue* value, int32_t index);
 
 SEABOLT_EXPORT struct BoltValue* BoltDictionary_value_by_key(const struct BoltValue* value, const char* key, size_t key_size);
-
 
 /**
  * Format a BoltValue instance to hold a list.
