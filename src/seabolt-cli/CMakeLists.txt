@@ -6,4 +6,4 @@ target_sources(seabolt-cli
 
 target_link_libraries(seabolt-cli
         PRIVATE
-        ${SEABOLT_SHARED})
+        ${SEABOLT_STATIC})

@@ -48,7 +48,21 @@ target_sources(${SEABOLT_SHARED}
         PRIVATE
         ${private_source_files})
 
+target_sources(${SEABOLT_STATIC}
+        PRIVATE
+        ${private_source_files})
+
 target_compile_definitions(${SEABOLT_SHARED}
+        PUBLIC
+        IS_BIG_ENDIAN=$<BOOL:${IS_BIG_ENDIAN}>
+        USE_WINSOCK=$<BOOL:${ON_WINDOWS}>
+        USE_POSIXSOCK=$<BOOL:${ON_POSIX}>
+        USE_WINSSPI=$<BOOL:${WITH_TLS_SECURE_CHANNEL}>
+        USE_OPENSSL=$<BOOL:${WITH_TLS_OPENSSL}>
+        INTERFACE
+        $<INSTALL_INTERFACE:USING_seabolt>)
+
+target_compile_definitions(${SEABOLT_STATIC}
         PUBLIC
         IS_BIG_ENDIAN=$<BOOL:${IS_BIG_ENDIAN}>
         USE_WINSOCK=$<BOOL:${ON_WINDOWS}>
@@ -62,6 +76,10 @@ if (ON_POSIX)
     set(CMAKE_THREAD_PREFER_PTHREAD ON)
     find_package(Threads REQUIRED)
     target_link_libraries(${SEABOLT_SHARED}
+            PUBLIC
+            pthread)
+
+    target_link_libraries(${SEABOLT_STATIC}
             PUBLIC
             pthread)
 endif ()
@@ -79,6 +97,12 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
             PUBLIC
             ${OPENSSL_SHARED_LIBRARIES}
             ${CMAKE_DL_LIBS})
+
+    target_link_libraries(${SEABOLT_STATIC}
+            PUBLIC
+            ${OPENSSL_STATIC_LIBRARIES}
+            ${CMAKE_DL_LIBS})
+
     if (ON_WINDOWS)
         target_link_libraries(${SEABOLT_SHARED}
                 PUBLIC
@@ -86,6 +110,10 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
     endif ()
 
     target_include_directories(${SEABOLT_SHARED}
+            PRIVATE
+            ${OPENSSL_SHARED_INCLUDE_DIR})
+
+    target_include_directories(${SEABOLT_STATIC}
             PRIVATE
             ${OPENSSL_SHARED_INCLUDE_DIR})
 endif ()
@@ -124,7 +152,17 @@ generate_export_header(${SEABOLT_SHARED}
         BASE_NAME seabolt
         EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-exports.h"
         DEFINE_NO_DEPRECATED)
+set_target_properties(${SEABOLT_STATIC}
+        PROPERTIES
+        COMPILE_FLAGS -DLIBSHARED_AND_STATIC_STATIC_DEFINE)
+
 target_include_directories(${SEABOLT_SHARED}
+        PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt>
+        $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>)
+
+target_include_directories(${SEABOLT_STATIC}
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
         $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt>
@@ -139,3 +177,11 @@ set_target_properties(${SEABOLT_SHARED}
         OUTPUT_NAME "${SEABOLT_NAME}"
         PUBLIC_HEADER "${public_header_files};${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-exports.h;${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-version.h"
         WINDOWS_EXPORT_ALL_SYMBOLS OFF)
+
+set_target_properties(${SEABOLT_STATIC}
+        PROPERTIES
+        POSITION_INDEPENDENT_CODE 1
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN 1
+        OUTPUT_NAME "${SEABOLT_STATIC_NAME}"
+        PUBLIC_HEADER "${public_header_files};${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-exports.h;${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-version.h")

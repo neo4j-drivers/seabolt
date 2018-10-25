@@ -110,6 +110,7 @@ include(InstallRequiredSystemLibraries)
 install(
         TARGETS
         ${SEABOLT_SHARED}
+        ${SEABOLT_STATIC}
         EXPORT
         ${SEABOLT_NAME}Targets
         ARCHIVE

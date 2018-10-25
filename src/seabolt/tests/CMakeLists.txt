@@ -16,7 +16,7 @@ target_include_directories(seabolt-test
 
 target_link_libraries(seabolt-test
         PRIVATE
-        ${SEABOLT_SHARED}
+        ${SEABOLT_STATIC}
         catch2)
 
 include(ParseAndAddCatchTests)
