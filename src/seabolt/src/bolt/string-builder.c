@@ -49,7 +49,7 @@ void StringBuilder_ensure_buffer(struct StringBuilder* builder, int size_to_add)
 
 void StringBuilder_append(struct StringBuilder* builder, const char* string)
 {
-    StringBuilder_append_n(builder, string, (int)SIZE_OF_C_STRING(string));
+    StringBuilder_append_n(builder, string, (int)strlen(string));
 }
 
 void StringBuilder_append_n(struct StringBuilder* builder, const char* string, const int len)
