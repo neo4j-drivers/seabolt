@@ -88,6 +88,9 @@ if (ON_WINDOWS)
     target_link_libraries(${SEABOLT_SHARED}
             PUBLIC
             ws2_32)
+    target_link_libraries(${SEABOLT_STATIC}
+            PUBLIC
+            ws2_32)
 endif ()
 
 if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
@@ -100,11 +103,14 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
 
     target_link_libraries(${SEABOLT_STATIC}
             PUBLIC
-            ${OPENSSL_STATIC_LIBRARIES}
-            ${CMAKE_DL_LIBS})
+            ${OPENSSL_STATIC_LIBRARIES})
 
     if (ON_WINDOWS)
         target_link_libraries(${SEABOLT_SHARED}
+                PUBLIC
+                crypt32)
+
+        target_link_libraries(${SEABOLT_STATIC}
                 PUBLIC
                 crypt32)
     endif ()
@@ -152,9 +158,9 @@ generate_export_header(${SEABOLT_SHARED}
         BASE_NAME seabolt
         EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-exports.h"
         DEFINE_NO_DEPRECATED)
-set_target_properties(${SEABOLT_STATIC}
-        PROPERTIES
-        COMPILE_FLAGS -DLIBSHARED_AND_STATIC_STATIC_DEFINE)
+target_compile_definitions(${SEABOLT_STATIC}
+        PUBLIC
+        SEABOLT_STATIC_DEFINE)
 
 target_include_directories(${SEABOLT_SHARED}
         PUBLIC
