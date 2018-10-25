@@ -91,6 +91,12 @@ if (ON_WINDOWS)
     target_link_libraries(${SEABOLT_STATIC}
             PUBLIC
             ws2_32)
+
+	if (MSVC)
+    target_link_libraries(${SEABOLT_STATIC}
+            PUBLIC
+            legacy_stdio_definitions)
+	endif()
 endif ()
 
 if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
