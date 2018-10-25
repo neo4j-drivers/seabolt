@@ -122,7 +122,7 @@ install(
         DESTINATION ${INSTALL_LIBDIR}
         COMPONENT lib
         PUBLIC_HEADER
-        DESTINATION ${INSTALL_INCLUDEDIR}
+        DESTINATION ${INSTALL_INCLUDEDIR}/bolt
         COMPONENT dev)
 
 install(

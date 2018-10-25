@@ -28,7 +28,7 @@ list(APPEND private_source_files
         ${CMAKE_CURRENT_LIST_DIR}/bolt/values.c)
 
 list(APPEND public_header_files
-        ${CMAKE_CURRENT_LIST_DIR}/bolt.h
+        ${CMAKE_CURRENT_LIST_DIR}/bolt/bolt.h
         ${CMAKE_CURRENT_LIST_DIR}/bolt/address.h
         ${CMAKE_CURRENT_LIST_DIR}/bolt/address-set.h
         ${CMAKE_CURRENT_LIST_DIR}/bolt/address-resolver.h
