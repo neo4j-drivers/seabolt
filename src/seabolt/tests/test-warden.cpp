@@ -18,12 +18,10 @@
  */
 
 #include "catch.hpp"
+#include "integration.hpp"
 
 extern "C" {
-#include <string.h>
-#include <memory.h>
-#include <stdint.h>
-#include "mem.h"
+#include "bolt/mem.h"
 }
 
 SCENARIO("Test BoltMem_reverse_copy against memcpy")

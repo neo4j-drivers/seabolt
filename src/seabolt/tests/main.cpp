@@ -21,10 +21,7 @@
 #define CATCH_CONFIG_RUNNER  // This tells Catch to provide a main()
 
 #include "catch.hpp"
-
-extern "C" {
-#include "lifecycle.h"
-}
+#include "integration.hpp"
 
 int main(int argc, char* argv[])
 {

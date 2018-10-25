@@ -18,10 +18,15 @@
  */
 
 #include "catch.hpp"
-#include "bolt.h"
+#include "integration.hpp"
 
 SCENARIO("BoltAddressSet")
 {
+    struct BoltAddress* localhost7687 = BoltAddress_create("localhost", "7687");
+    struct BoltAddress* localhost7688 = BoltAddress_create("localhost", "7688");
+    struct BoltAddress* localhost7689 = BoltAddress_create("localhost", "7689");
+    struct BoltAddress* localhost7690 = BoltAddress_create("localhost", "7690");
+
     WHEN("constructed") {
         struct BoltAddressSet* set = BoltAddressSet_create();
 
@@ -42,47 +47,47 @@ SCENARIO("BoltAddressSet")
         struct BoltAddressSet* set = BoltAddressSet_create();
 
         WHEN("BoltAddress[localhost,7687] is added") {
-            BoltAddressSet_add(set, BoltAddress_of("localhost", "7687"));
+            BoltAddressSet_add(set, localhost7687);
 
             THEN("it should have size = 1") {
                 REQUIRE(BoltAddressSet_size(set)==1);
             }
 
             THEN("it should report index of = 0") {
-                REQUIRE(BoltAddressSet_index_of(set, BoltAddress_of("localhost", "7687"))==0);
+                REQUIRE(BoltAddressSet_index_of(set, localhost7687)==0);
             }
         }
 
         WHEN("BoltAddress[localhost,7687] is added again") {
-            BoltAddressSet_add(set, BoltAddress_of("localhost", "7687"));
+            BoltAddressSet_add(set, localhost7687);
 
             THEN("it should have size = 1") {
                 REQUIRE(BoltAddressSet_size(set)==1);
             }
 
             THEN("it should report index of = 0") {
-                REQUIRE(BoltAddressSet_index_of(set, BoltAddress_of("localhost", "7687"))==0);
+                REQUIRE(BoltAddressSet_index_of(set, localhost7687)==0);
             }
         }
 
         WHEN("BoltAddress[localhost,7687] and BoltAddress[localhost,7688] is added") {
-            BoltAddressSet_add(set, BoltAddress_of("localhost", "7687"));
-            BoltAddressSet_add(set, BoltAddress_of("localhost", "7688"));
+            BoltAddressSet_add(set, localhost7687);
+            BoltAddressSet_add(set, localhost7688);
 
             THEN("it should have size = 2") {
                 REQUIRE(BoltAddressSet_size(set)==2);
             }
 
             THEN("it should report index of BoltAddress[localhost,7687] = 0") {
-                REQUIRE(BoltAddressSet_index_of(set, BoltAddress_of("localhost", "7687"))==0);
+                REQUIRE(BoltAddressSet_index_of(set, localhost7687)==0);
             }
 
             THEN("it should report index of BoltAddress[localhost,7688] = 1") {
-                REQUIRE(BoltAddressSet_index_of(set, BoltAddress_of("localhost", "7688"))==1);
+                REQUIRE(BoltAddressSet_index_of(set, localhost7688)==1);
             }
 
             THEN("it should report index of BoltAddress[localhost,7689] = -1") {
-                REQUIRE(BoltAddressSet_index_of(set, BoltAddress_of("localhost", "7689"))==-1);
+                REQUIRE(BoltAddressSet_index_of(set, localhost7689)==-1);
             }
         }
 
@@ -92,30 +97,30 @@ SCENARIO("BoltAddressSet")
     GIVEN("A BoltAddressSet with 3 addresses") {
         struct BoltAddressSet* set = BoltAddressSet_create();
 
-        BoltAddressSet_add(set, BoltAddress_of("localhost", "7687"));
-        BoltAddressSet_add(set, BoltAddress_of("localhost", "7688"));
-        BoltAddressSet_add(set, BoltAddress_of("localhost", "7689"));
+        BoltAddressSet_add(set, localhost7687);
+        BoltAddressSet_add(set, localhost7688);
+        BoltAddressSet_add(set, localhost7689);
 
         WHEN("index of BoltAddress[localhost,7689] is queried") {
             THEN("it should report = 2") {
-                REQUIRE(BoltAddressSet_index_of(set, BoltAddress_of("localhost", "7689"))==2);
+                REQUIRE(BoltAddressSet_index_of(set, localhost7689)==2);
             }
         }
 
         WHEN("index of BoltAddress[localhost,7690] is queried") {
             THEN("it should report = -1") {
-                REQUIRE(BoltAddressSet_index_of(set, BoltAddress_of("localhost", "7690"))==-1);
+                REQUIRE(BoltAddressSet_index_of(set, localhost7690)==-1);
             }
         }
 
         WHEN("BoltAddress[localhost,7689] is added again") {
             THEN("it should return -1") {
-                REQUIRE(BoltAddressSet_add(set, BoltAddress_of("localhost", "7689"))==-1);
+                REQUIRE(BoltAddressSet_add(set, localhost7689)==-1);
             }
         }
 
         WHEN("BoltAddress[localhost,7689] is removed") {
-            REQUIRE(BoltAddressSet_remove(set, BoltAddress_of("localhost", "7689"))==2);
+            REQUIRE(BoltAddressSet_remove(set, localhost7689)==2);
 
             THEN("it should have size = 2") {
                 REQUIRE(BoltAddressSet_size(set)==2);
@@ -123,7 +128,7 @@ SCENARIO("BoltAddressSet")
 
             AND_WHEN("BoltAddress[localhost,7689] is removed again") {
                 THEN("it should return -1") {
-                    REQUIRE(BoltAddressSet_remove(set, BoltAddress_of("localhost", "7689"))==-1);
+                    REQUIRE(BoltAddressSet_remove(set, localhost7689)==-1);
                 }
 
                 THEN("it should have size = 2") {
@@ -137,11 +142,11 @@ SCENARIO("BoltAddressSet")
 
     GIVEN("Two different BoltAddressSets") {
         struct BoltAddressSet* set1 = BoltAddressSet_create();
-        REQUIRE(BoltAddressSet_add(set1, BoltAddress_of("localhost", "7687"))==0);
-        REQUIRE(BoltAddressSet_add(set1, BoltAddress_of("localhost", "7688"))==1);
+        REQUIRE(BoltAddressSet_add(set1, localhost7687)==0);
+        REQUIRE(BoltAddressSet_add(set1, localhost7688)==1);
 
         struct BoltAddressSet* set2 = BoltAddressSet_create();
-        REQUIRE(BoltAddressSet_add(set2, BoltAddress_of("localhost", "7689"))==0);
+        REQUIRE(BoltAddressSet_add(set2, localhost7689)==0);
 
         WHEN("set1 is updated from set2") {
             BoltAddressSet_replace(set1, set2);
@@ -151,27 +156,27 @@ SCENARIO("BoltAddressSet")
             }
 
             THEN("set1 should contain BoltAddress[localhost,7689]") {
-                REQUIRE(BoltAddressSet_index_of(set1, BoltAddress_of("localhost", "7689"))==0);
+                REQUIRE(BoltAddressSet_index_of(set1, localhost7689)==0);
             }
 
             THEN("set1 should not contain BoltAddress[localhost,7687]") {
-                REQUIRE(BoltAddressSet_index_of(set1, BoltAddress_of("localhost", "7687"))==-1);
+                REQUIRE(BoltAddressSet_index_of(set1, localhost7687)==-1);
             }
 
             THEN("set1 should not contain BoltAddress[localhost,7688]") {
-                REQUIRE(BoltAddressSet_index_of(set1, BoltAddress_of("localhost", "7688"))==-1);
+                REQUIRE(BoltAddressSet_index_of(set1, localhost7688)==-1);
             }
         }
     }
 
     GIVEN("Two different BoltAddressSets") {
         struct BoltAddressSet* set1 = BoltAddressSet_create();
-        REQUIRE(BoltAddressSet_add(set1, BoltAddress_of("localhost", "7689"))==0);
+        REQUIRE(BoltAddressSet_add(set1, localhost7689)==0);
 
         struct BoltAddressSet* set2 = BoltAddressSet_create();
-        REQUIRE(BoltAddressSet_add(set2, BoltAddress_of("localhost", "7687"))==0);
-        REQUIRE(BoltAddressSet_add(set2, BoltAddress_of("localhost", "7688"))==1);
-        REQUIRE(BoltAddressSet_add(set2, BoltAddress_of("localhost", "7689"))==2);
+        REQUIRE(BoltAddressSet_add(set2, localhost7687)==0);
+        REQUIRE(BoltAddressSet_add(set2, localhost7688)==1);
+        REQUIRE(BoltAddressSet_add(set2, localhost7689)==2);
 
         WHEN("set2 is added to set1") {
             BoltAddressSet_add_all(set1, set2);
@@ -181,16 +186,21 @@ SCENARIO("BoltAddressSet")
             }
 
             THEN("set1 should contain BoltAddress[localhost,7689]") {
-                REQUIRE(BoltAddressSet_index_of(set1, BoltAddress_of("localhost", "7689"))==0);
+                REQUIRE(BoltAddressSet_index_of(set1, localhost7689)==0);
             }
 
             THEN("set1 should not contain BoltAddress[localhost,7687]") {
-                REQUIRE(BoltAddressSet_index_of(set1, BoltAddress_of("localhost", "7687"))>=0);
+                REQUIRE(BoltAddressSet_index_of(set1, localhost7687)>=0);
             }
 
             THEN("set1 should not contain BoltAddress[localhost,7688]") {
-                REQUIRE(BoltAddressSet_index_of(set1, BoltAddress_of("localhost", "7688"))>=0);
+                REQUIRE(BoltAddressSet_index_of(set1, localhost7688)>=0);
             }
         }
     }
+
+    BoltAddress_destroy(localhost7687);
+    BoltAddress_destroy(localhost7688);
+    BoltAddress_destroy(localhost7689);
+    BoltAddress_destroy(localhost7690);
 }

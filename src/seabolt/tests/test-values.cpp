@@ -27,18 +27,18 @@ using Catch::Matchers::Equals;
 #define REQUIRE_BOLT_BOOLEAN(value, x) { REQUIRE(BoltValue_type(value) == BOLT_BOOLEAN); REQUIRE(BoltBoolean_get(value) == (x)); }
 #define REQUIRE_BOLT_INTEGER(value, x) { REQUIRE(BoltValue_type(value) == BOLT_INTEGER); REQUIRE(BoltInteger_get(value) == (x)); }
 #define REQUIRE_BOLT_FLOAT(value, x) { REQUIRE(BoltValue_type(value) == BOLT_FLOAT); REQUIRE( BoltFloat_get(value) == (x)); }
-#define REQUIRE_BOLT_STRING(value, x, size_) { REQUIRE(BoltValue_type(value) == BOLT_STRING); REQUIRE(strncmp(BoltString_get(value), x, size_) == 0); REQUIRE((value)->size == (size_)); }
-#define REQUIRE_BOLT_DICTIONARY(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_DICTIONARY); REQUIRE((value)->size == (size_)); }
-#define REQUIRE_BOLT_LIST(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_LIST); REQUIRE((value)->size == (size_)); }
-#define REQUIRE_BOLT_BYTES(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_BYTES); REQUIRE((value)->size == (size_)); }
-#define REQUIRE_BOLT_STRUCTURE(value, code, size_) { REQUIRE(BoltValue_type(value) == BOLT_STRUCTURE); REQUIRE(BoltStructure_code(value) == (code)); REQUIRE((value)->size == (size_)); }
+#define REQUIRE_BOLT_STRING(value, x, size_) { REQUIRE(BoltValue_type(value) == BOLT_STRING); REQUIRE(strncmp(BoltString_get(value), x, size_) == 0); REQUIRE(BoltValue_size(value) == (size_)); }
+#define REQUIRE_BOLT_DICTIONARY(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_DICTIONARY); REQUIRE(BoltValue_size(value) == (size_)); }
+#define REQUIRE_BOLT_LIST(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_LIST); REQUIRE(BoltValue_size(value) == (size_)); }
+#define REQUIRE_BOLT_BYTES(value, size_) { REQUIRE(BoltValue_type(value) == BOLT_BYTES); REQUIRE(BoltValue_size(value) == (size_)); }
+#define REQUIRE_BOLT_STRUCTURE(value, code, size_) { REQUIRE(BoltValue_type(value) == BOLT_STRUCTURE); REQUIRE(BoltStructure_code(value) == (code)); REQUIRE(BoltValue_size(value) == (size_)); }
 #define REQUIRE_BOLT_SUCCESS(connection) { REQUIRE(BoltConnection_summary_success(connection) == 1); }
 
 #define RUN_PULL_SEND(connection, result)\
     BoltConnection_load_run_request(connection);\
     BoltConnection_load_pull_request(connection, -1);\
     BoltConnection_send(connection);\
-    bolt_request (result) = BoltConnection_last_request(connection);
+    BoltRequest (result) = BoltConnection_last_request(connection);
 
 SCENARIO("Test null parameter", "[integration][ipv6][secure]")
 {
@@ -435,10 +435,10 @@ SCENARIO("Test structure in result", "[integration][ipv6][secure]")
             BoltConnection_set_run_cypher(connection, cypher, strlen(cypher), 0);
             BoltConnection_load_run_request(connection);
             BoltConnection_load_pull_request(connection, -1);
-            bolt_request result = BoltConnection_last_request(connection);
+            BoltRequest result = BoltConnection_last_request(connection);
             BoltConnection_load_rollback_request(connection);
             BoltConnection_send(connection);
-            bolt_request last = BoltConnection_last_request(connection);
+            BoltRequest last = BoltConnection_last_request(connection);
             while (BoltConnection_fetch(connection, result)) {
                 const struct BoltValue* field_values = BoltConnection_field_values(connection);
                 struct BoltValue* node = BoltList_value(field_values, 0);
