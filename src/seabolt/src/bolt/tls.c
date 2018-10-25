@@ -162,3 +162,13 @@ void free_ssl_context(SSL_CTX* ctx)
     SSL_CTX_free(ctx);
 }
 
+#if USE_WINSOCK && defined(SEABOLT_STATIC_DEFINE) && defined(_MSC_VER)
+FILE * __cdecl __iob_func(void)
+{
+	FILE* _iob = (FILE*)malloc(3 * sizeof(FILE));
+	_iob[0] = *stdin;
+	_iob[1] = *stdout;
+	_iob[2] = *stderr;
+	return _iob;
+}
+#endif
