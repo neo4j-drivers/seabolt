@@ -103,7 +103,8 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
 
     target_link_libraries(${SEABOLT_STATIC}
             PUBLIC
-            ${OPENSSL_STATIC_LIBRARIES})
+            ${OPENSSL_STATIC_LIBRARIES}
+            ${CMAKE_DL_LIBS})
 
     if (ON_WINDOWS)
         target_link_libraries(${SEABOLT_SHARED}
