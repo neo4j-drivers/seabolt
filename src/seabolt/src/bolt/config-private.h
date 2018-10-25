@@ -23,7 +23,7 @@
 
 struct BoltTrust {
     char* certs;
-    int32_t certs_len;
+	int certs_len;
     int skip_verify;
     int skip_verify_hostname;
 };

@@ -18,8 +18,7 @@
  */
 
 #include "catch.hpp"
-#include "bolt.h"
-#include "address-set-private.h"
+#include "integration.hpp"
 
 SCENARIO("BoltAddressSet")
 {

@@ -59,7 +59,7 @@ SEABOLT_EXPORT void BoltTrust_destroy(BoltTrust* trust);
 
 SEABOLT_EXPORT const char* BoltTrust_get_certs(BoltTrust* trust, size_t* size);
 
-SEABOLT_EXPORT int BoltTrust_set_certs(BoltTrust* trust, const char* certs_pem, size_t size);
+SEABOLT_EXPORT int BoltTrust_set_certs(BoltTrust* trust, const char* certs_pem, int certs_pem_size);
 
 SEABOLT_EXPORT int BoltTrust_get_skip_verify(BoltTrust* trust);
 

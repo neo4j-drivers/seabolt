@@ -17,11 +17,8 @@
  * limitations under the License.
  */
 
+#include "bolt-private.h"
 #include "string-builder.h"
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 struct StringBuilder* StringBuilder_create()
 {
@@ -39,23 +36,23 @@ void StringBuilder_destroy(struct StringBuilder* builder)
     free(builder);
 }
 
-void StringBuilder_ensure_buffer(struct StringBuilder* builder, int32_t size_to_add)
+void StringBuilder_ensure_buffer(struct StringBuilder* builder, int size_to_add)
 {
     if (builder->buffer_size-builder->buffer_pos>size_to_add) {
         return;
     }
 
-    size_t new_size = builder->buffer_pos+size_to_add;
+    int new_size = builder->buffer_pos+size_to_add;
     builder->buffer = (char*) realloc(builder->buffer, new_size);
     builder->buffer_size = new_size;
 }
 
 void StringBuilder_append(struct StringBuilder* builder, const char* string)
 {
-    StringBuilder_append_n(builder, string, strlen(string));
+    StringBuilder_append_n(builder, string, (int)SIZE_OF_C_STRING(string));
 }
 
-void StringBuilder_append_n(struct StringBuilder* builder, const char* string, const int32_t len)
+void StringBuilder_append_n(struct StringBuilder* builder, const char* string, const int len)
 {
     StringBuilder_ensure_buffer(builder, len+1);
     strncpy(builder->buffer+builder->buffer_pos, string, len);
@@ -90,7 +87,7 @@ char* StringBuilder_get_string(struct StringBuilder* builder)
     return builder->buffer;
 }
 
-int32_t StringBuilder_get_length(struct StringBuilder* builder)
+int StringBuilder_get_length(struct StringBuilder* builder)
 {
     return builder->buffer_pos;
 }

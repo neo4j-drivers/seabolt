@@ -25,15 +25,8 @@
 
 #include <inttypes.h>
 
-#include "auth.h"
-#include "connector.h"
-#include "connection.h"
-#include "lifecycle.h"
-#include "mem.h"
-#include "values.h"
-#include "platform.h"
-#include "log.h"
-#include "protocol.h"
+#include "bolt/bolt.h"
+#include "bolt/platform.h"
 
 #ifdef WIN32
 
@@ -144,7 +137,7 @@ struct Application* app_create(int argc, char** argv)
     const char* BOLT_CONFIG_USER = getenv_or_default("BOLT_USER", "neo4j");
     const char* BOLT_CONFIG_PASSWORD = getenv("BOLT_PASSWORD");
 
-    struct Application* app = BoltMem_allocate(sizeof(struct Application));
+    struct Application* app = malloc(sizeof(struct Application));
 
     app->access_mode = (strcmp(BOLT_CONFIG_ACCESS_MODE, "WRITE")==0 ? BOLT_ACCESS_MODE_WRITE : BOLT_ACCESS_MODE_READ);
     app->with_allocation_report = 0;
@@ -220,7 +213,7 @@ struct Application* app_create(int argc, char** argv)
 void app_destroy(struct Application* app)
 {
     BoltConnector_destroy(app->connector);
-    BoltMem_deallocate(app, sizeof(struct Application));
+    free(app);
 }
 
 void app_connect(struct Application* app)
@@ -455,13 +448,13 @@ int main(int argc, char* argv[])
 
     if (with_allocation_report) {
         fprintf(stderr, "=====================================\n");
-        fprintf(stderr, "current allocation   : %" PRIu64 " bytes\n", (int64_t) BoltMem_current_allocation());
-        fprintf(stderr, "peak allocation      : %" PRId64 " bytes\n", (int64_t) BoltMem_peak_allocation());
-        fprintf(stderr, "allocation events    : %" PRId64 "\n", BoltMem_allocation_events());
+        fprintf(stderr, "current allocation   : %" PRIu64 " bytes\n", (int64_t) BoltStat_memory_allocation_current());
+        fprintf(stderr, "peak allocation      : %" PRId64 " bytes\n", (int64_t) BoltStat_memory_allocation_peak());
+        fprintf(stderr, "allocation events    : %" PRId64 "\n", BoltStat_memory_allocation_events());
         fprintf(stderr, "=====================================\n");
     }
 
-    if (BoltMem_current_allocation()==0) {
+    if (BoltStat_memory_allocation_current()==0) {
         return EXIT_SUCCESS;
     }
     else {

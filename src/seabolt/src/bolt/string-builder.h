@@ -24,8 +24,8 @@
 
 struct StringBuilder {
     char* buffer;
-    int32_t buffer_size;
-    int32_t buffer_pos;
+	int buffer_size;
+	int buffer_pos;
 };
 
 struct StringBuilder* StringBuilder_create();
@@ -34,12 +34,12 @@ void StringBuilder_destroy(struct StringBuilder* builder);
 
 void StringBuilder_append(struct StringBuilder* builder, const char* string);
 
-void StringBuilder_append_n(struct StringBuilder* builder, const char* string, const int32_t len);
+void StringBuilder_append_n(struct StringBuilder* builder, const char* string, const int len);
 
 void StringBuilder_append_f(struct StringBuilder* builder, const char* format, ...);
 
 char* StringBuilder_get_string(struct StringBuilder* builder);
 
-int32_t StringBuilder_get_length(struct StringBuilder* builder);
+int StringBuilder_get_length(struct StringBuilder* builder);
 
 #endif //SEABOLT_STRING_BUILDER_H

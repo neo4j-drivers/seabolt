@@ -25,7 +25,7 @@ struct BoltStatus {
     BoltConnectionState state;
     int error;
     char* error_ctx;
-    int error_ctx_size;
+    size_t error_ctx_size;
 };
 
 BoltStatus* BoltStatus_create(size_t context_size);

@@ -111,10 +111,10 @@ const char* BoltTrust_get_certs(BoltTrust* trust, size_t* size)
     return trust->certs;
 }
 
-int BoltTrust_set_certs(BoltTrust* trust, const char* certs_pem, size_t size)
+int BoltTrust_set_certs(BoltTrust* trust, const char* certs_pem, int certs_pem_size)
 {
-    trust->certs = BoltMem_duplicate(certs_pem, size);
-    trust->certs_len = size;
+    trust->certs = BoltMem_duplicate(certs_pem, certs_pem_size);
+    trust->certs_len = certs_pem_size;
     return BOLT_SUCCESS;
 }
 

@@ -26,7 +26,7 @@
 #include "bolt-public.h"
 
 
-void* BoltMem_reverse_copy(void * dest, const void * src, size_t n);
+void* BoltMem_reverse_copy(void * dest, const void * src, int64_t n);
 
 #if IS_BIG_ENDIAN
     #define memcpy_be(target, src, n) memcpy(target, src, n)
@@ -41,7 +41,7 @@ void* BoltMem_reverse_copy(void * dest, const void * src, size_t n);
  * @param new_size
  * @return
  */
-void* BoltMem_allocate(size_t new_size);
+void* BoltMem_allocate(int64_t new_size);
 
 /**
  * Reallocate memory.
@@ -51,7 +51,7 @@ void* BoltMem_allocate(size_t new_size);
  * @param new_size
  * @return
  */
-void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size);
+void* BoltMem_reallocate(void* ptr, int64_t old_size, int64_t new_size);
 
 /**
  * Deallocate memory.
@@ -60,7 +60,7 @@ void* BoltMem_reallocate(void* ptr, size_t old_size, size_t new_size);
  * @param old_size
  * @return
  */
-void* BoltMem_deallocate(void* ptr, size_t old_size);
+void* BoltMem_deallocate(void* ptr, int64_t old_size);
 
 /**
  * Allocate, reallocate or free memory for data storage.
@@ -72,7 +72,7 @@ void* BoltMem_deallocate(void* ptr, size_t old_size);
  * @param old_size the number of bytes already allocated
  * @param new_size the new number of bytes required
  */
-void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
+void* BoltMem_adjust(void* ptr, int64_t old_size, int64_t new_size);
 
 /**
 * Duplicates the memory region specified by ptr and ptr_size.
@@ -81,7 +81,7 @@ void* BoltMem_adjust(void* ptr, size_t old_size, size_t new_size);
 * @param ptr_size
 * @return
 */
-void* BoltMem_duplicate(const void *ptr, size_t ptr_size);
+void* BoltMem_duplicate(const void *ptr, int64_t ptr_size);
 
 /**
  * Retrieve the amount of memory currently allocated.

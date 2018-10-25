@@ -154,7 +154,7 @@ int BoltAddress_resolve(BoltAddress* address, int* n_resolved, BoltLog* log)
 
     if (address->n_resolved_hosts>0) {
         struct sockaddr_storage* resolved = &address->resolved_hosts[0];
-        const in_port_t resolved_port = resolved->ss_family==AF_INET ?
+        const uint16_t resolved_port = resolved->ss_family==AF_INET ?
                                         ((struct sockaddr_in*) (resolved))->sin_port
                                                                      : ((struct sockaddr_in6*) (resolved))->sin6_port;
         address->resolved_port = ntohs(resolved_port);

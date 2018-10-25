@@ -23,14 +23,15 @@
 
 #include <cstring>
 #include <cstdlib>
-#include "bolt.h"
+#include "bolt/bolt.h"
 
 extern "C"
 {
-#include "address-private.h"
-#include "config-private.h"
-#include "connection-private.h"
-#include "values-private.h"
+#include "bolt/address-private.h"
+#include "bolt/address-set-private.h"
+#include "bolt/config-private.h"
+#include "bolt/connection-private.h"
+#include "bolt/values-private.h"
 }
 
 #define SETTING(name, default_value) ((char*)((getenv(name) == nullptr) ? (default_value) : getenv(name)))

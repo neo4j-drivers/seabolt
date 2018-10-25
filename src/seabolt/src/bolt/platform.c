@@ -96,7 +96,7 @@ int64_t BoltUtil_add(volatile int64_t* ref, int64_t by)
 #if defined(__APPLE__)
     return OSAtomicAdd64(by, ref);
 #elif defined(_WIN32)
-    return _InterlockedAdd64(ref, by);
+    return _InterlockedExchangeAdd64(ref, by);
 #else
     return __sync_add_and_fetch(ref, by);
 #endif

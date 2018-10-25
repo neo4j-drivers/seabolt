@@ -16,20 +16,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef SEABOLT_ALL_TLS_H
+#define SEABOLT_ALL_TLS_H
 
+#include "bolt-private.h"
+#include "log.h"
 
-#define CATCH_CONFIG_RUNNER  // This tells Catch to provide a main()
+SEABOLT_EXPORT struct ssl_ctx_st*
+create_ssl_ctx(struct BoltTrust* trust, const char* hostname, const struct BoltLog* log, const char* id);
 
-#include "catch.hpp"
-#include "integration.hpp"
+SEABOLT_EXPORT void free_ssl_context(struct ssl_ctx_st* ctx);
 
-int main(int argc, char* argv[])
-{
-    Bolt_startup();
-
-    int result = Catch::Session().run(argc, argv);
-
-    Bolt_shutdown();
-
-    return result;
-}
+#endif //SEABOLT_ALL_TLS_H

@@ -20,15 +20,10 @@
 #ifndef SEABOLT_BOLT
 #define SEABOLT_BOLT
 
-
-#include <stdio.h>
-
 #include "bolt-public.h"
-
 
 SEABOLT_EXPORT void Bolt_startup();
 
 SEABOLT_EXPORT void Bolt_shutdown();
-
 
 #endif // SEABOLT_BOLT
