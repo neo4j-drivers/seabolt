@@ -162,7 +162,6 @@ Description: The C Connector Library for Neo4j\n\
 Version: ${PROJECT_VERSION}\n\
 CFlags: -I\${includedir}\n\
 Libs: -L\${libdir} -l\${name}\n\
-Libs.private: $<TARGET_PROPERTY:${SEABOLT_SHARED},INTERFACE_LINK_LIBRARIES>\n\
 ")
 
 install(
