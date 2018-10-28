@@ -1,3 +1,13 @@
+set_target_properties(${SEABOLT_SHARED}
+        PROPERTIES
+        SOVERSION 1
+        OUTPUT_NAME "${SEABOLT_NAME}"
+        WINDOWS_EXPORT_ALL_SYMBOLS OFF)
+
+set_target_properties(${SEABOLT_STATIC}
+        PROPERTIES
+        OUTPUT_NAME "${SEABOLT_STATIC_NAME}")
+
 list(APPEND private_source_files
         ${CMAKE_CURRENT_LIST_DIR}/bolt/address-resolver.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/address-set.c
@@ -44,91 +54,145 @@ list(APPEND public_header_files
         ${CMAKE_CURRENT_LIST_DIR}/bolt/status.h
         ${CMAKE_CURRENT_LIST_DIR}/bolt/values.h)
 
-target_sources(${SEABOLT_SHARED}
-        PRIVATE
-        ${private_source_files})
-
-target_sources(${SEABOLT_STATIC}
-        PRIVATE
-        ${private_source_files})
-
-target_compile_definitions(${SEABOLT_SHARED}
-        PUBLIC
-        IS_BIG_ENDIAN=$<BOOL:${IS_BIG_ENDIAN}>
-        USE_WINSOCK=$<BOOL:${ON_WINDOWS}>
-        USE_POSIXSOCK=$<BOOL:${ON_POSIX}>
-        USE_WINSSPI=$<BOOL:${WITH_TLS_SECURE_CHANNEL}>
-        USE_OPENSSL=$<BOOL:${WITH_TLS_OPENSSL}>
-        INTERFACE
-        $<INSTALL_INTERFACE:USING_seabolt>)
-
-target_compile_definitions(${SEABOLT_STATIC}
-        PUBLIC
-        IS_BIG_ENDIAN=$<BOOL:${IS_BIG_ENDIAN}>
-        USE_WINSOCK=$<BOOL:${ON_WINDOWS}>
-        USE_POSIXSOCK=$<BOOL:${ON_POSIX}>
-        USE_WINSSPI=$<BOOL:${WITH_TLS_SECURE_CHANNEL}>
-        USE_OPENSSL=$<BOOL:${WITH_TLS_OPENSSL}>
-        INTERFACE
-        $<INSTALL_INTERFACE:USING_seabolt>)
+if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
+    find_openssl_both()
+endif ()
 
 if (ON_POSIX)
     set(CMAKE_THREAD_PREFER_PTHREAD ON)
     find_package(Threads REQUIRED)
-    target_link_libraries(${SEABOLT_SHARED}
-            PUBLIC
-            pthread)
-
-    target_link_libraries(${SEABOLT_STATIC}
-            PUBLIC
-            pthread)
 endif ()
 
-if (ON_WINDOWS)
-    target_link_libraries(${SEABOLT_SHARED}
-            PUBLIC
-            ws2_32)
-    target_link_libraries(${SEABOLT_STATIC}
-            PUBLIC
-            ws2_32)
+add_custom_command(
+        OUTPUT
+        ${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-version.h
+        ALL
+        COMMAND
+        ${CMAKE_COMMAND}
+        -D INPUT_FILE=${CMAKE_CURRENT_LIST_DIR}/version.h.in
+        -D OUTPUT_FILE=${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-version.h
+        -D VERSION=${PROJECT_VERSION}
+        -D VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        -D VERSION_MINOR=${PROJECT_VERSION_MINOR}
+        -D VERSION_PATCH=${PROJECT_VERSION_PATCH}
+        -D VERSION_TWEAK=${PROJECT_VERSION_TWEAK}
+        -P ${PROJECT_SOURCE_DIR}/cmake/GitHash.cmake
+        WORKING_DIRECTORY
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-	if (MSVC)
-    target_link_libraries(${SEABOLT_STATIC}
-            PUBLIC
-            legacy_stdio_definitions)
-	endif()
-endif ()
+add_custom_target(
+        write_version_info
+        ALL
+        DEPENDS
+        ${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-version.h
+)
 
-if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
-    find_openssl_both()
+add_custom_command(
+        TARGET
+        ${SEABOLT_SHARED}
+        POST_BUILD
+        COMMAND
+        ${CMAKE_COMMAND}
+        -D NAME=${SEABOLT_NAME}
+        -D VERSION=${PROJECT_VERSION}
+        -D LIB_DIR=${LIBDIR_RELATIVE_PKGCONFIGDIR}
+        -D INCLUDE_DIR=${INCLUDEDIR_RELATIVE_PKGCONFIGDIR}
+        -D OUTPUT_NAME=$<TARGET_LINKER_FILE_NAME:${SEABOLT_SHARED}>
+        -D LIBRARIES="$<TARGET_PROPERTY:${SEABOLT_SHARED},INTERFACE_LINK_LIBRARIES>"
+        -D OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}.pc
+        -P ${PROJECT_SOURCE_DIR}/cmake/PkgConfigFiles.cmake
+        WORKING_DIRECTORY
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_custom_command(
+        TARGET
+        ${SEABOLT_STATIC}
+        POST_BUILD
+        COMMAND
+        ${CMAKE_COMMAND}
+        -D NAME=${SEABOLT_NAME}-static
+        -D VERSION=${PROJECT_VERSION}
+        -D LIB_DIR=${LIBDIR_RELATIVE_PKGCONFIGDIR}
+        -D INCLUDE_DIR=${INCLUDEDIR_RELATIVE_PKGCONFIGDIR}
+        -D OUTPUT_NAME=$<TARGET_LINKER_FILE_NAME:${SEABOLT_STATIC}>
+        -D LIBRARIES="$<TARGET_PROPERTY:${SEABOLT_STATIC},INTERFACE_LINK_LIBRARIES>"
+        -D OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}-static.pc
+        -P ${PROJECT_SOURCE_DIR}/cmake/PkgConfigFiles.cmake
+        WORKING_DIRECTORY
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+foreach (target ${SEABOLT_SHARED} ${SEABOLT_STATIC})
+    target_sources(${target}
+            PRIVATE
+            ${private_source_files})
+
+    target_compile_definitions(${target}
+            PRIVATE
+            IS_BIG_ENDIAN=$<BOOL:${IS_BIG_ENDIAN}>
+            USE_WINSOCK=$<BOOL:${ON_WINDOWS}>
+            USE_POSIXSOCK=$<BOOL:${ON_POSIX}>
+            USE_WINSSPI=$<BOOL:${WITH_TLS_SECURE_CHANNEL}>
+            USE_OPENSSL=$<BOOL:${WITH_TLS_OPENSSL}>
+            INTERFACE
+            $<INSTALL_INTERFACE:USING_seabolt>)
+
+    if (ON_POSIX)
+        target_link_libraries(${target}
+                PUBLIC
+                ${CMAKE_THREAD_LIBS_INIT})
+    endif ()
+
+    if (ON_WINDOWS)
+        target_link_libraries(${target}
+                PUBLIC
+                ws2_32)
+    endif ()
+
+    if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
+        target_include_directories(${target}
+                PRIVATE
+                ${OPENSSL_SHARED_INCLUDE_DIR})
+
+        if (ON_WINDOWS)
+            target_link_libraries(${target}
+                    PUBLIC
+                    crypt32)
+        endif ()
+    endif ()
+
+    target_include_directories(${target}
+            PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+            $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt>
+            $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>)
+
+    set_target_properties(${target}
+            PROPERTIES
+            POSITION_INDEPENDENT_CODE 1
+            CXX_VISIBILITY_PRESET hidden
+            VISIBILITY_INLINES_HIDDEN 1
+            PUBLIC_HEADER "${public_header_files};${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-exports.h;${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-version.h")
+
+    add_dependencies(${target} write_version_info)
+endforeach ()
+
+
+if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL AND ON_POSIX)
+    include(FindPkgConfig)
+    pkg_check_modules(OPENSSLDEPS openssl)
 
     target_link_libraries(${SEABOLT_SHARED}
             PUBLIC
             ${OPENSSL_SHARED_LIBRARIES}
-            ${CMAKE_DL_LIBS})
+            ${OPENSSLDEPS_LIBRARIES})
 
     target_link_libraries(${SEABOLT_STATIC}
             PUBLIC
             ${OPENSSL_STATIC_LIBRARIES}
-            ${CMAKE_DL_LIBS})
-
-    if (ON_WINDOWS)
-        target_link_libraries(${SEABOLT_SHARED}
-                PUBLIC
-                crypt32)
-
-        target_link_libraries(${SEABOLT_STATIC}
-                PUBLIC
-                crypt32)
-    endif ()
-
-    target_include_directories(${SEABOLT_SHARED}
-            PRIVATE
-            ${OPENSSL_SHARED_INCLUDE_DIR})
-
-    target_include_directories(${SEABOLT_STATIC}
-            PRIVATE
-            ${OPENSSL_SHARED_INCLUDE_DIR})
+            ${OPENSSLDEPS_STATIC_LIBRARIES})
 endif ()
 
 if (CMAKE_C_COMPILER_ID MATCHES AppleClang)
@@ -136,29 +200,6 @@ if (CMAKE_C_COMPILER_ID MATCHES AppleClang)
             PROPERTIES
             COMPILE_FLAGS -Wno-deprecated-declarations)
 endif ()
-
-# in case Git is not available, we default to "unknown"
-set(PROJECT_VERSION_HASH "unknown")
-
-# find Git and if available set GIT_HASH variable
-find_package(Git QUIET)
-if (GIT_FOUND)
-    execute_process(
-            COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:%h
-            OUTPUT_VARIABLE PROJECT_VERSION_HASH
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            ERROR_QUIET
-    )
-endif ()
-
-message(STATUS "Git hash is ${PROJECT_VERSION_HASH}")
-
-# generate file version.h based on version.h.in
-configure_file(
-        ${CMAKE_CURRENT_LIST_DIR}/version.h.in
-        ${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-version.h
-        @ONLY
-)
 
 include(GenerateExportHeader)
 generate_export_header(${SEABOLT_SHARED}
@@ -168,33 +209,3 @@ generate_export_header(${SEABOLT_SHARED}
 target_compile_definitions(${SEABOLT_STATIC}
         PUBLIC
         SEABOLT_STATIC_DEFINE)
-
-target_include_directories(${SEABOLT_SHARED}
-        PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
-        $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt>
-        $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>)
-
-target_include_directories(${SEABOLT_STATIC}
-        PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
-        $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt>
-        $<INSTALL_INTERFACE:${INSTALL_INCLUDEDIR}>)
-
-set_target_properties(${SEABOLT_SHARED}
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-        CXX_VISIBILITY_PRESET hidden
-        VISIBILITY_INLINES_HIDDEN 1
-        SOVERSION 1
-        OUTPUT_NAME "${SEABOLT_NAME}"
-        PUBLIC_HEADER "${public_header_files};${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-exports.h;${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-version.h"
-        WINDOWS_EXPORT_ALL_SYMBOLS OFF)
-
-set_target_properties(${SEABOLT_STATIC}
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-        CXX_VISIBILITY_PRESET hidden
-        VISIBILITY_INLINES_HIDDEN 1
-        OUTPUT_NAME "${SEABOLT_STATIC_NAME}"
-        PUBLIC_HEADER "${public_header_files};${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-exports.h;${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-version.h")

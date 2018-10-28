@@ -1,0 +1,9 @@
+name=@NAME@
+libdir=${pcfiledir}/@LIB_DIR@
+includedir=${pcfiledir}/@INCLUDE_DIR@
+
+Name: @NAME@
+Description: The C Connector Library for Neo4j
+Version: @VERSION@
+CFlags: -I${includedir}
+Libs: ${libdir}/@OUTPUT_NAME@  @LIBS_PROCESSED@
