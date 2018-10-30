@@ -164,6 +164,12 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
                 PUBLIC
                 ${OPENSSLDEPS_STATIC_LIBRARIES})
     endif ()
+
+    if (MSVC)
+        target_link_libraries(${SEABOLT_STATIC}
+                PUBLIC
+                legacy_stdio_definitions)
+    endif ()
 endif ()
 
 if (CMAKE_C_COMPILER_ID MATCHES AppleClang)
