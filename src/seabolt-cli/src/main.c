@@ -220,13 +220,15 @@ void app_connect(struct Application* app)
 {
     struct timespec t[2];
     BoltUtil_get_time(&t[0]);
-    struct BoltConnectionResult result = BoltConnector_acquire(app->connector, app->access_mode);
-    if (result.connection==NULL) {
+    BoltStatus* status = BoltStatus_create();
+    BoltConnection* connection = BoltConnector_acquire(app->connector, app->access_mode, status);
+    if (connection==NULL) {
         fprintf(stderr, "FATAL: Failed to connect\n");
         app_destroy(app);
         exit(EXIT_FAILURE);
     }
-    app->connection = result.connection;
+    BoltStatus_destroy(status);
+    app->connection = connection;
     BoltUtil_get_time(&t[1]);
     timespec_diff(&app->stats.connect_time, &t[1], &t[0]);
 }

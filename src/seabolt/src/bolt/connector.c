@@ -25,6 +25,7 @@
 #include "direct-pool.h"
 #include "mem.h"
 #include "routing-pool.h"
+#include "status-private.h"
 
 BoltConfig* BoltConnector_apply_defaults(BoltConfig* config)
 {
@@ -77,19 +78,21 @@ void BoltConnector_destroy(BoltConnector* connector)
     BoltMem_deallocate(connector, sizeof(BoltConnector));
 }
 
-struct BoltConnectionResult BoltConnector_acquire(BoltConnector* connector, BoltAccessMode mode)
+BoltConnection* BoltConnector_acquire(BoltConnector* connector, BoltAccessMode mode, BoltStatus *status)
 {
     switch (connector->config->mode) {
     case BOLT_MODE_DIRECT:
-        return BoltDirectPool_acquire((struct BoltDirectPool*) connector->pool_state);
+        return BoltDirectPool_acquire((struct BoltDirectPool*) connector->pool_state, status);
     case BOLT_MODE_ROUTING:
-        return BoltRoutingPool_acquire((struct BoltRoutingPool*) connector->pool_state, mode);
+        return BoltRoutingPool_acquire((struct BoltRoutingPool*) connector->pool_state, mode, status);
     }
 
-    struct BoltConnectionResult result = {
-            NULL, BOLT_CONNECTION_STATE_DISCONNECTED, BOLT_UNSUPPORTED, NULL
-    };
-    return result;
+    status->state = BOLT_CONNECTION_STATE_DISCONNECTED;
+    status->error = BOLT_UNSUPPORTED;
+    status->error_ctx = NULL;
+    status->error_ctx_size = 0;
+
+    return NULL;
 }
 
 void BoltConnector_release(BoltConnector* connector, BoltConnection* connection)

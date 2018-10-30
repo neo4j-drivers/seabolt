@@ -38,6 +38,10 @@ typedef int BoltConnectionState;
  */
 typedef struct BoltStatus BoltStatus;
 
+SEABOLT_EXPORT BoltStatus* BoltStatus_create();
+
+SEABOLT_EXPORT void BoltStatus_destroy(BoltStatus* status);
+
 SEABOLT_EXPORT BoltConnectionState BoltStatus_get_state(BoltStatus* status);
 
 SEABOLT_EXPORT int32_t BoltStatus_get_error(BoltStatus* status);

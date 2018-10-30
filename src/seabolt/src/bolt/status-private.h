@@ -28,8 +28,6 @@ struct BoltStatus {
     uint64_t error_ctx_size;
 };
 
-BoltStatus* BoltStatus_create(uint64_t context_size);
-
-void BoltStatus_destroy(BoltStatus* status);
+BoltStatus* BoltStatus_create_with_ctx(uint64_t ctx_size);
 
 #endif //SEABOLT_STATUS_PRIVATE_H

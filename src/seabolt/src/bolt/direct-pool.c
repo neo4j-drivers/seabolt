@@ -217,14 +217,13 @@ void BoltDirectPool_destroy(struct BoltDirectPool* pool)
     BoltMem_deallocate(pool, SIZE_OF_DIRECT_POOL);
 }
 
-struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
+BoltConnection* BoltDirectPool_acquire(struct BoltDirectPool* pool, BoltStatus* status)
 {
-    struct BoltConnectionResult handle;
     int index = 0;
     int pool_error = BOLT_SUCCESS;
+    BoltConnection* connection = NULL;
 
-    int64_t
-            started_at = BoltUtil_get_time_ms();
+    int64_t started_at = BoltUtil_get_time_ms();
     BoltLog_info(pool->config->log, "[%s]: Acquiring connection from the pool towards %s:%s", pool->id,
             pool->address->host, pool->address->port);
 
@@ -262,26 +261,26 @@ struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
             }
         }
 
-        handle.connection_status = BOLT_CONNECTION_STATE_DISCONNECTED;
-        handle.connection_error = BOLT_SUCCESS;
-        handle.connection_error_ctx = NULL;
-        handle.connection = NULL;
+        status->state = BOLT_CONNECTION_STATE_DISCONNECTED;
+        status->error = BOLT_SUCCESS;
+        status->error_ctx = NULL;
+        status->error_ctx_size = 0;
 
         switch (pool_error) {
         case BOLT_SUCCESS:
-            handle.connection = pool->connections[index];
-            handle.connection->agent = "USED";
-            handle.connection_status = handle.connection->status->state;
+            connection = pool->connections[index];
+            connection->agent = "USED";
+            status->state = connection->status->state;
             break;
         case BOLT_CONNECTION_HAS_MORE_INFO:
-            handle.connection_status = pool->connections[index]->status->state;
-            handle.connection_error = pool->connections[index]->status->error;
-            handle.connection_error_ctx = pool->connections[index]->status->error_ctx;
+            status->state = pool->connections[index]->status->state;
+            status->error = pool->connections[index]->status->error;
+            status->error_ctx = pool->connections[index]->status->error_ctx;
             break;
         default:
-            handle.connection_status = BOLT_CONNECTION_STATE_DISCONNECTED;
-            handle.connection_error = pool_error;
-            handle.connection_error_ctx = NULL;
+            status->state = BOLT_CONNECTION_STATE_DISCONNECTED;
+            status->error = pool_error;
+            status->error_ctx = NULL;
             break;
         }
 
@@ -293,12 +292,12 @@ struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
         }
 
         // Retry acquire operation until we get a live connection or timeout
-        if (handle.connection_error==BOLT_POOL_FULL) {
+        if (status->error==BOLT_POOL_FULL) {
             if (pool->config->max_connection_acquisition_time>0
                     && BoltUtil_get_time_ms()-started_at>pool->config->max_connection_acquisition_time) {
-                handle.connection_status = BOLT_CONNECTION_STATE_DISCONNECTED;
-                handle.connection_error = BOLT_POOL_ACQUISITION_TIMED_OUT;
-                handle.connection_error_ctx = NULL;
+                status->state = BOLT_CONNECTION_STATE_DISCONNECTED;
+                status->error = BOLT_POOL_ACQUISITION_TIMED_OUT;
+                status->error_ctx = NULL;
 
                 break;
             }
@@ -317,7 +316,7 @@ struct BoltConnectionResult BoltDirectPool_acquire(struct BoltDirectPool* pool)
         }
     }
 
-    return handle;
+    return connection;
 }
 
 int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* connection)

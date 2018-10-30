@@ -49,8 +49,7 @@ BoltDirectPool_create(const struct BoltAddress* address, const struct BoltValue*
 
 void BoltDirectPool_destroy(struct BoltDirectPool* pool);
 
-struct BoltConnectionResult
-BoltDirectPool_acquire(struct BoltDirectPool* pool);
+BoltConnection* BoltDirectPool_acquire(struct BoltDirectPool* pool, BoltStatus* status);
 
 int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* connection);
 
