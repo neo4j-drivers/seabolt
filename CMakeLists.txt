@@ -167,9 +167,15 @@ configure_package_config_file(
 install(
         FILES
         ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}.pc
-        ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}-static.pc
         DESTINATION ${INSTALL_PKGCONFIGDIR}
         COMPONENT dev)
+if (NOT ON_WINDOWS)
+    install(
+            FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}-static.pc
+            DESTINATION ${INSTALL_PKGCONFIGDIR}
+            COMPONENT dev)
+endif ()
 
 install(
         FILES

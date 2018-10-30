@@ -88,49 +88,13 @@ add_custom_target(
         ${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-version.h
 )
 
-add_custom_command(
-        TARGET
-        ${SEABOLT_SHARED}
-        POST_BUILD
-        COMMAND
-        ${CMAKE_COMMAND}
-        -D NAME=${SEABOLT_NAME}
-        -D VERSION=${PROJECT_VERSION}
-        -D LIB_DIR=${LIBDIR_RELATIVE_PKGCONFIGDIR}
-        -D INCLUDE_DIR=${INCLUDEDIR_RELATIVE_PKGCONFIGDIR}
-        -D OUTPUT_NAME=$<TARGET_LINKER_FILE_NAME:${SEABOLT_SHARED}>
-        -D LIBRARIES="$<TARGET_PROPERTY:${SEABOLT_SHARED},INTERFACE_LINK_LIBRARIES>"
-        -D OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}.pc
-        -P ${PROJECT_SOURCE_DIR}/cmake/PkgConfigFiles.cmake
-        WORKING_DIRECTORY
-        ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-add_custom_command(
-        TARGET
-        ${SEABOLT_STATIC}
-        POST_BUILD
-        COMMAND
-        ${CMAKE_COMMAND}
-        -D NAME=${SEABOLT_NAME}-static
-        -D VERSION=${PROJECT_VERSION}
-        -D LIB_DIR=${LIBDIR_RELATIVE_PKGCONFIGDIR}
-        -D INCLUDE_DIR=${INCLUDEDIR_RELATIVE_PKGCONFIGDIR}
-        -D OUTPUT_NAME=$<TARGET_LINKER_FILE_NAME:${SEABOLT_STATIC}>
-        -D LIBRARIES="$<TARGET_PROPERTY:${SEABOLT_STATIC},INTERFACE_LINK_LIBRARIES>"
-        -D OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}-static.pc
-        -P ${PROJECT_SOURCE_DIR}/cmake/PkgConfigFiles.cmake
-        WORKING_DIRECTORY
-        ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
 foreach (target ${SEABOLT_SHARED} ${SEABOLT_STATIC})
     target_sources(${target}
             PRIVATE
             ${private_source_files})
 
     target_compile_definitions(${target}
-            PRIVATE
+            PUBLIC
             IS_BIG_ENDIAN=$<BOOL:${IS_BIG_ENDIAN}>
             USE_WINSOCK=$<BOOL:${ON_WINDOWS}>
             USE_POSIXSOCK=$<BOOL:${ON_POSIX}>
@@ -179,20 +143,27 @@ foreach (target ${SEABOLT_SHARED} ${SEABOLT_STATIC})
     add_dependencies(${target} write_version_info)
 endforeach ()
 
-
-if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL AND ON_POSIX)
-    include(FindPkgConfig)
-    pkg_check_modules(OPENSSLDEPS openssl)
-
+if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
     target_link_libraries(${SEABOLT_SHARED}
             PUBLIC
-            ${OPENSSL_SHARED_LIBRARIES}
-            ${OPENSSLDEPS_LIBRARIES})
+            ${OPENSSL_SHARED_LIBRARIES})
 
     target_link_libraries(${SEABOLT_STATIC}
             PUBLIC
-            ${OPENSSL_STATIC_LIBRARIES}
-            ${OPENSSLDEPS_STATIC_LIBRARIES})
+            ${OPENSSL_STATIC_LIBRARIES})
+
+    if (ON_POSIX)
+        include(FindPkgConfig)
+        pkg_check_modules(OPENSSLDEPS openssl)
+
+        target_link_libraries(${SEABOLT_SHARED}
+                PUBLIC
+                ${OPENSSLDEPS_LIBRARIES})
+
+        target_link_libraries(${SEABOLT_STATIC}
+                PUBLIC
+                ${OPENSSLDEPS_STATIC_LIBRARIES})
+    endif ()
 endif ()
 
 if (CMAKE_C_COMPILER_ID MATCHES AppleClang)
@@ -209,3 +180,37 @@ generate_export_header(${SEABOLT_SHARED}
 target_compile_definitions(${SEABOLT_STATIC}
         PUBLIC
         SEABOLT_STATIC_DEFINE)
+
+add_custom_command(
+        TARGET ${SEABOLT_SHARED} POST_BUILD
+        COMMAND
+        ${CMAKE_COMMAND}
+        -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -D NAME=${SEABOLT_NAME}
+        -D VERSION=${PROJECT_VERSION}
+        -D LIB_DIR=${LIBDIR_RELATIVE_PKGCONFIGDIR}
+        -D INCLUDE_DIR=${INCLUDEDIR_RELATIVE_PKGCONFIGDIR}
+        -D OUTPUT_NAME=${SEABOLT_NAME}
+        -D LIBRARIES="$<TARGET_PROPERTY:${SEABOLT_SHARED},INTERFACE_LINK_LIBRARIES>"
+        -D INPUT_FILE=${PROJECT_SOURCE_DIR}/cmake/seabolt.pc.in
+        -D OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}.pc
+        -P ${PROJECT_SOURCE_DIR}/cmake/PkgConfigFiles.cmake
+)
+
+if (NOT ON_WINDOWS)
+    add_custom_command(
+            TARGET ${SEABOLT_STATIC} POST_BUILD
+            COMMAND
+            ${CMAKE_COMMAND}
+            -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+            -D NAME=${SEABOLT_NAME}-static
+            -D VERSION=${PROJECT_VERSION}
+            -D LIB_DIR=${LIBDIR_RELATIVE_PKGCONFIGDIR}
+            -D INCLUDE_DIR=${INCLUDEDIR_RELATIVE_PKGCONFIGDIR}
+            -D OUTPUT_NAME=${SEABOLT_STATIC_NAME}
+            -D LIBRARIES="$<TARGET_PROPERTY:${SEABOLT_STATIC},INTERFACE_LINK_LIBRARIES>"
+            -D INPUT_FILE=${PROJECT_SOURCE_DIR}/cmake/seabolt-static.pc.in
+            -D OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}-static.pc
+            -P ${PROJECT_SOURCE_DIR}/cmake/PkgConfigFiles.cmake
+    )
+endif ()
