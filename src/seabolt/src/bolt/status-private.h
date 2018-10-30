@@ -23,12 +23,12 @@
 
 struct BoltStatus {
     BoltConnectionState state;
-    int error;
+    int32_t error;
     char* error_ctx;
-    size_t error_ctx_size;
+    uint64_t error_ctx_size;
 };
 
-BoltStatus* BoltStatus_create(size_t context_size);
+BoltStatus* BoltStatus_create(uint64_t context_size);
 
 void BoltStatus_destroy(BoltStatus* status);
 

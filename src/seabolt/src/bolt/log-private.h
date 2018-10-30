@@ -22,7 +22,7 @@
 #include "log.h"
 
 struct BoltLog {
-    int state;
+    void* state;
 
     int error_enabled;
     int warning_enabled;

@@ -103,7 +103,7 @@ void timespec_diff(struct timespec* t, struct timespec* t0, struct timespec* t1)
     }
 }
 
-void log_to_stderr(int state, const char* message)
+void log_to_stderr(void* state, const char* message)
 {
     UNUSED(state);
     fprintf(stderr, "%s\n", message);
@@ -323,7 +323,7 @@ int app_run(struct Application* app, const char* cypher)
             if (i>0) {
                 putc('\t', stdout);
             }
-            if (BoltValue_string(BoltList_value(fields, i), string_buffer, 4096, app->connection)>4096) {
+            if (BoltValue_to_string(BoltList_value(fields, i), string_buffer, 4096, app->connection)>4096) {
                 string_buffer[4095] = 0;
             }
             fprintf(stdout, "%s", string_buffer);
@@ -338,7 +338,7 @@ int app_run(struct Application* app, const char* cypher)
             if (i>0) {
                 putc('\t', stdout);
             }
-            if (BoltValue_string(value, string_buffer, 4096, app->connection)>4096) {
+            if (BoltValue_to_string(value, string_buffer, 4096, app->connection)>4096) {
                 string_buffer[4095] = 0;
             }
             fprintf(stdout, "%s", string_buffer);

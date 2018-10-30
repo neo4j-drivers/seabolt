@@ -21,9 +21,9 @@
 
 #include "bolt-public.h"
 
-SEABOLT_EXPORT size_t BoltStat_memory_allocation_current();
+SEABOLT_EXPORT uint64_t BoltStat_memory_allocation_current();
 
-SEABOLT_EXPORT size_t BoltStat_memory_allocation_peak();
+SEABOLT_EXPORT uint64_t BoltStat_memory_allocation_peak();
 
 SEABOLT_EXPORT int64_t BoltStat_memory_allocation_events();
 

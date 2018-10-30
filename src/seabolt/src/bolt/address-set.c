@@ -39,12 +39,12 @@ void BoltAddressSet_destroy(BoltAddressSet* set)
     BoltMem_deallocate(set, SIZE_OF_ADDRESS_SET);
 }
 
-int BoltAddressSet_size(BoltAddressSet* set)
+int32_t BoltAddressSet_size(BoltAddressSet* set)
 {
     return set->size;
 }
 
-int BoltAddressSet_index_of(BoltAddressSet* set, const BoltAddress* address)
+int32_t BoltAddressSet_index_of(BoltAddressSet* set, const BoltAddress* address)
 {
     for (int i = 0; i<set->size; i++) {
         struct BoltAddress* current = set->elements[i];
@@ -57,7 +57,7 @@ int BoltAddressSet_index_of(BoltAddressSet* set, const BoltAddress* address)
     return -1;
 }
 
-int BoltAddressSet_add(BoltAddressSet* set, const BoltAddress* address)
+int32_t BoltAddressSet_add(BoltAddressSet* set, const BoltAddress* address)
 {
     if (BoltAddressSet_index_of(set, address)==-1) {
         set->elements = (struct BoltAddress**) BoltMem_reallocate(set->elements, set->size*sizeof(BoltAddress*),
@@ -70,7 +70,7 @@ int BoltAddressSet_add(BoltAddressSet* set, const BoltAddress* address)
     return -1;
 }
 
-int BoltAddressSet_remove(BoltAddressSet* set, const BoltAddress* address)
+int32_t BoltAddressSet_remove(BoltAddressSet* set, const BoltAddress* address)
 {
     int index = BoltAddressSet_index_of(set, address);
     if (index>=0) {

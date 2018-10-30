@@ -23,15 +23,12 @@
 #include "address.h"
 #include "address-set.h"
 
-typedef void (* address_resolver_func)(int state, struct BoltAddress*, struct BoltAddressSet*);
+typedef void (* address_resolver_func)(void* state, struct BoltAddress*, struct BoltAddressSet*);
 
 typedef struct BoltAddressResolver BoltAddressResolver;
 
-SEABOLT_EXPORT BoltAddressResolver* BoltAddressResolver_create(int state, address_resolver_func resolver_func);
+SEABOLT_EXPORT BoltAddressResolver* BoltAddressResolver_create(void* state, address_resolver_func resolver_func);
 
 SEABOLT_EXPORT void BoltAddressResolver_destroy(BoltAddressResolver* resolver);
-
-void BoltAddressResolver_resolve(BoltAddressResolver* resolver, BoltAddress* address,
-        BoltAddressSet* resolved);
 
 #endif //SEABOLT_ALL_SERVER_ADDRESS_RESOLVER_H

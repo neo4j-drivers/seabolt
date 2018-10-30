@@ -713,7 +713,7 @@ void BoltConnection_destroy(BoltConnection* connection)
     BoltMem_deallocate(connection, sizeof(BoltConnection));
 }
 
-int
+int32_t
 BoltConnection_open(BoltConnection* connection, BoltTransport transport, struct BoltAddress* address,
         struct BoltTrust* trust, struct BoltLog* log, struct BoltSocketOptions* sock_opts)
 {
@@ -811,7 +811,7 @@ void BoltConnection_close(BoltConnection* connection)
     }
 }
 
-int BoltConnection_send(BoltConnection* connection)
+int32_t BoltConnection_send(BoltConnection* connection)
 {
     int size = BoltBuffer_unloadable(connection->tx_buffer);
     TRY(_send(connection, BoltBuffer_unload_pointer(connection->tx_buffer, size), size),
@@ -876,7 +876,7 @@ int BoltConnection_fetch(BoltConnection* connection, BoltRequest request)
     return fetched;
 }
 
-int BoltConnection_fetch_summary(BoltConnection* connection, BoltRequest request)
+int32_t BoltConnection_fetch_summary(BoltConnection* connection, BoltRequest request)
 {
     int records = 0;
     int data;
@@ -896,17 +896,17 @@ struct BoltValue* BoltConnection_field_values(BoltConnection* connection)
     return connection->protocol->field_values(connection);
 }
 
-int BoltConnection_summary_success(BoltConnection* connection)
+int32_t BoltConnection_summary_success(BoltConnection* connection)
 {
     return connection->protocol->is_success_summary(connection);
 }
 
-int BoltConnection_summary_failure(BoltConnection* connection)
+int32_t BoltConnection_summary_failure(BoltConnection* connection)
 {
     return connection->protocol->is_failure_summary(connection);
 }
 
-int
+int32_t
 BoltConnection_init(BoltConnection* connection, const char* user_agent, const struct BoltValue* auth_token)
 {
     BoltLog_info(connection->log, "[%s]: Initialising connection", BoltConnection_id(connection));
@@ -939,35 +939,35 @@ BoltConnection_init(BoltConnection* connection, const char* user_agent, const st
     }
 }
 
-int BoltConnection_clear_begin(BoltConnection* connection)
+int32_t BoltConnection_clear_begin(BoltConnection* connection)
 {
     TRY(connection->protocol->clear_begin_tx(connection), "BoltConnection_clear_begin(%s:%d), error code: %d", __FILE__,
             __LINE__);
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_set_begin_bookmarks(BoltConnection* connection, struct BoltValue* bookmark_list)
+int32_t BoltConnection_set_begin_bookmarks(BoltConnection* connection, struct BoltValue* bookmark_list)
 {
     TRY(connection->protocol->set_begin_tx_bookmark(connection, bookmark_list),
             "BoltConnection_set_begin_bookmarks(%s:%d), error code: %d", __FILE__, __LINE__);
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_set_begin_tx_timeout(BoltConnection* connection, int64_t timeout)
+int32_t BoltConnection_set_begin_tx_timeout(BoltConnection* connection, int64_t timeout)
 {
     TRY(connection->protocol->set_begin_tx_timeout(connection, timeout),
             "BoltConnection_set_begin_tx_timeout(%s:%d), error code: %d", __FILE__, __LINE__);
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_set_begin_tx_metadata(BoltConnection* connection, struct BoltValue* metadata)
+int32_t BoltConnection_set_begin_tx_metadata(BoltConnection* connection, struct BoltValue* metadata)
 {
     TRY(connection->protocol->set_begin_tx_metadata(connection, metadata),
             "BoltConnection_set_begin_tx_metadata(%s:%d), error code: %d", __FILE__, __LINE__);
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_load_begin_request(BoltConnection* connection)
+int32_t BoltConnection_load_begin_request(BoltConnection* connection)
 {
     TRY(connection->protocol->load_begin_tx(connection), "BoltConnection_load_begin_request(%s:%d), error code: %d",
             __FILE__,
@@ -975,7 +975,7 @@ int BoltConnection_load_begin_request(BoltConnection* connection)
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_load_commit_request(BoltConnection* connection)
+int32_t BoltConnection_load_commit_request(BoltConnection* connection)
 {
     TRY(connection->protocol->load_commit_tx(connection), "BoltConnection_load_commit_request(%s:%d), error code: %d",
             __FILE__,
@@ -983,7 +983,7 @@ int BoltConnection_load_commit_request(BoltConnection* connection)
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_load_rollback_request(BoltConnection* connection)
+int32_t BoltConnection_load_rollback_request(BoltConnection* connection)
 {
     TRY(connection->protocol->load_rollback_tx(connection),
             "BoltConnection_load_rollback_request(%s:%d), error code: %d",
@@ -991,16 +991,16 @@ int BoltConnection_load_rollback_request(BoltConnection* connection)
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_clear_run(BoltConnection* connection)
+int32_t BoltConnection_clear_run(BoltConnection* connection)
 {
     TRY(connection->protocol->clear_run(connection), "BoltConnection_clear_run(%s:%d), error code: %d", __FILE__,
             __LINE__);
     return BOLT_SUCCESS;
 }
 
-int
-BoltConnection_set_run_cypher(BoltConnection* connection, const char* cypher, const size_t cypher_size,
-        int32_t n_parameter)
+int32_t
+BoltConnection_set_run_cypher(BoltConnection* connection, const char* cypher, const uint64_t cypher_size,
+        const int32_t n_parameter)
 {
     TRY(connection->protocol->set_run_cypher(connection, cypher, cypher_size, n_parameter),
             "BoltConnection_set_run_cypher(%s:%d), error code: %d", __FILE__, __LINE__);
@@ -1009,54 +1009,54 @@ BoltConnection_set_run_cypher(BoltConnection* connection, const char* cypher, co
 
 struct BoltValue*
 BoltConnection_set_run_cypher_parameter(BoltConnection* connection, int32_t index, const char* name,
-        size_t name_size)
+        const uint64_t name_size)
 {
     return connection->protocol->set_run_cypher_parameter(connection, index, name, name_size);
 }
 
-int BoltConnection_set_run_bookmarks(BoltConnection* connection, struct BoltValue* bookmark_list)
+int32_t BoltConnection_set_run_bookmarks(BoltConnection* connection, struct BoltValue* bookmark_list)
 {
     TRY(connection->protocol->set_run_bookmark(connection, bookmark_list),
             "BoltConnection_set_run_bookmarks(%s:%d), error code: %d", __FILE__, __LINE__);
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_set_run_tx_timeout(BoltConnection* connection, int64_t timeout)
+int32_t BoltConnection_set_run_tx_timeout(BoltConnection* connection, int64_t timeout)
 {
     TRY(connection->protocol->set_run_tx_timeout(connection, timeout),
             "BoltConnection_set_run_tx_timeout(%s:%d), error code: %d", __FILE__, __LINE__);
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_set_run_tx_metadata(BoltConnection* connection, struct BoltValue* metadata)
+int32_t BoltConnection_set_run_tx_metadata(BoltConnection* connection, struct BoltValue* metadata)
 {
     TRY(connection->protocol->set_run_tx_metadata(connection, metadata),
             "BoltConnection_set_run_tx_metadata(%s:%d), error code: %d", __FILE__, __LINE__);
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_load_run_request(BoltConnection* connection)
+int32_t BoltConnection_load_run_request(BoltConnection* connection)
 {
     TRY(connection->protocol->load_run(connection), "BoltConnection_load_run_request(%s:%d), error code: %d", __FILE__,
             __LINE__);
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_load_discard_request(BoltConnection* connection, int32_t n)
+int32_t BoltConnection_load_discard_request(BoltConnection* connection, int32_t n)
 {
     TRY(connection->protocol->load_discard(connection, n), "BoltConnection_load_discard_request(%s:%d), error code: %d",
             __FILE__, __LINE__);
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_load_pull_request(BoltConnection* connection, int32_t n)
+int32_t BoltConnection_load_pull_request(BoltConnection* connection, int32_t n)
 {
     TRY(connection->protocol->load_pull(connection, n), "BoltConnection_load_pull_request(%s:%d), error code: %d",
             __FILE__, __LINE__);
     return BOLT_SUCCESS;
 }
 
-int BoltConnection_load_reset_request(BoltConnection* connection)
+int32_t BoltConnection_load_reset_request(BoltConnection* connection)
 {
     TRY(connection->protocol->load_reset(connection), "BoltConnection_load_reset_request(%s:%d), error code: %d",
             __FILE__, __LINE__);
@@ -1068,12 +1068,12 @@ BoltRequest BoltConnection_last_request(BoltConnection* connection)
     return connection->protocol->last_request(connection);
 }
 
-char* BoltConnection_server(BoltConnection* connection)
+const char* BoltConnection_server(BoltConnection* connection)
 {
     return connection->protocol->server(connection);
 }
 
-char* BoltConnection_id(BoltConnection* connection)
+const char* BoltConnection_id(BoltConnection* connection)
 {
     if (connection->protocol!=NULL && connection->protocol->id!=NULL) {
         return connection->protocol->id(connection);
@@ -1097,7 +1097,7 @@ const BoltAddress* BoltConnection_local_endpoint(BoltConnection* connection)
     return connection->local_address;
 }
 
-char* BoltConnection_last_bookmark(BoltConnection* connection)
+const char* BoltConnection_last_bookmark(BoltConnection* connection)
 {
     return connection->protocol->last_bookmark(connection);
 }

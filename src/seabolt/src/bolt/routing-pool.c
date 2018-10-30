@@ -19,6 +19,7 @@
 
 #include "bolt-private.h"
 #include "address-private.h"
+#include "address-resolver-private.h"
 #include "address-set-private.h"
 #include "config-private.h"
 #include "connection-private.h"

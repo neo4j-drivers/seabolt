@@ -21,12 +21,12 @@
 #include "stats.h"
 #include "mem.h"
 
-size_t BoltStat_memory_allocation_current()
+uint64_t BoltStat_memory_allocation_current()
 {
     return BoltMem_current_allocation();
 }
 
-size_t BoltStat_memory_allocation_peak()
+uint64_t BoltStat_memory_allocation_peak()
 {
     return BoltMem_peak_allocation();
 }

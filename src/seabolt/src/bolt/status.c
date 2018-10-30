@@ -21,7 +21,7 @@
 #include "status-private.h"
 #include "mem.h"
 
-BoltStatus* BoltStatus_create(size_t context_size)
+BoltStatus* BoltStatus_create(uint64_t context_size)
 {
     BoltStatus* status = BoltMem_allocate(sizeof(BoltStatus));
     status->state = BOLT_CONNECTION_STATE_DISCONNECTED;
@@ -44,7 +44,7 @@ BoltConnectionState BoltStatus_get_state(BoltStatus* status)
     return status->state;
 }
 
-int BoltStatus_get_error(BoltStatus* status)
+int32_t BoltStatus_get_error(BoltStatus* status)
 {
     return status->error;
 }

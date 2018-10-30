@@ -24,20 +24,6 @@
 
 typedef struct BoltAddressSet BoltAddressSet;
 
-SEABOLT_EXPORT BoltAddressSet* BoltAddressSet_create();
-
-SEABOLT_EXPORT void BoltAddressSet_destroy(BoltAddressSet* set);
-
-SEABOLT_EXPORT int BoltAddressSet_size(BoltAddressSet* set);
-
-SEABOLT_EXPORT int BoltAddressSet_index_of(BoltAddressSet* set, const BoltAddress* address);
-
-SEABOLT_EXPORT int BoltAddressSet_add(BoltAddressSet* set, const BoltAddress* address);
-
-SEABOLT_EXPORT int BoltAddressSet_remove(BoltAddressSet* set, const BoltAddress* address);
-
-SEABOLT_EXPORT void BoltAddressSet_replace(BoltAddressSet* destination, BoltAddressSet* source);
-
-SEABOLT_EXPORT void BoltAddressSet_add_all(BoltAddressSet* destination, BoltAddressSet* source);
+SEABOLT_EXPORT int32_t BoltAddressSet_add(BoltAddressSet* set, const BoltAddress* address);
 
 #endif //SEABOLT_ALL_ADDRESS_SET_H

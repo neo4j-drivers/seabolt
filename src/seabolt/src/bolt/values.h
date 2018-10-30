@@ -114,7 +114,7 @@ SEABOLT_EXPORT int32_t BoltValue_size(const struct BoltValue* value);
  */
 SEABOLT_EXPORT enum BoltType BoltValue_type(const struct BoltValue* value);
 
-SEABOLT_EXPORT int32_t BoltValue_string(const struct BoltValue* value, char *dest, int32_t length, struct BoltConnection* connection);
+SEABOLT_EXPORT int32_t BoltValue_to_string(const struct BoltValue* value, char *dest, int32_t length, struct BoltConnection* connection);
 /**
  * Set a BoltValue instance to null.
  *
@@ -147,13 +147,13 @@ SEABOLT_EXPORT const char* BoltDictionary_get_key(const struct BoltValue* value,
 SEABOLT_EXPORT int32_t BoltDictionary_get_key_size(const struct BoltValue* value, int32_t index);
 
 SEABOLT_EXPORT int32_t
-BoltDictionary_get_key_index(const struct BoltValue* value, const char* key, size_t key_size, int32_t start_index);
+BoltDictionary_get_key_index(const struct BoltValue* value, const char* key, int32_t key_size, int32_t start_index);
 
-SEABOLT_EXPORT int BoltDictionary_set_key(struct BoltValue* value, int32_t index, const char* key, size_t key_size);
+SEABOLT_EXPORT int32_t BoltDictionary_set_key(struct BoltValue* value, int32_t index, const char* key, int32_t key_size);
 
 SEABOLT_EXPORT struct BoltValue* BoltDictionary_value(const struct BoltValue* value, int32_t index);
 
-SEABOLT_EXPORT struct BoltValue* BoltDictionary_value_by_key(const struct BoltValue* value, const char* key, size_t key_size);
+SEABOLT_EXPORT struct BoltValue* BoltDictionary_value_by_key(const struct BoltValue* value, const char* key, int32_t key_size);
 
 /**
  * Format a BoltValue instance to hold a list.

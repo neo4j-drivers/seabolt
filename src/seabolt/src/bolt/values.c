@@ -286,7 +286,7 @@ enum BoltType BoltValue_type(const struct BoltValue* value)
     return (enum BoltType) (value->type);
 }
 
-int32_t BoltValue_string(const struct BoltValue* value, char* dest, int32_t length, struct BoltConnection* connection)
+int32_t BoltValue_to_string(const struct BoltValue* value, char* dest, int32_t length, struct BoltConnection* connection)
 {
     name_resolver_func name_resolver = NULL;
     struct StringBuilder* builder = StringBuilder_create();
@@ -435,7 +435,7 @@ int32_t BoltDictionary_get_key_size(const struct BoltValue* value, int32_t index
 }
 
 int32_t
-BoltDictionary_get_key_index(const struct BoltValue* value, const char* key, size_t key_size, int32_t start_index)
+BoltDictionary_get_key_index(const struct BoltValue* value, const char* key, int32_t key_size, int32_t start_index)
 {
     assert(BoltValue_type(value)==BOLT_DICTIONARY);
     if (start_index>=value->size) return -1;
@@ -450,7 +450,7 @@ BoltDictionary_get_key_index(const struct BoltValue* value, const char* key, siz
     return -1;
 }
 
-int BoltDictionary_set_key(struct BoltValue* value, int32_t index, const char* key, size_t key_size)
+int32_t BoltDictionary_set_key(struct BoltValue* value, int32_t index, const char* key, int32_t key_size)
 {
     if (key_size<=INT32_MAX) {
         assert(BoltValue_type(value)==BOLT_DICTIONARY);
@@ -468,7 +468,7 @@ struct BoltValue* BoltDictionary_value(const struct BoltValue* value, int32_t in
     return &value->data.extended.as_value[2*index+1];
 }
 
-struct BoltValue* BoltDictionary_value_by_key(const struct BoltValue* value, const char* key, size_t key_size)
+struct BoltValue* BoltDictionary_value_by_key(const struct BoltValue* value, const char* key, int32_t key_size)
 {
     const int32_t index = BoltDictionary_get_key_index(value, key, key_size, 0);
     if (index<0) {

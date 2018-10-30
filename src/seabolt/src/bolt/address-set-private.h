@@ -22,11 +22,25 @@
 #include "address-set.h"
 
 struct BoltAddressSet {
-    int size;
+    int32_t size;
     struct BoltAddress** elements;
 };
 
 #define SIZE_OF_ADDRESS_SET sizeof(struct BoltAddressSet)
 #define SIZE_OF_ADDRESS_SET_PTR sizeof(struct BoltAddressSet*)
+
+BoltAddressSet* BoltAddressSet_create();
+
+void BoltAddressSet_destroy(BoltAddressSet* set);
+
+int32_t BoltAddressSet_size(BoltAddressSet* set);
+
+int32_t BoltAddressSet_index_of(BoltAddressSet* set, const BoltAddress* address);
+
+int32_t BoltAddressSet_remove(BoltAddressSet* set, const BoltAddress* address);
+
+void BoltAddressSet_replace(BoltAddressSet* destination, BoltAddressSet* source);
+
+void BoltAddressSet_add_all(BoltAddressSet* destination, BoltAddressSet* source);
 
 #endif //SEABOLT_ADDRESS_SET_PRIVATE_H

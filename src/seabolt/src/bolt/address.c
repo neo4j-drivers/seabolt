@@ -60,12 +60,8 @@ const char* BoltAddress_port(BoltAddress* address)
     return address->port;
 }
 
-BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int32_t endpoint_len)
+BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, uint64_t endpoint_len)
 {
-    if (endpoint_len<0) {
-        endpoint_len = (int32_t) strlen(endpoint_str);
-    }
-
     // Create a copy of the string and add null character at the end to properly
     // work with string functions
     char* address_str = (char*) BoltMem_duplicate(endpoint_str, endpoint_len+1);
@@ -85,7 +81,7 @@ BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, int32_t en
     return result;
 }
 
-int BoltAddress_resolve(BoltAddress* address, int* n_resolved, BoltLog* log)
+int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* log)
 {
     BoltUtil_mutex_lock(&address->lock);
 
@@ -169,8 +165,8 @@ int BoltAddress_resolve(BoltAddress* address, int* n_resolved, BoltLog* log)
     return gai_status;
 }
 
-int BoltAddress_copy_resolved_host(BoltAddress* address, size_t index, char* buffer,
-        int32_t buffer_size)
+int32_t BoltAddress_copy_resolved_host(BoltAddress* address, int32_t index, char* buffer,
+        uint64_t buffer_size)
 {
     struct sockaddr_storage* resolved_host_storage = &address->resolved_hosts[index];
     const struct sockaddr* resolved_host = (const struct sockaddr*) resolved_host_storage;

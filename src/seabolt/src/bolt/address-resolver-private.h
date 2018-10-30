@@ -22,10 +22,13 @@
 #include "address-resolver.h"
 
 struct BoltAddressResolver {
-    int state;
+    void* state;
     address_resolver_func resolver;
 };
 
 BoltAddressResolver* BoltAddressResolver_clone(BoltAddressResolver* resolver);
+
+void BoltAddressResolver_resolve(BoltAddressResolver* resolver, BoltAddress* address,
+        BoltAddressSet* resolved);
 
 #endif //SEABOLT_ADDRESS_RESOLVER_PRIVATE_H
