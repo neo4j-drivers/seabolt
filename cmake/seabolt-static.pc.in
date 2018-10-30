@@ -6,4 +6,4 @@ Name: @NAME@
 Description: The C Connector Library for Neo4j
 Version: @VERSION@
 CFlags: -I${includedir} -DSEABOLT_STATIC_DEFINE
-Libs: -L${libdir} -l@OUTPUT_NAME@ @LIBS_PROCESSED@
+Libs: ${libdir}/@OUTPUT_NAME@ @LIBS_PROCESSED@
