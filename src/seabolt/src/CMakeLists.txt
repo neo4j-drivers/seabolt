@@ -153,7 +153,7 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
             ${OPENSSL_STATIC_LIBRARIES})
 
     if (ON_POSIX)
-        include(FindPkgConfig)
+        include(FindPkgConfig REQUIRED)
         pkg_check_modules(OPENSSLDEPS openssl)
 
         target_link_libraries(${SEABOLT_SHARED}
