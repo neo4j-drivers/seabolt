@@ -149,26 +149,33 @@ configure_package_config_file(
         ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}Config.cmake
         INSTALL_DESTINATION ${INSTALL_CMAKEDIR}
 )
-
-file(GENERATE
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}.pc
-        CONTENT "\
-name=${SEABOLT_NAME}\n\
-libdir=\${pcfiledir}/${LIBDIR_RELATIVE_PKGCONFIGDIR}\n\
-includedir=\${pcfiledir}/${INCLUDEDIR_RELATIVE_PKGCONFIGDIR}\n\
-\n\
-Name: ${SEABOLT_NAME}\n\
-Description: The C Connector Library for Neo4j\n\
-Version: ${PROJECT_VERSION}\n\
-CFlags: -I\${includedir}\n\
-Libs: -L\${libdir} -l\${name}\n\
-")
+#
+#file(GENERATE
+#        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}.pc
+#        CONTENT "\
+#name=${SEABOLT_NAME}\n\
+#libdir=\${pcfiledir}/${LIBDIR_RELATIVE_PKGCONFIGDIR}\n\
+#includedir=\${pcfiledir}/${INCLUDEDIR_RELATIVE_PKGCONFIGDIR}\n\
+#\n\
+#Name: ${SEABOLT_NAME}\n\
+#Description: The C Connector Library for Neo4j\n\
+#Version: ${PROJECT_VERSION}\n\
+#CFlags: -I\${includedir}\n\
+#Libs: -L\${libdir} -l\${name}\n\
+#")
 
 install(
         FILES
         ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}.pc
         DESTINATION ${INSTALL_PKGCONFIGDIR}
         COMPONENT dev)
+if (NOT ON_WINDOWS)
+    install(
+            FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}-static.pc
+            DESTINATION ${INSTALL_PKGCONFIGDIR}
+            COMPONENT dev)
+endif ()
 
 install(
         FILES
