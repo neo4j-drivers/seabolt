@@ -1,22 +1,21 @@
-﻿$ErrorActionPreference = "Stop"
-$BaseDir = $PSScriptRoot
-$Password = "password"
-$Port = 7699
-$Python = "python.exe"
-$TestArgs = $args
+﻿$ErrorActionPreference="Stop"
+$BaseDir=$PSScriptRoot
+$Password="password"
+$Port=7699
+$Python="python.exe"
+$TestArgs=$args
 
-$ErrorBoltKitNotAvailable = 11
-$ErrorCompilationFailed = 12
-$ErrorServerCleanUpFailed = 18
-$ErrorServerInstallFailed = 13
-$ErrorServerConfigFailed = 14
-$ErrorServerStartFailed = 15
-$ErrorServerStopFailed = 16
-$ErrorServerConfigurationError = 17
-$ErrorTestsFailed = 199
+$ErrorBoltKitNotAvailable=11
+$ErrorCompilationFailed=12
+$ErrorServerCleanUpFailed=18
+$ErrorServerInstallFailed=13
+$ErrorServerConfigFailed=14
+$ErrorServerStartFailed=15
+$ErrorServerStopFailed=16
+$ErrorServerConfigurationError=17
+$ErrorTestsFailed=199
 
-trap
-{
+trap {
     Exit 1
 }
 
@@ -24,7 +23,7 @@ Function CheckBoltKit()
 {
     Write-Host "Checking boltkit..."
     & $Python -c "import boltkit" *> $null
-    If ($LASTEXITCODE -ne 0)
+    If ( $LASTEXITCODE -ne 0 )
     {
         throw @{
             Code = $ErrorBoltKitNotAvailable
@@ -37,7 +36,7 @@ Function Compile()
 {
     Write-Host "Compiling..."
     & cmd.exe /c "$BaseDir\make_debug.cmd" $env:SEABOLT_TOOLCHAIN
-    if ($LASTEXITCODE -ne 0)
+    if ( $LASTEXITCODE -ne 0 )
     {
         throw @{
             Code = $ErrorCompilationFailed
@@ -65,7 +64,7 @@ Function InstallServer($Target, $Version)
 {
     Write-Host "-- Installing server"
     $Server = Invoke-Expression "neoctrl-install $Version $Target"
-    if ($LASTEXITCODE -ne 0)
+    if ( $LASTEXITCODE -ne 0 )
     {
         throw @{
             Code = $ErrorServerInstallFailed
@@ -75,8 +74,8 @@ Function InstallServer($Target, $Version)
     Write-Host "-- Server installed at $Server"
 
     Write-Host "-- Configuring server to listen on port $Port"
-    & neoctrl-configure "$Server" dbms.connector.bolt.listen_address = :$Port
-    if ($LASTEXITCODE -ne 0)
+    & neoctrl-configure "$Server" dbms.connector.bolt.listen_address=:$Port
+    if ( $LASTEXITCODE -ne 0 )
     {
         throw @{
             Code = $ErrorServerConfigFailed
@@ -85,8 +84,8 @@ Function InstallServer($Target, $Version)
     }
 
     Write-Host "-- Configuring server to accept IPv6 connections"
-    & neoctrl-configure "$Server" dbms.connectors.default_listen_address = ::
-    if ($LASTEXITCODE -ne 0)
+    & neoctrl-configure "$Server" dbms.connectors.default_listen_address=::
+    if ( $LASTEXITCODE -ne 0 )
     {
         throw @{
             Code = $ErrorServerConfigFailed
@@ -96,7 +95,7 @@ Function InstallServer($Target, $Version)
 
     Write-Host "-- Setting initial password"
     & neoctrl-set-initial-password "$Password" "$Server"
-    if ($LASTEXITCODE -ne 0)
+    if ( $LASTEXITCODE -ne 0 )
     {
         throw @{
             Code = $ErrorServerConfigFailed
@@ -112,7 +111,7 @@ Function StartServer($Server)
 {
     Write-Host "-- Starting server"
     $BoltUri = Invoke-Expression "neoctrl-start $Server" | Select-String "^bolt:"
-    if ($LASTEXITCODE -ne 0)
+    if ( $LASTEXITCODE -ne 0 )
     {
         throw @{
             Code = $ErrorServerStartFailed
@@ -128,7 +127,7 @@ Function StopServer($Server)
 {
     Write-Host "-- Stopping server"
     & neoctrl-stop $Server
-    if ($LASTEXITCODE -ne 0)
+    if ( $LASTEXITCODE -ne 0 )
     {
         throw @{
             Code = $ErrorServerStopFailed
@@ -149,10 +148,10 @@ Function RunTests($Version)
     try
     {
         Write-Host "-- Checking server"
-        $env:BOLT_PASSWORD = $Password
-        $env:BOLT_PORT = $Port
+        $env:BOLT_PASSWORD=$Password
+        $env:BOLT_PORT=$Port
         & $BaseDir\build\bin\Debug\seabolt-cli.exe debug "UNWIND range(1, 10000) AS n RETURN n"
-        if ($LASTEXITCODE -ne 0)
+        if ( $LASTEXITCODE -ne 0 )
         {
             throw @{
                 Code = $ErrorServerConfigurationError
@@ -162,7 +161,7 @@ Function RunTests($Version)
 
         Write-Host "-- Running tests"
         & $BaseDir\build\bin\Debug\seabolt-test.exe $TestArgs
-        if ($LASTEXITCODE -ne 0)
+        if ( $LASTEXITCODE -ne 0 )
         {
             throw @{
                 Code = $ErrorTestsFailed
@@ -179,13 +178,12 @@ Function RunTests($Version)
 
 try
 {
-    $env:NEO4J_CHILD_SCRIPT = "1"
+    $env:NEO4J_CHILD_SCRIPT="1"
     CheckBoltKit
     Compile
 
     $Neo4jVersion = "-e 3.4"
-    If (Test-Path "env:NEOCTRLARGS")
-    {
+    If (Test-Path "env:NEOCTRLARGS") {
         $Neo4jVersion = $env:NEOCTRLARGS
     }
 
@@ -196,22 +194,22 @@ catch
     $ErrorCode = 1
     $ErrorMessage = $_.Exception.Message
 
-    If ($_.TargetObject.Code -and $_.TargetObject.Message)
+    If ( $_.TargetObject.Code -and $_.TargetObject.Message )
     {
         $ErrorCode = $_.TargetObject.Code
         $ErrorMessage = $_.TargetObject.Message
     }
 
-    If ($env:TEAMCITY_PROJECT_NAME)
+    If ( $env:TEAMCITY_PROJECT_NAME )
     {
         $CleanedErrorMessage = $ErrorMessage -replace "[^a-zA-Z0-9., ]"
 
-        Write-Host "##teamcity[buildProblem description='$( $CleanedErrorMessage )' identity='$( $ErrorCode )']"
-        Write-Host "##teamcity[buildStatus status='FAILURE' text='$( $CleanedErrorMessage )']"
+        Write-Host "##teamcity[buildProblem description='$($CleanedErrorMessage)' identity='$($ErrorCode)']"
+        Write-Host "##teamcity[buildStatus status='FAILURE' text='$($CleanedErrorMessage)']"
     }
     Else
     {
-        Write-Host "$( $ErrorMessage ) [$( $ErrorCode )]"
+        Write-Host "$($ErrorMessage) [$($ErrorCode)]"
     }
 
     Exit $ErrorCode
