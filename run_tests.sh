@@ -1,19 +1,5 @@
 #!/usr/bin/env bash
 
-OPT_QUICK=0
-while getopts ":q" opt
-do
-  case ${opt} in
-    q)
-      OPT_QUICK=1
-      ;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
-      ;;
-  esac
-done
-shift $((OPTIND -1))
-
 BASE=$(dirname $0)
 DATE_FORMAT="%Y-%m-%dT%H:%M:%S"
 PASSWORD="password"
@@ -32,6 +18,12 @@ SERVER_STOP_FAILED=16
 SERVER_INCORRECTLY_CONFIGURED=17
 TESTS_FAILED=18
 PACKAGING_FAILED=19
+
+if [[ -z "${NEOCTRLARGS}" ]]; then
+    NEO4J_VERSION="-e 3.4"
+else
+    NEO4J_VERSION="${NEOCTRLARGS}"
+fi
 
 function check_boltkit
 {
@@ -147,15 +139,12 @@ function run_tests
     trap "stop_server ${NEO4J_DIR}" EXIT
     echo "-- Server is listening at ${NEO4J_BOLT_URI}"
 
-    if [ "${OPT_QUICK}" == "0" ]
+    echo "-- Checking server"
+    BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt-cli debug -a "UNWIND range(1, 10000) AS n RETURN n"
+    if [ "$?" -ne "0" ]
     then
-        echo "-- Checking server"
-        BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt-cli debug -a "UNWIND range(1, 10000) AS n RETURN n"
-        if [ "$?" -ne "0" ]
-        then
-            echo "FATAL: Server checks failed."
-            exit ${SERVER_INCORRECTLY_CONFIGURED}
-        fi
+        echo "FATAL: Server checks failed."
+        exit ${SERVER_INCORRECTLY_CONFIGURED}
     fi
 
     echo "-- Running tests"
@@ -173,30 +162,10 @@ function run_tests
 echo "Seabolt test run started at $(date +$DATE_FORMAT)"
 check_boltkit
 compile_debug
-for NEO4J_VERSION in $(grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" COMPATIBILITY)
-do
-    run_tests "${NEO4J_VERSION}"
-    if [ "$?" -ne "0" ]
-    then
-        echo "FATAL: Test execution failed."
-        exit ${TESTS_FAILED}
-    fi
-    if [ "${OPT_QUICK}" != "0" ]
-    then
-        break
-    fi
-done
-if [ "${OPT_QUICK}" == "0" ]
+run_tests "${NEO4J_VERSION}"
+if [ "$?" -ne "0" ]
 then
-    compile_release
-    for NEO4J_VERSION in $(grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" COMPATIBILITY)
-    do
-        run_tests "${NEO4J_VERSION}"
-        if [ "$?" -ne "0" ]
-        then
-            echo "FATAL: Test execution failed."
-            exit ${TESTS_FAILED}
-        fi
-    done
+    echo "FATAL: Test execution failed."
+    exit ${TESTS_FAILED}
 fi
 echo "Seabolt test run completed at $(date +$DATE_FORMAT)"
