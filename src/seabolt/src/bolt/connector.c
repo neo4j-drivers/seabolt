@@ -22,6 +22,7 @@
 #include "address-private.h"
 #include "config-private.h"
 #include "connector-private.h"
+#include "log-private.h"
 #include "direct-pool.h"
 #include "mem.h"
 #include "routing-pool.h"
@@ -45,6 +46,9 @@ BoltConnector_create(BoltAddress* address, BoltValue* auth_token, struct BoltCon
     connector->address = BoltAddress_create(address->host, address->port);
     connector->auth_token = BoltValue_duplicate(auth_token);
     connector->config = BoltConnector_apply_defaults(BoltConfig_clone(config));
+
+    BoltLog_info(connector->config->log, "[connector]: Version %s [%s]", SEABOLT_VERSION,
+            SEABOLT_VERSION_HASH);
 
     switch (connector->config->mode) {
     case BOLT_MODE_DIRECT:
@@ -78,7 +82,7 @@ void BoltConnector_destroy(BoltConnector* connector)
     BoltMem_deallocate(connector, sizeof(BoltConnector));
 }
 
-BoltConnection* BoltConnector_acquire(BoltConnector* connector, BoltAccessMode mode, BoltStatus *status)
+BoltConnection* BoltConnector_acquire(BoltConnector* connector, BoltAccessMode mode, BoltStatus* status)
 {
     switch (connector->config->mode) {
     case BOLT_MODE_DIRECT:
