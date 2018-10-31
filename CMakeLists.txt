@@ -4,7 +4,7 @@ project(seabolt
         DESCRIPTION "The C Connector library for Neo4j"
         LANGUAGES C CXX)
 
-set(SEABOLT_VERSION "1.7.0-rc03" CACHE STRING "The version of seabolt being built")
+set(SEABOLT_VERSION "1.7.0-SNAPSHOT" CACHE STRING "The version of seabolt being built")
 
 message(STATUS ${SEABOLT_VERSION})
 

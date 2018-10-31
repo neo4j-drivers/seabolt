@@ -19,7 +19,7 @@
 
 #include "bolt-private.h"
 
-const char* BoltError_get_string(int code)
+const char* BoltError_get_string(int32_t code)
 {
     switch (code) {
     case BOLT_SUCCESS:

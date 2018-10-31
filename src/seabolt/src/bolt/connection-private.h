@@ -84,4 +84,15 @@ struct BoltConnection {
     void* on_error_cb_state;
 };
 
+/**
+ * Take an exact amount of data from the receive buffer, deferring to
+ * the socket if not enough data is available.
+ *
+ * @param connection
+ * @param buffer
+ * @param buffer_size
+ * @return
+ */
+int32_t BoltConnection_receive(BoltConnection* connection, char* buffer, int buffer_size);
+
 #endif //SEABOLT_CONNECTION_PRIVATE_H

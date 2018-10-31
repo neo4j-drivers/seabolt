@@ -28,13 +28,6 @@ typedef int BoltAccessMode;
 #define BOLT_ACCESS_MODE_WRITE  0
 #define BOLT_ACCESS_MODE_READ   1
 
-struct BoltConnectionResult {
-    BoltConnection* connection;
-    BoltConnectionState connection_status;
-    int connection_error;
-    char* connection_error_ctx;
-};
-
 typedef struct BoltConnector BoltConnector;
 
 SEABOLT_EXPORT BoltConnector*
@@ -42,7 +35,7 @@ BoltConnector_create(struct BoltAddress* address, struct BoltValue* auth_token, 
 
 SEABOLT_EXPORT void BoltConnector_destroy(BoltConnector* connector);
 
-SEABOLT_EXPORT struct BoltConnectionResult BoltConnector_acquire(BoltConnector* connector, BoltAccessMode mode);
+SEABOLT_EXPORT BoltConnection* BoltConnector_acquire(BoltConnector* connector, BoltAccessMode mode, BoltStatus *status);
 
 SEABOLT_EXPORT void BoltConnector_release(BoltConnector* connector, struct BoltConnection* connection);
 

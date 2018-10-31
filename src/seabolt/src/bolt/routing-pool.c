@@ -19,6 +19,7 @@
 
 #include "bolt-private.h"
 #include "address-private.h"
+#include "address-resolver-private.h"
 #include "address-set-private.h"
 #include "config-private.h"
 #include "connection-private.h"
@@ -478,60 +479,56 @@ void BoltRoutingPool_destroy(struct BoltRoutingPool* pool)
     BoltMem_deallocate(pool, SIZE_OF_ROUTING_POOL);
 }
 
-struct BoltConnectionResult
-BoltRoutingPool_acquire(struct BoltRoutingPool* pool, BoltAccessMode mode)
+BoltConnection* BoltRoutingPool_acquire(struct BoltRoutingPool* pool, BoltAccessMode mode, BoltStatus* status)
 {
     struct BoltAddress* server = NULL;
 
     BoltUtil_rwlock_rdlock(&pool->rwlock);
 
-    int status = BoltRoutingPool_ensure_routing_table(pool, mode);
-    if (status==BOLT_SUCCESS) {
+    int result = BoltRoutingPool_ensure_routing_table(pool, mode);
+    if (result==BOLT_SUCCESS) {
         server = mode==BOLT_ACCESS_MODE_READ
                  ? BoltRoutingPool_select_least_connected_reader(pool)
                  : BoltRoutingPool_select_least_connected_writer(pool);
         if (server==NULL) {
-            status = BOLT_ROUTING_NO_SERVERS_TO_SELECT;
+            result = BOLT_ROUTING_NO_SERVERS_TO_SELECT;
         }
     }
 
     int server_pool_index = -1;
-    if (status==BOLT_SUCCESS) {
+    if (result==BOLT_SUCCESS) {
         server_pool_index = BoltRoutingPool_ensure_server(pool, server);
         if (server_pool_index<0) {
-            status = BOLT_ROUTING_UNABLE_TO_CONSTRUCT_POOL_FOR_SERVER;
+            result = BOLT_ROUTING_UNABLE_TO_CONSTRUCT_POOL_FOR_SERVER;
         }
     }
 
-    struct BoltConnectionResult result = {NULL, BOLT_CONNECTION_STATE_DISCONNECTED, BOLT_SUCCESS, NULL};
-    if (status==BOLT_SUCCESS) {
-        result = BoltDirectPool_acquire(pool->server_pools[server_pool_index]);
-        if (result.connection!=NULL) {
-            status = BOLT_SUCCESS;
-            result.connection->on_error_cb_state = pool;
-            result.connection->on_error_cb = BoltRoutingPool_connection_error_handler;
-        }
-        else {
-            status = result.connection_error;
+    BoltConnection* connection = NULL;
+    if (result==BOLT_SUCCESS) {
+        connection = BoltDirectPool_acquire(pool->server_pools[server_pool_index], status);
+        if (connection!=NULL) {
+            result = BOLT_SUCCESS;
+            connection->on_error_cb_state = pool;
+            connection->on_error_cb = BoltRoutingPool_connection_error_handler;
         }
     }
 
     BoltUtil_rwlock_rdunlock(&pool->rwlock);
 
-    if (status==BOLT_SUCCESS) {
-        return result;
+    if (result==BOLT_SUCCESS) {
+        return connection;
     }
 
     // check if we were able to complete server selection. this is not the case when routing
     // table refresh fails.
     if (server!=NULL) {
-        BoltRoutingPool_handle_connection_error_by_code(pool, server, status);
+        BoltRoutingPool_handle_connection_error_by_code(pool, server, result);
     }
 
-    result.connection_error = status;
-    result.connection_error_ctx = NULL;
+    status->error = result;
+    status->error_ctx = NULL;
 
-    return result;
+    return NULL;
 }
 
 int BoltRoutingPool_release(struct BoltRoutingPool* pool, struct BoltConnection* connection)

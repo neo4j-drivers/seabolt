@@ -39,8 +39,8 @@ static int64_t __allocation_events = 0;
 void* BoltMem_allocate(int64_t new_size)
 {
     void* p = malloc(new_size);
-    size_t new_allocation = BoltUtil_add(&__allocation, new_size);
-    size_t peak_allocation = BoltUtil_add(&__peak_allocation, 0);
+    int64_t new_allocation = BoltUtil_add(&__allocation, new_size);
+    int64_t peak_allocation = BoltUtil_add(&__peak_allocation, 0);
     if (new_allocation>peak_allocation) BoltUtil_add(&__peak_allocation, new_allocation-peak_allocation);
     BoltUtil_increment(&__allocation_events);
     return p;
@@ -50,8 +50,8 @@ void* BoltMem_reallocate(void* ptr, int64_t old_size, int64_t new_size)
 {
     void* p = realloc(ptr, new_size);
 
-    size_t new_allocation = BoltUtil_add(&__allocation, -old_size+new_size);
-    size_t peak_allocation = BoltUtil_add(&__peak_allocation, 0);
+    int64_t new_allocation = BoltUtil_add(&__allocation, -old_size+new_size);
+    int64_t peak_allocation = BoltUtil_add(&__peak_allocation, 0);
     if (__allocation>__peak_allocation) BoltUtil_add(&__peak_allocation, new_allocation-peak_allocation);
     BoltUtil_increment(&__allocation_events);
     return p;

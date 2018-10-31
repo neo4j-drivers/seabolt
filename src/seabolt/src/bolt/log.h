@@ -25,11 +25,11 @@
 #include "connection.h"
 #include "values.h"
 
-typedef void (* log_func)(int state, const char* message);
+typedef void (* log_func)(void* state, const char* message);
 
 typedef struct BoltLog BoltLog;
 
-SEABOLT_EXPORT struct BoltLog* BoltLog_create(int state);
+SEABOLT_EXPORT struct BoltLog* BoltLog_create(void* state);
 
 SEABOLT_EXPORT void BoltLog_destroy(struct BoltLog* log);
 

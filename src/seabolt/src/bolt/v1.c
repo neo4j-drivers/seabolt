@@ -163,8 +163,8 @@ void ensure_failure_data(struct BoltProtocolV1State* state)
     if (state->failure_data==NULL) {
         state->failure_data = BoltValue_create();
         BoltValue_format_as_Dictionary(state->failure_data, 2);
-        BoltDictionary_set_key(state->failure_data, 0, "code", strlen("code"));
-        BoltDictionary_set_key(state->failure_data, 1, "message", strlen("message"));
+        BoltDictionary_set_key(state->failure_data, 0, "code", (int32_t)strlen("code"));
+        BoltDictionary_set_key(state->failure_data, 1, "message", (int32_t)strlen("message"));
     }
 }
 
@@ -276,7 +276,7 @@ struct BoltValue* BoltProtocolV1_set_run_cypher_parameter(struct BoltConnection*
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     struct BoltValue* params = BoltMessage_param(state->run_request, 1);
-    BoltDictionary_set_key(params, index, name, name_size);
+    BoltDictionary_set_key(params, index, name, (int32_t)name_size);
     return BoltDictionary_value(params, index);
 }
 

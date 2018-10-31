@@ -633,7 +633,7 @@ BoltProtocolV3_set_run_cypher_parameter(struct BoltConnection* connection, int32
 {
     struct BoltProtocolV3State* state = BoltProtocolV3_state(connection);
     struct BoltValue* params = BoltMessage_param(state->run_request, 1);
-    BoltDictionary_set_key(params, index, name, name_size);
+    BoltDictionary_set_key(params, index, name, (int32_t)name_size);
     return BoltDictionary_value(params, index);
 }
 
@@ -884,7 +884,7 @@ void BoltProtocolV3_extract_metadata(struct BoltConnection* connection, struct B
                 case BOLT_STRING: {
                     char new_connection_id[MAX_CONNECTION_ID_SIZE];
                     strncpy(new_connection_id, BoltString_get(value), (size_t) value->size+1);
-                    char* old_connection_id = BoltConnection_id(connection);
+                    const char* old_connection_id = BoltConnection_id(connection);
                     snprintf(state->connection_id, MAX_CONNECTION_ID_SIZE, "%s, %s", old_connection_id,
                             new_connection_id);
                     BoltLog_info(connection->log, "[%s]: <SET connection_id=\"%s\">", old_connection_id,

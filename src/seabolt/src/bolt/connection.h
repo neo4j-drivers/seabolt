@@ -85,7 +85,7 @@ SEABOLT_EXPORT void BoltConnection_destroy(BoltConnection* connection);
  * @param address descriptor of the remote Bolt server address
  * @return 0 if the connection was opened successfully, -1 otherwise
  */
-SEABOLT_EXPORT int BoltConnection_open(BoltConnection* connection, BoltTransport transport,
+SEABOLT_EXPORT int32_t BoltConnection_open(BoltConnection* connection, BoltTransport transport,
         BoltAddress* address, struct BoltTrust* trust, struct BoltLog* log, struct BoltSocketOptions* sock_opts);
 
 /**
@@ -104,7 +104,7 @@ SEABOLT_EXPORT void BoltConnection_close(BoltConnection* connection);
  * @param auth_token dictionary that contains user credentials
  * @return
  */
-SEABOLT_EXPORT int
+SEABOLT_EXPORT int32_t
 BoltConnection_init(BoltConnection* connection, const char* user_agent, const BoltValue* auth_token);
 
 /**
@@ -113,18 +113,7 @@ BoltConnection_init(BoltConnection* connection, const char* user_agent, const Bo
  * @param connection
  * @return the latest request ID
  */
-SEABOLT_EXPORT int BoltConnection_send(BoltConnection* connection);
-
-/**
- * Take an exact amount of data from the receive buffer, deferring to
- * the socket if not enough data is available.
- *
- * @param connection
- * @param buffer
- * @param size
- * @return
- */
-int BoltConnection_receive(BoltConnection* connection, char* buffer, int size);
+SEABOLT_EXPORT int32_t BoltConnection_send(BoltConnection* connection);
 
 /**
  * Fetch the next value from the result stream for a given request.
@@ -147,7 +136,7 @@ int BoltConnection_receive(BoltConnection* connection, char* buffer, int size);
  *         -1 if an error occurs
  *
  */
-SEABOLT_EXPORT int BoltConnection_fetch(BoltConnection* connection, BoltRequest request);
+SEABOLT_EXPORT int32_t BoltConnection_fetch(BoltConnection* connection, BoltRequest request);
 
 /**
  * Fetch values from the result stream for a given request, up to and
@@ -167,7 +156,7 @@ SEABOLT_EXPORT int BoltConnection_fetch(BoltConnection* connection, BoltRequest 
  * @return >=0 the number of records discarded from this result
  *         -1 if an error occurs
  */
-SEABOLT_EXPORT int BoltConnection_fetch_summary(BoltConnection* connection, BoltRequest request);
+SEABOLT_EXPORT int32_t BoltConnection_fetch_summary(BoltConnection* connection, BoltRequest request);
 
 /**
  * Load a transaction BEGIN request into the request queue.
@@ -175,13 +164,13 @@ SEABOLT_EXPORT int BoltConnection_fetch_summary(BoltConnection* connection, Bolt
  * @param connection
  * @return
  */
-SEABOLT_EXPORT int BoltConnection_clear_begin(BoltConnection* connection);
+SEABOLT_EXPORT int32_t BoltConnection_clear_begin(BoltConnection* connection);
 
-SEABOLT_EXPORT int BoltConnection_set_begin_bookmarks(BoltConnection* connection, BoltValue* bookmark_list);
+SEABOLT_EXPORT int32_t BoltConnection_set_begin_bookmarks(BoltConnection* connection, BoltValue* bookmark_list);
 
-SEABOLT_EXPORT int BoltConnection_set_begin_tx_timeout(BoltConnection* connection, int64_t timeout);
+SEABOLT_EXPORT int32_t BoltConnection_set_begin_tx_timeout(BoltConnection* connection, int64_t timeout);
 
-SEABOLT_EXPORT int BoltConnection_set_begin_tx_metadata(BoltConnection* connection, BoltValue* metadata);
+SEABOLT_EXPORT int32_t BoltConnection_set_begin_tx_metadata(BoltConnection* connection, BoltValue* metadata);
 
 /**
  * Load a transaction BEGIN request into the request queue.
@@ -189,7 +178,7 @@ SEABOLT_EXPORT int BoltConnection_set_begin_tx_metadata(BoltConnection* connecti
  * @param connection
  * @return
  */
-SEABOLT_EXPORT int BoltConnection_load_begin_request(BoltConnection* connection);
+SEABOLT_EXPORT int32_t BoltConnection_load_begin_request(BoltConnection* connection);
 
 /**
  * Load a transaction COMMIT request into the request queue.
@@ -197,7 +186,7 @@ SEABOLT_EXPORT int BoltConnection_load_begin_request(BoltConnection* connection)
  * @param connection
  * @return
  */
-SEABOLT_EXPORT int BoltConnection_load_commit_request(BoltConnection* connection);
+SEABOLT_EXPORT int32_t BoltConnection_load_commit_request(BoltConnection* connection);
 
 /**
  * Load a transaction ROLLBACK request into the request queue.
@@ -205,7 +194,7 @@ SEABOLT_EXPORT int BoltConnection_load_commit_request(BoltConnection* connection
  * @param connection
  * @return
  */
-SEABOLT_EXPORT int BoltConnection_load_rollback_request(BoltConnection* connection);
+SEABOLT_EXPORT int32_t BoltConnection_load_rollback_request(BoltConnection* connection);
 
 /**
  * Load a RUN request into the request queue.
@@ -213,23 +202,23 @@ SEABOLT_EXPORT int BoltConnection_load_rollback_request(BoltConnection* connecti
  * @param connection
  * @return
  */
-SEABOLT_EXPORT int BoltConnection_clear_run(BoltConnection* connection);
+SEABOLT_EXPORT int32_t BoltConnection_clear_run(BoltConnection* connection);
 
-SEABOLT_EXPORT int BoltConnection_set_run_bookmarks(BoltConnection* connection, BoltValue* bookmark_list);
+SEABOLT_EXPORT int32_t BoltConnection_set_run_bookmarks(BoltConnection* connection, BoltValue* bookmark_list);
 
-SEABOLT_EXPORT int BoltConnection_set_run_tx_timeout(BoltConnection* connection, int64_t timeout);
+SEABOLT_EXPORT int32_t BoltConnection_set_run_tx_timeout(BoltConnection* connection, int64_t timeout);
 
-SEABOLT_EXPORT int BoltConnection_set_run_tx_metadata(BoltConnection* connection, BoltValue* metadata);
+SEABOLT_EXPORT int32_t BoltConnection_set_run_tx_metadata(BoltConnection* connection, BoltValue* metadata);
 
 SEABOLT_EXPORT int
-BoltConnection_set_run_cypher(BoltConnection* connection, const char* cypher, const size_t cypher_size,
-        int32_t n_parameter);
+BoltConnection_set_run_cypher(BoltConnection* connection, const char* cypher, const uint64_t cypher_size,
+        const int32_t n_parameter);
 
 SEABOLT_EXPORT BoltValue*
 BoltConnection_set_run_cypher_parameter(BoltConnection* connection, int32_t index, const char* name,
-        size_t name_size);
+        const uint64_t name_size);
 
-SEABOLT_EXPORT int BoltConnection_load_run_request(BoltConnection* connection);
+SEABOLT_EXPORT int32_t BoltConnection_load_run_request(BoltConnection* connection);
 
 /**
  * Load a DISCARD_ALL request into the request queue.
@@ -238,7 +227,7 @@ SEABOLT_EXPORT int BoltConnection_load_run_request(BoltConnection* connection);
  * @param n should always be -1
  * @return
  */
-SEABOLT_EXPORT int BoltConnection_load_discard_request(BoltConnection* connection, int32_t n);
+SEABOLT_EXPORT int32_t BoltConnection_load_discard_request(BoltConnection* connection, int32_t n);
 
 /**
  * Load a PULL_ALL request into the request queue.
@@ -247,7 +236,7 @@ SEABOLT_EXPORT int BoltConnection_load_discard_request(BoltConnection* connectio
  * @param n should always be -1
  * @return
  */
-SEABOLT_EXPORT int BoltConnection_load_pull_request(BoltConnection* connection, int32_t n);
+SEABOLT_EXPORT int32_t BoltConnection_load_pull_request(BoltConnection* connection, int32_t n);
 
 /**
  * Load a RESET request into the request queue.
@@ -259,7 +248,7 @@ SEABOLT_EXPORT int BoltConnection_load_pull_request(BoltConnection* connection, 
  * @param connection
  * @return
  */
-SEABOLT_EXPORT int BoltConnection_load_reset_request(BoltConnection* connection);
+SEABOLT_EXPORT int32_t BoltConnection_load_reset_request(BoltConnection* connection);
 
 /**
  * Obtain a handle to the last request sent to the server. This handle
@@ -270,9 +259,9 @@ SEABOLT_EXPORT int BoltConnection_load_reset_request(BoltConnection* connection)
  */
 SEABOLT_EXPORT BoltRequest BoltConnection_last_request(BoltConnection* connection);
 
-SEABOLT_EXPORT char* BoltConnection_server(BoltConnection* connection);
+SEABOLT_EXPORT const char* BoltConnection_server(BoltConnection* connection);
 
-SEABOLT_EXPORT char* BoltConnection_id(BoltConnection* connection);
+SEABOLT_EXPORT const char* BoltConnection_id(BoltConnection* connection);
 
 SEABOLT_EXPORT const BoltAddress* BoltConnection_address(BoltConnection* connection);
 
@@ -290,7 +279,7 @@ SEABOLT_EXPORT const BoltAddress* BoltConnection_local_endpoint(BoltConnection* 
  * @param connection
  * @return
  */
-SEABOLT_EXPORT char* BoltConnection_last_bookmark(BoltConnection* connection);
+SEABOLT_EXPORT const char* BoltConnection_last_bookmark(BoltConnection* connection);
 
 
 /**
@@ -298,7 +287,7 @@ SEABOLT_EXPORT char* BoltConnection_last_bookmark(BoltConnection* connection);
 * @param connection
 * @return
 */
-SEABOLT_EXPORT int BoltConnection_summary_success(BoltConnection* connection);
+SEABOLT_EXPORT int32_t BoltConnection_summary_success(BoltConnection* connection);
 
 /**
  * Obtain the details of the latest server generated FAILURE message

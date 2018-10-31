@@ -53,7 +53,7 @@ SEABOLT_EXPORT const char* BoltAddress_port(BoltAddress* address);
  * @param n_resolved pointer to an int value where number of resolved addresses will be saved
  * @return status of the internal getaddrinfo call
  */
-SEABOLT_EXPORT int BoltAddress_resolve(BoltAddress* address, int* n_resolved, struct BoltLog* log);
+SEABOLT_EXPORT int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, struct BoltLog* log);
 
 /**
  * Copy the textual representation of a resolved host IP address into a buffer.
@@ -68,8 +68,8 @@ SEABOLT_EXPORT int BoltAddress_resolve(BoltAddress* address, int* n_resolved, st
  * @param buffer_size size of the buffer
  * @return address family (AF_INET or AF_INET6) or -1 on error
  */
-SEABOLT_EXPORT int
-BoltAddress_copy_resolved_host(BoltAddress* address, size_t index, char* buffer, int32_t buffer_size);
+SEABOLT_EXPORT int32_t
+BoltAddress_copy_resolved_host(BoltAddress* address, int32_t index, char* buffer, uint64_t buffer_size);
 
 /**
  * Destroy an address structure and deallocate any associated memory.

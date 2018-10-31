@@ -23,13 +23,11 @@
 
 struct BoltStatus {
     BoltConnectionState state;
-    int error;
+    int32_t error;
     char* error_ctx;
-    size_t error_ctx_size;
+    uint64_t error_ctx_size;
 };
 
-BoltStatus* BoltStatus_create(size_t context_size);
-
-void BoltStatus_destroy(BoltStatus* status);
+BoltStatus* BoltStatus_create_with_ctx(uint64_t ctx_size);
 
 #endif //SEABOLT_STATUS_PRIVATE_H

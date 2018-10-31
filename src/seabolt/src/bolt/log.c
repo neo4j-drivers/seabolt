@@ -24,7 +24,7 @@
 #include "string-builder.h"
 #include "values-private.h"
 
-struct BoltLog* BoltLog_create(int state)
+struct BoltLog* BoltLog_create(void* state)
 {
     struct BoltLog* log = (struct BoltLog*) BoltMem_allocate(sizeof(struct BoltLog));
     log->state = state;
@@ -86,16 +86,14 @@ void BoltLog_set_debug_func(BoltLog* log, log_func func)
     log->debug_logger = func;
 }
 
-void _perform_log_call(log_func func, int state, const char* format, va_list args)
+void _perform_log_call(log_func func, void* state, const char* format, va_list args)
 {
-    size_t
-            size = 512*sizeof(char);
+    uint64_t size = 512*sizeof(char);
     char* message_fmt = (char*) BoltMem_allocate(size);
     while (1) {
         va_list args_copy;
         va_copy(args_copy, args);
-        size_t
-                written = vsnprintf(message_fmt, size, format, args_copy);
+        uint64_t written = (uint64_t) vsnprintf(message_fmt, size, format, args_copy);
         va_end(args_copy);
         if (written<size) {
             break;

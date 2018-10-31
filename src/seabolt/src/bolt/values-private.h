@@ -58,10 +58,6 @@ struct BoltValue {
     int16_t subtype;
 
     /// Logical size of this value.
-    /// For portability between platforms, the logical
-    /// size of a value (e.g. string length or list size)
-    /// cannot exceed 2^31, therefore an int32_t is safe
-    /// here.
     int32_t size;
 
     /// Physical size of this value, in bytes.

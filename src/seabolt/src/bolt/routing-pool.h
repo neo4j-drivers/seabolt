@@ -43,12 +43,12 @@ struct BoltRoutingPool {
 #define SIZE_OF_ROUTING_POOL_PTR sizeof(struct BoltRoutingConnectionPool*)
 
 struct BoltRoutingPool*
-BoltRoutingPool_create(struct BoltAddress* address, const struct BoltValue* auth_token, const struct BoltConfig* config);
+BoltRoutingPool_create(struct BoltAddress* address, const struct BoltValue* auth_token,
+        const struct BoltConfig* config);
 
 void BoltRoutingPool_destroy(struct BoltRoutingPool* pool);
 
-struct BoltConnectionResult
-BoltRoutingPool_acquire(struct BoltRoutingPool* pool, BoltAccessMode mode);
+BoltConnection* BoltRoutingPool_acquire(struct BoltRoutingPool* pool, BoltAccessMode mode, BoltStatus* status);
 
 int BoltRoutingPool_release(struct BoltRoutingPool* pool, struct BoltConnection* connection);
 

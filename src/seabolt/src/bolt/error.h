@@ -54,6 +54,6 @@
 #define BOLT_CONNECTION_HAS_MORE_INFO   0xFFE
 #define BOLT_STATUS_SET   0xFFF
 
-SEABOLT_EXPORT const char* BoltError_get_string(int code);
+SEABOLT_EXPORT const char* BoltError_get_string(int32_t code);
 
 #endif //SEABOLT_ALL_ERROR_H

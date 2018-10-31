@@ -106,7 +106,7 @@ SSL_CTX* create_ssl_ctx(struct BoltTrust* trust, const char* hostname, const str
             if (trust->certs!=NULL && trust->certs_len!=0) {
                 // load the buffer into a BIO memory reader
                 BIO* trusted_certs_bio = BIO_new(BIO_s_mem());
-                BIO_write(trusted_certs_bio, trust->certs, trust->certs_len);
+                BIO_write(trusted_certs_bio, trust->certs, (int32_t)trust->certs_len);
 
                 // read all X509_AUX objects encoded (_AUX suffix tells that these
                 // certificates are to be treated as trusted

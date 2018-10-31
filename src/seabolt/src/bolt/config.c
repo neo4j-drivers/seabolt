@@ -52,23 +52,23 @@ void BoltSocketOptions_destroy(BoltSocketOptions* socket_options)
     BoltMem_deallocate(socket_options, sizeof(BoltSocketOptions));
 }
 
-int BoltSocketOptions_get_connect_timeout(BoltSocketOptions* socket_options)
+int32_t BoltSocketOptions_get_connect_timeout(BoltSocketOptions* socket_options)
 {
     return socket_options->connect_timeout;
 }
 
-int BoltSocketOptions_set_connect_timeout(BoltSocketOptions* socket_options, int connect_timeout)
+int32_t BoltSocketOptions_set_connect_timeout(BoltSocketOptions* socket_options, int32_t connect_timeout)
 {
     socket_options->connect_timeout = connect_timeout;
     return BOLT_SUCCESS;
 }
 
-int BoltSocketOptions_get_keep_alive(BoltSocketOptions* socket_options)
+int32_t BoltSocketOptions_get_keep_alive(BoltSocketOptions* socket_options)
 {
     return socket_options->keep_alive;
 }
 
-int BoltSocketOptions_set_keep_alive(BoltSocketOptions* socket_options, int keep_alive)
+int32_t BoltSocketOptions_set_keep_alive(BoltSocketOptions* socket_options, int32_t keep_alive)
 {
     socket_options->keep_alive = keep_alive;
     return BOLT_SUCCESS;
@@ -105,36 +105,36 @@ void BoltTrust_destroy(BoltTrust* trust)
     BoltMem_deallocate(trust, sizeof(BoltTrust));
 }
 
-const char* BoltTrust_get_certs(BoltTrust* trust, size_t* size)
+const char* BoltTrust_get_certs(BoltTrust* trust, uint64_t* size)
 {
     *size = trust->certs_len;
     return trust->certs;
 }
 
-int BoltTrust_set_certs(BoltTrust* trust, const char* certs_pem, int certs_pem_size)
+int32_t BoltTrust_set_certs(BoltTrust* trust, const char* certs_pem, uint64_t certs_pem_size)
 {
     trust->certs = BoltMem_duplicate(certs_pem, certs_pem_size);
     trust->certs_len = certs_pem_size;
     return BOLT_SUCCESS;
 }
 
-int BoltTrust_get_skip_verify(BoltTrust* trust)
+int32_t BoltTrust_get_skip_verify(BoltTrust* trust)
 {
     return trust->skip_verify;
 }
 
-int BoltTrust_set_skip_verify(BoltTrust* trust, int skip_verify)
+int32_t BoltTrust_set_skip_verify(BoltTrust* trust, int32_t skip_verify)
 {
     trust->skip_verify = skip_verify;
     return BOLT_SUCCESS;
 }
 
-int BoltTrust_get_skip_verify_hostname(BoltTrust* trust)
+int32_t BoltTrust_get_skip_verify_hostname(BoltTrust* trust)
 {
     return trust->skip_verify_hostname;
 }
 
-int BoltTrust_set_skip_verify_hostname(BoltTrust* trust, int skip_verify_hostname)
+int32_t BoltTrust_set_skip_verify_hostname(BoltTrust* trust, int32_t skip_verify_hostname)
 {
     trust->skip_verify_hostname = skip_verify_hostname;
     return BOLT_SUCCESS;
@@ -204,7 +204,7 @@ BoltMode BoltConfig_get_mode(BoltConfig* config)
     return config->mode;
 }
 
-int BoltConfig_set_mode(BoltConfig* config, BoltMode mode)
+int32_t BoltConfig_set_mode(BoltConfig* config, BoltMode mode)
 {
     config->mode = mode;
     return BOLT_SUCCESS;
@@ -215,7 +215,7 @@ BoltTransport BoltConfig_get_transport(BoltConfig* config)
     return config->transport;
 }
 
-int BoltConfig_set_transport(BoltConfig* config, BoltTransport transport)
+int32_t BoltConfig_set_transport(BoltConfig* config, BoltTransport transport)
 {
     config->transport = transport;
     return BOLT_SUCCESS;
@@ -226,7 +226,7 @@ BoltTrust* BoltConfig_get_trust(BoltConfig* config)
     return config->trust;
 }
 
-int BoltConfig_set_trust(BoltConfig* config, BoltTrust* trust)
+int32_t BoltConfig_set_trust(BoltConfig* config, BoltTrust* trust)
 {
     config->trust = BoltTrust_clone(trust);
     return BOLT_SUCCESS;
@@ -237,7 +237,7 @@ const char* BoltConfig_get_user_agent(BoltConfig* config)
     return config->user_agent;
 }
 
-int BoltConfig_set_user_agent(BoltConfig* config, const char* user_agent)
+int32_t BoltConfig_set_user_agent(BoltConfig* config, const char* user_agent)
 {
     config->user_agent = BoltMem_duplicate(user_agent, SIZE_OF_C_STRING(user_agent));
     return BOLT_SUCCESS;
@@ -248,7 +248,7 @@ BoltValue* BoltConfig_get_routing_context(BoltConfig* config)
     return config->routing_context;
 }
 
-int BoltConfig_set_routing_context(BoltConfig* config, BoltValue* routing_context)
+int32_t BoltConfig_set_routing_context(BoltConfig* config, BoltValue* routing_context)
 {
     config->routing_context = BoltValue_duplicate(routing_context);
     return BOLT_SUCCESS;
@@ -259,7 +259,7 @@ BoltAddressResolver* BoltConfig_get_address_resolver(BoltConfig* config)
     return config->address_resolver;
 }
 
-int BoltConfig_set_address_resolver(BoltConfig* config, BoltAddressResolver* address_resolver)
+int32_t BoltConfig_set_address_resolver(BoltConfig* config, BoltAddressResolver* address_resolver)
 {
     config->address_resolver = BoltAddressResolver_clone(address_resolver);
     return BOLT_SUCCESS;
@@ -270,40 +270,40 @@ BoltLog* BoltConfig_get_log(BoltConfig* config)
     return config->log;
 }
 
-int BoltConfig_set_log(BoltConfig* config, BoltLog* log)
+int32_t BoltConfig_set_log(BoltConfig* config, BoltLog* log)
 {
     config->log = BoltLog_clone(log);
     return BOLT_SUCCESS;
 }
 
-int BoltConfig_get_max_pool_size(BoltConfig* config)
+int32_t BoltConfig_get_max_pool_size(BoltConfig* config)
 {
     return config->max_pool_size;
 }
 
-int BoltConfig_set_max_pool_size(BoltConfig* config, int max_pool_size)
+int32_t BoltConfig_set_max_pool_size(BoltConfig* config, int32_t max_pool_size)
 {
     config->max_pool_size = max_pool_size;
     return BOLT_SUCCESS;
 }
 
-int BoltConfig_get_max_connection_life_time(BoltConfig* config)
+int32_t BoltConfig_get_max_connection_life_time(BoltConfig* config)
 {
     return config->max_connection_life_time;
 }
 
-int BoltConfig_set_max_connection_life_time(BoltConfig* config, int max_connection_life_time)
+int32_t BoltConfig_set_max_connection_life_time(BoltConfig* config, int32_t max_connection_life_time)
 {
     config->max_connection_life_time = max_connection_life_time;
     return BOLT_SUCCESS;
 }
 
-int BoltConfig_get_max_connection_acquisition_time(BoltConfig* config)
+int32_t BoltConfig_get_max_connection_acquisition_time(BoltConfig* config)
 {
     return config->max_connection_acquisition_time;
 }
 
-int BoltConfig_set_max_connection_acquisition_time(BoltConfig* config, int max_connection_acquisition_time)
+int32_t BoltConfig_set_max_connection_acquisition_time(BoltConfig* config, int32_t max_connection_acquisition_time)
 {
     config->max_connection_acquisition_time = max_connection_acquisition_time;
     return BOLT_SUCCESS;
@@ -314,7 +314,7 @@ BoltSocketOptions* BoltConfig_get_socket_options(BoltConfig* config)
     return config->socket_options;
 }
 
-int BoltConfig_set_socket_options(BoltConfig* config, BoltSocketOptions* socket_options)
+int32_t BoltConfig_set_socket_options(BoltConfig* config, BoltSocketOptions* socket_options)
 {
     config->socket_options = BoltSocketOptions_clone(socket_options);
     return BOLT_SUCCESS;

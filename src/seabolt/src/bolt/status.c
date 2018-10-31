@@ -21,19 +21,24 @@
 #include "status-private.h"
 #include "mem.h"
 
-BoltStatus* BoltStatus_create(size_t context_size)
+BoltStatus* BoltStatus_create()
+{
+    return BoltStatus_create_with_ctx(0);
+}
+
+BoltStatus* BoltStatus_create_with_ctx(uint64_t context_size)
 {
     BoltStatus* status = BoltMem_allocate(sizeof(BoltStatus));
     status->state = BOLT_CONNECTION_STATE_DISCONNECTED;
     status->error = BOLT_SUCCESS;
-    status->error_ctx = BoltMem_allocate(context_size);
+    status->error_ctx = context_size ? BoltMem_allocate(context_size) : NULL;
     status->error_ctx_size = context_size;
     return status;
 }
 
 void BoltStatus_destroy(BoltStatus* status)
 {
-    if (status->error_ctx!=NULL) {
+    if (status->error_ctx_size>0) {
         BoltMem_deallocate(status->error_ctx, status->error_ctx_size);
     }
     BoltMem_deallocate(status, sizeof(BoltStatus));
@@ -44,7 +49,7 @@ BoltConnectionState BoltStatus_get_state(BoltStatus* status)
     return status->state;
 }
 
-int BoltStatus_get_error(BoltStatus* status)
+int32_t BoltStatus_get_error(BoltStatus* status)
 {
     return status->error;
 }

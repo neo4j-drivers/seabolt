@@ -21,7 +21,7 @@
 #include "address-resolver-private.h"
 #include "mem.h"
 
-BoltAddressResolver* BoltAddressResolver_create(int state, address_resolver_func resolver_func)
+BoltAddressResolver* BoltAddressResolver_create(void* state, address_resolver_func resolver_func)
 {
     BoltAddressResolver* resolver = (struct BoltAddressResolver*) BoltMem_allocate(sizeof(BoltAddressResolver));
     resolver->state = state;
