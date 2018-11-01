@@ -7,7 +7,7 @@ project(seabolt
 IF(DEFINED ENV{SEABOLT_VERSION})
     set(_SEABOLT_VERSION $ENV{SEABOLT_VERSION})
 ELSE()
-    set(_SEABOLT_VERSION "1.7.0-dev")
+    set(_SEABOLT_VERSION "1.7.1-dev")
 ENDIF()
 
 set(SEABOLT_VERSION ${_SEABOLT_VERSION} CACHE STRING "The version of seabolt being built")
