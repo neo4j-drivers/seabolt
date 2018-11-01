@@ -10,7 +10,7 @@ This project is a work in progress, so we're not yet able to accept issues or co
 This project requires the following tools/libraries to be installed in order to be built. General installation instructions can be found in the following sections.
 
 1. CMake >= 3.12
-2. OpenSSL Development Libraries
+2. OpenSSL Development Libraries (must include static libraries)
 
 ### Linux (Ubuntu)
 
