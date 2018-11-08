@@ -61,10 +61,10 @@ if (WIN32 AND NOT CYGWIN)
     set(LIBDIR_RELATIVE_PKGCONFIGDIR "lib")
 else ()
     include(GNUInstallDirs)
-    set(CMAKE_INSTALL_PKGCONFIGDIR share/pkgconfig)
-    set(CMAKE_INSTALL_CMAKEDIR share/cmake/${SEABOLT_NAME})
-    set(INCLUDEDIR_RELATIVE_PKGCONFIGDIR "../../include/${SEABOLT_NAME}")
-    set(LIBDIR_RELATIVE_PKGCONFIGDIR "../../lib")
+    set(CMAKE_INSTALL_PKGCONFIGDIR ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
+    set(CMAKE_INSTALL_CMAKEDIR ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${SEABOLT_NAME})
+    set(INCLUDEDIR_RELATIVE_PKGCONFIGDIR "../../${CMAKE_INSTALL_INCLUDEDIR}/${SEABOLT_NAME}")
+    set(LIBDIR_RELATIVE_PKGCONFIGDIR "../../${CMAKE_INSTALL_LIBDIR}")
 endif ()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
@@ -155,20 +155,6 @@ configure_package_config_file(
         ${CMAKE_CURRENT_BINARY_DIR}/${SEABOLT_NAME}Config.cmake
         INSTALL_DESTINATION ${INSTALL_CMAKEDIR}
 )
-#
-#file(GENERATE
-#        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}.pc
-#        CONTENT "\
-#name=${SEABOLT_NAME}\n\
-#libdir=\${pcfiledir}/${LIBDIR_RELATIVE_PKGCONFIGDIR}\n\
-#includedir=\${pcfiledir}/${INCLUDEDIR_RELATIVE_PKGCONFIGDIR}\n\
-#\n\
-#Name: ${SEABOLT_NAME}\n\
-#Description: The C Connector Library for Neo4j\n\
-#Version: ${PROJECT_VERSION}\n\
-#CFlags: -I\${includedir}\n\
-#Libs: -L\${libdir} -l\${name}\n\
-#")
 
 install(
         FILES
