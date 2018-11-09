@@ -5,6 +5,28 @@ The library supports multiple versions of the Bolt protocol through the new _Con
 
 This project is a work in progress, so we're not yet able to accept issues or contributions. Sorry!
 
+## Installing from packages
+
+### Linux (Ubuntu)
+
+1. Install runtime dependencies
+```
+sudo apt-get install -y libssl1.0.0
+```
+
+2. Fetch the latest package
+```
+wget https://github.com/neo4j-drivers/seabolt/releases/download/v1.7.0/seabolt-1.7.0-Linux-Ubuntu-Xenial.deb
+```
+
+3. (optional) Check the signature
+
+4. Install the package and clean up
+```
+dpkg -i seabolt-1.7.0-Linux-Ubuntu-Xenial.deb
+rm seabolt-1.7.0-Linux-Ubuntu-Xenial.deb
+```
+
 ## Requirements
 
 This project requires the following tools/libraries to be installed in order to be built. General installation instructions can be found in the following sections.
@@ -14,7 +36,7 @@ This project requires the following tools/libraries to be installed in order to 
 
 ### Linux (Ubuntu)
 
-1. Install all required components via ```apt install git build-essential cmake libssl-dev```
+1. Install all required components via ```apt install git build-essential cmake libssl-dev``` 
 
 ### MacOS X
 
