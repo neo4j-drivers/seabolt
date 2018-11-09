@@ -14,7 +14,7 @@ This project is a work in progress, so we're not yet able to accept issues or co
 sudo apt-get install -y libssl1.0.0
 ```
 
-2. Fetch the latest package
+2. Fetch the latest package (check [here](https://github.com/neo4j-drivers/seabolt/releases) for latest releases)
 ```
 wget https://github.com/neo4j-drivers/seabolt/releases/download/v1.7.0/seabolt-1.7.0-Linux-Ubuntu-Xenial.deb
 ```
@@ -36,7 +36,7 @@ This project requires the following tools/libraries to be installed in order to 
 
 ### Linux (Ubuntu)
 
-1. Install all required components via ```apt install git build-essential cmake libssl-dev``` 
+1. Install all required components via ```apt install git build-essential cmake libssl-dev```
 
 ### MacOS X
 
