@@ -116,3 +116,25 @@ macro(configure_rpath)
     set(CMAKE_BUILD_RPATH ${CMAKE_CURRENT_BINARY_DIR}/lib)
     set(CMAKE_MACOSX_RPATH ON)
 endmacro()
+
+macro(discover_os)
+    if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        file(STRINGS /etc/os-release OS_RELEASE_FIELDS)
+        foreach(ENTRY ${OS_RELEASE_FIELDS})
+            # Trim
+            string(REGEX REPLACE "^[ ]+" "" ENTRY ${ENTRY})
+            string(REGEX REPLACE "[ ]+$" "" ENTRY ${ENTRY})
+
+            # Extract Field Name
+            string(REGEX MATCH "^[^=]+" Field ${ENTRY})
+            string(REPLACE "\"" "" Field ${Field})
+
+            # Extract Field Value
+            string(REPLACE "${Field}=" "" Value ${ENTRY})
+            string(REPLACE "\"" "" Value ${Value})
+
+            # Set the variable
+            set("OS_${Field}" ${Value})
+        endforeach()
+    endif ()
+endmacro()
