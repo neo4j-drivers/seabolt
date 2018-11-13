@@ -12,15 +12,15 @@ ENDIF()
 
 set(SEABOLT_VERSION ${_SEABOLT_VERSION} CACHE STRING "The version of seabolt being built")
 
-message(STATUS ${SEABOLT_VERSION})
+message(STATUS "Building seabolt: ${SEABOLT_VERSION}")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(Internals)
+discover_os()
 set_version()
 set_names()
 configure_rpath()
 fix_compiler_settings()
-
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_EXTENSIONS ON)
