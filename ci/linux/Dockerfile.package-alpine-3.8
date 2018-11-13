@@ -1,0 +1,7 @@
+FROM alpine:3.8
+RUN apk add --no-cache ca-certificates cmake make g++ openssl-dev git
+ADD . /tmp/seabolt
+WORKDIR /tmp/build
+RUN cmake -D CMAKE_BUILD_TYPE=Release /tmp/seabolt \
+    && cmake --build . --target package
+CMD tar -czf - dist-package/seabolt*

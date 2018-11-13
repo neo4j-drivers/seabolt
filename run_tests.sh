@@ -3,10 +3,7 @@
 BASE=$(dirname $0)
 DATE_FORMAT="%Y-%m-%dT%H:%M:%S"
 PASSWORD="password"
-BOLT_PORT=7699
-HTTPS_PORT=7698
-HTTP_PORT=7697
-PYTHON="python"
+PYTHON="python3"
 TEST_ARGS=$@
 
 BOLTKIT_NOT_AVAILABLE=11
@@ -25,6 +22,18 @@ else
     NEO4J_VERSION="${NEOCTRLARGS}"
 fi
 
+if [[ -z "${BOLT_PORT}" ]]; then
+    BOLT_PORT=7687
+fi
+
+if [[ -z "${HTTP_PORT}" ]]; then
+    HTTP_PORT=7474
+fi
+
+if [[ -z "${HTTPS_PORT}" ]]; then
+    HTTPS_PORT=7473
+fi
+
 function check_boltkit
 {
     echo "Checking boltkit"
@@ -33,28 +42,6 @@ function check_boltkit
     then
         echo "FATAL: The boltkit library is not available. Use \`pip install boltkit\` to install."
         exit ${BOLTKIT_NOT_AVAILABLE}
-    fi
-}
-
-function compile_debug
-{
-    echo "Compiling for debug"
-    ${BASE}/make_debug.sh
-    if [ "$?" -ne "0" ]
-    then
-        echo "FATAL: Compilation failed."
-        exit ${COMPILATION_FAILED}
-    fi
-}
-
-function compile_release
-{
-    echo "Compiling for release"
-    ${BASE}/make_release.sh
-    if [ "$?" -ne "0" ]
-    then
-        echo "FATAL: Compilation failed."
-        exit ${COMPILATION_FAILED}
     fi
 }
 
@@ -75,7 +62,7 @@ function run_tests
 {
     NEO4J_VERSION=$1
 
-    SERVER=${BASE}/build/server
+    SERVER=${BASE}/server
     rm -r ${SERVER} 2> /dev/null
 
     echo "Testing against Neo4j ${NEO4J_VERSION}"
@@ -140,7 +127,7 @@ function run_tests
     echo "-- Server is listening at ${NEO4J_BOLT_URI}"
 
     echo "-- Checking server"
-    BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt-cli debug -a "UNWIND range(1, 10000) AS n RETURN n"
+    BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${BOLT_PORT}" ${BASE}/bin/seabolt-cli debug -a "UNWIND range(1, 10000) AS n RETURN n"
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Server checks failed."
@@ -148,7 +135,7 @@ function run_tests
     fi
 
     echo "-- Running tests"
-    BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt-test ${TEST_ARGS}
+    BOLT_PORT="${BOLT_PORT}" ${BASE}/bin/seabolt-test ${TEST_ARGS}
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Test execution failed."
@@ -161,7 +148,6 @@ function run_tests
 
 echo "Seabolt test run started at $(date +$DATE_FORMAT)"
 check_boltkit
-compile_debug
 run_tests "${NEO4J_VERSION}"
 if [ "$?" -ne "0" ]
 then
