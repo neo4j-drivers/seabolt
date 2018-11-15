@@ -3,7 +3,7 @@
 BASE=$(dirname $0)
 DATE_FORMAT="%Y-%m-%dT%H:%M:%S"
 PASSWORD="password"
-PYTHON="python3"
+PYTHON="python"
 TEST_ARGS=$@
 
 BOLTKIT_NOT_AVAILABLE=11
