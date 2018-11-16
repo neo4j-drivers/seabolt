@@ -3,7 +3,6 @@
 BASE=$(dirname $0)
 DATE_FORMAT="%Y-%m-%dT%H:%M:%S"
 PASSWORD="password"
-PYTHON="python"
 TEST_ARGS=$@
 
 BOLTKIT_NOT_AVAILABLE=11
@@ -15,6 +14,10 @@ SERVER_STOP_FAILED=16
 SERVER_INCORRECTLY_CONFIGURED=17
 TESTS_FAILED=18
 PACKAGING_FAILED=19
+
+if [[ -z "${PYTHON}" ]]; then
+    PYTHON="python"
+fi
 
 if [[ -z "${NEOCTRLARGS}" ]]; then
     NEO4J_VERSION="-e 3.4"
@@ -127,7 +130,7 @@ function run_tests
     echo "-- Server is listening at ${NEO4J_BOLT_URI}"
 
     echo "-- Checking server"
-    BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${BOLT_PORT}" ${BASE}/bin/seabolt-cli debug -a "UNWIND range(1, 10000) AS n RETURN n"
+    BOLT_PASSWORD="${PASSWORD}" BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt-cli debug -a "UNWIND range(1, 10000) AS n RETURN n"
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Server checks failed."
@@ -135,7 +138,7 @@ function run_tests
     fi
 
     echo "-- Running tests"
-    BOLT_PORT="${BOLT_PORT}" ${BASE}/bin/seabolt-test ${TEST_ARGS}
+    BOLT_PORT="${BOLT_PORT}" ${BASE}/build/bin/seabolt-test ${TEST_ARGS}
     if [ "$?" -ne "0" ]
     then
         echo "FATAL: Test execution failed."
