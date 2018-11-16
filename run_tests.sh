@@ -65,7 +65,7 @@ function run_tests
 {
     NEO4J_VERSION=$1
 
-    SERVER=${BASE}/server
+    SERVER=${BASE}/build/server
     rm -r ${SERVER} 2> /dev/null
 
     echo "Testing against Neo4j ${NEO4J_VERSION}"
