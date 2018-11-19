@@ -577,7 +577,9 @@ int _send(BoltConnection* connection, const char* data, int size)
 
 #if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
     struct sigaction ignore_act, previous_act;
+#if defined(MSG_NOSIGNAL)
     if (connection->transport==BOLT_TRANSPORT_ENCRYPTED) {
+#endif
         memset(&ignore_act, '\0', sizeof(ignore_act));
         memset(&previous_act, '\0', sizeof(previous_act));
         ignore_act.sa_handler = SIG_IGN;
@@ -589,7 +591,9 @@ int _send(BoltConnection* connection, const char* data, int size)
                     last_error);
             return BOLT_STATUS_SET;
         }
+#if defined(MSG_NOSIGNAL)
     }
+#endif
 #endif
     int status = BOLT_SUCCESS;
     int remaining = size;
@@ -642,7 +646,9 @@ int _send(BoltConnection* connection, const char* data, int size)
         BoltLog_info(connection->log, "[%s]: (Sent %d of %d bytes)", BoltConnection_id(connection), total_sent, size);
     }
 #if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
+#if defined(MSG_NOSIGNAL)
     if (connection->transport==BOLT_TRANSPORT_ENCRYPTED) {
+#endif
         if (sigaction(SIGPIPE, &previous_act, NULL)<0) {
             int last_error = _last_error_code();
             _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
@@ -650,7 +656,9 @@ int _send(BoltConnection* connection, const char* data, int size)
                     last_error);
             return BOLT_STATUS_SET;
         }
+#if defined(MSG_NOSIGNAL)
     }
+#endif
 #endif
     return status;
 }
@@ -672,7 +680,9 @@ int _receive(BoltConnection* connection, char* buffer, int min_size, int max_siz
 
 #if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
     struct sigaction ignore_act, previous_act;
+#if defined(MSG_NOSIGNAL)
     if (connection->transport==BOLT_TRANSPORT_ENCRYPTED) {
+#endif
         memset(&ignore_act, '\0', sizeof(ignore_act));
         memset(&previous_act, '\0', sizeof(previous_act));
         ignore_act.sa_handler = SIG_IGN;
@@ -684,7 +694,9 @@ int _receive(BoltConnection* connection, char* buffer, int min_size, int max_siz
                     last_error);
             return BOLT_STATUS_SET;
         }
+#if defined(MSG_NOSIGNAL)
     }
+#endif
 #endif
 
     int status = BOLT_SUCCESS;
@@ -724,7 +736,8 @@ int _receive(BoltConnection* connection, char* buffer, int min_size, int max_siz
             }
             case BOLT_TRANSPORT_ENCRYPTED: {
                 int last_error = 0, ssl_error = 0;
-                int last_error_transformed = _last_error_code_ssl(connection, single_received, &ssl_error, &last_error);
+                int last_error_transformed = _last_error_code_ssl(connection, single_received, &ssl_error,
+                        &last_error);
                 _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, last_error_transformed,
                         "_receive(%s:%d), receive_s error code: %d, underlying error code: %d", __FILE__, __LINE__,
                         ssl_error, last_error);
@@ -750,7 +763,9 @@ int _receive(BoltConnection* connection, char* buffer, int min_size, int max_siz
     }
     *received = total_received;
 #if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
+#if defined(MSG_NOSIGNAL)
     if (connection->transport==BOLT_TRANSPORT_ENCRYPTED) {
+#endif
         if (sigaction(SIGPIPE, &previous_act, NULL)<0) {
             int last_error = _last_error_code();
             _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
@@ -758,7 +773,9 @@ int _receive(BoltConnection* connection, char* buffer, int min_size, int max_siz
                     last_error);
             return BOLT_STATUS_SET;
         }
+#if defined(MSG_NOSIGNAL)
     }
+#endif
 #endif
     return status;
 }
