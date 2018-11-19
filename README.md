@@ -19,7 +19,7 @@ sudo apt-get install -y libssl1.0.0
 wget https://github.com/neo4j-drivers/seabolt/releases/download/v1.7.0/seabolt-1.7.0-Linux-Ubuntu-Xenial.deb
 ```
 
-3. (optional) Check the signature
+3. (optional) Check the sha256 hash of the download matches the published hash
 
 4. Install the package and clean up
 ```
