@@ -32,6 +32,7 @@
 #include <netinet/tcp.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <signal.h>
 
 #endif // USE_POSIXSOCK
 

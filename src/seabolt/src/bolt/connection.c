@@ -40,9 +40,14 @@
 #define SOCKET(domain, type, protocol) socket(domain, type, protocol)
 #define CONNECT(socket, address, address_size) connect(socket, address, address_size)
 #define SHUTDOWN(socket, how) shutdown(socket, how)
+#ifdef MSG_NOSIGNAL
+#define TRANSMIT(socket, data, size, flags) (int)(send(socket, data, (size_t)(size), flags | MSG_NOSIGNAL))
+#define RECEIVE(socket, buffer, size, flags) (int)(recv(socket, buffer, (size_t)(size), flags | MSG_NOSIGNAL))
+#else
 #define TRANSMIT(socket, data, size, flags) (int)(send(socket, data, (size_t)(size), flags))
-#define TRANSMIT_S(socket, data, size, flags) SSL_write(socket, data, size)
 #define RECEIVE(socket, buffer, size, flags) (int)(recv(socket, buffer, (size_t)(size), flags))
+#endif
+#define TRANSMIT_S(socket, data, size, flags) SSL_write(socket, data, size)
 #define RECEIVE_S(socket, buffer, size, flags) SSL_read(socket, buffer, size)
 #define ADDR_SIZE(address) address->ss_family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6)
 #if USE_WINSOCK
@@ -246,6 +251,12 @@ int _socket_configure(BoltConnection* connection)
     // Enable TCP_NODELAY
     TRY(SETSOCKETOPT(connection->socket, IPPROTO_TCP, TCP_NODELAY, &YES, sizeof(YES)),
             "_socket_configure(%s:%d), set tcp_nodelay error code: %d", __FILE__, __LINE__);
+
+#ifdef SO_NOSIGPIPE
+    // Disable PIPE signals
+    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_NOSIGPIPE, &NO, sizeof(NO)),
+            "_socket_configure(%s:%d), set so_nosigpipe error code: %d", __FILE__, __LINE__);
+#endif
 
     // Set keep-alive accordingly, default: TRUE
     if (connection->sock_opts==NULL || connection->sock_opts->keep_alive) {
@@ -508,6 +519,20 @@ void _close(BoltConnection* connection)
         connection->protocol_version = 0;
     }
 
+#if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
+    struct sigaction ignore_act, previous_act;
+    memset(&ignore_act, '\0', sizeof(ignore_act));
+    memset(&previous_act, '\0', sizeof(previous_act));
+    ignore_act.sa_handler = SIG_IGN;
+    ignore_act.sa_flags = 0;
+    if (sigaction(SIGPIPE, &ignore_act, &previous_act)<0) {
+        int last_error = _last_error_code();
+        _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
+                "_send(%s:%d), unable to install ignore handler for SIGPIPE: %d", __FILE__, __LINE__,
+                last_error);
+    }
+#endif
+
     switch (connection->transport) {
     case BOLT_TRANSPORT_PLAINTEXT: {
         SHUTDOWN(connection->socket, SHUT_RDWR);
@@ -533,6 +558,15 @@ void _close(BoltConnection* connection)
     BoltUtil_get_time(&connection->metrics->time_closed);
     connection->socket = 0;
     _set_status(connection, BOLT_CONNECTION_STATE_DISCONNECTED, BOLT_SUCCESS);
+
+#if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
+    if (sigaction(SIGPIPE, &previous_act, NULL)<0) {
+        int last_error = _last_error_code();
+        _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
+                "_send(%s:%d), unable to revert to previous handler for SIGPIPE: %d", __FILE__, __LINE__,
+                last_error);
+    }
+#endif
 }
 
 int _send(BoltConnection* connection, const char* data, int size)
@@ -540,6 +574,24 @@ int _send(BoltConnection* connection, const char* data, int size)
     if (size==0) {
         return BOLT_SUCCESS;
     }
+
+#if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
+    struct sigaction ignore_act, previous_act;
+    if (connection->transport==BOLT_TRANSPORT_ENCRYPTED) {
+        memset(&ignore_act, '\0', sizeof(ignore_act));
+        memset(&previous_act, '\0', sizeof(previous_act));
+        ignore_act.sa_handler = SIG_IGN;
+        ignore_act.sa_flags = 0;
+        if (sigaction(SIGPIPE, &ignore_act, &previous_act)<0) {
+            int last_error = _last_error_code();
+            _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
+                    "_send(%s:%d), unable to install ignore handler for SIGPIPE: %d", __FILE__, __LINE__,
+                    last_error);
+            return BOLT_STATUS_SET;
+        }
+    }
+#endif
+    int status = BOLT_SUCCESS;
     int remaining = size;
     int total_sent = 0;
     while (total_sent<size) {
@@ -554,6 +606,7 @@ int _send(BoltConnection* connection, const char* data, int size)
             break;
         }
         }
+
         if (sent>=0) {
             connection->metrics->bytes_sent += sent;
             total_sent += sent;
@@ -580,11 +633,26 @@ int _send(BoltConnection* connection, const char* data, int size)
                 break;
             }
             }
-            return BOLT_TRANSPORT_UNSUPPORTED;
+
+            status = BOLT_TRANSPORT_UNSUPPORTED;
+            break;
         }
     }
-    BoltLog_info(connection->log, "[%s]: (Sent %d of %d bytes)", BoltConnection_id(connection), total_sent, size);
-    return BOLT_SUCCESS;
+    if (status==BOLT_SUCCESS) {
+        BoltLog_info(connection->log, "[%s]: (Sent %d of %d bytes)", BoltConnection_id(connection), total_sent, size);
+    }
+#if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
+    if (connection->transport==BOLT_TRANSPORT_ENCRYPTED) {
+        if (sigaction(SIGPIPE, &previous_act, NULL)<0) {
+            int last_error = _last_error_code();
+            _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
+                    "_send(%s:%d), unable to revert to previous handler for SIGPIPE: %d", __FILE__, __LINE__,
+                    last_error);
+            return BOLT_STATUS_SET;
+        }
+    }
+#endif
+    return status;
 }
 
 /**
@@ -601,6 +669,25 @@ int _receive(BoltConnection* connection, char* buffer, int min_size, int max_siz
     if (min_size==0) {
         return BOLT_SUCCESS;
     }
+
+#if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
+    struct sigaction ignore_act, previous_act;
+    if (connection->transport==BOLT_TRANSPORT_ENCRYPTED) {
+        memset(&ignore_act, '\0', sizeof(ignore_act));
+        memset(&previous_act, '\0', sizeof(previous_act));
+        ignore_act.sa_handler = SIG_IGN;
+        ignore_act.sa_flags = 0;
+        if (sigaction(SIGPIPE, &ignore_act, &previous_act)<0) {
+            int last_error = _last_error_code();
+            _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
+                    "_send(%s:%d), unable to install ignore handler for SIGPIPE: %d", __FILE__, __LINE__,
+                    last_error);
+            return BOLT_STATUS_SET;
+        }
+    }
+#endif
+
+    int status = BOLT_SUCCESS;
     int max_remaining = max_size;
     int total_received = 0;
     while (total_received<min_size) {
@@ -622,7 +709,8 @@ int _receive(BoltConnection* connection, char* buffer, int min_size, int max_siz
             BoltLog_info(connection->log, "[%s]: Detected end of transmission", BoltConnection_id(connection));
             _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DISCONNECTED, BOLT_END_OF_TRANSMISSION,
                     "_receive(%s:%d), receive returned 0", __FILE__, __LINE__);
-            return BOLT_STATUS_SET;
+            status = BOLT_STATUS_SET;
+            break;
         }
         else {
             switch (connection->transport) {
@@ -645,19 +733,34 @@ int _receive(BoltConnection* connection, char* buffer, int min_size, int max_siz
                 break;
             }
             }
+            status = BOLT_STATUS_SET;
+            break;
+        }
+    }
+    if (status==BOLT_SUCCESS) {
+        if (min_size==max_size) {
+            BoltLog_info(connection->log, "[%s]: Received %d of %d bytes", BoltConnection_id(connection),
+                    total_received,
+                    max_size);
+        }
+        else {
+            BoltLog_info(connection->log, "[%s]: Received %d of %d..%d bytes", BoltConnection_id(connection),
+                    total_received, min_size, max_size);
+        }
+    }
+    *received = total_received;
+#if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
+    if (connection->transport==BOLT_TRANSPORT_ENCRYPTED) {
+        if (sigaction(SIGPIPE, &previous_act, NULL)<0) {
+            int last_error = _last_error_code();
+            _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
+                    "_send(%s:%d), unable to revert to previous handler for SIGPIPE: %d", __FILE__, __LINE__,
+                    last_error);
             return BOLT_STATUS_SET;
         }
     }
-    if (min_size==max_size) {
-        BoltLog_info(connection->log, "[%s]: Received %d of %d bytes", BoltConnection_id(connection), total_received,
-                max_size);
-    }
-    else {
-        BoltLog_info(connection->log, "[%s]: Received %d of %d..%d bytes", BoltConnection_id(connection),
-                total_received, min_size, max_size);
-    }
-    *received = total_received;
-    return BOLT_SUCCESS;
+#endif
+    return status;
 }
 
 int handshake_b(BoltConnection* connection, int32_t _1, int32_t _2, int32_t _3, int32_t _4)

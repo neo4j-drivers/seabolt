@@ -112,6 +112,7 @@ SSL_CTX* create_ssl_ctx(struct BoltTrust* trust, const char* hostname, const str
                 // certificates are to be treated as trusted
                 X509* trusted_cert = PEM_read_bio_X509_AUX(trusted_certs_bio, NULL, NULL, NULL);
                 while (trusted_cert!=NULL) {
+                    BoltLog_debug(log, "adding trusted certificate");
                     X509_STORE_add_cert(store, trusted_cert);
 
                     trusted_cert = PEM_read_bio_X509_AUX(trusted_certs_bio, NULL, NULL, NULL);
