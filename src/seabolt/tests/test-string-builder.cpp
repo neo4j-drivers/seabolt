@@ -23,7 +23,7 @@
 TEST_CASE("StringBuilder")
 {
     const char* charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-#'?!";
-    const int charset_size = strlen(charset);
+    const int charset_size = (int)strlen(charset);
 
     StringBuilder* builder = StringBuilder_create();
 
