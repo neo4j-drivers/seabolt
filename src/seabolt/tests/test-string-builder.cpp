@@ -93,10 +93,8 @@ TEST_CASE("StringBuilder")
 
             REQUIRE(StringBuilder_get_length(builder)==size);
             REQUIRE(StringBuilder_get_string(builder)!=nullptr);
-            for (int i = 0; i<size+1; i++) {
-                REQUIRE(StringBuilder_get_string(builder)[i]==buffer[i]);
-            }
             REQUIRE(StringBuilder_get_string(builder)[size]==0);
+            REQUIRE(strcmp(StringBuilder_get_string(builder), buffer)==0);
 
             SECTION("and append a number") {
                 StringBuilder_append(builder, "1");
@@ -180,10 +178,8 @@ TEST_CASE("StringBuilder")
 
             REQUIRE(StringBuilder_get_length(builder)==size);
             REQUIRE(StringBuilder_get_string(builder)!=nullptr);
-            for (int i = 0; i<size+1; i++) {
-                REQUIRE(StringBuilder_get_string(builder)[i]==buffer[i]);
-            }
             REQUIRE(StringBuilder_get_string(builder)[size]==0);
+            REQUIRE(strcmp(StringBuilder_get_string(builder), buffer)==0);
 
             SECTION("and append a number") {
                 StringBuilder_append_n(builder, "1", 1);
@@ -267,10 +263,8 @@ TEST_CASE("StringBuilder")
 
             REQUIRE(StringBuilder_get_length(builder)==size);
             REQUIRE(StringBuilder_get_string(builder)!=nullptr);
-            for (int i = 0; i<size+1; i++) {
-                REQUIRE(StringBuilder_get_string(builder)[i]==buffer[i]);
-            }
             REQUIRE(StringBuilder_get_string(builder)[size]==0);
+            REQUIRE(strcmp(StringBuilder_get_string(builder), buffer)==0);
 
             SECTION("and append a number") {
                 StringBuilder_append_f(builder, "%d", 1);
