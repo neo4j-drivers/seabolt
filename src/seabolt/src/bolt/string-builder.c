@@ -66,7 +66,11 @@ void StringBuilder_append_n(struct StringBuilder* builder, const char* string, c
 
 void StringBuilder_append_f(struct StringBuilder* builder, const char* format, ...)
 {
-    int written = -1;
+    if (format==NULL) {
+        return;
+    }
+
+    int written;
     int size = 10240*sizeof(char);
     char* message_fmt = (char*) malloc(size);
     message_fmt[0] = 0;
