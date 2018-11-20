@@ -459,3 +459,257 @@ SCENARIO("Test structure in result", "[integration][ipv6][secure]")
         bolt_close_and_destroy_b(connection);
     }
 }
+
+TEST_CASE("BoltValue")
+{
+    SECTION("BoltValue_to_string") {
+        // assume an un-initialized buffer
+        const int buffer_size = 128000;
+        char buffer[buffer_size+1];
+        for (int i = 0; i<buffer_size; i++) {
+            buffer[i] = 'a';
+        }
+
+        BoltValue* value = BoltValue_create();
+
+        SECTION("Null") {
+            BoltValue_format_as_Null(value);
+
+            REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==4);
+            REQUIRE(strlen(buffer)==4);
+            REQUIRE(strcmp(buffer, "null")==0);
+        }
+
+        SECTION("Boolean") {
+            SECTION("True") {
+                BoltValue_format_as_Boolean(value, 1);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==4);
+                REQUIRE(strlen(buffer)==4);
+                REQUIRE(strcmp(buffer, "true")==0);
+            }
+
+            SECTION("False") {
+                BoltValue_format_as_Boolean(value, 0);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==5);
+                REQUIRE(strlen(buffer)==5);
+                REQUIRE(strcmp(buffer, "false")==0);
+            }
+        }
+
+        SECTION("Integer") {
+            SECTION("-9223372036854775807") {
+                BoltValue_format_as_Integer(value, -9223372036854775807);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==20);
+                REQUIRE(strlen(buffer)==20);
+                REQUIRE(strcmp(buffer, "-9223372036854775807")==0);
+            }
+
+            SECTION("-100050") {
+                BoltValue_format_as_Integer(value, -100050);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==7);
+                REQUIRE(strlen(buffer)==7);
+                REQUIRE(strcmp(buffer, "-100050")==0);
+            }
+
+            SECTION("0") {
+                BoltValue_format_as_Integer(value, 0);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==1);
+                REQUIRE(strlen(buffer)==1);
+                REQUIRE(strcmp(buffer, "0")==0);
+            }
+
+            SECTION("100") {
+                BoltValue_format_as_Integer(value, 100);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==3);
+                REQUIRE(strlen(buffer)==3);
+                REQUIRE(strcmp(buffer, "100")==0);
+            }
+
+            SECTION("9223372036854775807") {
+                BoltValue_format_as_Integer(value, 9223372036854775807);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==19);
+                REQUIRE(strlen(buffer)==19);
+                REQUIRE(strcmp(buffer, "9223372036854775807")==0);
+            }
+        }
+
+        SECTION("Float") {
+            SECTION("-100513.14574789") {
+                BoltValue_format_as_Float(value, -100513.14574789);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==14);
+                REQUIRE(strlen(buffer)==14);
+                REQUIRE(strcmp(buffer, "-100513.145748")==0);
+            }
+
+            SECTION("0") {
+                BoltValue_format_as_Float(value, 0);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==8);
+                REQUIRE(strlen(buffer)==8);
+                REQUIRE(strcmp(buffer, "0.000000")==0);
+            }
+
+            SECTION("3.14") {
+                BoltValue_format_as_Float(value, 3.14);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==8);
+                REQUIRE(strlen(buffer)==8);
+                REQUIRE(strcmp(buffer, "3.140000")==0);
+            }
+
+            SECTION("100513.145747") {
+                BoltValue_format_as_Float(value, 100513.145747);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==13);
+                REQUIRE(strlen(buffer)==13);
+                REQUIRE(strcmp(buffer, "100513.145747")==0);
+            }
+
+            SECTION("100513.14574789") {
+                BoltValue_format_as_Float(value, 100513.14574789);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==13);
+                REQUIRE(strlen(buffer)==13);
+                REQUIRE(strcmp(buffer, "100513.145748")==0);
+            }
+        }
+
+        SECTION("String") {
+            SECTION("null") {
+                BoltValue_format_as_String(value, nullptr, 0);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==0);
+                REQUIRE(strlen(buffer)==0);
+                REQUIRE(strcmp(buffer, "")==0);
+            }
+
+            SECTION("empty string") {
+                BoltValue_format_as_String(value, "", 0);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==0);
+                REQUIRE(strlen(buffer)==0);
+                REQUIRE(strcmp(buffer, "")==0);
+            }
+
+            SECTION("abcdefg hijkl") {
+                BoltValue_format_as_String(value, "abcdefg hijkl", 13);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==13);
+                REQUIRE(strlen(buffer)==13);
+                REQUIRE(strcmp(buffer, "abcdefg hijkl")==0);
+            }
+        }
+
+        SECTION("Bytes") {
+            SECTION("null") {
+                BoltValue_format_as_Bytes(value, nullptr, 0);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==1);
+                REQUIRE(strlen(buffer)==1);
+                REQUIRE(strcmp(buffer, "#")==0);
+            }
+
+            SECTION("empty array") {
+                char empty[1];
+                BoltValue_format_as_Bytes(value, empty, 0);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==1);
+                REQUIRE(strlen(buffer)==1);
+                REQUIRE(strcmp(buffer, "#")==0);
+            }
+
+            SECTION("byte sequence") {
+                char empty[11] = "abcdefghij";
+                BoltValue_format_as_Bytes(value, empty, 10);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==21);
+                REQUIRE(strlen(buffer)==21);
+                REQUIRE(strcmp(buffer, "#6162636465666768696A")==0);
+            }
+        }
+
+        SECTION("List") {
+            SECTION("empty list") {
+                BoltValue_format_as_List(value, 0);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==2);
+                REQUIRE(strlen(buffer)==2);
+                REQUIRE(strcmp(buffer, "[]")==0);
+            }
+
+            SECTION("a list of basic types") {
+                BoltValue_format_as_List(value, 5);
+                BoltValue_format_as_Null(BoltList_value(value, 0));
+                BoltValue_format_as_Boolean(BoltList_value(value, 1), 1);
+                BoltValue_format_as_Integer(BoltList_value(value, 2), 2467);
+                BoltValue_format_as_Float(BoltList_value(value, 3), 3.14);
+                BoltValue_format_as_String(BoltList_value(value, 4), "test string", 11);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==41);
+                REQUIRE(strlen(buffer)==41);
+                REQUIRE(strcmp(buffer, "[null, true, 2467, 3.140000, test string]")==0);
+            }
+        }
+
+        SECTION("Dictionary") {
+            SECTION("empty dictionary") {
+                BoltValue_format_as_Dictionary(value, 0);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==2);
+                REQUIRE(strlen(buffer)==2);
+                REQUIRE(strcmp(buffer, "{}")==0);
+            }
+
+            SECTION("a dictionary of basic types") {
+                BoltValue_format_as_Dictionary(value, 5);
+                BoltDictionary_set_key(value, 0, "a", 1);
+                BoltValue_format_as_Null(BoltDictionary_value(value, 0));
+                BoltDictionary_set_key(value, 1, "b", 1);
+                BoltValue_format_as_Boolean(BoltDictionary_value(value, 1), 1);
+                BoltDictionary_set_key(value, 2, "c", 1);
+                BoltValue_format_as_Integer(BoltDictionary_value(value, 2), 2467);
+                BoltDictionary_set_key(value, 3, "d", 1);
+                BoltValue_format_as_Float(BoltDictionary_value(value, 3), 3.14);
+                BoltDictionary_set_key(value, 4, "e", 1);
+                BoltValue_format_as_String(BoltDictionary_value(value, 4), "test string", 11);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==56);
+                REQUIRE(strlen(buffer)==56);
+                REQUIRE(strcmp(buffer, "{a: null, b: true, c: 2467, d: 3.140000, e: test string}")==0);
+            }
+        }
+
+        SECTION("Structure") {
+            SECTION("code only") {
+                BoltValue_format_as_Structure(value, 65, 0);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==8);
+                REQUIRE(strlen(buffer)==8);
+                REQUIRE(strcmp(buffer, "$#0041()")==0);
+            }
+
+            SECTION("with simple fields") {
+                BoltValue_format_as_Structure(value, 95, 5);
+                BoltValue_format_as_Null(BoltStructure_value(value, 0));
+                BoltValue_format_as_Boolean(BoltStructure_value(value, 1), 0);
+                BoltValue_format_as_Integer(BoltStructure_value(value, 2), 2467);
+                BoltValue_format_as_Float(BoltStructure_value(value, 3), 3.14);
+                BoltValue_format_as_String(BoltStructure_value(value, 4), "test string", 11);
+
+                REQUIRE(BoltValue_to_string(value, buffer, buffer_size, nullptr)==48);
+                REQUIRE(strlen(buffer)==48);
+                REQUIRE(strcmp(buffer, "$#005F(null, false, 2467, 3.140000, test string)")==0);
+            }
+        }
+
+        BoltValue_destroy(value);
+    }
+}

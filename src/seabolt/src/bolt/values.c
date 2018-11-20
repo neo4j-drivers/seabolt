@@ -286,7 +286,8 @@ enum BoltType BoltValue_type(const struct BoltValue* value)
     return (enum BoltType) (value->type);
 }
 
-int32_t BoltValue_to_string(const struct BoltValue* value, char* dest, int32_t length, struct BoltConnection* connection)
+int32_t
+BoltValue_to_string(const struct BoltValue* value, char* dest, int32_t length, struct BoltConnection* connection)
 {
     name_resolver_func name_resolver = NULL;
     struct StringBuilder* builder = StringBuilder_create();
@@ -299,6 +300,9 @@ int32_t BoltValue_to_string(const struct BoltValue* value, char* dest, int32_t l
         int32_t builder_length = StringBuilder_get_length(builder);
         int32_t copy_length = builder_length>length ? length : builder_length;
         strncpy(dest, StringBuilder_get_string(builder), copy_length);
+        if (copy_length<length) {
+            dest[copy_length] = 0;
+        }
         result = builder_length;
     }
 
@@ -565,7 +569,7 @@ BoltValue_write(struct StringBuilder* builder, const struct BoltValue* value, na
         return 0;
     }
     case BOLT_FLOAT: {
-        StringBuilder_append_f(builder, "%E", BoltFloat_get(value));
+        StringBuilder_append_f(builder, "%f", BoltFloat_get(value));
         return 0;
     }
     case BOLT_STRING: {
@@ -624,7 +628,7 @@ BoltValue_write(struct StringBuilder* builder, const struct BoltValue* value, na
 
         StringBuilder_append(builder, "(");
         for (int i = 0; i<value->size; i++) {
-            if (i>0) StringBuilder_append(builder, " ");
+            if (i>0) StringBuilder_append(builder, ", ");
             BoltValue_write(builder, BoltStructure_value(value, i), struct_name_resolver);
         }
         StringBuilder_append(builder, ")");
