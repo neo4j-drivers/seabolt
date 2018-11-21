@@ -49,25 +49,35 @@ void StringBuilder_ensure_buffer(struct StringBuilder* builder, int size_to_add)
 
 void StringBuilder_append(struct StringBuilder* builder, const char* string)
 {
-    StringBuilder_append_n(builder, string, (int)strlen(string));
+    if (string!=NULL) {
+        StringBuilder_append_n(builder, string, (int) strlen(string));
+    }
 }
 
 void StringBuilder_append_n(struct StringBuilder* builder, const char* string, const int len)
 {
-    StringBuilder_ensure_buffer(builder, len+1);
-    strncpy(builder->buffer+builder->buffer_pos, string, len);
-    builder->buffer_pos += len;
-    builder->buffer[builder->buffer_pos] = 0;
+    if (len>0) {
+        StringBuilder_ensure_buffer(builder, len+1);
+        strncpy(builder->buffer+builder->buffer_pos, string, len);
+        builder->buffer_pos += len;
+        builder->buffer[builder->buffer_pos] = 0;
+    }
 }
 
 void StringBuilder_append_f(struct StringBuilder* builder, const char* format, ...)
 {
-    size_t size = 10240*sizeof(char);
+    if (format==NULL) {
+        return;
+    }
+
+    int written;
+    int size = 10240*sizeof(char);
     char* message_fmt = (char*) malloc(size);
+    message_fmt[0] = 0;
     while (1) {
         va_list args;
         va_start(args, format);
-        size_t written = vsnprintf(message_fmt, size, format, args);
+        written = vsnprintf(message_fmt, size, format, args);
         va_end(args);
         if (written<size) {
             break;
@@ -77,7 +87,7 @@ void StringBuilder_append_f(struct StringBuilder* builder, const char* format, .
         size = written+1;
     }
 
-    StringBuilder_append(builder, message_fmt);
+    StringBuilder_append_n(builder, message_fmt, written);
 
     free(message_fmt);
 }
