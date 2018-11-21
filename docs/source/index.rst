@@ -1,27 +1,32 @@
-.. Seabolt documentation master file, created by
-   sphinx-quickstart on Thu Dec  7 18:25:37 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+********************************************
+Seabolt |version|
+********************************************
 
-===================================
-Welcome to Seabolt's documentation!
-===================================
+This is the main API docs for The Official Neo4j Connector for C.
+
+Requirements
+============
+
+Installation
+============
+
+Quick Start
+===========
+
+API Documentation
+=================
 
 .. toctree::
-    :maxdepth: 2
-    :caption: Contents:
+    :maxdepth: 1
 
+    configuration
+    authentication
+    logging
     addressing
-    connections
+    connector
+    connection
     lifecycle
-    mem
     values
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+    stats
+    errors
+    constants

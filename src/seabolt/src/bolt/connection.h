@@ -83,6 +83,9 @@ SEABOLT_EXPORT void BoltConnection_destroy(BoltConnection* connection);
  * @param connection the connection to open
  * @param transport the type of transport over which to connect
  * @param address descriptor of the remote Bolt server address
+ * @param trust
+ * @param log
+ * @param sock_opts
  * @return 0 if the connection was opened successfully, -1 otherwise
  */
 SEABOLT_EXPORT int32_t BoltConnection_open(BoltConnection* connection, BoltTransport transport,
@@ -309,7 +312,6 @@ SEABOLT_EXPORT BoltValue* BoltConnection_field_names(BoltConnection* connection)
 * Obtain a value from the current record.
 *
 * @param connection
-* @param field
 * @return pointer to a `BoltValue` data structure formatted as a BOLT_LIST
 */
 SEABOLT_EXPORT BoltValue* BoltConnection_field_values(BoltConnection* connection);

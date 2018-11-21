@@ -4,17 +4,21 @@ Values
 
 .. doxygenenum:: BoltType
 
-.. doxygenstruct:: BoltValue
-
-.. doxygenunion:: BoltExtendedValue
+.. doxygentypedef:: BoltValue
 
 .. doxygenfunction:: BoltValue_create
 
 .. doxygenfunction:: BoltValue_destroy
 
+.. doxygenfunction:: BoltValue_duplicate
+
+.. doxygenfunction:: BoltValue_copy
+
+.. doxygenfunction:: BoltValue_size
+
 .. doxygenfunction:: BoltValue_type
 
-.. doxygenfunction:: BoltValue_write
+.. doxygenfunction:: BoltValue_to_string
 
 
 Null
@@ -66,10 +70,13 @@ Dictionary
 
 .. doxygenfunction:: BoltDictionary_get_key_size
 
+.. doxygenfunction:: BoltDictionary_get_key_index
+
 .. doxygenfunction:: BoltDictionary_set_key
 
 .. doxygenfunction:: BoltDictionary_value
 
+.. doxygenfunction:: BoltDictionary_value_by_key
 
 List
 ====

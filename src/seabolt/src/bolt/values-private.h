@@ -22,6 +22,8 @@
 #include "values.h"
 #include "string-builder.h"
 
+typedef const char* (* name_resolver_func)(int16_t code);
+
 static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                                   '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 

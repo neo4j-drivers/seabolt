@@ -65,8 +65,6 @@ enum BoltType {
  */
 typedef struct BoltValue BoltValue;
 
-typedef const char* (* name_resolver_func)(int16_t code);
-
 /**
  * Create a new BoltValue instance.
  *

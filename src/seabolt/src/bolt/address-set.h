@@ -22,8 +22,22 @@
 #include "bolt-public.h"
 #include "address.h"
 
+/**
+ * The type that represents a set of \ref BoltAddress instances.
+ *
+ * It is the destination data structure for a custom \ref BoltAddressResolver to provide its resolved
+ * addresses.
+ */
 typedef struct BoltAddressSet BoltAddressSet;
 
+/**
+ * Adds a \ref BoltAddress instance to the set, if it's not present.
+ *
+ * @param set the target set instance.
+ * @param address the address instance to be added to the set.
+ * @returns -1 if the provided address is already a member of the set, or the index at which the given address
+ * is added.
+ */
 SEABOLT_EXPORT int32_t BoltAddressSet_add(BoltAddressSet* set, const BoltAddress* address);
 
 #endif //SEABOLT_ALL_ADDRESS_SET_H
