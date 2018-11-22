@@ -22,8 +22,19 @@
 
 #include "bolt-public.h"
 
+/**
+ * Carries out global initialization of the external dependencies like OpenSSL, Winsocks, etc.
+ *
+ * Must be called before any other connector functions are invoked.
+ */
 SEABOLT_EXPORT void Bolt_startup();
 
+/**
+ * Carries out global cleanup as required by external dependencies.
+ *
+ * Must be called to perform a clean shutdown. No more interactions with the API should occur
+ * after this call.
+ */
 SEABOLT_EXPORT void Bolt_shutdown();
 
 #endif // SEABOLT_BOLT

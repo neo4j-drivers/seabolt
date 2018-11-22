@@ -28,10 +28,16 @@
  * username, password and an optional realm.
  *
  * Returned \ref BoltValue is a dictionary that contains the following key-value pairs.
- * - "scheme"         = "basic"
- * - "principal"      = username
- * - "credentials"    = password
- * - "realm"          = realm (only if it's not NULL)
+ * @verbatim embed:rst:leading-asterisk
+ * =============  ==============================
+ * Key            Value
+ * =============  ==============================
+ * "scheme"       "basic"
+ * "principal"    username
+ * "credentials"  password
+ * "realm"        realm (only if it's not NULL)
+ * =============  ==============================
+ * @endverbatim
  *
  * @param username username
  * @param password password

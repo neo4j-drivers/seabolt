@@ -19,14 +19,4 @@ API Documentation
 .. toctree::
     :maxdepth: 1
 
-    configuration
-    authentication
-    logging
-    addressing
-    connector
-    connection
-    lifecycle
-    values
-    stats
-    errors
-    constants
+    api
