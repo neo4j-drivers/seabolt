@@ -1,22 +1,16 @@
-********************************************
 Seabolt |version|
-********************************************
+*****************
 
-This is the main API docs for The Official Neo4j Connector for C.
+Seabolt is the C Connector Library for Neo4j.
+The library supports multiple versions of the Bolt protocol through the new Connector API and will provide a base layer
+for a number of language drivers.
 
-Requirements
-============
-
-Installation
-============
-
-Quick Start
-===========
-
-API Documentation
-=================
+Contents
+========
 
 .. toctree::
     :maxdepth: 1
 
+    binary-packages
+    building
     api
