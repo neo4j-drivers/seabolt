@@ -8,6 +8,7 @@ Bolt
 
 .. doxygenfunction:: Bolt_shutdown
 
+
 BoltAccessMode
 --------------
 
@@ -16,6 +17,7 @@ BoltAccessMode
 .. doxygendefine:: BOLT_ACCESS_MODE_WRITE
 
 .. doxygendefine:: BOLT_ACCESS_MODE_READ
+
 
 BoltAddress
 -----------
@@ -34,12 +36,14 @@ BoltAddress
 
 .. doxygenfunction:: BoltAddress_copy_resolved_host
 
+
 BoltAddressSet
 --------------
 
 .. doxygentypedef:: BoltAddressSet
 
 .. doxygenfunction:: BoltAddressSet_add
+
 
 BoltAddressResolver
 -------------------
@@ -51,6 +55,7 @@ BoltAddressResolver
 .. doxygenfunction:: BoltAddressResolver_create
 
 .. doxygenfunction:: BoltAddressResolver_destroy
+
 
 BoltAuth
 --------
@@ -117,7 +122,7 @@ BoltConfig
 
 .. doxygenfunction:: BoltConfig_set_socket_options
 
---------------
+
 BoltConnection
 --------------
 
@@ -215,6 +220,7 @@ BoltConnectionState
 
 .. doxygendefine:: BOLT_CONNECTION_STATE_DEFUNCT
 
+
 BoltConnector
 -------------
 
@@ -227,6 +233,7 @@ BoltConnector
 .. doxygenfunction:: BoltConnector_acquire
 
 .. doxygenfunction:: BoltConnector_release
+
 
 BoltError
 ---------
@@ -400,12 +407,10 @@ BoltValue
 
 .. doxygenfunction:: BoltValue_to_string
 
-
 Null
 ^^^^
 
 .. doxygenfunction:: BoltValue_format_as_Null
-
 
 Boolean
 ^^^^^^^
@@ -414,14 +419,12 @@ Boolean
 
 .. doxygenfunction:: BoltBoolean_get
 
-
 Integer
 ^^^^^^^
 
 .. doxygenfunction:: BoltValue_format_as_Integer
 
 .. doxygenfunction:: BoltInteger_get
-
 
 Float
 ^^^^^
@@ -430,14 +433,12 @@ Float
 
 .. doxygenfunction:: BoltFloat_get
 
-
 String
 ^^^^^^
 
 .. doxygenfunction:: BoltValue_format_as_String
 
 .. doxygenfunction:: BoltString_get
-
 
 Dictionary
 ^^^^^^^^^^
@@ -467,7 +468,6 @@ List
 
 .. doxygenfunction:: BoltList_value
 
-
 Bytes
 ^^^^^
 
@@ -476,7 +476,6 @@ Bytes
 .. doxygenfunction:: BoltBytes_get
 
 .. doxygenfunction:: BoltBytes_get_all
-
 
 Structure
 ^^^^^^^^^

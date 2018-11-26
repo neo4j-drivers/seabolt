@@ -108,6 +108,8 @@ html_static_path = ['_static']
 
 html_title = "Seabolt %s" % version
 
+html_show_sourcelink = False
+
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
