@@ -23,6 +23,27 @@
 
 #include "values.h"
 
+/**
+ * Generates an authentication token that can be used for basic authentication use-cases that consists of
+ * username, password and an optional realm.
+ *
+ * Returned \ref BoltValue is a dictionary that contains the following key-value pairs.
+ * @verbatim embed:rst:leading-asterisk
+ * =============  ==============================
+ * Key            Value
+ * =============  ==============================
+ * "scheme"       "basic"
+ * "principal"    username
+ * "credentials"  password
+ * "realm"        realm (only if it's not NULL)
+ * =============  ==============================
+ * @endverbatim
+ *
+ * @param username username
+ * @param password password
+ * @param realm realm if available (may be passed as NULL)
+ * @return a constructed \ref BoltValue that can be used as an authentication token
+ */
 SEABOLT_EXPORT BoltValue* BoltAuth_basic(const char* username, const char* password, const char* realm);
 
 #endif // SEABOLT_AUTH

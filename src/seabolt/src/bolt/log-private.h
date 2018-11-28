@@ -20,6 +20,7 @@
 #define SEABOLT_LOG_PRIVATE_H
 
 #include "log.h"
+#include "values-private.h"
 
 struct BoltLog {
     void* state;

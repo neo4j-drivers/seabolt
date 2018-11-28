@@ -21,10 +21,26 @@
 
 #include "bolt-public.h"
 
+/**
+ * Returns the current allocated memory by the internal connector data structures.
+ *
+ * @returns the current allocated memory
+ */
 SEABOLT_EXPORT uint64_t BoltStat_memory_allocation_current();
 
+/**
+ * Returns the peak allocated memory by the internal connector data structures.
+ *
+ * @return the peak allocated memory
+ */
 SEABOLT_EXPORT uint64_t BoltStat_memory_allocation_peak();
 
+/**
+ * Returns the number of allocation events (malloc, realloc, free) by the internal
+ * connector data structures.
+ *
+ * @return the number of allocation events.
+ */
 SEABOLT_EXPORT int64_t BoltStat_memory_allocation_events();
 
 #endif //SEABOLT_STATS_H

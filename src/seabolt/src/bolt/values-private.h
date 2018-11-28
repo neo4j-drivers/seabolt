@@ -22,6 +22,8 @@
 #include "values.h"
 #include "string-builder.h"
 
+typedef const char* (* name_resolver_func)(int16_t code);
+
 static const char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                                   '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
@@ -50,6 +52,21 @@ union BoltExtendedValue {
     struct BoltValue* as_value;
 };
 
+/**
+ * A BoltValue consists of a 128-bit header followed by a 128-byte data block. For
+ * values that require more space than 128 bits, external memory is allocated and
+ * a pointer to this is held in the inline data field.
+ *
+ * ```
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * |  type   | subtype |  (logical) size   |         (physical) data size          |
+ * |[16 bits]|[16 bits]|     [32 bits]     |               [64 bits]               |
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * |                      inline data or pointer to external data                  |
+ * |                                  [128 bits]                                   |
+ * +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ * ```
+ */
 struct BoltValue {
     /// Type of this value, as defined in BoltType.
     int16_t type;

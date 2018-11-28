@@ -1,27 +1,17 @@
-.. Seabolt documentation master file, created by
-   sphinx-quickstart on Thu Dec  7 18:25:37 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Seabolt |version|
+*****************
 
-===================================
-Welcome to Seabolt's documentation!
-===================================
+Seabolt is the C Connector Library for Neo4j.
+The library supports multiple versions of the Bolt protocol through the new Connector API and will provide a base layer
+for a number of language drivers.
+
+Contents
+========
 
 .. toctree::
-    :maxdepth: 2
-    :caption: Contents:
+    :maxdepth: 1
 
-    addressing
-    connections
-    lifecycle
-    mem
-    values
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+    binary-packages
+    building
+    using
+    api

@@ -21,31 +21,76 @@
 
 #include "bolt-public.h"
 
-typedef int BoltConnectionState;
-// not connected
+/**
+ * The type that identifies the state of the connection
+ */
+typedef int32_t BoltConnectionState;
+/**
+ * Not connected
+ */
 #define BOLT_CONNECTION_STATE_DISCONNECTED    0
-// connected but not authenticated
+/**
+ * Connected but not authenticated
+ */
 #define BOLT_CONNECTION_STATE_CONNECTED       1
-// connected and authenticated
+/**
+ * Connected and authenticated
+ */
 #define BOLT_CONNECTION_STATE_READY           2
-// recoverable failure
+/**
+ * Recoverable failure
+ */
 #define BOLT_CONNECTION_STATE_FAILED          3
-// unrecoverable failure
+/**
+ * Unrecoverable failure
+ */
 #define BOLT_CONNECTION_STATE_DEFUNCT         4
 
 /**
- * Status information about connection including details about errors
+ * The type that holds status information about connection, including details about errors.
  */
 typedef struct BoltStatus BoltStatus;
 
+/**
+ * Creates a new instance of \ref BoltStatus.
+ *
+ * @return the pointer to the newly allocated \ref BoltStatus instance.
+ */
 SEABOLT_EXPORT BoltStatus* BoltStatus_create();
 
+/**
+ * Destroys the passed \ref BoltStatus instance.
+ *
+ * @param status the instance to be destroyed.
+ */
 SEABOLT_EXPORT void BoltStatus_destroy(BoltStatus* status);
 
+/**
+ * Returns the current \ref BoltConnectionState "state".
+ *
+ * @param status the instance to be destroyed.
+ * @returns the current \ref BoltConnectionState "state".
+ */
 SEABOLT_EXPORT BoltConnectionState BoltStatus_get_state(BoltStatus* status);
 
+/**
+ * Returns the current error code.
+ *
+ * A string representation of the returned error code can be retrieved by calling
+ * \ref BoltError_get_string.
+ *
+ * @param status the instance to be destroyed.
+ * @returns the current error code.
+ */
 SEABOLT_EXPORT int32_t BoltStatus_get_error(BoltStatus* status);
 
+/**
+ * Returns more information (if set by the internal code) about the error stored, like
+ * which internal call generated the error and the location of it.
+ *
+ * @param status the instance to be destroyed.
+ * @returns the current error context (may be NULL or empty string).
+ */
 SEABOLT_EXPORT const char* BoltStatus_get_error_context(BoltStatus* status);
 
 #endif //SEABOLT_STATUS_H

@@ -32,104 +32,105 @@
 typedef uint64_t BoltRequest;
 
 /**
- * A Bolt client-server connection instance.
+ *  The type that represents a Bolt client-server connection.
+ *
  *
  */
 typedef struct BoltConnection BoltConnection;
 
 /**
- * Create a new connection.
+ * Creates a new instance of \ref BoltConnection.
  *
- * @return
+ * @return the pointer to the newly allocated \ref BoltConnection instance.
  */
 SEABOLT_EXPORT BoltConnection* BoltConnection_create();
 
 /**
- * Destroy a connection.
+ * Destroys the passed \ref BoltConnection instance.
+ *
+ * @param connection the instance to be destroyed.
  */
 SEABOLT_EXPORT void BoltConnection_destroy(BoltConnection* connection);
 
 /**
- * Open a connection to a Bolt server.
+ * Opens a connection to a Bolt server.
  *
  * This function attempts to connect a BoltConnection to _address_ over
  * _transport_. The `address` should be a pointer to a `BoltAddress` struct
  * that has been successfully resolved.
  *
  * This function blocks until the connection attempt succeeds or fails.
- * On returning, the connection status will be set to either `BOLT_CONNECTED`
- * (if successful) or `BOLT_DEFUNCT` (if not). If defunct, the error code for
- * the connection will be set to one of the following:
+ * On returning, the connection status will be set to either \ref BOLT_CONNECTION_STATE_CONNECTED
+ * (if successful) or \ref BOLT_CONNECTION_STATE_DEFUNCT (if not). If defunct, the actual error code will
+ * be returned.
  *
- * @verbatim embed:rst:leading-asterisk
- * ========================  ====================================================================
- * Error code                Description
- * ========================  ====================================================================
- * BOLT_UNRESOLVED_ADDRESS   The supplied address has not been resolved.
- * BOLT_CONNECTION_REFUSED   The remote server refused to accept the connection.
- * BOLT_INTERRUPTED          The connection attempt was interrupted.
- * BOLT_NETWORK_UNREACHABLE  The server address is on an unreachable network.
- * BOLT_OUT_OF_FILES         The system limit on the total number of open files has been reached.
- * BOLT_OUT_OF_MEMORY        Insufficient memory is available.
- * BOLT_OUT_OF_PORTS         No more local ports are available.
- * BOLT_PERMISSION_DENIED    The current process does not have permission to create a connection.
- * BOLT_TIMED_OUT            The connection attempt timed out.
- * BOLT_TLS_ERROR            An error occurred while attempting to secure the connection.
- * BOLT_UNKNOWN_ERROR        An error occurred for which no further detail can be determined.
- * BOLT_UNSUPPORTED          One or more connection parameters are unsupported.
- * ========================  ====================================================================
- * @endverbatim
+ * In case an error code is returned, more information can be gathered through \ref BoltStatus for which you can
+ * get a reference by calling \ref BoltConnection_status.
  *
- * @param connection the connection to open
- * @param transport the type of transport over which to connect
- * @param address descriptor of the remote Bolt server address
- * @return 0 if the connection was opened successfully, -1 otherwise
+ * @param connection the instance to attempt the connection.
+ * @param transport the type of transport over which to connect.
+ * @param address the Bolt server address.
+ * @param trust the trust settings to be used for \ref BOLT_TRANSPORT_ENCRYPTED connections.
+ * @param log the logger to be used for logging purposes.
+ * @param sock_opts the socket options to be applied to the underlying socket.
+ * @return \ref BOLT_SUCCESS if the connection was opened successfully,
+ *          an error code otherwise.
  */
 SEABOLT_EXPORT int32_t BoltConnection_open(BoltConnection* connection, BoltTransport transport,
         BoltAddress* address, struct BoltTrust* trust, struct BoltLog* log, struct BoltSocketOptions* sock_opts);
 
 /**
- * Close a connection.
+ * Closes the connection.
  *
- * @param connection
+ * @param connection the instance to be closed.
  */
 SEABOLT_EXPORT void BoltConnection_close(BoltConnection* connection);
 
 /**
- * Initialise the connection and authenticate using the basic
- * authentication scheme.
+ * Initialise the connection and authenticate using the provided authentication token.
  *
- * @param connection the connection to initialise
- * @param user_agent the user-agent string
- * @param auth_token dictionary that contains user credentials
- * @return
+ * Returns 0 on success and -1 in case of an error. More information about the underlying error can be gathered
+ * through \ref BoltStatus for which you can get a reference by calling \ref BoltConnection_status.
+ *
+ * @param connection the instance to be initialised and authenticated.
+ * @param user_agent the user agent string to present to the server.
+ * @param auth_token dictionary that contains an authentication token.
+ * @return 0 on success,
+ *        -1 on error.
  */
 SEABOLT_EXPORT int32_t
 BoltConnection_init(BoltConnection* connection, const char* user_agent, const BoltValue* auth_token);
 
 /**
- * Send all queued requests.
+ * Sends all of the queued requests.
  *
- * @param connection
- * @return the latest request ID
+ * @param connection the instance for which send will be carried out.
+ * @return \ref BOLT_SUCCESS on success or an error code in case of a failure.
  */
 SEABOLT_EXPORT int32_t BoltConnection_send(BoltConnection* connection);
 
 /**
- * Fetch the next value from the result stream for a given request.
+ * Fetches the next value from the result stream for a given request.
  * This will discard the responses of earlier requests that have not
  * already been fully consumed. This function will always consume at
  * least one record from the result stream and is not able to check
  * whether the given request has already been fully consumed; doing
  * so is the responsibility of the calling application.
  *
- * After calling this function, the value returned by
- * `BoltConnection_data` should contain either record data
- * (stored in a `BOLT_LIST`) or summary metadata (in a `BOLT_SUMMARY`).
+ * The function returns 1 if a record data is received and corresponding data
+ * is available through \ref BoltConnection_field_values function.
+ *
+ * The function returns 0 if a summary metadata is received and corresponding
+ * data is available through \ref BoltConnection_metadata and
+ * \ref BoltConnection_field_names (if this is for a RUN request) functions.
+ *
+ * The function returns -1 if an error occurs, and more information about the
+ * underlying error can be gathered through \ref BoltStatus for which you can
+ * get a reference by calling \ref BoltConnection_status.
  *
  * This function will block until an appropriate value has been fetched.
  *
- * @param connection the connection to fetch from
+ * @param connection the instance to fetch from
  * @param request the request for which to fetch a response
  * @return 1 if record data is received,
  *         0 if summary metadata is received,
@@ -147,11 +148,17 @@ SEABOLT_EXPORT int32_t BoltConnection_fetch(BoltConnection* connection, BoltRequ
  * to check whether the given request has already been fully consumed;
  * doing so is the responsibility of the calling application.
  *
- * After calling this function, the value returned by
- * `BoltConnection_data` should contain the summary metadata of the
- * received result (in a `BOLT_SUMMARY`).
+ * The function returns >=0 if the call succeeds and corresponding
+ * data is available through \ref BoltConnection_metadata and
+ * \ref BoltConnection_field_names (if this is for a RUN request) functions.
  *
- * @param connection the connection to fetch from
+ * The function returns -1 if an error occurs, and more information about the
+ * underlying error can be gathered through \ref BoltStatus for which you can
+ * get a reference by calling \ref BoltConnection_status.
+ *
+ * This function will block until an appropriate value has been fetched.
+ *
+ * @param connection the instance to fetch from
  * @param request the request for which to fetch a response
  * @return >=0 the number of records discarded from this result
  *         -1 if an error occurs
@@ -159,169 +166,306 @@ SEABOLT_EXPORT int32_t BoltConnection_fetch(BoltConnection* connection, BoltRequ
 SEABOLT_EXPORT int32_t BoltConnection_fetch_summary(BoltConnection* connection, BoltRequest request);
 
 /**
- * Load a transaction BEGIN request into the request queue.
+ * Clears the buffered BEGIN TRANSACTION message.
  *
- * @param connection
- * @return
+ * @param connection the instance on which to clear buffered BEGIN TRANSACTION message.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
  */
 SEABOLT_EXPORT int32_t BoltConnection_clear_begin(BoltConnection* connection);
 
+/**
+ * Sets bookmark list on the buffered BEGIN TRANSACTION message.
+ *
+ * @param connection the instance on which to update buffered BEGIN TRANSACTION message.
+ * @param bookmark_list the list of bookmarks to set.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
+ */
 SEABOLT_EXPORT int32_t BoltConnection_set_begin_bookmarks(BoltConnection* connection, BoltValue* bookmark_list);
 
+/**
+ * Sets transaction timeout on the buffered BEGIN TRANSACTION message.
+ *
+ * @param connection the instance on which to update buffered BEGIN TRANSACTION message
+ * @param timeout the timeout value to apply.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
+ */
 SEABOLT_EXPORT int32_t BoltConnection_set_begin_tx_timeout(BoltConnection* connection, int64_t timeout);
 
+/**
+ * Sets transaction metadata on the buffered BEGIN TRANSACTION message.
+ *
+ * @param connection the instance on which to update buffered BEGIN TRANSACTION message
+ * @param metadata the metadata dictionary value to apply.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
+ */
 SEABOLT_EXPORT int32_t BoltConnection_set_begin_tx_metadata(BoltConnection* connection, BoltValue* metadata);
 
 /**
- * Load a transaction BEGIN request into the request queue.
+ * Loads the buffered BEGIN TRANSACTION message into the request queue.
  *
- * @param connection
- * @return
+ * @param connection the instance on which to queue the message.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
  */
 SEABOLT_EXPORT int32_t BoltConnection_load_begin_request(BoltConnection* connection);
 
 /**
- * Load a transaction COMMIT request into the request queue.
+ * Loads a COMMIT TRANSACTION message into the request queue.
  *
- * @param connection
- * @return
+ * @param connection the instance to queue the request into.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
  */
 SEABOLT_EXPORT int32_t BoltConnection_load_commit_request(BoltConnection* connection);
 
 /**
- * Load a transaction ROLLBACK request into the request queue.
+ * Loads a ROLLBACK TRANSACTION message into the request queue.
  *
- * @param connection
- * @return
+ * @param connection the instance to queue the request into.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
  */
 SEABOLT_EXPORT int32_t BoltConnection_load_rollback_request(BoltConnection* connection);
 
 /**
- * Load a RUN request into the request queue.
+ * Clears the buffered RUN message.
  *
- * @param connection
- * @return
+ * @param connection the instance on which to clear buffered RUN message.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
  */
 SEABOLT_EXPORT int32_t BoltConnection_clear_run(BoltConnection* connection);
 
+/**
+ * Sets bookmark list on the buffered RUN message.
+ *
+ * @param connection the instance on which to update buffered RUN message.
+ * @param bookmark_list the list of bookmarks to set.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
+ */
 SEABOLT_EXPORT int32_t BoltConnection_set_run_bookmarks(BoltConnection* connection, BoltValue* bookmark_list);
 
+/**
+ * Sets transaction timeout on the buffered RUN message.
+ *
+ * @param connection the instance on which to update buffered RUN message
+ * @param timeout the timeout value to apply.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
+ */
 SEABOLT_EXPORT int32_t BoltConnection_set_run_tx_timeout(BoltConnection* connection, int64_t timeout);
 
+/**
+ * Sets transaction metadata on the buffered RUN message.
+ *
+ * @param connection the instance on which to update buffered RUN message
+ * @param metadata the metadata dictionary value to apply.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
+ */
 SEABOLT_EXPORT int32_t BoltConnection_set_run_tx_metadata(BoltConnection* connection, BoltValue* metadata);
 
-SEABOLT_EXPORT int
+/**
+ * Sets the cypher query on the buffered RUN message.
+ *
+ * @param connection the instance on which to update buffered RUN message.
+ * @param cypher the cypher text to execute.
+ * @param cypher_size the size of the cypher text.
+ * @param n_parameter number of cypher parameters to be allocated on the message.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
+ */
+SEABOLT_EXPORT int32_t
 BoltConnection_set_run_cypher(BoltConnection* connection, const char* cypher, const uint64_t cypher_size,
         const int32_t n_parameter);
 
+/**
+ * Sets the cypher parameter's value on the buffered RUN message.
+ *
+ * @param connection the instance on which to update buffered RUN message.
+ * @param index the index of the parameter to update.
+ * @param name the parameter name to set.
+ * @param name_size size of the parameter name.
+ * @return a reference to an already allocated \ref BoltValue to be populated.
+ */
 SEABOLT_EXPORT BoltValue*
 BoltConnection_set_run_cypher_parameter(BoltConnection* connection, int32_t index, const char* name,
         const uint64_t name_size);
 
+/**
+ * Loads the buffered RUN message into the request queue.
+ *
+ * @param connection the instance on which to queue the message.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
+ */
 SEABOLT_EXPORT int32_t BoltConnection_load_run_request(BoltConnection* connection);
 
 /**
- * Load a DISCARD_ALL request into the request queue.
+ * Loads a DISCARD_ALL message into the request queue.
  *
- * @param connection
- * @param n should always be -1
- * @return
+ * @param connection the instance to queue the request into.
+ * @param n not used currently, should be set to -1.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
  */
 SEABOLT_EXPORT int32_t BoltConnection_load_discard_request(BoltConnection* connection, int32_t n);
 
 /**
- * Load a PULL_ALL request into the request queue.
+ * Loads a PULL_ALL message into the request queue.
  *
- * @param connection
- * @param n should always be -1
- * @return
+ * @param connection the instance to queue the request into.
+ * @param n not used currently, should be set to -1.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
  */
 SEABOLT_EXPORT int32_t BoltConnection_load_pull_request(BoltConnection* connection, int32_t n);
 
 /**
- * Load a RESET request into the request queue.
+ * Loads a RESET message into the request queue.
  *
  * RESET message resets the connection to discard any outstanding results,
  * rollback the current transaction and clear any unacknowledged
  * failures.
  *
- * @param connection
- * @return
+ * @param connection the instance to queue the request into.
+ * @return \ref BOLT_SUCCESS on success,
+ *          an error code on failure.
  */
 SEABOLT_EXPORT int32_t BoltConnection_load_reset_request(BoltConnection* connection);
 
 /**
- * Obtain a handle to the last request sent to the server. This handle
+ * Returns a handle to the last request queued to be sent to the server. This handle
  * can be used to fetch response data for a particular request.
  *
- * @param connection
- * @return
+ * @param connection the instance to query.
+ * @returns the last queued message's \ref BoltRequest "handle".
  */
 SEABOLT_EXPORT BoltRequest BoltConnection_last_request(BoltConnection* connection);
 
+/**
+ * Returns the server identification (vendor/version) string as presented by the server.
+ *
+ * @param connection the instance to query.
+ * @returns the server identification string if available, NULL otherwise.
+ */
 SEABOLT_EXPORT const char* BoltConnection_server(BoltConnection* connection);
 
+/**
+ * Returns a unique connection identifier for this connection.
+ *
+ * The returned string is unique across the process, and also is appended with any connection identifier
+ * assigned by the server (only available with Bolt V3). The appended connection identifier can
+ * be used to form a correlation between client and server side information (such as active connections,
+ * active transactions, active queries, etc.).
+ *
+ * @param connection the instance to query.
+ * @returns the identifier string.
+ */
 SEABOLT_EXPORT const char* BoltConnection_id(BoltConnection* connection);
 
+/**
+ * Returns the server address as specified to \ref BoltConnection_open.
+ *
+ * @param connection the instance to query.
+ * @returns the server address.
+ */
 SEABOLT_EXPORT const BoltAddress* BoltConnection_address(BoltConnection* connection);
 
+/**
+ * Returns the remote endpoint (IP address / port) of the active connection.
+ *
+ * @param connection the instance to query.
+ * @returns the remote endpoint.
+ */
 SEABOLT_EXPORT const BoltAddress* BoltConnection_remote_endpoint(BoltConnection* connection);
 
+/**
+ * Returns the local endpoint (IP address / port) of the active connection.
+ *
+ * @param connection the instance to query.
+ * @returns the local endpoint.
+ */
 SEABOLT_EXPORT const BoltAddress* BoltConnection_local_endpoint(BoltConnection* connection);
 
 /**
- * Obtain the latest bookmark sent by the server. This may return null if
- * server did not return any bookmark data for this connection. This pointer is
- * alive, which means the underlying bookmark data may be changed over time with
- * updated data on this same connection. Do not change underlying data and clone
- * it if you want to have a fixed bookmark in-hand.
+ * Returns the latest bookmark sent by the server.
  *
- * @param connection
- * @return
+ * This may return null if server did not return any bookmark data for this connection.
+ * This pointer is alive, which means the underlying bookmark data may be changed over
+ * time with updated data on this same connection. Do not change underlying data and
+ * clone it if you want to have a fixed bookmark in-hand.
+ *
+ * @param connection the instance to query.
+ * @returns the latest bookmark received.
  */
 SEABOLT_EXPORT const char* BoltConnection_last_bookmark(BoltConnection* connection);
 
-
 /**
-*
-* @param connection
-* @return
-*/
+ * Checks whether the last received data is a SUMMARY message of SUCCESS.
+ *
+ * @param connection the instance to query.
+ * @returns 1 if the last received data is a SUCCESS summary message,
+ *          0 otherwise
+ */
 SEABOLT_EXPORT int32_t BoltConnection_summary_success(BoltConnection* connection);
 
 /**
- * Obtain the details of the latest server generated FAILURE message
+ * Returns the details of the latest server generated FAILURE message
  *
- * @param connection
- * @return
+ * The returned \ref BoltValue is a dictionary with _code_ and _message_ keys, each
+ * pointing to a string value identifying the code and message of the failure
+ * server generated.
+ *
+ * @param connection the instance to query.
+ * @return a \ref BoltValue "dictionary" representing the FAILURE data.
  */
 SEABOLT_EXPORT BoltValue* BoltConnection_failure(BoltConnection* connection);
 
 /**
- * Return the fields available in the current result.
+ * Returns the field names available in the current result.
  *
- * @param connection
- * @return
+ * The returned \ref BoltValue is a list of field names, each pointing to a string value
+ * identifying the corresponding field name.
+ *
+ * @param connection the instance to query.
+ * @return a \ref BoltValue "list" containing the field names.
  */
 SEABOLT_EXPORT BoltValue* BoltConnection_field_names(BoltConnection* connection);
 
 /**
-* Obtain a value from the current record.
-*
-* @param connection
-* @param field
-* @return pointer to a `BoltValue` data structure formatted as a BOLT_LIST
-*/
+ * Returns the field values available in the last received record.
+ *
+ * The returned \ref BoltValue is a list of field values, each pointing to an arbitrary value
+ * as generated by the executed cypher query.
+ *
+ * @param connection the instance to query.
+ * @return a \ref BoltValue "list" containing the field values.
+ */
 SEABOLT_EXPORT BoltValue* BoltConnection_field_values(BoltConnection* connection);
 
 /**
- * Returns the metadata sent by the server.
+ * Returns the metadata fields sent by the server in the last SUMMARY message.
  *
- * @param connection
- * @return
+ * The returned \ref BoltValue is a dictionary with arbitrary keys, each
+ * pointing to a corresponding value.
+ *
+ * @param connection the instance to query.
+ * @return a \ref BoltValue "dictionary" representing the metadata fields.
  */
 SEABOLT_EXPORT BoltValue* BoltConnection_metadata(BoltConnection* connection);
 
+/**
+ * Returns the current status data of the connection.
+ *
+ * @param connection the instance to query.
+ * @return a \ref BoltStatus instance containing further status information.
+ */
 SEABOLT_EXPORT BoltStatus* BoltConnection_status(BoltConnection* connection);
 
 #endif // SEABOLT_CONNECTION

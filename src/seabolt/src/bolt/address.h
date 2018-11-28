@@ -23,48 +23,69 @@
 #include "bolt-public.h"
 
 /**
- * The address of a Bolt server. This can carry both the original host
- * and port details, as supplied by the application, as well as one or
- * more resolved IP addresses and port number.
+ * The type that represents a network endpoint as a host name and a port number.
+ *
+ * This can carry both the original host name and port details, as supplied by the application,
+ * as well as one or more resolved IP addresses and port number.
  */
 typedef struct BoltAddress BoltAddress;
 
 /**
- * Create a new address structure for a given host and port. No name
- * resolution is carried out on creation so this simply initialises
+ * Creates a new instance of \ref BoltAddress for a given host and port.
+ *
+ * No name resolution is carried out on creation so this simply initialises
  * the original host and port details and zeroes out the remainder
  * of the structure.
  *
- * @param host host name for this address, e.g. "www.example.com"
+ * @param host host name, e.g. "www.example.com"
  * @param port port name or numeric string, e.g. "7687" or "http"
- * @return pointer to a new BoltAddress
+ * @returns the pointer to the newly allocated \ref BoltAddress instance.
  */
-SEABOLT_EXPORT struct BoltAddress* BoltAddress_create(const char* host, const char* port);
+SEABOLT_EXPORT BoltAddress* BoltAddress_create(const char* host, const char* port);
 
+/**
+ * Returns the host name.
+ *
+ * @param address the instance to be queried.
+ * @returns the host name as specified with \ref BoltAddress_create.
+ */
 SEABOLT_EXPORT const char* BoltAddress_host(BoltAddress* address);
 
-SEABOLT_EXPORT const char* BoltAddress_port(BoltAddress* address);
 /**
- * Resolve the original host and port into one or more IP addresses and
- * a port number. This can be carried out more than once on the same
+ * Returns the port.
+ *
+ * @param address the instance to be queried.
+ * @returns the port as specified with \ref BoltAddress_create.
+ */
+SEABOLT_EXPORT const char* BoltAddress_port(BoltAddress* address);
+
+/**
+ * Resolves the original host and port into one or more IP addresses and
+ * a port number.
+ *
+ * This can be carried out more than once on the same
  * address. Any newly-resolved addresses will replace any previously stored.
  *
- * @param address pointer to a BoltAddress
- * @param n_resolved pointer to an int value where number of resolved addresses will be saved
- * @return status of the internal getaddrinfo call
+ * The name resolution is a synchronized operation, i.e. concurrent resolution requests on the same
+ * instance are protected by a mutex.
+ *
+ * @param address the instance to be resolved.
+ * @param n_resolved number of resolved addresses that will be set upon successful resolution.
+ * @param log an optional \ref BoltLog instance to be used for logging purposes.
+ * @returns 0 for success, and non-zero error codes returned from getaddrinfo call on error.
  */
 SEABOLT_EXPORT int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, struct BoltLog* log);
 
 /**
- * Copy the textual representation of a resolved host IP address into a buffer.
+ * Copies the textual representation of the resolved IP address at the specified index into an already
+ * allocated buffer.
  *
- * If successful, AF_INET or AF_INET6 is returned depending on the address
- * family. If unsuccessful, -1 is returned. Failure may be a result of a
- * system problem or because the supplied buffer is too small for the address.
+ * If successful, AF_INET or AF_INET6 is returned depending on the address family. If unsuccessful, -1 is returned.
+ * Failure may be a result of a system problem or because the supplied buffer is too small for the address.
  *
- * @param address pointer to a resolved BoltAddress structure
+ * @param address the instance to be queried.
  * @param index index of the resolved IP address
- * @param buffer buffer in which to write the address representation
+ * @param buffer destination buffer to write the IP address's string representation
  * @param buffer_size size of the buffer
  * @return address family (AF_INET or AF_INET6) or -1 on error
  */
@@ -72,9 +93,9 @@ SEABOLT_EXPORT int32_t
 BoltAddress_copy_resolved_host(BoltAddress* address, int32_t index, char* buffer, uint64_t buffer_size);
 
 /**
- * Destroy an address structure and deallocate any associated memory.
+ * Destroys the passed \ref BoltAddress instance.
  *
- * @param address pointer to a BoltAddress structure
+ * @param address the instance to be destroyed.
  */
 SEABOLT_EXPORT void BoltAddress_destroy(BoltAddress* address);
 
