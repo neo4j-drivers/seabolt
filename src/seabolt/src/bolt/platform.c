@@ -35,6 +35,8 @@
 
 #endif
 
+#define NANOSECONDS_PER_SEC 1000000000
+
 int BoltUtil_get_time(struct timespec* tp)
 {
 #if defined(__APPLE__)
@@ -347,8 +349,6 @@ int BoltUtil_cond_wait(cond_t* cond, mutex_t* mutex)
 #endif
 }
 
-#define NSEC_PER_SEC 1000000000
-
 int BoltUtil_cond_timedwait(cond_t* cond, mutex_t* mutex, int timeout_ms)
 {
 #ifdef _WIN32
@@ -360,9 +360,9 @@ int BoltUtil_cond_timedwait(cond_t* cond, mutex_t* mutex, int timeout_ms)
     gettimeofday(&now, NULL);
     timeout.tv_sec = now.tv_sec+(timeout_ms/1000);
     timeout.tv_nsec = (now.tv_usec*1000)+((timeout_ms%1000)*1000000);
-    if (timeout.tv_nsec>=NSEC_PER_SEC) {
+    if (timeout.tv_nsec>=NANOSECONDS_PER_SEC) {
         timeout.tv_sec++;
-        timeout.tv_nsec -= NSEC_PER_SEC;
+        timeout.tv_nsec -= NANOSECONDS_PER_SEC;
     }
     return pthread_cond_timedwait(*cond, *mutex, &timeout)==0;
 #endif
