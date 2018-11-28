@@ -31,8 +31,11 @@
 
 #include <pthread.h>
 #include <assert.h>
+#include <sys/time.h>
 
 #endif
+
+#define NANOSECONDS_PER_SEC 1000000000
 
 int BoltUtil_get_time(struct timespec* tp)
 {
@@ -114,10 +117,8 @@ void BoltUtil_sleep(int milliseconds)
 int BoltUtil_mutex_create(mutex_t* mutex)
 {
 #ifdef _WIN32
-    *mutex = CreateMutex(NULL, FALSE, NULL);
-    if (*mutex==NULL) {
-        return GetLastError();
-    }
+    *mutex = BoltMem_allocate(sizeof(CRITICAL_SECTION));
+    InitializeCriticalSectionAndSpinCount(*mutex, 0x400);
     return 0;
 #else
     *mutex = BoltMem_allocate(sizeof(pthread_mutex_t));
@@ -133,9 +134,8 @@ int BoltUtil_mutex_create(mutex_t* mutex)
 int BoltUtil_mutex_destroy(mutex_t* mutex)
 {
 #ifdef _WIN32
-    if (!CloseHandle(*mutex)) {
-        return GetLastError();
-    }
+    DeleteCriticalSection(*mutex);
+    BoltMem_deallocate(*mutex, sizeof(CRITICAL_SECTION));
     return 0;
 #else
     int status = pthread_mutex_destroy(*mutex);
@@ -147,10 +147,7 @@ int BoltUtil_mutex_destroy(mutex_t* mutex)
 int BoltUtil_mutex_lock(mutex_t* mutex)
 {
 #ifdef _WIN32
-    const DWORD result = WaitForSingleObject(*mutex, INFINITE);
-    if (result) {
-        return result;
-    }
+    EnterCriticalSection(*mutex);
     return 0;
 #else
     return pthread_mutex_lock(*mutex);
@@ -160,10 +157,7 @@ int BoltUtil_mutex_lock(mutex_t* mutex)
 int BoltUtil_mutex_unlock(mutex_t* mutex)
 {
 #ifdef _WIN32
-    if (ReleaseMutex(*mutex)) {
-        return GetLastError();
-    }
-
+    LeaveCriticalSection(*mutex);
     return 0;
 #else
     return pthread_mutex_unlock(*mutex);
@@ -173,9 +167,9 @@ int BoltUtil_mutex_unlock(mutex_t* mutex)
 int BoltUtil_mutex_trylock(mutex_t* mutex)
 {
 #ifdef _WIN32
-    const DWORD result = WaitForSingleObject(*mutex, 0);
+    const BOOL result = TryEnterCriticalSection(*mutex);
     if (result) {
-        return result;
+        return 1;
     }
     return 0;
 #else
@@ -301,3 +295,76 @@ int BoltUtil_rwlock_wrunlock(rwlock_t* rwlock)
     return pthread_rwlock_unlock(*rwlock)==0;
 #endif
 }
+
+int BoltUtil_cond_create(cond_t* cond)
+{
+#ifdef _WIN32
+    *cond = BoltMem_allocate(sizeof(CONDITION_VARIABLE));
+    InitializeConditionVariable((PCONDITION_VARIABLE) *cond);
+    return 1;
+#else
+    *cond = BoltMem_allocate(sizeof(pthread_cond_t));
+    return pthread_cond_init(*cond, NULL)==0;
+#endif
+}
+
+int BoltUtil_cond_destroy(cond_t* cond)
+{
+#ifdef _WIN32
+    BoltMem_deallocate(*cond, sizeof(CONDITION_VARIABLE));
+    return 1;
+#else
+    int status = pthread_cond_destroy(*cond)==0;
+    BoltMem_deallocate(*cond, sizeof(pthread_cond_t));
+    return status;
+#endif
+}
+
+int BoltUtil_cond_signal(cond_t* cond)
+{
+#ifdef _WIN32
+    WakeConditionVariable(*cond);
+    return 1;
+#else
+    return pthread_cond_signal(*cond)==0;
+#endif
+}
+
+int BoltUtil_cond_broadcast(cond_t* cond)
+{
+#ifdef _WIN32
+    WakeAllConditionVariable(*cond);
+    return 1;
+#else
+    return pthread_cond_broadcast(*cond)==0;
+#endif
+}
+
+int BoltUtil_cond_wait(cond_t* cond, mutex_t* mutex)
+{
+#ifdef _WIN32
+    return SleepConditionVariableCS(*cond, *mutex, INFINITE);
+#else
+    return pthread_cond_wait(*cond, *mutex);
+#endif
+}
+
+int BoltUtil_cond_timedwait(cond_t* cond, mutex_t* mutex, int timeout_ms)
+{
+#ifdef _WIN32
+    return SleepConditionVariableCS(*cond, *mutex, timeout_ms);
+#else
+    struct timeval now;
+    struct timespec timeout;
+
+    gettimeofday(&now, NULL);
+    timeout.tv_sec = now.tv_sec+(timeout_ms/1000);
+    timeout.tv_nsec = (now.tv_usec*1000)+((timeout_ms%1000)*1000000);
+    if (timeout.tv_nsec>=NANOSECONDS_PER_SEC) {
+        timeout.tv_sec++;
+        timeout.tv_nsec -= NANOSECONDS_PER_SEC;
+    }
+    return pthread_cond_timedwait(*cond, *mutex, &timeout)==0;
+#endif
+}
+

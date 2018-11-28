@@ -27,6 +27,8 @@ typedef void * mutex_t;
 
 typedef void * rwlock_t;
 
+typedef void * cond_t;
+
 SEABOLT_EXPORT int BoltUtil_get_time(struct timespec* tp);
 
 int64_t BoltUtil_get_time_ms();
@@ -70,6 +72,18 @@ int BoltUtil_rwlock_timedwrlock(rwlock_t* rwlock, int timeout_ms);
 int BoltUtil_rwlock_rdunlock(rwlock_t* rwlock);
 
 int BoltUtil_rwlock_wrunlock(rwlock_t* rwlock);
+
+int BoltUtil_cond_create(cond_t* cond);
+
+int BoltUtil_cond_destroy(cond_t* cond);
+
+int BoltUtil_cond_signal(cond_t* cond);
+
+int BoltUtil_cond_broadcast(cond_t* cond);
+
+int BoltUtil_cond_wait(cond_t* cond, mutex_t* mutex);
+
+int BoltUtil_cond_timedwait(cond_t* cond, mutex_t* mutex, int timeout_ms);
 
 #endif //SEABOLT_UTILS_H
 
