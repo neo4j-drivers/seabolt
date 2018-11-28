@@ -31,6 +31,7 @@
 
 #include <pthread.h>
 #include <assert.h>
+#include <sys/time.h>
 
 #endif
 
@@ -301,3 +302,76 @@ int BoltUtil_rwlock_wrunlock(rwlock_t* rwlock)
     return pthread_rwlock_unlock(*rwlock)==0;
 #endif
 }
+
+int BoltUtil_cond_create(cond_t* cond)
+{
+#ifdef _WIN32
+    InitializeConditionVariable((PCONDITION_VARIABLE) cond);
+    return 1;
+#else
+    *cond = BoltMem_allocate(sizeof(pthread_cond_t));
+    return pthread_cond_init(*cond, NULL)==0;
+#endif
+}
+
+int BoltUtil_cond_destroy(cond_t* cond)
+{
+#ifdef _WIN32
+    return 1;
+#else
+    int status = pthread_cond_destroy(*cond)==0;
+    BoltMem_deallocate(*cond, sizeof(pthread_cond_t));
+    return status;
+#endif
+}
+
+int BoltUtil_cond_signal(cond_t* cond)
+{
+#ifdef _WIN32
+    WakeConditionVariable(*cond);
+    return 1;
+#else
+    return pthread_cond_signal(*cond)==0;
+#endif
+}
+
+int BoltUtil_cond_broadcast(cond_t* cond)
+{
+#ifdef _WIN32
+    WakeAllConditionVariable(*cond);
+    return 1;
+#else
+    return pthread_cond_broadcast(*cond)==0;
+#endif
+}
+
+int BoltUtil_cond_wait(cond_t* cond, mutex_t* mutex)
+{
+#ifdef _WIN32
+    return SleepConditionVariableCS(*cond, *mutex, INFINITE);
+#else
+    return pthread_cond_wait(*cond, *mutex);
+#endif
+}
+
+#define NSEC_PER_SEC 1000000000
+
+int BoltUtil_cond_timedwait(cond_t* cond, mutex_t* mutex, int timeout_ms)
+{
+#ifdef _WIN32
+    return SleepConditionVariableCS(*cond, *mutex, timeout_ms);
+#else
+    struct timeval now;
+    struct timespec timeout;
+
+    gettimeofday(&now, NULL);
+    timeout.tv_sec = now.tv_sec+(timeout_ms/1000);
+    timeout.tv_nsec = (now.tv_usec*1000)+((timeout_ms%1000)*1000000);
+    if (timeout.tv_nsec>=NSEC_PER_SEC) {
+        timeout.tv_sec++;
+        timeout.tv_nsec -= NSEC_PER_SEC;
+    }
+    return pthread_cond_timedwait(*cond, *mutex, &timeout)==0;
+#endif
+}
+

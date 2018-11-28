@@ -175,6 +175,7 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
     BoltLog_info(config->log, "[%s]: Creating pool towards %s:%s", id, address->host, address->port);
     struct BoltDirectPool* pool = (struct BoltDirectPool*) BoltMem_allocate(SIZE_OF_DIRECT_POOL);
     BoltUtil_mutex_create(&pool->mutex);
+    BoltUtil_cond_create(&pool->released_cond);
     pool->id = id;
     pool->config = config;
     pool->address = BoltAddress_create(address->host, address->port);
@@ -213,6 +214,7 @@ void BoltDirectPool_destroy(struct BoltDirectPool* pool)
     }
     BoltAddress_destroy(pool->address);
     BoltMem_deallocate(pool->id, MAX_ID_LEN);
+    BoltUtil_cond_destroy(&pool->released_cond);
     BoltUtil_mutex_destroy(&pool->mutex);
     BoltMem_deallocate(pool, SIZE_OF_DIRECT_POOL);
 }
@@ -220,16 +222,16 @@ void BoltDirectPool_destroy(struct BoltDirectPool* pool)
 BoltConnection* BoltDirectPool_acquire(struct BoltDirectPool* pool, BoltStatus* status)
 {
     int index = 0;
-    int pool_error = BOLT_SUCCESS;
+    int pool_error;
     BoltConnection* connection = NULL;
 
     int64_t started_at = BoltUtil_get_time_ms();
     BoltLog_info(pool->config->log, "[%s]: Acquiring connection from the pool towards %s:%s", pool->id,
             pool->address->host, pool->address->port);
 
-    while (1) {
-        BoltUtil_mutex_lock(&pool->mutex);
+    BoltUtil_mutex_lock(&pool->mutex);
 
+    while (1) {
         index = find_unused_connection(pool);
         pool_error = index>=0 ? BOLT_SUCCESS : BOLT_POOL_FULL;
         if (index>=0) {
@@ -284,8 +286,6 @@ BoltConnection* BoltDirectPool_acquire(struct BoltDirectPool* pool, BoltStatus* 
             break;
         }
 
-        BoltUtil_mutex_unlock(&pool->mutex);
-
         if (pool->config->max_connection_acquisition_time==0) {
             // fail fast, we report the failure asap
             break;
@@ -298,23 +298,23 @@ BoltConnection* BoltDirectPool_acquire(struct BoltDirectPool* pool, BoltStatus* 
                 status->state = BOLT_CONNECTION_STATE_DISCONNECTED;
                 status->error = BOLT_POOL_ACQUISITION_TIMED_OUT;
                 status->error_ctx = NULL;
-
-                break;
             }
             else {
                 BoltLog_info(pool->config->log,
                         "[%s]: Pool towards %s:%s is full, will retry acquiring a connection from the pool.", pool->id,
                         pool->address->host, pool->address->port);
 
-                BoltUtil_sleep(250);
-
-                continue;
+                if (BoltUtil_cond_timedwait(&pool->released_cond, &pool->mutex,
+                        pool->config->max_connection_acquisition_time)) {
+                    continue;
+                }
             }
         }
-        else {
-            break;
-        }
+
+        break;
     }
+
+    BoltUtil_mutex_unlock(&pool->mutex);
 
     return connection;
 }
@@ -332,6 +332,8 @@ int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* c
         connection->protocol->clear_begin_tx(connection);
 
         reset_or_close(pool, index);
+
+        BoltUtil_cond_signal(&pool->released_cond);
     }
     BoltUtil_mutex_unlock(&pool->mutex);
     return index;
