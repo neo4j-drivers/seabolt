@@ -115,10 +115,8 @@ void BoltUtil_sleep(int milliseconds)
 int BoltUtil_mutex_create(mutex_t* mutex)
 {
 #ifdef _WIN32
-    *mutex = CreateMutex(NULL, FALSE, NULL);
-    if (*mutex==NULL) {
-        return GetLastError();
-    }
+    *mutex = BoltMem_allocate(sizeof(CRITICAL_SECTION));
+    InitializeCriticalSectionAndSpinCount(*mutex, 0x400);
     return 0;
 #else
     *mutex = BoltMem_allocate(sizeof(pthread_mutex_t));
@@ -134,9 +132,8 @@ int BoltUtil_mutex_create(mutex_t* mutex)
 int BoltUtil_mutex_destroy(mutex_t* mutex)
 {
 #ifdef _WIN32
-    if (!CloseHandle(*mutex)) {
-        return GetLastError();
-    }
+    DeleteCriticalSection(*mutex);
+    BoltMem_deallocate(*mutex, sizeof(CRITICAL_SECTION));
     return 0;
 #else
     int status = pthread_mutex_destroy(*mutex);
@@ -148,10 +145,7 @@ int BoltUtil_mutex_destroy(mutex_t* mutex)
 int BoltUtil_mutex_lock(mutex_t* mutex)
 {
 #ifdef _WIN32
-    const DWORD result = WaitForSingleObject(*mutex, INFINITE);
-    if (result) {
-        return result;
-    }
+    EnterCriticalSection(*mutex);
     return 0;
 #else
     return pthread_mutex_lock(*mutex);
@@ -161,10 +155,7 @@ int BoltUtil_mutex_lock(mutex_t* mutex)
 int BoltUtil_mutex_unlock(mutex_t* mutex)
 {
 #ifdef _WIN32
-    if (ReleaseMutex(*mutex)) {
-        return GetLastError();
-    }
-
+    LeaveCriticalSection(*mutex);
     return 0;
 #else
     return pthread_mutex_unlock(*mutex);
@@ -174,9 +165,9 @@ int BoltUtil_mutex_unlock(mutex_t* mutex)
 int BoltUtil_mutex_trylock(mutex_t* mutex)
 {
 #ifdef _WIN32
-    const DWORD result = WaitForSingleObject(*mutex, 0);
+    const BOOL result = TryEnterCriticalSection(*mutex);
     if (result) {
-        return result;
+        return 1;
     }
     return 0;
 #else
@@ -306,7 +297,8 @@ int BoltUtil_rwlock_wrunlock(rwlock_t* rwlock)
 int BoltUtil_cond_create(cond_t* cond)
 {
 #ifdef _WIN32
-    InitializeConditionVariable((PCONDITION_VARIABLE) cond);
+    *cond = BoltMem_allocate(sizeof(CONDITION_VARIABLE));
+    InitializeConditionVariable((PCONDITION_VARIABLE) *cond);
     return 1;
 #else
     *cond = BoltMem_allocate(sizeof(pthread_cond_t));
@@ -317,6 +309,7 @@ int BoltUtil_cond_create(cond_t* cond)
 int BoltUtil_cond_destroy(cond_t* cond)
 {
 #ifdef _WIN32
+    BoltMem_deallocate(*cond, sizeof(CONDITION_VARIABLE));
     return 1;
 #else
     int status = pthread_cond_destroy(*cond)==0;
