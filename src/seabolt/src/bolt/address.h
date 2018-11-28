@@ -74,7 +74,7 @@ SEABOLT_EXPORT const char* BoltAddress_port(BoltAddress* address);
  * @param log an optional \ref BoltLog instance to be used for logging purposes.
  * @returns 0 for success, and non-zero error codes returned from getaddrinfo call on error.
  */
-SEABOLT_EXPORT int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, struct BoltLog* log);
+SEABOLT_EXPORT int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* log);
 
 /**
  * Copies the textual representation of the resolved IP address at the specified index into an already

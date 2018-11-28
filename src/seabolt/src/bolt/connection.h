@@ -77,7 +77,7 @@ SEABOLT_EXPORT void BoltConnection_destroy(BoltConnection* connection);
  *          an error code otherwise.
  */
 SEABOLT_EXPORT int32_t BoltConnection_open(BoltConnection* connection, BoltTransport transport,
-        BoltAddress* address, struct BoltTrust* trust, struct BoltLog* log, struct BoltSocketOptions* sock_opts);
+        BoltAddress* address, BoltTrust* trust, BoltLog* log, BoltSocketOptions* sock_opts);
 
 /**
  * Closes the connection.

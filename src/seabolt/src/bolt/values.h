@@ -76,7 +76,7 @@ SEABOLT_EXPORT void BoltValue_destroy(BoltValue* value);
  * @param value the instance to be duplicated.
  * @returns a pointer to the newly allocated and populated \ref BoltValue instance.
  */
-SEABOLT_EXPORT struct BoltValue* BoltValue_duplicate(const struct BoltValue* value);
+SEABOLT_EXPORT BoltValue* BoltValue_duplicate(const BoltValue* value);
 
 /**
  * Deep copies the passed \ref BoltValue instance to another one.
@@ -86,7 +86,7 @@ SEABOLT_EXPORT struct BoltValue* BoltValue_duplicate(const struct BoltValue* val
  * @param dest the destination instance.
  * @param src the source instance.
  */
-SEABOLT_EXPORT void BoltValue_copy(struct BoltValue* dest, const struct BoltValue* src);
+SEABOLT_EXPORT void BoltValue_copy(BoltValue* dest, const BoltValue* src);
 
 /**
  * Returns the size of the passed \ref BoltValue instance.
@@ -94,7 +94,7 @@ SEABOLT_EXPORT void BoltValue_copy(struct BoltValue* dest, const struct BoltValu
  * @param value the instance to be queried.
  * @returns the size.
  */
-SEABOLT_EXPORT int32_t BoltValue_size(const struct BoltValue* value);
+SEABOLT_EXPORT int32_t BoltValue_size(const BoltValue* value);
 
 /**
  * Returns the type of the passed \ref BoltValue instance.
@@ -102,7 +102,7 @@ SEABOLT_EXPORT int32_t BoltValue_size(const struct BoltValue* value);
  * @param value the instance to be queried.
  * @returns the type.
  */
-SEABOLT_EXPORT enum BoltType BoltValue_type(const struct BoltValue* value);
+SEABOLT_EXPORT enum BoltType BoltValue_type(const BoltValue* value);
 
 /**
  * Copies the string representation of the passed \ref BoltValue instance to the provided buffers.
@@ -119,14 +119,14 @@ SEABOLT_EXPORT enum BoltType BoltValue_type(const struct BoltValue* value);
  *          buffer will ensure the full string represention to be available to the caller.
  */
 SEABOLT_EXPORT int32_t
-BoltValue_to_string(const struct BoltValue* value, char* dest, int32_t length, struct BoltConnection* connection);
+BoltValue_to_string(const BoltValue* value, char* dest, int32_t length, BoltConnection* connection);
 
 /**
  * Sets the passed \ref BoltValue instance to null.
  *
  * @param value the instance to be updated
  */
-SEABOLT_EXPORT void BoltValue_format_as_Null(struct BoltValue* value);
+SEABOLT_EXPORT void BoltValue_format_as_Null(BoltValue* value);
 
 /**
  * Sets the passed \ref BoltValue instance to \ref BOLT_BOOLEAN.
@@ -134,7 +134,7 @@ SEABOLT_EXPORT void BoltValue_format_as_Null(struct BoltValue* value);
  * @param value the instance to be updated
  * @param data the boolean value to set, 1 for TRUE, 0 for FALSE.
  */
-SEABOLT_EXPORT void BoltValue_format_as_Boolean(struct BoltValue* value, char data);
+SEABOLT_EXPORT void BoltValue_format_as_Boolean(BoltValue* value, char data);
 
 /**
  * Gets the boolean value stored in the passed \ref BoltValue instance.
@@ -142,7 +142,7 @@ SEABOLT_EXPORT void BoltValue_format_as_Boolean(struct BoltValue* value, char da
  * @param value the instance to be queried
  * @returns 1 for TRUE, 0 for FALSE.
  */
-SEABOLT_EXPORT char BoltBoolean_get(const struct BoltValue* value);
+SEABOLT_EXPORT char BoltBoolean_get(const BoltValue* value);
 
 /**
  * Sets the passed \ref BoltValue instance to \ref BOLT_INTEGER.
@@ -150,7 +150,7 @@ SEABOLT_EXPORT char BoltBoolean_get(const struct BoltValue* value);
  * @param value the instance to be updated
  * @param data the integer value to set.
  */
-SEABOLT_EXPORT void BoltValue_format_as_Integer(struct BoltValue* value, int64_t data);
+SEABOLT_EXPORT void BoltValue_format_as_Integer(BoltValue* value, int64_t data);
 
 /**
  * Gets the integer value stored in the passed \ref BoltValue instance.
@@ -158,7 +158,7 @@ SEABOLT_EXPORT void BoltValue_format_as_Integer(struct BoltValue* value, int64_t
  * @param value the instance to be queried
  * @returns the integer value stored.
  */
-SEABOLT_EXPORT int64_t BoltInteger_get(const struct BoltValue* value);
+SEABOLT_EXPORT int64_t BoltInteger_get(const BoltValue* value);
 
 /**
  * Sets the passed \ref BoltValue instance to \ref BOLT_FLOAT.
@@ -166,7 +166,7 @@ SEABOLT_EXPORT int64_t BoltInteger_get(const struct BoltValue* value);
  * @param value the instance to be updated
  * @param data the float value to set.
  */
-SEABOLT_EXPORT void BoltValue_format_as_Float(struct BoltValue* value, double data);
+SEABOLT_EXPORT void BoltValue_format_as_Float(BoltValue* value, double data);
 
 /**
  * Gets the float value stored in the passed \ref BoltValue instance.
@@ -174,7 +174,7 @@ SEABOLT_EXPORT void BoltValue_format_as_Float(struct BoltValue* value, double da
  * @param value the instance to be queried
  * @returns the float value stored.
  */
-SEABOLT_EXPORT double BoltFloat_get(const struct BoltValue* value);
+SEABOLT_EXPORT double BoltFloat_get(const BoltValue* value);
 
 /**
  * Sets the passed \ref BoltValue instance to \ref BOLT_STRING.
@@ -183,7 +183,7 @@ SEABOLT_EXPORT double BoltFloat_get(const struct BoltValue* value);
  * @param data the string buffer containing the value to be set.
  * @param length the length of the string buffer.
  */
-SEABOLT_EXPORT void BoltValue_format_as_String(struct BoltValue* value, const char* data, int32_t length);
+SEABOLT_EXPORT void BoltValue_format_as_String(BoltValue* value, const char* data, int32_t length);
 
 /**
  * Gets the string buffer stored in the passed \ref BoltValue instance.
@@ -191,7 +191,7 @@ SEABOLT_EXPORT void BoltValue_format_as_String(struct BoltValue* value, const ch
  * @param value the instance to be queried
  * @returns the string buffer. Actual length of the string can be queried by a call to \ref BoltValue_size.
  */
-SEABOLT_EXPORT char* BoltString_get(const struct BoltValue* value);
+SEABOLT_EXPORT char* BoltString_get(const BoltValue* value);
 
 /**
  * Sets the passed \ref BoltValue instance to \ref BOLT_DICTIONARY.
@@ -199,7 +199,7 @@ SEABOLT_EXPORT char* BoltString_get(const struct BoltValue* value);
  * @param value the instance to be updated
  * @param length the number of entries.
  */
-SEABOLT_EXPORT void BoltValue_format_as_Dictionary(struct BoltValue* value, int32_t length);
+SEABOLT_EXPORT void BoltValue_format_as_Dictionary(BoltValue* value, int32_t length);
 
 /**
  * Returns an instance to a \ref BoltValue identifying the _key_ at _index_.
@@ -208,7 +208,7 @@ SEABOLT_EXPORT void BoltValue_format_as_Dictionary(struct BoltValue* value, int3
  * @param index the index of the key.
  * @returns \ref BoltValue instance identifying the key.
  */
-SEABOLT_EXPORT struct BoltValue* BoltDictionary_key(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT BoltValue* BoltDictionary_key(const BoltValue* value, int32_t index);
 
 /**
  * Returns the string buffer identifying the _key_ at _index_.
@@ -217,7 +217,7 @@ SEABOLT_EXPORT struct BoltValue* BoltDictionary_key(const struct BoltValue* valu
  * @param index the index of the key.
  * @returns the string buffer identifying the key.
  */
-SEABOLT_EXPORT const char* BoltDictionary_get_key(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT const char* BoltDictionary_get_key(const BoltValue* value, int32_t index);
 
 /**
  * Returns the size of the string buffer identifying the _key_ at _index_.
@@ -226,7 +226,7 @@ SEABOLT_EXPORT const char* BoltDictionary_get_key(const struct BoltValue* value,
  * @param index the index of the key.
  * @returns size of the string buffer identifying the key.
  */
-SEABOLT_EXPORT int32_t BoltDictionary_get_key_size(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT int32_t BoltDictionary_get_key_size(const BoltValue* value, int32_t index);
 
 /**
  * Returns the index of a _key_ if it is present in the passed \ref BoltValue instance.
@@ -238,7 +238,7 @@ SEABOLT_EXPORT int32_t BoltDictionary_get_key_size(const struct BoltValue* value
  * @returns the index of the key found, or -1 if not found.
  */
 SEABOLT_EXPORT int32_t
-BoltDictionary_get_key_index(const struct BoltValue* value, const char* key, int32_t key_size, int32_t start_index);
+BoltDictionary_get_key_index(const BoltValue* value, const char* key, int32_t key_size, int32_t start_index);
 
 /**
  * Sets the _key_ value at _index_ from the passed in string buffer.
@@ -250,7 +250,7 @@ BoltDictionary_get_key_index(const struct BoltValue* value, const char* key, int
  * @return 0 if successful, -1 if index is larger than the maximum value (INT32_MAX).
  */
 SEABOLT_EXPORT int32_t
-BoltDictionary_set_key(struct BoltValue* value, int32_t index, const char* key, int32_t key_size);
+BoltDictionary_set_key(BoltValue* value, int32_t index, const char* key, int32_t key_size);
 
 /**
  * Returns an instance to a \ref BoltValue identifying the _value_ at _index_.
@@ -259,7 +259,7 @@ BoltDictionary_set_key(struct BoltValue* value, int32_t index, const char* key, 
  * @param index the index of the value.
  * @returns \ref BoltValue instance identifying the value, NULL if the index is out of bounds.
  */
-SEABOLT_EXPORT struct BoltValue* BoltDictionary_value(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT BoltValue* BoltDictionary_value(const BoltValue* value, int32_t index);
 
 /**
  * Returns an instance to a \ref BoltValue identifying the _value_ corresponding to the key passed as a
@@ -270,8 +270,8 @@ SEABOLT_EXPORT struct BoltValue* BoltDictionary_value(const struct BoltValue* va
  * @param key_size the size of the string buffer identifying the key to be searched.
  * @returns \ref BoltValue instance identifying the value, NULL if the key is not found.
  */
-SEABOLT_EXPORT struct BoltValue*
-BoltDictionary_value_by_key(const struct BoltValue* value, const char* key, int32_t key_size);
+SEABOLT_EXPORT BoltValue*
+BoltDictionary_value_by_key(const BoltValue* value, const char* key, int32_t key_size);
 
 /**
  * Sets the passed \ref BoltValue instance to \ref BOLT_LIST.
@@ -279,7 +279,7 @@ BoltDictionary_value_by_key(const struct BoltValue* value, const char* key, int3
  * @param value the instance to be updated
  * @param length the number of entries.
  */
-SEABOLT_EXPORT void BoltValue_format_as_List(struct BoltValue* value, int32_t length);
+SEABOLT_EXPORT void BoltValue_format_as_List(BoltValue* value, int32_t length);
 
 /**
  * Resizes the passed \ref BoltValue "list" instance.
@@ -288,7 +288,7 @@ SEABOLT_EXPORT void BoltValue_format_as_List(struct BoltValue* value, int32_t le
  * @param size the new size to be set. If it is smaller than the instance's current size, the
  *      elements at indices larger than size will be trimmed.
  */
-SEABOLT_EXPORT void BoltList_resize(struct BoltValue* value, int32_t size);
+SEABOLT_EXPORT void BoltList_resize(BoltValue* value, int32_t size);
 
 /**
  * Returns an instance to a \ref BoltValue identifying the _value_ at _index_.
@@ -297,7 +297,7 @@ SEABOLT_EXPORT void BoltList_resize(struct BoltValue* value, int32_t size);
  * @param index the index of the value.
  * @returns \ref BoltValue instance identifying the value, NULL if the index is out of bounds.
  */
-SEABOLT_EXPORT struct BoltValue* BoltList_value(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT BoltValue* BoltList_value(const BoltValue* value, int32_t index);
 
 /**
  * Sets the passed \ref BoltValue instance to \ref BOLT_BYTES.
@@ -306,7 +306,7 @@ SEABOLT_EXPORT struct BoltValue* BoltList_value(const struct BoltValue* value, i
  * @param data the byte buffer containing the value to be set.
  * @param length the length of the byte buffer.
  */
-SEABOLT_EXPORT void BoltValue_format_as_Bytes(struct BoltValue* value, char* data, int32_t length);
+SEABOLT_EXPORT void BoltValue_format_as_Bytes(BoltValue* value, char* data, int32_t length);
 
 /**
  * Returns the byte _value_ at _index_.
@@ -315,7 +315,7 @@ SEABOLT_EXPORT void BoltValue_format_as_Bytes(struct BoltValue* value, char* dat
  * @param index the index of the byte to be queried
  * @returns the byte value (undefined if _index_ is out of bounds).
  */
-SEABOLT_EXPORT char BoltBytes_get(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT char BoltBytes_get(const BoltValue* value, int32_t index);
 
 /**
  * Returns the whole byte buffer stored in the passed \ref BoltValue.
@@ -324,7 +324,7 @@ SEABOLT_EXPORT char BoltBytes_get(const struct BoltValue* value, int32_t index);
  * @returns the stored byte buffer. Actual length of the byte buffer can be queried by a call
  *          to \ref BoltValue_size.
  */
-SEABOLT_EXPORT char* BoltBytes_get_all(const struct BoltValue* value);
+SEABOLT_EXPORT char* BoltBytes_get_all(const BoltValue* value);
 
 /**
  * Sets the passed \ref BoltValue instance to \ref BOLT_STRUCTURE.
@@ -333,7 +333,7 @@ SEABOLT_EXPORT char* BoltBytes_get_all(const struct BoltValue* value);
  * @param code the code of the structure.
  * @param length the number of entries to be placed in the structure.
  */
-SEABOLT_EXPORT void BoltValue_format_as_Structure(struct BoltValue* value, int16_t code, int32_t length);
+SEABOLT_EXPORT void BoltValue_format_as_Structure(BoltValue* value, int16_t code, int32_t length);
 
 /**
  * Returns the code of the structure.
@@ -341,7 +341,7 @@ SEABOLT_EXPORT void BoltValue_format_as_Structure(struct BoltValue* value, int16
  * @param value the instance to be queried.
  * @return the code of the structure.
  */
-SEABOLT_EXPORT int16_t BoltStructure_code(const struct BoltValue* value);
+SEABOLT_EXPORT int16_t BoltStructure_code(const BoltValue* value);
 
 /**
  * Returns an instance to a \ref BoltValue identifying the _entry_ at _index_.
@@ -350,6 +350,6 @@ SEABOLT_EXPORT int16_t BoltStructure_code(const struct BoltValue* value);
  * @param index the index of the entry.
  * @returns \ref BoltValue instance identifying the entry at _index_, NULL if the index is out of bounds.
  */
-SEABOLT_EXPORT struct BoltValue* BoltStructure_value(const struct BoltValue* value, int32_t index);
+SEABOLT_EXPORT BoltValue* BoltStructure_value(const BoltValue* value, int32_t index);
 
 #endif // SEABOLT_VALUES

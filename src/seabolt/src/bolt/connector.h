@@ -57,7 +57,7 @@ typedef struct BoltConnector BoltConnector;
  * @return the pointer to the newly allocated \ref BoltConnector instance.
  */
 SEABOLT_EXPORT BoltConnector*
-BoltConnector_create(struct BoltAddress* address, struct BoltValue* auth_token, struct BoltConfig* config);
+BoltConnector_create(BoltAddress* address, BoltValue* auth_token, BoltConfig* config);
 
 /**
  * Destroys the passed \ref BoltConnector instance and all related resources (connections, pools, etc.).
@@ -92,6 +92,6 @@ SEABOLT_EXPORT BoltConnection* BoltConnector_acquire(BoltConnector* connector, B
  * @param connector the instance to release the connection to.
  * @param connection the actual \ref BoltConnection "connection" to be released.
  */
-SEABOLT_EXPORT void BoltConnector_release(BoltConnector* connector, struct BoltConnection* connection);
+SEABOLT_EXPORT void BoltConnector_release(BoltConnector* connector, BoltConnection* connection);
 
 #endif //SEABOLT_ALL_CONNECTOR_H
