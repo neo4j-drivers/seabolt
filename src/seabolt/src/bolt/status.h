@@ -24,7 +24,7 @@
 /**
  * The type that identifies the state of the connection
  */
-typedef int BoltConnectionState;
+typedef int32_t BoltConnectionState;
 /**
  * Not connected
  */

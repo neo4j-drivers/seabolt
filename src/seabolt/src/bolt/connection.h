@@ -280,7 +280,7 @@ SEABOLT_EXPORT int32_t BoltConnection_set_run_tx_metadata(BoltConnection* connec
  * @return \ref BOLT_SUCCESS on success,
  *          an error code on failure.
  */
-SEABOLT_EXPORT int
+SEABOLT_EXPORT int32_t
 BoltConnection_set_run_cypher(BoltConnection* connection, const char* cypher, const uint64_t cypher_size,
         const int32_t n_parameter);
 

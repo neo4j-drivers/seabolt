@@ -29,7 +29,7 @@
  *
  * Only applies to connectors that are configured to operate on a \ref BOLT_MODE_ROUTING mode.
  */
-typedef int BoltAccessMode;
+typedef int32_t BoltAccessMode;
 /**
  * Use BOLT_ACCESS_MODE_WRITE to acquire a connection against a WRITE server.
  */
