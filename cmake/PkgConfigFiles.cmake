@@ -6,6 +6,10 @@ foreach (lib ${LIBRARIES})
         continue()
     endif ()
 
+    if (lib MATCHES ">$")
+        continue()
+    endif ()
+
     if (lib MATCHES "^-l")
         string(SUBSTRING ${lib} 2 -1 lib)
     endif ()
