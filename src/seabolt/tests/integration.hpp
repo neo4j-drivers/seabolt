@@ -33,6 +33,7 @@ extern "C"
 #include "bolt/connection-private.h"
 #include "bolt/values-private.h"
 #include "bolt/string-builder.h"
+#include "bolt/direct-pool.h"
 }
 
 #define SETTING(name, default_value) ((char*)((getenv(name) == nullptr) ? (default_value) : getenv(name)))

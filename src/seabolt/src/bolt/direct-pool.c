@@ -225,7 +225,6 @@ BoltConnection* BoltDirectPool_acquire(struct BoltDirectPool* pool, BoltStatus* 
     int pool_error;
     BoltConnection* connection = NULL;
 
-    int64_t started_at = BoltUtil_get_time_ms();
     BoltLog_info(pool->config->log, "[%s]: Acquiring connection from the pool towards %s:%s", pool->id,
             pool->address->host, pool->address->port);
 
@@ -286,29 +285,20 @@ BoltConnection* BoltDirectPool_acquire(struct BoltDirectPool* pool, BoltStatus* 
             break;
         }
 
-        if (pool->config->max_connection_acquisition_time==0) {
-            // fail fast, we report the failure asap
-            break;
-        }
-
         // Retry acquire operation until we get a live connection or timeout
-        if (status->error==BOLT_POOL_FULL) {
-            if (pool->config->max_connection_acquisition_time>0
-                    && BoltUtil_get_time_ms()-started_at>pool->config->max_connection_acquisition_time) {
-                status->state = BOLT_CONNECTION_STATE_DISCONNECTED;
-                status->error = BOLT_POOL_ACQUISITION_TIMED_OUT;
-                status->error_ctx = NULL;
-            }
-            else {
-                BoltLog_info(pool->config->log,
-                        "[%s]: Pool towards %s:%s is full, will retry acquiring a connection from the pool.", pool->id,
-                        pool->address->host, pool->address->port);
+        if (status->error==BOLT_POOL_FULL && pool->config->max_connection_acquisition_time>0) {
+            BoltLog_info(pool->config->log,
+                    "[%s]: Pool towards %s:%s is full, waiting for a released connection.", pool->id,
+                    pool->address->host, pool->address->port);
 
-                if (BoltUtil_cond_timedwait(&pool->released_cond, &pool->mutex,
-                        pool->config->max_connection_acquisition_time)) {
-                    continue;
-                }
+            if (BoltUtil_cond_timedwait(&pool->released_cond, &pool->mutex,
+                    pool->config->max_connection_acquisition_time)) {
+                continue;
             }
+
+            status->state = BOLT_CONNECTION_STATE_DISCONNECTED;
+            status->error = BOLT_POOL_ACQUISITION_TIMED_OUT;
+            status->error_ctx = NULL;
         }
 
         break;
