@@ -49,6 +49,8 @@
 #define FAILURE_MESSAGE_KEY_SIZE 7
 #define CONNECTION_ID_KEY "connection_id"
 #define CONNECTION_ID_KEY_SIZE 13
+#define CONNECTION_ID_SEPARATOR ", "
+#define CONNECTION_ID_SEPARATOR_SIZE 2
 
 #define INITIAL_TX_BUFFER_SIZE 8192
 #define INITIAL_RX_BUFFER_SIZE 8192
@@ -882,13 +884,31 @@ void BoltProtocolV3_extract_metadata(struct BoltConnection* connection, struct B
                 struct BoltValue* value = BoltDictionary_value(metadata, i);
                 switch (BoltValue_type(value)) {
                 case BOLT_STRING: {
-                    char new_connection_id[MAX_CONNECTION_ID_SIZE];
-                    strncpy(new_connection_id, BoltString_get(value), (size_t) value->size+1);
-                    const char* old_connection_id = BoltConnection_id(connection);
-                    snprintf(state->connection_id, MAX_CONNECTION_ID_SIZE, "%s, %s", old_connection_id,
+                    const char *old_connection_id = BoltConnection_id(connection);
+                    const char *new_connection_id = BoltString_get(value);
+                    char *state_connection_id = state->connection_id;
+                    size_t total_new_length =
+                            strlen(old_connection_id) + value->size + CONNECTION_ID_SEPARATOR_SIZE + 1;
+
+                    if (total_new_length > MAX_CONNECTION_ID_SIZE) {
+                        BoltLog_error(connection->log, "[%s]: Unable to set new connection_id %s: "
+                                "new length (%zu) would exceed max length (%zu)", old_connection_id,
+                                new_connection_id, total_new_length, MAX_CONNECTION_ID_SIZE);
+                        break;
+                    }
+
+                    /**
+                    * Using pointers to copy `BoltConnection_id(connection)` into `state->connection_id` 
+                    * without having to make a copy of `BoltConnection_id(connection)` first, which
+                    * would otherwise be required since `state->connection_id` can sometimes
+                    * point to the same buffer (and that is undefined in `snprintf`):
+                    */
+                    while((*state_connection_id = *old_connection_id++)) state_connection_id++;
+                    snprintf(state_connection_id, MAX_CONNECTION_ID_SIZE, "%s%s", CONNECTION_ID_SEPARATOR,
                             new_connection_id);
-                    BoltLog_info(connection->log, "[%s]: <SET connection_id=\"%s\">", old_connection_id,
-                            new_connection_id);
+
+                    BoltLog_info(connection->log, "[%s]: <SET connection_id=\"%s\">",
+                            BoltConnection_id(connection), new_connection_id);
                     break;
                 }
                 default:
