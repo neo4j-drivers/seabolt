@@ -1,0 +1,53 @@
+version: '2.1'
+services:
+  neo4j-server:
+    image: neo4j:3.5.0
+    expose:
+    - &bolt-port 7687
+    - &http-port 7474
+    - &https-port 7473
+    ports:
+    - 7687:7687
+    - 7474:7474
+    environment:
+      NEO4J_AUTH: neo4j/password
+      NEO4J_dbms_connector_bolt_listen__address: ":7687"
+      NEO4J_dbms_connector_http_listen__address: ":7474"
+      NEO4J_dbms_connector_https_listen__address: ":7473"
+      NEO4J_dbms_connectors_default__listen__address: "::"
+    networks:
+      ci_net:
+        ipv6_address: &server-address 2001:3200:3200::20
+
+  seabolt-ci:
+    depends_on: [neo4j-server]
+    command: |
+      bash -c "
+         while ! /seabolt/build/bin/seabolt-cli debug -a \"UNWIND range(1, 10000) AS n RETURN n\";
+             do sleep 10;
+         done;
+         /seabolt/build/bin/seabolt-test && false || while true; do sleep 1; done
+      "
+    build:
+      context: .
+      dockerfile: ./ci/linux/Dockerfile.build
+    environment:
+      BOLT_PORT: *bolt-port
+      BOLT_USER: neo4j
+      BOLT_IPV4_HOST: neo4j-server
+      BOLT_IPV6_HOST: neo4j-server
+      BOLT_HOST: neo4j-server
+      BOLT_PASSWORD: password
+    networks:
+      ci_net:
+        ipv6_address: 2001:3200:3200::21
+
+networks:
+  ci_net:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 2001:3200:3200::/64
+        gateway: 2001:3200:3200::1

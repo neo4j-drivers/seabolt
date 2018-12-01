@@ -50,6 +50,9 @@
 #define BOLT_V3_ZONED_DATE_TIME     'f'
 #define BOLT_V3_DURATION            'E'
 
+
+void BoltProtocolV3_extract_metadata(struct BoltConnection* connection, struct BoltValue* metadata);
+
 struct BoltProtocol* BoltProtocolV3_create_protocol();
 
 void BoltProtocolV3_destroy_protocol(struct BoltProtocol* protocol);

@@ -10,7 +10,8 @@ target_sources(seabolt-test
         ${CMAKE_CURRENT_LIST_DIR}/test-values.cpp
         ${CMAKE_CURRENT_LIST_DIR}/test-warden.cpp
         ${CMAKE_CURRENT_LIST_DIR}/test-string-builder.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/test-direct-pool.cpp)
+        ${CMAKE_CURRENT_LIST_DIR}/test-direct-pool.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/test-v3.cpp)
 
 target_include_directories(seabolt-test
         PRIVATE
