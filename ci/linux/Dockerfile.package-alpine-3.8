@@ -1,5 +1,7 @@
 FROM alpine:3.8
 RUN apk add --no-cache ca-certificates cmake make g++ openssl-dev git
+ARG SEABOLT_VERSION
+ENV SEABOLT_VERSION=$SEABOLT_VERSION
 ADD . /tmp/seabolt
 WORKDIR /tmp/build
 RUN cmake -D CMAKE_BUILD_TYPE=Release /tmp/seabolt \
