@@ -13,7 +13,7 @@ ENV TEAMCITY_HOST="" TEAMCITY_USER="" TEAMCITY_PASSWORD=""
 ENV BOLT_HOST="localhost" BOLT_PORT="7687" HTTP_PORT="7474" HTTPS_PORT="7473"
 ENV BOLT_PASSWORD="password"
 ADD run_tests.sh /seabolt/
-COPY --from=build /tmp/build/bin /seabolt/build/bin/
-COPY --from=build /tmp/build/dist /seabolt/build/dist/
+COPY --from=build /tmp/seabolt/build-docker/bin /seabolt/build/bin/
+COPY --from=build /tmp/seabolt/build-docker/dist /seabolt/build/dist/
 WORKDIR /seabolt
 CMD PYTHON=python3 ./run_tests.sh
