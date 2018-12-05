@@ -12,7 +12,9 @@ if [[ ! -f "$BASE/linux/Dockerfile.package-$1" ]]; then
     exit 1
 fi
 
-docker image build --build-arg SEABOLT_VERSION=$SEABOLT_VERSION -t seabolt-package -f $BASE/linux/Dockerfile.package-$1 $BASE/..
+GIT_HASH=$(git log -1 --pretty=format:%h $BASE 2>/dev/null || echo "unknown")
+
+docker image build --build-arg SEABOLT_VERSION=$SEABOLT_VERSION --build-arg SEABOLT_VERSION_HASH=$GIT_HASH -t seabolt-package -f $BASE/linux/Dockerfile.package-$1 $BASE/..
 if [[ "$?" -ne "0" ]]; then
     echo "FATAL: docker image build failed, possible compilation failure."
     exit 1
