@@ -50,7 +50,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Seabolt, The C Connector for Neo4j'
-copyright = u'2002-2018, Neo4j, Inc.'
+copyright = u'2002-2019, Neo4j, Inc.'
 author = u'Neo4j, Inc.'
 
 # The version info for the project you're documenting, acts as replacement for
