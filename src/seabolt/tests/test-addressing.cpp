@@ -92,7 +92,7 @@ SCENARIO("Test address construction", "")
 
 SCENARIO("Test address resolution (IPv4)", "[dns]")
 {
-    const char* host = "ipv4-only.bolt-test.net";
+    const char* host = "ipv4-only.nigelsmall.net";
     const char* port = "7687";
     struct BoltAddress* address = BoltAddress_create(host, port);
     REQUIRE(strcmp(address->host, host)==0);
@@ -105,7 +105,7 @@ SCENARIO("Test address resolution (IPv4)", "[dns]")
         char host_string[40];
         int af = BoltAddress_copy_resolved_host(address, 0, &host_string[0], sizeof(host_string));
         REQUIRE(af==AF_INET);
-        REQUIRE(strcmp(host_string, "52.215.65.80")==0);
+        REQUIRE(strcmp(host_string, "172.104.242.177")==0);
         REQUIRE(address->resolved_port==7687);
     }
     BoltAddress_destroy(address);
@@ -113,7 +113,7 @@ SCENARIO("Test address resolution (IPv4)", "[dns]")
 
 SCENARIO("Test address resolution (IPv6)", "[dns]")
 {
-    const char* host = "ipv6-only.bolt-test.net";
+    const char* host = "ipv6-only.nigelsmall.net";
     const char* port = "7687";
     struct BoltAddress* address = BoltAddress_create(host, port);
     REQUIRE(strcmp(address->host, host)==0);
@@ -127,7 +127,7 @@ SCENARIO("Test address resolution (IPv6)", "[dns]")
             char host_string[40];
             int af = BoltAddress_copy_resolved_host(address, 0, &host_string[0], sizeof(host_string));
             REQUIRE(af==AF_INET6);
-            REQUIRE(strcmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7")==0);
+            REQUIRE(strcmp(host_string, "2a01:7e01::f03c:91ff:fe48:6c1b")==0);
             REQUIRE(address->resolved_port==7687);
         }
     }
@@ -136,7 +136,7 @@ SCENARIO("Test address resolution (IPv6)", "[dns]")
 
 SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
 {
-    const char* host = "ipv4-and-ipv6.bolt-test.net";
+    const char* host = "ipv4-and-ipv6.nigelsmall.net";
     const char* port = "7687";
     struct BoltAddress* address = BoltAddress_create(host, port);
     REQUIRE(strcmp(address->host, host)==0);
@@ -151,10 +151,10 @@ SCENARIO("Test address resolution (IPv4 and IPv6)", "[dns]")
                 int af = BoltAddress_copy_resolved_host(address, j, &host_string[0], sizeof(host_string));
                 switch (af) {
                 case AF_INET:
-                    REQUIRE(strcmp(host_string, "52.215.65.80")==0);
+                    REQUIRE(strcmp(host_string, "172.104.242.177")==0);
                     break;
                 case AF_INET6:
-                    REQUIRE(strcmp(host_string, "2a05:d018:1ca:6113:c9d8:4689:33f2:15f7")==0);
+                    REQUIRE(strcmp(host_string, "2a01:7e01::f03c:91ff:fe48:6c1b")==0);
                     break;
                 default:
                     FAIL();
