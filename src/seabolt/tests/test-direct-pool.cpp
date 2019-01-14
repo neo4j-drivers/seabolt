@@ -43,7 +43,7 @@ TEST_CASE("Direct Pool", "[unit]")
                 BoltStatus* status = BoltStatus_create();
                 BoltConnection* connection = BoltDirectPool_acquire(pool, status);
 
-                REQUIRE(connection==NULL);
+                REQUIRE(connection==nullptr);
                 REQUIRE(status->error==BOLT_POOL_ACQUISITION_TIMED_OUT);
             }
 
@@ -66,7 +66,7 @@ TEST_CASE("Direct Pool", "[unit]")
                 BoltStatus* status = BoltStatus_create();
                 BoltConnection* connection = BoltDirectPool_acquire(pool, status);
 
-                REQUIRE(connection==NULL);
+                REQUIRE(connection==nullptr);
                 REQUIRE(status->error==BOLT_POOL_FULL);
             }
 
