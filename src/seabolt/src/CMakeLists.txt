@@ -216,7 +216,7 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
 endif ()
 
 if (CMAKE_C_COMPILER_ID MATCHES AppleClang)
-    set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/bolt/atomic.c
+    set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/bolt/atomic-macos.c
             PROPERTIES
             COMPILE_FLAGS -Wno-deprecated-declarations)
 endif ()
