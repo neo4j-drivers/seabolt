@@ -21,7 +21,6 @@
 
 #include <mach/clock.h>
 #include <mach/mach.h>
-#include <libkern/OSAtomic.h>
 
 int BoltTime_get_time(struct timespec* tp)
 {

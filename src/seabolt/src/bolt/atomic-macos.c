@@ -20,6 +20,8 @@
 #include "bolt-private.h"
 #include "atomic.h"
 
+#include <libkern/OSAtomic.h>
+
 int64_t BoltAtomic_increment(volatile int64_t* ref)
 {
     return OSAtomicIncrement64(ref);
