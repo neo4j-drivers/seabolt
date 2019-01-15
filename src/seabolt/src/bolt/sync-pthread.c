@@ -16,7 +16,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "bolt-private.h"
 #include "sync.h"
+#include "mem.h"
+#include "time.h"
+
+#include <pthread.h>
 
 void BoltSync_sleep(int milliseconds)
 {
@@ -95,14 +100,14 @@ int BoltSync_rwlock_trywrlock(rwlock_t* rwlock)
 
 int BoltSync_rwlock_timedrdlock(rwlock_t* rwlock, int timeout_ms)
 {
-    int64_t end_at = BoltSync_get_time_ms()+timeout_ms;
+    int64_t end_at = BoltTime_get_time_ms()+timeout_ms;
 
     while (1) {
         if (BoltSync_rwlock_tryrdlock(rwlock)) {
             return 1;
         }
 
-        if (BoltSync_get_time_ms()>end_at) {
+        if (BoltTime_get_time_ms()>end_at) {
             return 0;
         }
 
@@ -112,14 +117,14 @@ int BoltSync_rwlock_timedrdlock(rwlock_t* rwlock, int timeout_ms)
 
 int BoltSync_rwlock_timedwrlock(rwlock_t* rwlock, int timeout_ms)
 {
-    int64_t end_at = BoltSync_get_time_ms()+timeout_ms;
+    int64_t end_at = BoltTime_get_time_ms()+timeout_ms;
 
     while (1) {
         if (BoltSync_rwlock_trywrlock(rwlock)) {
             return 1;
         }
 
-        if (BoltSync_get_time_ms()>end_at) {
+        if (BoltTime_get_time_ms()>end_at) {
             return 0;
         }
 
@@ -173,9 +178,9 @@ int BoltSync_cond_timedwait(cond_t* cond, mutex_t* mutex, int timeout_ms)
     gettimeofday(&now, NULL);
     timeout.tv_sec = now.tv_sec+(timeout_ms/1000);
     timeout.tv_nsec = (now.tv_usec*1000)+((timeout_ms%1000)*1000000);
-    if (timeout.tv_nsec>=NANOSECONDS_PER_SEC) {
+    if (timeout.tv_nsec>=NANOS_PER_SEC) {
         timeout.tv_sec++;
-        timeout.tv_nsec -= NANOSECONDS_PER_SEC;
+        timeout.tv_nsec -= NANOS_PER_SEC;
     }
     return pthread_cond_timedwait(*cond, *mutex, &timeout)==0;
 }
