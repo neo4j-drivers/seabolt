@@ -24,11 +24,12 @@
 #include "log-private.h"
 #include "mem.h"
 #include "protocol.h"
+#include "time.h"
 #include "tls.h"
 #include "v1.h"
 #include "v2.h"
 #include "v3.h"
-#include "platform.h"
+#include "atomic.h"
 
 #define INITIAL_TX_BUFFER_SIZE 8192
 #define INITIAL_RX_BUFFER_SIZE 8192
@@ -366,13 +367,13 @@ int _open(BoltConnection* connection, BoltTransport transport, const struct sock
             int error_code = _last_error_code();
             switch (error_code) {
 #if USE_WINSOCK
-                case WSAEWOULDBLOCK: {
-                    break;
-                }
-#else
-            case EINPROGRESS: {
+            case WSAEWOULDBLOCK: {
                 break;
             }
+#else
+                case EINPROGRESS: {
+                    break;
+                }
 #endif
             default:
                 _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(error_code),
@@ -432,7 +433,7 @@ int _open(BoltConnection* connection, BoltTransport transport, const struct sock
     }
 
     TRY(_socket_configure(connection), "_open(%s:%d), _socket_configure error code: %d", __FILE__, __LINE__);
-    BoltUtil_get_time(&connection->metrics->time_opened);
+    BoltTime_get_time(&connection->metrics->time_opened);
     connection->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
     connection->rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
     return BOLT_SUCCESS;
@@ -555,7 +556,7 @@ void _close(BoltConnection* connection)
         break;
     }
     }
-    BoltUtil_get_time(&connection->metrics->time_closed);
+    BoltTime_get_time(&connection->metrics->time_closed);
     connection->socket = 0;
     _set_status(connection, BOLT_CONNECTION_STATE_DISCONNECTED, BOLT_SUCCESS);
 
@@ -842,7 +843,7 @@ BoltConnection_open(BoltConnection* connection, BoltTransport transport, struct 
     }
     // Id buffer composed of local&remote Endpoints
     connection->id = BoltMem_allocate(MAX_ID_LEN);
-    snprintf(connection->id, MAX_ID_LEN, "conn-%" PRId64, BoltUtil_increment(&id_seq));
+    snprintf(connection->id, MAX_ID_LEN, "conn-%" PRId64, BoltAtomic_increment(&id_seq));
     connection->log = log;
     // Store connection info
     connection->address = BoltAddress_create(address->host, address->port);

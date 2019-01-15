@@ -16,13 +16,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "bolt-private.h"
+#include "time.h"
 
-#ifndef SEABOLT_ALL_UTILS_H
-#define SEABOLT_ALL_UTILS_H
+#include <mach/clock.h>
+#include <mach/mach.h>
+#include <libkern/OSAtomic.h>
 
-#include "bolt-public.h"
-#include <time.h>
-
-void BoltUtil_diff_time(struct timespec* t, struct timespec* t0, struct timespec* t1);
-
-#endif //SEABOLT_ALL_UTILS_H
+int BoltTime_get_time(struct timespec* tp)
+{
+    clock_serv_t cclock;
+    mach_timespec_t mts;
+    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+    clock_get_time(cclock, &mts);
+    mach_port_deallocate(mach_task_self(), cclock);
+    tp->tv_sec = mts.tv_sec;
+    tp->tv_nsec = mts.tv_nsec;
+    return 0;
+}

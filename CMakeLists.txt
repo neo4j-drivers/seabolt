@@ -4,11 +4,11 @@ project(seabolt
         DESCRIPTION "The C Connector library for Neo4j"
         LANGUAGES C CXX)
 
-IF(DEFINED ENV{SEABOLT_VERSION})
+IF (DEFINED ENV{SEABOLT_VERSION})
     set(_SEABOLT_VERSION $ENV{SEABOLT_VERSION})
-ELSE()
-    set(_SEABOLT_VERSION "1.7.1-dev")
-ENDIF()
+ELSE ()
+    set(_SEABOLT_VERSION "1.7.2-dev")
+ENDIF ()
 
 set(SEABOLT_VERSION ${_SEABOLT_VERSION} CACHE STRING "The version of seabolt being built")
 
@@ -41,6 +41,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(ON_WINDOWS ON)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(ON_MACOS ON)
+endif ()
+
+set(ON_GCC OFF)
+if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    set(ON_GCC ON)
 endif ()
 
 if (NOT ON_WINDOWS)

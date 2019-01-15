@@ -26,7 +26,7 @@
 #include <inttypes.h>
 
 #include "bolt/bolt.h"
-#include "bolt/platform.h"
+#include "bolt/time.h"
 
 #ifdef WIN32
 
@@ -219,7 +219,7 @@ void app_destroy(struct Application* app)
 void app_connect(struct Application* app)
 {
     struct timespec t[2];
-    BoltUtil_get_time(&t[0]);
+    BoltTime_get_time(&t[0]);
     BoltStatus* status = BoltStatus_create();
     BoltConnection* connection = BoltConnector_acquire(app->connector, app->access_mode, status);
     if (connection==NULL) {
@@ -229,7 +229,7 @@ void app_connect(struct Application* app)
     }
     BoltStatus_destroy(status);
     app->connection = connection;
-    BoltUtil_get_time(&t[1]);
+    BoltTime_get_time(&t[1]);
     timespec_diff(&app->stats.connect_time, &t[1], &t[0]);
 }
 
@@ -237,11 +237,11 @@ int app_debug(struct Application* app, const char* cypher)
 {
     struct timespec t[7];
 
-    BoltUtil_get_time(&t[1]);    // Checkpoint 1 - right at the start
+    BoltTime_get_time(&t[1]);    // Checkpoint 1 - right at the start
 
     app_connect(app);
 
-    BoltUtil_get_time(&t[2]);    // Checkpoint 2 - after handshake and initialisation
+    BoltTime_get_time(&t[2]);    // Checkpoint 2 - after handshake and initialisation
 
     //BoltConnection_load_bookmark(bolt->connection, "tx:1234");
     BoltConnection_load_begin_request(app->connection);
@@ -255,13 +255,13 @@ int app_debug(struct Application* app, const char* cypher)
 
     BoltConnection_send(app->connection);
 
-    BoltUtil_get_time(&t[3]);    // Checkpoint 3 - after query transmission
+    BoltTime_get_time(&t[3]);    // Checkpoint 3 - after query transmission
 
     long record_count = 0;
 
     BoltConnection_fetch_summary(app->connection, run);
 
-    BoltUtil_get_time(&t[4]);    // Checkpoint 4 - receipt of header
+    BoltTime_get_time(&t[4]);    // Checkpoint 4 - receipt of header
 
     while (BoltConnection_fetch(app->connection, pull)) {
         record_count += 1;
@@ -269,11 +269,11 @@ int app_debug(struct Application* app, const char* cypher)
 
     BoltConnection_fetch_summary(app->connection, commit);
 
-    BoltUtil_get_time(&t[5]);    // Checkpoint 5 - receipt of footer
+    BoltTime_get_time(&t[5]);    // Checkpoint 5 - receipt of footer
 
     BoltConnector_release(app->connector, app->connection);
 
-    BoltUtil_get_time(&t[6]);    // Checkpoint 6 - after close
+    BoltTime_get_time(&t[6]);    // Checkpoint 6 - after close
 
     ///////////////////////////////////////////////////////////////////
 
@@ -388,12 +388,12 @@ int app_perf(struct Application* app, long warmup_times, long actual_times, cons
         run_fetch(app, cypher);
     }
 
-    BoltUtil_get_time(&t[1]);    // Checkpoint 1 - before run
+    BoltTime_get_time(&t[1]);    // Checkpoint 1 - before run
     long record_count = 0;
     for (int i = 0; i<actual_times; i++) {
         record_count += run_fetch(app, cypher);
     }
-    BoltUtil_get_time(&t[2]);    // Checkpoint 2 - after run
+    BoltTime_get_time(&t[2]);    // Checkpoint 2 - after run
 
     BoltConnector_release(app->connector, app->connection);
 
