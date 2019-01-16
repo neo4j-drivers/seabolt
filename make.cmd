@@ -44,7 +44,7 @@ Mkdir %BUILDDIR%
 Pushd %BUILDDIR%
 
 cmake.exe -G "%CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CMAKE_BUILD% -DCMAKE_INSTALL_PREFIX=dist .. || Goto :Failure
-cmake.exe --build . --target install || Goto :Failure
+cmake.exe --build . --target install --config %CMAKE_BUILD% || Goto :Failure
 
 Popd
 Exit /b 0
