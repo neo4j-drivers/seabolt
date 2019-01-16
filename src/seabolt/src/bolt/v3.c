@@ -635,7 +635,7 @@ BoltProtocolV3_set_run_cypher_parameter(struct BoltConnection* connection, int32
 {
     struct BoltProtocolV3State* state = BoltProtocolV3_state(connection);
     struct BoltValue* params = BoltMessage_param(state->run_request, 1);
-    BoltDictionary_set_key(params, index, name, (int32_t)name_size);
+    BoltDictionary_set_key(params, index, name, (int32_t) name_size);
     return BoltDictionary_value(params, index);
 }
 
@@ -884,15 +884,16 @@ void BoltProtocolV3_extract_metadata(struct BoltConnection* connection, struct B
                 struct BoltValue* value = BoltDictionary_value(metadata, i);
                 switch (BoltValue_type(value)) {
                 case BOLT_STRING: {
-                    const char *old_connection_id = BoltConnection_id(connection);
-                    const char *new_connection_id = BoltString_get(value);
-                    char *state_connection_id = state->connection_id;
+                    const char* old_connection_id = BoltConnection_id(connection);
+                    const char* new_connection_id = BoltString_get(value);
+                    char* state_connection_id = state->connection_id;
                     size_t total_new_length =
-                            strlen(old_connection_id) + value->size + CONNECTION_ID_SEPARATOR_SIZE + 1;
+                            strlen(old_connection_id)+value->size+CONNECTION_ID_SEPARATOR_SIZE+1;
 
-                    if (total_new_length > MAX_CONNECTION_ID_SIZE) {
+                    if (total_new_length>MAX_CONNECTION_ID_SIZE) {
                         BoltLog_error(connection->log, "[%s]: Unable to set new connection_id %s: "
-                                "new length (%zu) would exceed max length (%zu)", old_connection_id,
+                                                       "new length (%zu) would exceed max length (%zu)",
+                                old_connection_id,
                                 new_connection_id, total_new_length, MAX_CONNECTION_ID_SIZE);
                         break;
                     }
@@ -903,7 +904,9 @@ void BoltProtocolV3_extract_metadata(struct BoltConnection* connection, struct B
                     * would otherwise be required since `state->connection_id` can sometimes
                     * point to the same buffer (and that is undefined in `snprintf`):
                     */
-                    while((*state_connection_id = *old_connection_id++)) state_connection_id++;
+                    while (*old_connection_id) {
+                        *state_connection_id++=*old_connection_id++;
+                    }
                     snprintf(state_connection_id, MAX_CONNECTION_ID_SIZE, "%s%s", CONNECTION_ID_SEPARATOR,
                             new_connection_id);
 
