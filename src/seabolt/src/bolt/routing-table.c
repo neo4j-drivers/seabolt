@@ -21,8 +21,8 @@
 #include "address-private.h"
 #include "address-set-private.h"
 #include "mem.h"
-#include "platform.h"
 #include "routing-table.h"
+#include "time.h"
 #include "values-private.h"
 
 #define READ_ROLE "READ"
@@ -139,7 +139,7 @@ int RoutingTable_update(struct RoutingTable* table, struct BoltValue* response)
         BoltAddressSet_replace(table->readers, readers);
         BoltAddressSet_replace(table->writers, writers);
         BoltAddressSet_replace(table->routers, routers);
-        table->last_updated = BoltUtil_get_time_ms();
+        table->last_updated = BoltTime_get_time_ms();
         table->expires = table->last_updated+ttl;
     }
 
@@ -154,7 +154,7 @@ int RoutingTable_is_expired(struct RoutingTable* state, BoltAccessMode mode)
 {
     return state->routers->size==0
             || (mode==BOLT_ACCESS_MODE_READ ? state->readers->size==0 : state->writers->size==0)
-            || state->expires<=BoltUtil_get_time_ms();
+            || state->expires<=BoltTime_get_time_ms();
 }
 
 void RoutingTable_forget_server(struct RoutingTable* state, const struct BoltAddress* address)

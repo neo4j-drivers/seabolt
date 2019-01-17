@@ -25,7 +25,7 @@
 #define SEABOLT_POOLING_H
 
 #include "connector.h"
-#include "platform.h"
+#include "sync.h"
 
 /**
  * Connection pool (experimental)
@@ -33,11 +33,11 @@
 struct BoltDirectPool {
     mutex_t mutex;
     cond_t released_cond;
-    char *id;
+    char* id;
     struct BoltAddress* address;
     const struct BoltValue* auth_token;
     const struct BoltConfig* config;
-    struct ssl_ctx_st *ssl_context;
+    struct ssl_ctx_st* ssl_context;
     int size;
     BoltConnection** connections;
 };
@@ -46,7 +46,8 @@ struct BoltDirectPool {
 #define SIZE_OF_DIRECT_POOL_PTR sizeof(struct BoltDirectPool*)
 
 struct BoltDirectPool*
-BoltDirectPool_create(const struct BoltAddress* address, const struct BoltValue* auth_token, const struct BoltConfig* config);
+BoltDirectPool_create(const struct BoltAddress* address, const struct BoltValue* auth_token,
+        const struct BoltConfig* config);
 
 void BoltDirectPool_destroy(struct BoltDirectPool* pool);
 

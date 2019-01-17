@@ -1,3 +1,5 @@
+include(CheckSymbolExists)
+
 set_target_properties(${SEABOLT_SHARED}
         PROPERTIES
         SOVERSION 1
@@ -23,19 +25,60 @@ list(APPEND private_source_files
         ${CMAKE_CURRENT_LIST_DIR}/bolt/log.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/mem.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/packstream.c
-        ${CMAKE_CURRENT_LIST_DIR}/bolt/platform.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/protocol.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/routing-pool.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/routing-table.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/stats.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/status.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/string-builder.c
+        ${CMAKE_CURRENT_LIST_DIR}/bolt/time.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/tls.c
-        ${CMAKE_CURRENT_LIST_DIR}/bolt/utils.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/v1.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/v2.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/v3.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/values.c)
+
+check_symbol_exists(timespec_get "time.h" HAVE_TIMESPEC_GET)
+
+if (ON_POSIX)
+    list(APPEND private_source_files
+            ${CMAKE_CURRENT_LIST_DIR}/bolt/sync-pthread.c)
+endif ()
+
+if (ON_WINDOWS)
+    list(APPEND private_source_files
+            ${CMAKE_CURRENT_LIST_DIR}/bolt/sync-win32.c)
+endif ()
+
+if (HAVE_TIMESPEC_GET)
+    list(APPEND private_source_files
+            ${CMAKE_CURRENT_LIST_DIR}/bolt/time-timespec.c)
+else ()
+    if (ON_WINDOWS)
+        list(APPEND private_source_files
+                ${CMAKE_CURRENT_LIST_DIR}/bolt/time-win32.c)
+    endif ()
+
+    if (ON_MACOS)
+        list(APPEND private_source_files
+                ${CMAKE_CURRENT_LIST_DIR}/bolt/time-macos.c)
+    endif ()
+endif ()
+
+if (ON_GCC)
+    list(APPEND private_source_files
+            ${CMAKE_CURRENT_LIST_DIR}/bolt/atomic-gcc.c)
+else ()
+    if (ON_WINDOWS)
+        list(APPEND private_source_files
+                ${CMAKE_CURRENT_LIST_DIR}/bolt/atomic-win32.c)
+    endif ()
+
+    if (ON_MACOS)
+        list(APPEND private_source_files
+                ${CMAKE_CURRENT_LIST_DIR}/bolt/atomic-macos.c)
+    endif ()
+endif ()
 
 list(APPEND public_header_files
         ${CMAKE_CURRENT_LIST_DIR}/bolt/bolt.h
@@ -173,7 +216,7 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
 endif ()
 
 if (CMAKE_C_COMPILER_ID MATCHES AppleClang)
-    set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/bolt/platform.c
+    set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/bolt/atomic-macos.c
             PROPERTIES
             COMPILE_FLAGS -Wno-deprecated-declarations)
 endif ()

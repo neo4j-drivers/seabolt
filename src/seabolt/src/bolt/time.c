@@ -16,14 +16,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <string.h>
-
 #include "bolt-private.h"
-#include "mem.h"
-#include "utils.h"
+#include "time.h"
 
-void BoltUtil_diff_time(struct timespec* t, struct timespec* t0, struct timespec* t1)
+int64_t BoltTime_get_time_ms_from(struct timespec* tp)
+{
+    return (tp->tv_sec)*1000+(tp->tv_nsec)/1000000;
+}
+
+int64_t BoltTime_get_time_ms()
+{
+    struct timespec now;
+    BoltTime_get_time(&now);
+    return BoltTime_get_time_ms_from(&now);
+}
+
+void BoltTime_diff_time(struct timespec* t, struct timespec* t0, struct timespec* t1)
 {
     t->tv_sec = t0->tv_sec-t1->tv_sec;
     t->tv_nsec = t0->tv_nsec-t1->tv_nsec;
@@ -36,4 +44,3 @@ void BoltUtil_diff_time(struct timespec* t, struct timespec* t0, struct timespec
         t->tv_nsec += 1000000000;
     }
 }
-

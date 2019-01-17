@@ -19,14 +19,16 @@
 
 #include "bolt-private.h"
 #include "address-private.h"
+#include "atomic.h"
 #include "config-private.h"
 #include "connection-private.h"
 #include "direct-pool.h"
 #include "log-private.h"
 #include "mem.h"
 #include "protocol.h"
+#include "sync.h"
+#include "time.h"
 #include "tls.h"
-#include "utils.h"
 
 #define MAX_ID_LEN 16
 
@@ -39,8 +41,8 @@ void close_pool_entry(struct BoltDirectPool* pool, int index)
         if (connection->metrics->time_opened.tv_sec!=0 || connection->metrics->time_opened.tv_nsec!=0) {
             struct timespec now;
             struct timespec diff;
-            BoltUtil_get_time(&now);
-            BoltUtil_diff_time(&diff, &now, &connection->metrics->time_opened);
+            BoltTime_get_time(&now);
+            BoltTime_diff_time(&diff, &now, &connection->metrics->time_opened);
             BoltLog_info(pool->config->log, "[%s]: Connection alive for %lds %09ldns", BoltConnection_id(connection),
                     (long) (diff.tv_sec), diff.tv_nsec);
         }
@@ -59,10 +61,8 @@ int find_unused_connection(struct BoltDirectPool* pool)
             if (connection->status->state!=BOLT_CONNECTION_STATE_DISCONNECTED
                     && connection->status->state!=BOLT_CONNECTION_STATE_DEFUNCT) {
                 if (pool->config->max_connection_life_time>0) {
-                    int64_t
-                            now = BoltUtil_get_time_ms();
-                    int64_t
-                            created = BoltUtil_get_time_ms_from(&connection->metrics->time_opened);
+                    int64_t now = BoltTime_get_time_ms();
+                    int64_t created = BoltTime_get_time_ms_from(&connection->metrics->time_opened);
 
                     if (now-created>pool->config->max_connection_life_time) {
                         BoltLog_info(pool->config->log, "[%s]: Connection reached its maximum lifetime, force closing.",
@@ -171,11 +171,11 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
         const struct BoltConfig* config)
 {
     char* id = BoltMem_allocate(MAX_ID_LEN);
-    snprintf(id, MAX_ID_LEN, "pool-%" PRId64, BoltUtil_increment(&pool_seq));
+    snprintf(id, MAX_ID_LEN, "pool-%" PRId64, BoltAtomic_increment(&pool_seq));
     BoltLog_info(config->log, "[%s]: Creating pool towards %s:%s", id, address->host, address->port);
     struct BoltDirectPool* pool = (struct BoltDirectPool*) BoltMem_allocate(SIZE_OF_DIRECT_POOL);
-    BoltUtil_mutex_create(&pool->mutex);
-    BoltUtil_cond_create(&pool->released_cond);
+    BoltSync_mutex_create(&pool->mutex);
+    BoltSync_cond_create(&pool->released_cond);
     pool->id = id;
     pool->config = config;
     pool->address = BoltAddress_create(address->host, address->port);
@@ -214,8 +214,8 @@ void BoltDirectPool_destroy(struct BoltDirectPool* pool)
     }
     BoltAddress_destroy(pool->address);
     BoltMem_deallocate(pool->id, MAX_ID_LEN);
-    BoltUtil_cond_destroy(&pool->released_cond);
-    BoltUtil_mutex_destroy(&pool->mutex);
+    BoltSync_cond_destroy(&pool->released_cond);
+    BoltSync_mutex_destroy(&pool->mutex);
     BoltMem_deallocate(pool, SIZE_OF_DIRECT_POOL);
 }
 
@@ -228,7 +228,7 @@ BoltConnection* BoltDirectPool_acquire(struct BoltDirectPool* pool, BoltStatus* 
     BoltLog_info(pool->config->log, "[%s]: Acquiring connection from the pool towards %s:%s", pool->id,
             pool->address->host, pool->address->port);
 
-    BoltUtil_mutex_lock(&pool->mutex);
+    BoltSync_mutex_lock(&pool->mutex);
 
     while (1) {
         index = find_unused_connection(pool);
@@ -291,7 +291,7 @@ BoltConnection* BoltDirectPool_acquire(struct BoltDirectPool* pool, BoltStatus* 
                     "[%s]: Pool towards %s:%s is full, waiting for a released connection.", pool->id,
                     pool->address->host, pool->address->port);
 
-            if (BoltUtil_cond_timedwait(&pool->released_cond, &pool->mutex,
+            if (BoltSync_cond_timedwait(&pool->released_cond, &pool->mutex,
                     pool->config->max_connection_acquisition_time)) {
                 continue;
             }
@@ -304,7 +304,7 @@ BoltConnection* BoltDirectPool_acquire(struct BoltDirectPool* pool, BoltStatus* 
         break;
     }
 
-    BoltUtil_mutex_unlock(&pool->mutex);
+    BoltSync_mutex_unlock(&pool->mutex);
 
     return connection;
 }
@@ -313,7 +313,7 @@ int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* c
 {
     BoltLog_info(pool->config->log, "[%s]: Releasing connection to pool towards %s:%s", pool->id, pool->address->host,
             pool->address->port);
-    BoltUtil_mutex_lock(&pool->mutex);
+    BoltSync_mutex_lock(&pool->mutex);
     int index = find_connection(pool, connection);
     if (index>=0) {
         connection->agent = NULL;
@@ -323,9 +323,9 @@ int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* c
 
         reset_or_close(pool, index);
 
-        BoltUtil_cond_signal(&pool->released_cond);
+        BoltSync_cond_signal(&pool->released_cond);
     }
-    BoltUtil_mutex_unlock(&pool->mutex);
+    BoltSync_mutex_unlock(&pool->mutex);
     return index;
 }
 

@@ -22,7 +22,7 @@
 #include "connector.h"
 #include "address.h"
 #include "values.h"
-#include "platform.h"
+#include "atomic.h"
 
 struct BoltRoutingPool {
     struct BoltAddress* address;

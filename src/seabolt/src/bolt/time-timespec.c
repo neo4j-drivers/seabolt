@@ -16,13 +16,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef SEABOLT_ALL_UTILS_H
-#define SEABOLT_ALL_UTILS_H
-
-#include "bolt-public.h"
+#include "bolt-private.h"
+#include "time.h"
 #include <time.h>
 
-void BoltUtil_diff_time(struct timespec* t, struct timespec* t0, struct timespec* t1);
+int BoltTime_get_time(struct timespec* tp)
+{
+    return timespec_get(tp, TIME_UTC);
+}
 
-#endif //SEABOLT_ALL_UTILS_H
+

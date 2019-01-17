@@ -20,7 +20,7 @@
 #include "bolt-private.h"
 
 #include "mem.h"
-#include "platform.h"
+#include "atomic.h"
 
 void* BoltMem_reverse_copy(void* dest, const void* src, int64_t n)
 {
@@ -39,10 +39,10 @@ static int64_t __allocation_events = 0;
 void* BoltMem_allocate(int64_t new_size)
 {
     void* p = malloc(new_size);
-    int64_t new_allocation = BoltUtil_add(&__allocation, new_size);
-    int64_t peak_allocation = BoltUtil_add(&__peak_allocation, 0);
-    if (new_allocation>peak_allocation) BoltUtil_add(&__peak_allocation, new_allocation-peak_allocation);
-    BoltUtil_increment(&__allocation_events);
+    int64_t new_allocation = BoltAtomic_add(&__allocation, new_size);
+    int64_t peak_allocation = BoltAtomic_add(&__peak_allocation, 0);
+    if (new_allocation>peak_allocation) BoltAtomic_add(&__peak_allocation, new_allocation-peak_allocation);
+    BoltAtomic_increment(&__allocation_events);
     return p;
 }
 
@@ -50,10 +50,10 @@ void* BoltMem_reallocate(void* ptr, int64_t old_size, int64_t new_size)
 {
     void* p = realloc(ptr, new_size);
 
-    int64_t new_allocation = BoltUtil_add(&__allocation, -old_size+new_size);
-    int64_t peak_allocation = BoltUtil_add(&__peak_allocation, 0);
-    if (__allocation>__peak_allocation) BoltUtil_add(&__peak_allocation, new_allocation-peak_allocation);
-    BoltUtil_increment(&__allocation_events);
+    int64_t new_allocation = BoltAtomic_add(&__allocation, -old_size+new_size);
+    int64_t peak_allocation = BoltAtomic_add(&__peak_allocation, 0);
+    if (__allocation>__peak_allocation) BoltAtomic_add(&__peak_allocation, new_allocation-peak_allocation);
+    BoltAtomic_increment(&__allocation_events);
     return p;
 }
 
@@ -64,8 +64,8 @@ void* BoltMem_deallocate(void* ptr, int64_t old_size)
     }
 
     free(ptr);
-    BoltUtil_add(&__allocation, -old_size);
-    BoltUtil_increment(&__allocation_events);
+    BoltAtomic_add(&__allocation, -old_size);
+    BoltAtomic_increment(&__allocation_events);
     return NULL;
 }
 
