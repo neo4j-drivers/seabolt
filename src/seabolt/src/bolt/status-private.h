@@ -30,4 +30,8 @@ struct BoltStatus {
 
 BoltStatus* BoltStatus_create_with_ctx(uint64_t ctx_size);
 
+void BoltStatus_set_error(BoltStatus* status, int error);
+
+void BoltStatus_set_error_with_ctx(BoltStatus* status, int error, const char* error_ctx_format, ...);
+
 #endif //SEABOLT_STATUS_PRIVATE_H

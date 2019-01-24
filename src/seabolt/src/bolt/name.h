@@ -16,29 +16,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef SEABOLT_NAME_H
+#define SEABOLT_NAME_H
 
-#include "bolt-private.h"
-#include "lifecycle.h"
-#include "communication.h"
-#include "communication-secure.h"
+int get_address_components(const struct sockaddr_storage* address, char* host_buffer, int host_buffer_size,
+        char* port_buffer, int port_buffer_size);
 
-void Bolt_startup()
-{
-#if USE_WINSOCK
-    WSADATA data;
-    WSAStartup(MAKEWORD(2, 2), &data);
-#endif
-    BoltCommunication_startup();
-    BoltSecurityContext_startup();
-}
-
-void Bolt_shutdown()
-{
-#if USE_WINSOCK
-    WSACleanup();
-#endif
-
-    BoltSecurityContext_shutdown();
-    BoltCommunication_shutdown();
-}
-
+#endif //SEABOLT_NAME_H

@@ -16,29 +16,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef SEABOLT_COMMUNICATION_SECURE_H
+#define SEABOLT_COMMUNICATION_SECURE_H
 
-#include "bolt-private.h"
-#include "lifecycle.h"
 #include "communication.h"
-#include "communication-secure.h"
 
-void Bolt_startup()
-{
-#if USE_WINSOCK
-    WSADATA data;
-    WSAStartup(MAKEWORD(2, 2), &data);
-#endif
-    BoltCommunication_startup();
-    BoltSecurityContext_startup();
-}
+typedef struct BoltSecurityContext BoltSecurityContext;
 
-void Bolt_shutdown()
-{
-#if USE_WINSOCK
-    WSACleanup();
-#endif
+int BoltSecurityContext_startup();
 
-    BoltSecurityContext_shutdown();
-    BoltCommunication_shutdown();
-}
+int BoltSecurityContext_shutdown();
 
+BoltSecurityContext*
+BoltSecurityContext_create(BoltTrust* trust, const char* hostname, const BoltLog* log);
+
+void BoltSecurityContext_destroy(BoltSecurityContext* context);
+
+BoltCommunication* BoltCommunication_create_secure(BoltSecurityContext* sec_ctx, BoltTrust* trust,
+        BoltSocketOptions* socket_options, BoltLog* log, const char* hostname, const char* id);
+
+#endif //SEABOLT_COMMUNICATION_SECURE_H

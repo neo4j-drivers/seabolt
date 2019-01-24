@@ -16,15 +16,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef SEABOLT_ALL_TLS_H
-#define SEABOLT_ALL_TLS_H
+#ifndef SEABOLT_COMMUNICATION_PLAIN_H
+#define SEABOLT_COMMUNICATION_PLAIN_H
 
-#include "bolt-private.h"
-#include "log.h"
+#include "communication.h"
+#include "config.h"
 
-SEABOLT_EXPORT struct ssl_ctx_st*
-create_ssl_ctx(struct BoltTrust* trust, const char* hostname, const struct BoltLog* log, const char* id);
+typedef struct PlainCommunicationContext {
+    BoltAddress* local_endpoint;
+    BoltAddress* remote_endpoint;
+    int fd_socket;
 
-SEABOLT_EXPORT void free_ssl_context(struct ssl_ctx_st* ctx);
+    struct sigaction action_to_restore;
+} PlainCommunicationContext;
 
-#endif //SEABOLT_ALL_TLS_H
+BoltCommunication* BoltCommunication_create_plain(BoltSocketOptions* socket_options, BoltLog* log);
+
+#endif //SEABOLT_COMMUNICATION_PLAIN_H

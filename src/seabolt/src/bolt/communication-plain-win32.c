@@ -16,29 +16,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include "bolt-private.h"
-#include "lifecycle.h"
-#include "communication.h"
 #include "communication-secure.h"
 
-void Bolt_startup()
-{
-#if USE_WINSOCK
-    WSADATA data;
-    WSAStartup(MAKEWORD(2, 2), &data);
-#endif
-    BoltCommunication_startup();
-    BoltSecurityContext_startup();
-}
-
-void Bolt_shutdown()
-{
-#if USE_WINSOCK
-    WSACleanup();
-#endif
-
-    BoltSecurityContext_shutdown();
-    BoltCommunication_shutdown();
-}
 

@@ -19,11 +19,14 @@ list(APPEND private_source_files
         ${CMAKE_CURRENT_LIST_DIR}/bolt/config.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/connection.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/connector.c
+        ${CMAKE_CURRENT_LIST_DIR}/bolt/communication.c
+        ${CMAKE_CURRENT_LIST_DIR}/bolt/communication-plain.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/direct-pool.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/error.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/lifecycle.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/log.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/mem.c
+        ${CMAKE_CURRENT_LIST_DIR}/bolt/name.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/packstream.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/protocol.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/routing-pool.c
@@ -32,7 +35,6 @@ list(APPEND private_source_files
         ${CMAKE_CURRENT_LIST_DIR}/bolt/status.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/string-builder.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/time.c
-        ${CMAKE_CURRENT_LIST_DIR}/bolt/tls.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/v1.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/v2.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/v3.c
@@ -43,11 +45,15 @@ check_symbol_exists(timespec_get "time.h" HAVE_TIMESPEC_GET)
 if (ON_POSIX)
     list(APPEND private_source_files
             ${CMAKE_CURRENT_LIST_DIR}/bolt/sync-pthread.c)
+    list(APPEND private_source_files
+            ${CMAKE_CURRENT_LIST_DIR}/bolt/communication-plain-posix.c)
 endif ()
 
 if (ON_WINDOWS)
     list(APPEND private_source_files
             ${CMAKE_CURRENT_LIST_DIR}/bolt/sync-win32.c)
+    list(APPEND private_source_files
+            ${CMAKE_CURRENT_LIST_DIR}/bolt/communication-plain-win32.c)
 endif ()
 
 if (HAVE_TIMESPEC_GET)
@@ -99,6 +105,9 @@ list(APPEND public_header_files
 
 if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
     find_openssl_both()
+
+    list(APPEND private_source_files
+            ${CMAKE_CURRENT_LIST_DIR}/bolt/communication-secure-openssl.c)
 endif ()
 
 if (ON_POSIX)

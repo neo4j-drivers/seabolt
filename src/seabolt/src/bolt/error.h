@@ -71,6 +71,8 @@
 #define BOLT_POOL_ACQUISITION_TIMED_OUT   0x601
 /// Address resolution failed
 #define BOLT_ADDRESS_NOT_RESOLVED   0x700
+/// Address name info couldn't be looked up
+#define BOLT_ADDRESS_NAME_INFO_FAILED   0x701
 /// Routing table retrieval failed
 #define BOLT_ROUTING_UNABLE_TO_RETRIEVE_ROUTING_TABLE   0x800
 /// No servers to select for the requested operation
