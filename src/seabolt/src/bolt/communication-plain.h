@@ -27,7 +27,7 @@ typedef struct PlainCommunicationContext {
     BoltAddress* remote_endpoint;
     int fd_socket;
 
-    struct sigaction action_to_restore;
+    void* action_to_restore;
 } PlainCommunicationContext;
 
 BoltCommunication* BoltCommunication_create_plain(BoltSocketOptions* socket_options, BoltLog* log);

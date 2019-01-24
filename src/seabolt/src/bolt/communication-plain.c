@@ -40,9 +40,9 @@ int socket_last_error();
 
 int socket_transform_error(BoltCommunication* comm, int error_code);
 
-int socket_ignore_sigpipe(struct sigaction* replaced_action);
+int socket_ignore_sigpipe(void* replaced_action);
 
-int socket_restore_sigpipe(struct sigaction* action_to_restore);
+int socket_restore_sigpipe(void* action_to_restore);
 
 int socket_lifecycle_startup();
 
@@ -332,6 +332,7 @@ BoltCommunication_create_plain(BoltSocketOptions* sock_opts, BoltLog* log)
     context->local_endpoint = NULL;
     context->remote_endpoint = NULL;
     context->fd_socket = 0;
+    context->action_to_restore = NULL;
     comm->context = context;
 
     return comm;

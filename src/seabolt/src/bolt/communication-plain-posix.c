@@ -58,23 +58,32 @@ int socket_transform_error(BoltCommunication* comm, int error_code)
     }
 }
 
-int socket_ignore_sigpipe(struct sigaction* replaced_action)
+int socket_ignore_sigpipe(void** replaced_action)
 {
 #if !defined(SO_NOSIGPIPE)
+    if (*replaced_action==NULL) {
+        *replaced_action = malloc(sizeof(struct sigaction));
+    }
+
     struct sigaction ignore_act;
     memset(&ignore_act, '\0', sizeof(ignore_act));
-    memset(replaced_action, '\0', sizeof(struct sigaction));
+    memset(*replaced_action, '\0', sizeof(struct sigaction));
     ignore_act.sa_handler = SIG_IGN;
     ignore_act.sa_flags = 0;
-    return sigaction(SIGPIPE, &ignore_act, replaced_action);
+    return sigaction(SIGPIPE, &ignore_act, *replaced_action);
 #endif
     return BOLT_SUCCESS;
 }
 
-int socket_restore_sigpipe(struct sigaction* action_to_restore)
+int socket_restore_sigpipe(void** action_to_restore)
 {
 #if !defined(SO_NOSIGPIPE)
-    return sigaction(SIGPIPE, action_to_restore, NULL);
+    if (action_to_restore!=NULL) {
+        int result = sigaction(SIGPIPE, *action_to_restore, NULL);
+        free(action_to_restore);
+        *action_to_restore = NULL;
+        return result;
+    }
 #endif
     return BOLT_SUCCESS;
 }
