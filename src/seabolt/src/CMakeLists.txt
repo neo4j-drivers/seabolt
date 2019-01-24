@@ -127,8 +127,6 @@ add_custom_command(
 add_custom_target(
         write_version_info
         ALL
-        DEPENDS
-        ${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-version.h
 )
 
 foreach (target ${SEABOLT_SHARED} ${SEABOLT_STATIC})

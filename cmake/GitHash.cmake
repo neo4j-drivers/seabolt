@@ -19,9 +19,26 @@ else ()
     message(STATUS "Using Git hash from git command: ${VERSION_HASH}")
 endif ()
 
-# generate file version.hpp based on version.hpp.in
+get_filename_component(OUTPUT_FILE_NAME ${OUTPUT_FILE} NAME)
+set(OUTPUT_TMP_FILE "${OUTPUT_FILE_NAME}.tmp")
+
+# generate outputfile based on input file
 configure_file(
         ${INPUT_FILE}
-        ${OUTPUT_FILE}
+        ${OUTPUT_TMP_FILE}
         @ONLY
 )
+
+if (EXISTS ${OUTPUT_FILE})
+    file(SHA256 ${OUTPUT_FILE} OLD_CONTENT_HASH)
+else ()
+    set(OLD_CONTENT_HASH "")
+endif ()
+
+file(SHA256 ${OUTPUT_TMP_FILE} NEW_CONTENT_HASH)
+
+if (OLD_CONTENT_HASH STREQUAL NEW_CONTENT_HASH)
+    # let's not copy contents because they're equal
+else ()
+    file(RENAME ${OUTPUT_TMP_FILE} ${OUTPUT_FILE})
+endif ()
