@@ -44,6 +44,10 @@ struct BoltAddress {
 #define BoltAddress_of(host, port) (BoltAddress) { (const char *)host, (const char *)port, 0, NULL, 0, NULL }
 #endif
 
+BoltAddress* BoltAddress_create_with_lock(const char* host, const char* port);
+
 BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, uint64_t endpoint_len);
+
+
 
 #endif //SEABOLT_ADDRESS_PRIVATE_H

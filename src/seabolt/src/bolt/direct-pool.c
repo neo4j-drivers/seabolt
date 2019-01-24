@@ -178,7 +178,7 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
     BoltSync_cond_create(&pool->released_cond);
     pool->id = id;
     pool->config = config;
-    pool->address = BoltAddress_create(address->host, address->port);
+    pool->address = BoltAddress_create_with_lock(address->host, address->port);
     pool->auth_token = auth_token;
     pool->size = config->max_pool_size;
     pool->connections = (struct BoltConnection**) BoltMem_allocate(config->max_pool_size*sizeof(BoltConnection*));

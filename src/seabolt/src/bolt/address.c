@@ -46,6 +46,13 @@ BoltAddress* BoltAddress_create(const char* host, const char* port)
     address->n_resolved_hosts = 0;
     address->resolved_hosts = NULL;
     address->resolved_port = 0;
+    address->lock = NULL;
+    return address;
+}
+
+BoltAddress* BoltAddress_create_with_lock(const char* host, const char* port)
+{
+    BoltAddress* address = BoltAddress_create(host, port);
     BoltSync_mutex_create(&address->lock);
     return address;
 }
@@ -83,7 +90,9 @@ BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, uint64_t e
 
 int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* log)
 {
-    BoltSync_mutex_lock(&address->lock);
+    if (address->lock!=NULL) {
+        BoltSync_mutex_lock(&address->lock);
+    }
 
     if (strchr(address->host, ':')==NULL) {
         BoltLog_info(log, "[addr]: Resolving address %s:%s", address->host, address->port);
@@ -160,7 +169,9 @@ int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* 
         *n_resolved = address->n_resolved_hosts;
     }
 
-    BoltSync_mutex_unlock(&address->lock);
+    if (address->lock!=NULL) {
+        BoltSync_mutex_unlock(&address->lock);
+    }
 
     return gai_status;
 }
@@ -190,7 +201,10 @@ void BoltAddress_destroy(BoltAddress* address)
         address->n_resolved_hosts = 0;
     }
 
-    BoltSync_mutex_destroy(&address->lock);
+    if (address->lock!=NULL) {
+        BoltSync_mutex_destroy(&address->lock);
+    }
+
     BoltMem_deallocate((char*) address->host, strlen(address->host)+1);
     BoltMem_deallocate((char*) address->port, strlen(address->port)+1);
     BoltMem_deallocate(address, sizeof(BoltAddress));
