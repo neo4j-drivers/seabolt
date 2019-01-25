@@ -110,15 +110,21 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
             ${CMAKE_CURRENT_LIST_DIR}/bolt/communication-secure-openssl.c)
 endif ()
 
+if (WITH_TLS_SUPPORT AND WITH_TLS_SECURE_CHANNEL)
+    list(APPEND private_source_files
+            ${CMAKE_CURRENT_LIST_DIR}/bolt/communication-secure-schannel.c)
+endif ()
+
 if (ON_POSIX)
     set(CMAKE_THREAD_PREFER_PTHREAD ON)
     find_package(Threads REQUIRED)
 endif ()
 
-add_custom_command(
-        OUTPUT
-        ${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-version.h
+add_custom_target(
+        write_version_info
         ALL
+        BYPRODUCTS
+        ${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-version.h
         COMMAND
         ${CMAKE_COMMAND}
         -D INPUT_FILE=${CMAKE_CURRENT_LIST_DIR}/version.h.in
@@ -131,11 +137,6 @@ add_custom_command(
         -P ${PROJECT_SOURCE_DIR}/cmake/GitHash.cmake
         WORKING_DIRECTORY
         ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-add_custom_target(
-        write_version_info
-        ALL
 )
 
 foreach (target ${SEABOLT_SHARED} ${SEABOLT_STATIC})

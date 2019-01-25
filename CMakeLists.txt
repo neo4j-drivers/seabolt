@@ -89,7 +89,7 @@ endif ()
 
 include(CMakeDependentOption)
 option(WITH_TLS_SUPPORT "Build seabolt with TLS support" ON)
-cmake_dependent_option(WITH_TLS_SECURE_CHANNEL "Use Windows Secure Channel for TLS support" OFF "WITH_TLS_SUPPORT;ON_WINDOWS;NOT WITH_TLS_OPENSSL" OFF)
+cmake_dependent_option(WITH_TLS_SECURE_CHANNEL "Use Windows Secure Channel for TLS support" ON "WITH_TLS_SUPPORT;ON_WINDOWS;NOT WITH_TLS_OPENSSL" OFF)
 cmake_dependent_option(WITH_TLS_OPENSSL "Use OPENSSL for TLS support" ON "WITH_TLS_SUPPORT;NOT WITH_TLS_SECURE_CHANNEL" OFF)
 
 if (WITH_TLS_SUPPORT)
