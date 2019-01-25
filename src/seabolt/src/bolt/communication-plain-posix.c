@@ -19,6 +19,8 @@
 #include "communication-plain.h"
 #include "status-private.h"
 
+#include <errno.h>
+
 int socket_last_error(BoltCommunication* comm)
 {
     UNUSED(comm);
@@ -81,7 +83,7 @@ int socket_restore_sigpipe(void** action_to_restore)
 #if !defined(SO_NOSIGPIPE)
     if (action_to_restore!=NULL) {
         int result = sigaction(SIGPIPE, *action_to_restore, NULL);
-        free(action_to_restore);
+        free(*action_to_restore);
         *action_to_restore = NULL;
         return result;
     }
@@ -152,7 +154,7 @@ int socket_close(int sockfd)
 int socket_connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen, int* in_progress)
 {
     int status = connect(sockfd, addr, addrlen);
-    *in_progress = status==-1 && socket_last_error()==EINPROGRESS;
+    *in_progress = status==-1 && errno==EINPROGRESS;
     return status;
 }
 
