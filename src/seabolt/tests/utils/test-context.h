@@ -23,6 +23,7 @@
 #include <vector>
 #include <queue>
 #include <set>
+#include <tuple>
 #include "bolt/bolt.h"
 #include "catch.hpp"
 
@@ -32,8 +33,9 @@ class TestContext {
 private:
     BoltLog* recording_log;
     vector<string> recorded_log_messages;
-    queue<tuple<string, int, shared_ptr<intptr_t>>> calls;
+    queue<tuple<string, int, intptr_t*>> calls;
     vector<string> calls_vector;
+    vector<intptr_t*> calls_cleanup;
 public:
     TestContext();
 
@@ -45,7 +47,7 @@ public:
 
     vector<string>& recorded_messages() { return recorded_log_messages; }
 
-    tuple<string, int, shared_ptr<intptr_t>> next_call();
+    tuple<string, int, intptr_t*> next_call();
 
     void add_call(string name, intptr_t value);
 

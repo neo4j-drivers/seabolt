@@ -30,12 +30,12 @@ using namespace std;
 
 #define RENDER_STD_MOCK_CALL(type, name) \
     auto ctx = (TestContext*) comm->context; \
-    tuple<string, int, shared_ptr<intptr_t>> call = ctx->next_call(); \
+    tuple<string, int, intptr_t*> call = ctx->next_call(); \
     if (get<0>(call)!=name) { \
         throw "expected"+get<0>(call)+", but called "+name;\
     }\
     ctx->record_call(name);\
-    return (type)(get<2>(call).get()[0])
+    return (type)(get<2>(call)[0])
 
 int test_open(BoltCommunication* comm, const struct sockaddr_storage* address)
 {
@@ -54,14 +54,14 @@ int test_send(BoltCommunication* comm, char* buf, int length, int* sent)
     UNUSED(length);
     UNUSED(sent);
     auto ctx = (TestContext*) comm->context;
-    tuple<string, int, shared_ptr<intptr_t>> call = ctx->next_call();
+    tuple<string, int, intptr_t*> call = ctx->next_call();
     if (get<0>(call)!="send") {
         throw "expected send but called "+get<0>(call);
     }
     ctx->record_call("send");
-    shared_ptr<intptr_t> values = get<2>(call);
-    *sent = values.get()[1];
-    return (int) (values.get()[0]);
+    intptr_t* values = get<2>(call);
+    *sent = (int) values[1];
+    return (int) (values[0]);
 }
 
 int test_recv(BoltCommunication* comm, char* buf, int length, int* received)
@@ -70,14 +70,14 @@ int test_recv(BoltCommunication* comm, char* buf, int length, int* received)
     UNUSED(length);
     UNUSED(received);
     auto ctx = (TestContext*) comm->context;
-    tuple<string, int, shared_ptr<intptr_t>> call = ctx->next_call();
+    tuple<string, int, intptr_t*> call = ctx->next_call();
     if (get<0>(call)!="recv") {
         throw "expected recv but called "+get<0>(call);
     }
     ctx->record_call("recv");
-    shared_ptr<intptr_t> values = get<2>(call);
-    *received = values.get()[1];
-    return (int) (values.get()[0]);
+    intptr_t* values = get<2>(call);
+    *received = (int) values[1];
+    return (int) (values[0]);
 }
 
 int test_destroy(BoltCommunication* comm)

@@ -61,12 +61,16 @@ TestContext::TestContext()
 
 TestContext::~TestContext()
 {
+    for (auto it = this->calls_cleanup.cbegin(); it!=this->calls_cleanup.cend(); ++it) {
+		delete[] *it;
+    }
+
     BoltLog_destroy(this->recording_log);
 }
 
 void TestContext::reset()
 {
-    queue<tuple<string, int, shared_ptr<intptr_t>>> empty;
+    queue<tuple<string, int, intptr_t*>> empty;
     swap(this->calls, empty);
     this->calls_vector.clear();
     this->recorded_log_messages.clear();
@@ -74,22 +78,24 @@ void TestContext::reset()
 
 void TestContext::add_call(string name, intptr_t value)
 {
-    shared_ptr<intptr_t> values(new intptr_t(1));
-    values.get()[0] = value;
-    this->calls.push(tuple<string, int, shared_ptr<intptr_t>>(name, 1, values));
+    intptr_t* values = new intptr_t[1];
+    values[0] = value;
+    this->calls_cleanup.push_back(values);
+    this->calls.push(tuple<string, int, intptr_t*>(name, 1, values));
 }
 
 void TestContext::add_call(string name, intptr_t value1, intptr_t value2)
 {
-    shared_ptr<intptr_t> values(new intptr_t(2));
-    values.get()[0] = value1;
-    values.get()[1] = value2;
-    this->calls.push(tuple<string, int, shared_ptr<intptr_t>>(name, 2, values));
+    intptr_t* values = new intptr_t[2];
+    values[0] = value1;
+    values[1] = value2;
+    this->calls_cleanup.push_back(values);
+    this->calls.push(tuple<string, int, intptr_t*>(name, 2, values));
 }
 
-tuple<string, int, shared_ptr<intptr_t>> TestContext::next_call()
+tuple<string, int, intptr_t*> TestContext::next_call()
 {
-    tuple<string, int, shared_ptr<intptr_t>> expected = this->calls.front();
+    tuple<string, int, intptr_t*> expected = this->calls.front();
     this->calls.pop();
     return expected;
 }
