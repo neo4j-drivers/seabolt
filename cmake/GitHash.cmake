@@ -22,7 +22,7 @@ endif ()
 get_filename_component(OUTPUT_FILE_NAME ${OUTPUT_FILE} NAME)
 set(OUTPUT_TMP_FILE "${OUTPUT_FILE_NAME}.tmp")
 
-# generate outputfile based on input file
+# generate a temporary outputfile based on input file
 configure_file(
         ${INPUT_FILE}
         ${OUTPUT_TMP_FILE}
@@ -40,5 +40,11 @@ file(SHA256 ${OUTPUT_TMP_FILE} NEW_CONTENT_HASH)
 if (OLD_CONTENT_HASH STREQUAL NEW_CONTENT_HASH)
     # let's not copy contents because they're equal
 else ()
-    file(RENAME ${OUTPUT_TMP_FILE} ${OUTPUT_FILE})
+    configure_file(
+            ${INPUT_FILE}
+            ${OUTPUT_FILE}
+            @ONLY
+    )
 endif ()
+
+file(REMOVE ${OUTPUT_TMP_FILE})
