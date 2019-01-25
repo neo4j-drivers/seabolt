@@ -178,10 +178,10 @@ int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* 
 }
 
 int32_t BoltAddress_copy_resolved_host(BoltAddress* address, int32_t index, char* buffer,
-        uint64_t buffer_size)
+        int32_t buffer_size)
 {
     struct sockaddr_storage* resolved_host = &address->resolved_hosts[index];
-    int status = get_address_components(resolved_host, buffer, buffer_size, NULL, 0);
+    int status = get_address_components(resolved_host, buffer, (int) buffer_size, NULL, 0);
     switch (status) {
     case 0:
         return resolved_host->ss_family;

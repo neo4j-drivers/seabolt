@@ -25,6 +25,11 @@
 #include "mem.h"
 #include "communication-plain.h"
 
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+#include <openssl/x509v3.h>
+
 typedef struct BoltSecurityContext {
     SSL_CTX* ssl_ctx;
 } BoltSecurityContext;

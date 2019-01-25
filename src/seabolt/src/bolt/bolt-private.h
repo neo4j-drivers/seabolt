@@ -44,27 +44,6 @@
 
 #endif // USE_WINSOCK
 
-#if USE_WINSSPI
-
-#endif // USE_WINSSPI
-
-#if USE_OPENSSL
-
-#include <openssl/bio.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-#include <openssl/x509v3.h>
-
-#endif // USE_OPENSSL
-
-#if USE_OPENSSL
-
-extern int SSL_CTX_TRUST_INDEX;
-extern int SSL_CTX_LOG_INDEX;
-extern int SSL_CTX_ID_INDEX;
-
-#endif // USE_OPENSSL
-
 #include "error.h"
 
 #define SIZE_OF_C_STRING(str) (sizeof(char)*(strlen(str)+1))

@@ -19,8 +19,9 @@
 #include "communication-plain.h"
 #include "status-private.h"
 
-int socket_last_error()
+int socket_last_error(BoltCommunication* comm)
 {
+    UNUSED(comm);
     return errno;
 }
 
@@ -155,14 +156,14 @@ int socket_connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen, i
     return status;
 }
 
-ssize_t socket_send(int sockfd, const void* buf, size_t len, int flags)
+int socket_send(int sockfd, const void* buf, int len, int flags)
 {
-    return send(sockfd, buf, len, flags);
+    return (int) send(sockfd, buf, len, flags);
 }
 
-ssize_t socket_recv(int sockfd, void* buf, size_t len, int flags)
+int socket_recv(int sockfd, void* buf, int len, int flags)
 {
-    return recv(sockfd, buf, len, flags);
+    return (int) recv(sockfd, buf, len, flags);
 }
 
 int socket_get_local_addr(int sockfd, struct sockaddr_storage* address, socklen_t* address_size)

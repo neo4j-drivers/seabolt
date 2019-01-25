@@ -29,14 +29,14 @@
 #define TRY_SOCKET(code, status, error_ctx_fmt, file, line) { \
     int status_try = (code); \
     if (status_try == -1) { \
-        int last_error = socket_last_error(); \
+        int last_error = socket_last_error(comm); \
         int last_error_transformed = socket_transform_error(comm, last_error); \
         BoltStatus_set_error_with_ctx(status, last_error_transformed, error_ctx_fmt, file, line, last_error); \
         return BOLT_STATUS_SET; \
     } \
 }
 
-int socket_last_error();
+int socket_last_error(BoltCommunication* comm);
 
 int socket_transform_error(BoltCommunication* comm, int error_code);
 
@@ -58,9 +58,9 @@ int socket_connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen, i
 
 int socket_select(int sockfd, int timeout);
 
-ssize_t socket_send(int sockfd, const void* buf, size_t len, int flags);
+int socket_send(int sockfd, const void* buf, int len, int flags);
 
-ssize_t socket_recv(int sockfd, void* buf, size_t len, int flags);
+int socket_recv(int sockfd, void* buf, int len, int flags);
 
 int socket_get_local_addr(int sockfd, struct sockaddr_storage* address, socklen_t* address_size);
 
@@ -79,7 +79,7 @@ int plain_socket_ignore_sigpipe(BoltCommunication* comm)
     PlainCommunicationContext* ctx = comm->context;
     int status = socket_ignore_sigpipe(&ctx->action_to_restore);
     if (status<0) {
-        int last_error = socket_last_error();
+        int last_error = socket_last_error(comm);
         BoltStatus_set_error_with_ctx(comm->status, socket_transform_error(comm, last_error),
                 "plain_socket_ignore_sigpipe(%s:%d): unable to install ignore handler for SIGPIPE: %d", __FILE__,
                 __LINE__, last_error);
@@ -93,7 +93,7 @@ int plain_socket_restore_sigpipe(BoltCommunication* comm)
     PlainCommunicationContext* ctx = comm->context;
     int status = socket_restore_sigpipe(&ctx->action_to_restore);
     if (status<0) {
-        int last_error = socket_last_error();
+        int last_error = socket_last_error(comm);
         BoltStatus_set_error_with_ctx(comm->status, socket_transform_error(comm, last_error),
                 "plain_socket_ignore_sigpipe(%s:%d): unable to restore original handler for SIGPIPE: %d", __FILE__,
                 __LINE__, last_error);
@@ -107,7 +107,7 @@ int plain_socket_open(BoltCommunication* comm, const struct sockaddr_storage* ad
     PlainCommunicationContext* context = comm->context;
     context->fd_socket = socket_open(address->ss_family, SOCK_STREAM, IPPROTO_TCP);
     if (context->fd_socket==-1) {
-        int last_error_code = socket_last_error();
+        int last_error_code = socket_last_error(comm);
         BoltStatus_set_error_with_ctx(comm->status, socket_transform_error(comm, last_error_code),
                 "plain_socket_open(%s,%d): socket error code: %d", __FILE__, __LINE__, last_error_code);
         return comm->status->error;
@@ -126,7 +126,7 @@ int plain_socket_open(BoltCommunication* comm, const struct sockaddr_storage* ad
         int conn_status = socket_connect(context->fd_socket, (struct sockaddr*) (address), ADDR_SIZE(address),
                 &in_progress);
         if (conn_status==-1 && !in_progress) {
-            int error_code = socket_last_error();
+            int error_code = socket_last_error(comm);
             BoltStatus_set_error_with_ctx(comm->status, socket_transform_error(comm, error_code),
                     "plain_socket_open(%s:%d), connect error code: %d", __FILE__, __LINE__, error_code);
             return BOLT_STATUS_SET;
@@ -146,7 +146,7 @@ int plain_socket_open(BoltCommunication* comm, const struct sockaddr_storage* ad
                 break;
             }
             default: {
-                int last_error = socket_last_error();
+                int last_error = socket_last_error(comm);
                 BoltStatus_set_error_with_ctx(comm->status, socket_transform_error(comm, last_error),
                         "plain_socket_open(%s:%d), select error code: %d", __FILE__, __LINE__, last_error);
                 return BOLT_STATUS_SET;
@@ -224,15 +224,15 @@ int plain_socket_send(BoltCommunication* comm, char* buffer, int length, int* se
 {
     PlainCommunicationContext* context = comm->context;
 
-    ssize_t bytes = socket_send(context->fd_socket, buffer, (size_t) length, 0);
+    int bytes = socket_send(context->fd_socket, buffer, (size_t) length, 0);
     if (bytes==-1) {
-        int last_error = socket_last_error();
+        int last_error = socket_last_error(comm);
         BoltStatus_set_error_with_ctx(comm->status, socket_transform_error(comm, last_error),
                 "plain_socket_send(%s:%d), send error code: %d", __FILE__, __LINE__, last_error);
         return BOLT_STATUS_SET;
     }
 
-    *sent = (int) bytes;
+    *sent = bytes;
 
     return BOLT_SUCCESS;
 }
@@ -241,9 +241,9 @@ int plain_socket_recv(BoltCommunication* comm, char* buffer, int length, int* re
 {
     PlainCommunicationContext* context = comm->context;
 
-    ssize_t bytes = socket_recv(context->fd_socket, buffer, (size_t) length, 0);
+    int bytes = socket_recv(context->fd_socket, buffer, (size_t) length, 0);
     if (bytes==-1) {
-        int last_error = socket_last_error();
+        int last_error = socket_last_error(comm);
         BoltStatus_set_error_with_ctx(comm->status, socket_transform_error(comm, last_error),
                 "plain_socket_recv(%s:%d), recv error code: %d", __FILE__, __LINE__, last_error);
         return BOLT_STATUS_SET;
@@ -255,7 +255,7 @@ int plain_socket_recv(BoltCommunication* comm, char* buffer, int length, int* re
         return BOLT_STATUS_SET;
     }
 
-    *received = (int) bytes;
+    *received = bytes;
 
     return BOLT_SUCCESS;
 }

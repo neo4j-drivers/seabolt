@@ -37,7 +37,7 @@ int BoltTime_get_time(struct timespec* tp)
     if (!ticksPerSec.QuadPart) {
         QueryPerformanceFrequency(&ticksPerSec);
         if (!ticksPerSec.QuadPart) {
-            errno = ENOTSUP;
+            // not supported
             return -1;
         }
     }
