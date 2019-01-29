@@ -156,6 +156,10 @@ foreach (target ${SEABOLT_SHARED} ${SEABOLT_STATIC})
         target_link_libraries(${target}
                 PUBLIC
                 ws2_32)
+
+        target_compile_definitions(${target}
+                PRIVATE
+                _WIN32_WINNT=0x0601)
     endif ()
 
     if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
