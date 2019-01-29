@@ -188,7 +188,7 @@ endforeach ()
 
 if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
     target_link_libraries(${SEABOLT_SHARED}
-            PUBLIC
+            PRIVATE
             ${OPENSSL_SHARED_LIBRARIES})
 
     target_link_libraries(${SEABOLT_STATIC}
@@ -200,18 +200,12 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
         pkg_check_modules(OPENSSLDEPS openssl)
 
         target_link_libraries(${SEABOLT_SHARED}
-                PUBLIC
+                PRIVATE
                 ${OPENSSLDEPS_LIBRARIES})
 
         target_link_libraries(${SEABOLT_STATIC}
                 PUBLIC
                 ${OPENSSLDEPS_STATIC_LIBRARIES})
-    endif ()
-
-    if (MSVC)
-        target_link_libraries(${SEABOLT_STATIC}
-                PUBLIC
-                legacy_stdio_definitions)
     endif ()
 endif ()
 
