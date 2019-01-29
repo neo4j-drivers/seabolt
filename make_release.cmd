@@ -1,6 +1,6 @@
 @Echo Off
 
-Call %~dp0\make.cmd %~1 Release x64 || Goto :Failure
+Call %~dp0\make.cmd %~1 Release x64 install || Goto :Failure
 Exit /b 0
 
 :Failure

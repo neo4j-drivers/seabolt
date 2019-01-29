@@ -156,6 +156,10 @@ foreach (target ${SEABOLT_SHARED} ${SEABOLT_STATIC})
         target_link_libraries(${target}
                 PUBLIC
                 ws2_32)
+
+        target_compile_definitions(${target}
+                PRIVATE
+                _WIN32_WINNT=0x0601)
     endif ()
 
     if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
@@ -188,7 +192,7 @@ endforeach ()
 
 if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
     target_link_libraries(${SEABOLT_SHARED}
-            PUBLIC
+            PRIVATE
             ${OPENSSL_SHARED_LIBRARIES})
 
     target_link_libraries(${SEABOLT_STATIC}
@@ -200,18 +204,12 @@ if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
         pkg_check_modules(OPENSSLDEPS openssl)
 
         target_link_libraries(${SEABOLT_SHARED}
-                PUBLIC
+                PRIVATE
                 ${OPENSSLDEPS_LIBRARIES})
 
         target_link_libraries(${SEABOLT_STATIC}
                 PUBLIC
                 ${OPENSSLDEPS_STATIC_LIBRARIES})
-    endif ()
-
-    if (MSVC)
-        target_link_libraries(${SEABOLT_STATIC}
-                PUBLIC
-                legacy_stdio_definitions)
     endif ()
 endif ()
 

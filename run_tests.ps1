@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference="Stop"
+$ErrorActionPreference="Stop"
 $BaseDir=$PSScriptRoot
 $Password="password"
 $Port=7699
@@ -49,7 +49,7 @@ Function Cleanup($Target)
 {
     try
     {
-        Get-ChildItem -Path $Target -Recurse | Remove-Item -Force -Recurse -ErrorAction Stop
+        Get-ChildItem -Path $Target -ErrorAction Ignore | Remove-Item -Force -Recurse -ErrorAction Stop
     }
     catch
     {
@@ -138,7 +138,11 @@ Function StopServer($Server)
 
 Function RunTests($Version)
 {
-    $ServerBase = "$BaseDir\build\server"
+    $CompilationBase = "$Basedir\build-$( $env:SEABOLT_TOOLCHAIN )-debug"
+    $SeaboltCli =  Get-ChildItem -Path $CompilationBase\bin -Filter seabolt-cli.exe -Recurse
+    $SeaboltTest =  Get-ChildItem -Path $CompilationBase\bin -Filter seabolt-test.exe -Recurse
+
+    $ServerBase = "$CompilationBase\server"
     Cleanup $ServerBase
 
     Write-Host "Testing against Neo4j $Version"
@@ -150,7 +154,7 @@ Function RunTests($Version)
         Write-Host "-- Checking server"
         $env:BOLT_PASSWORD=$Password
         $env:BOLT_PORT=$Port
-        & $BaseDir\build\bin\Debug\seabolt-cli.exe debug "UNWIND range(1, 10000) AS n RETURN n"
+        & $SeaboltCli.FullName debug "UNWIND range(1, 10000) AS n RETURN n"
         if ( $LASTEXITCODE -ne 0 )
         {
             throw @{
@@ -160,7 +164,7 @@ Function RunTests($Version)
         }
 
         Write-Host "-- Running tests"
-        & $BaseDir\build\bin\Debug\seabolt-test.exe $TestArgs
+        & $SeaboltTest.FullName $TestArgs
         if ( $LASTEXITCODE -ne 0 )
         {
             throw @{
