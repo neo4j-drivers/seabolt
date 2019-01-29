@@ -79,8 +79,14 @@ void StringBuilder_append_f(struct StringBuilder* builder, const char* format, .
         va_start(args, format);
         written = vsnprintf(message_fmt, size, format, args);
         va_end(args);
-        if (written<size) {
+        if (written!=-1 && written<size) {
             break;
+        }
+
+        // For some old implementations, vsnprintf returns -1 if the target buffer size is less than
+        // the generated string.
+        if (written==-1) {
+            written = size*10;
         }
 
         message_fmt = (char*) realloc(message_fmt, written+1);
