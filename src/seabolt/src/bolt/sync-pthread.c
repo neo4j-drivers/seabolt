@@ -22,6 +22,7 @@
 #include "time.h"
 
 #include <pthread.h>
+#include <sys/time.h>
 
 void BoltSync_sleep(int milliseconds)
 {
