@@ -49,7 +49,7 @@ Function Cleanup($Target)
 {
     try
     {
-        Get-ChildItem -Path $Target -Recurse | Remove-Item -Force -Recurse -ErrorAction Stop
+        Get-ChildItem -Path $Target -ErrorAction Ignore | Remove-Item -Force -Recurse -ErrorAction Stop
     }
     catch
     {
