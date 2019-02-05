@@ -373,16 +373,21 @@ int secure_openssl_recv(BoltCommunication* comm, char* buffer, int length, int* 
 int secure_openssl_destroy(BoltCommunication* comm)
 {
     OpenSSLContext* ctx = comm->context;
-
-    if (ctx!=NULL) {
-        BoltCommunication_destroy(ctx->plain_comm);
-
-        BoltMem_deallocate(ctx->hostname, strlen(ctx->hostname)+1);
-        BoltMem_deallocate(ctx->id, strlen(ctx->id)+1);
-
-        BoltMem_deallocate(ctx, sizeof(OpenSSLContext));
-        comm->context = NULL;
+    if (ctx==NULL) {
+        return BOLT_SUCCESS;
     }
+
+    if (ctx->sec_ctx!=NULL && ctx->owns_sec_ctx) {
+        BoltSecurityContext_destroy(ctx->sec_ctx);
+        ctx->sec_ctx = NULL;
+        ctx->owns_sec_ctx = 0;
+    }
+
+    BoltCommunication_destroy(ctx->plain_comm);
+    BoltMem_deallocate(ctx->hostname, strlen(ctx->hostname)+1);
+    BoltMem_deallocate(ctx->id, strlen(ctx->id)+1);
+    BoltMem_deallocate(ctx, sizeof(OpenSSLContext));
+    comm->context = NULL;
 
     return BOLT_SUCCESS;
 }
@@ -433,7 +438,7 @@ BoltCommunication* BoltCommunication_create_secure(BoltSecurityContext* sec_ctx,
     comm->status = plain_comm->status;
     comm->sock_opts_owned = 0;
     comm->sock_opts = plain_comm->sock_opts;
-    comm->log = BoltLog_clone(log);
+    comm->log = log;
 
     OpenSSLContext* context = BoltMem_allocate(sizeof(OpenSSLContext));
     context->sec_ctx = sec_ctx;

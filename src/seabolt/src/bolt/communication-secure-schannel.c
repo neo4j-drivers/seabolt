@@ -1077,9 +1077,9 @@ int secure_schannel_destroy(BoltCommunication* comm)
     }
 
     BoltCommunication_destroy(ctx->plain_comm);
-    BoltMem_deallocate(ctx->hostname, strlen(ctx->hostname));
+    BoltMem_deallocate(ctx->hostname, strlen(ctx->hostname)+1);
     BoltMem_deallocate(ctx->id, strlen(ctx->id)+1);
-    BoltMem_deallocate(ctx, sizeof(SChannelContext)+1);
+    BoltMem_deallocate(ctx, sizeof(SChannelContext));
     comm->context = NULL;
 
     return BOLT_SUCCESS;
