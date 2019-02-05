@@ -204,6 +204,7 @@ BoltConnection* BoltConnection_create()
     memset(connection, 0, size);
     connection->status = BoltStatus_create_with_ctx(ERROR_CTX_SIZE);
     connection->metrics = BoltMem_allocate(sizeof(BoltConnectionMetrics));
+    memset(connection->metrics, 0, sizeof(BoltConnectionMetrics));
     return connection;
 }
 
