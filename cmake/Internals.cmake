@@ -12,18 +12,6 @@ macro(fix_compiler_settings)
         endforeach (setting)
 
     endif ()
-
-#    if (MINGW)
-#        message(STATUS "Enabling LTO on MINGW")
-#
-#        list(APPEND setting_list CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
-#        list(APPEND setting_list CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-#
-#        foreach (setting ${setting_list})
-#            # Change default warning level in all C/CXX default compiler settings
-#            string(APPEND ${setting} " -flto")
-#        endforeach (setting)
-#    endif ()
 endmacro()
 
 macro(clear_openssl_cached_vars)
