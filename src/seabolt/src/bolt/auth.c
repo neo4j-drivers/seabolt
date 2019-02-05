@@ -37,5 +37,13 @@ BoltValue* BoltAuth_basic(const char* username, const char* password, const char
         BoltValue_format_as_String(BoltDictionary_value(auth_token, 3), realm, (int32_t) strlen(realm));
     }
     return auth_token;
+}
 
+BoltValue* BoltAuth_none()
+{
+    struct BoltValue* auth_token = BoltValue_create();
+    BoltValue_format_as_Dictionary(auth_token, 1);
+    BoltDictionary_set_key(auth_token, 0, "scheme", 6);
+    BoltValue_format_as_String(BoltDictionary_value(auth_token, 0), "none", 5);
+    return auth_token;
 }
