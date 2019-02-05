@@ -9,28 +9,29 @@ The library supports multiple versions of the Bolt protocol through the new _Con
 
 1. Install runtime dependencies
 ```
-sudo apt-get install -y libssl1.0.0
+# you can also choose to install libssl1.1
+sudo apt-get install -y libssl1.0.0 
 ```
 
 2. Fetch the latest package (check [here](https://github.com/neo4j-drivers/seabolt/releases) for latest releases)
 ```
-wget https://github.com/neo4j-drivers/seabolt/releases/download/v1.7.0/seabolt-1.7.0-Linux-Ubuntu-Xenial.deb
+wget https://github.com/neo4j-drivers/seabolt/releases/download/v1.7.3/seabolt-1.7.3-Linux-ubuntu-$(lsb_release -rs).deb
 ```
 
 3. (optional) Check the sha256 hash of the download matches the published hash
 
 4. Install the package and clean up
 ```
-dpkg -i seabolt-1.7.0-Linux-Ubuntu-Xenial.deb
-rm seabolt-1.7.0-Linux-Ubuntu-Xenial.deb
+dpkg -i seabolt-1.7.3-Linux-ubuntu-$(lsb_release -rs).deb
+rm seabolt-1.7.3-Linux-ubuntu-$(lsb_release -rs).deb
 ```
 
-## Requirements
+## Building from source
 
 This project requires the following tools/libraries to be installed in order to be built. General installation instructions can be found in the following sections.
 
 1. CMake >= 3.12
-2. OpenSSL Development Libraries (must include static libraries)
+2. For **_non-Windows_** systems OpenSSL Development Libraries (must include static libraries)
 
 ### Linux (Ubuntu)
 
@@ -46,19 +47,15 @@ This project requires the following tools/libraries to be installed in order to 
 
 ### Windows
 
-Currently windows builds also depend on OpenSSL, however support for windows secure sockets is in our roadmap.
-
 #### MSVC
 
 1. Install Visual Studio 2017 with VC++ support
 2. Install CMake via `choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'`
-3. Install OpenSSL Win64 using one of the recent and stable _**64-Bit**_ binary builds _**(full version instead of light)**_ listed at `https://slproweb.com/products/Win32OpenSSL.html` _**on a path with no spaces on it**_.
 
 #### MINGW
 
 1. Install MSYS2 from `https://www.msys2.org/`
     * Be sure to install a mingw toolchain into MSYS2 (you can use the following command `pacman -S --needed base-devel mingw-w64-i686-toolchain mingw-w64-x86_64-toolchain git subversion mercurial mingw-w64-i686-cmake mingw-w64-x86_64-cmake`)
-2. Install OpenSSL Win64 using one of the recent and stable _**64-Bit**_ binary builds _**(full version instead of light)**_ listed at `https://slproweb.com/products/Win32OpenSSL.html` _**on a path with no spaces on it**_.
 
 ## Building
 
@@ -76,14 +73,30 @@ To create distributable packages, invoke `cpack` in `build` directory (after `ma
 To build the project, run either the `make_debug.cmd` or the `make_release.cmd` script from the project root directory with `MINGW` as its first argument.
 This will compile and deposit project artifacts in the `build/dist` directories.
 
-To create distributable packages, invoke `cpack` in `build` directory (after `make_debug.cmd` or `make_release.cmd` is completed) and all binary package artifacts will be placed in `build/dist-package` directory.
+```
+make_[debug|release].cmd MINGW
+```
+
+To create distributable packages, invoke `make.cmd` with your preferred arguments and all binary package artifacts will be placed in `build/dist-package` directory.
+
+```
+make.cmd MINGW [Debug|Release] x64 package
+```
 
 #### MSVC
 
 To build the project, run either the `make_debug.cmd` or the `make_release.cmd` script from the project root directory with `MSVC` as its first argument.
 This will compile and deposit project artifacts in the `build/dist` directories.
 
-To create distributable packages, invoke `cpack` in `build` directory (after `make_debug.cmd` or `make_release.cmd` is completed) and all binary package artifacts will be placed in `build/dist-package` directory.
+```
+make_[debug|release].cmd MSVC
+```
+
+To create distributable packages, invoke `make.cmd` with your preferred arguments and all binary package artifacts will be placed in `build/dist-package` directory.
+
+```
+make.cmd MSVC [Debug|Release] x64 package
+```
 
 ## Docs 
 
