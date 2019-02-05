@@ -174,6 +174,12 @@ foreach (target ${SEABOLT_SHARED} ${SEABOLT_STATIC})
         target_include_directories(${target}
                 PRIVATE
                 ${OPENSSL_SHARED_INCLUDE_DIR})
+
+        if (ON_WINDOWS)
+            target_link_libraries(${target}
+                    PUBLIC
+                    crypt32)
+        endif ()
     endif ()
 
     if (WITH_TLS_SUPPORT AND WITH_TLS_SECURE_CHANNEL)
@@ -184,12 +190,6 @@ foreach (target ${SEABOLT_SHARED} ${SEABOLT_STATIC})
         target_link_libraries(${target}
                 PUBLIC
                 secur32 crypt32)
-    endif ()
-
-    if (WITH_TLS_SUPPORT AND WITH_TLS_OPENSSL)
-        target_link_libraries(${target}
-                PUBLIC
-                crypt32)
     endif ()
 
     target_include_directories(${target}
