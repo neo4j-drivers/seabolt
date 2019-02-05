@@ -28,7 +28,7 @@ int BoltSecurityContext_startup();
 int BoltSecurityContext_shutdown();
 
 BoltSecurityContext*
-BoltSecurityContext_create(BoltTrust* trust, const char* hostname, const BoltLog* log);
+BoltSecurityContext_create(BoltTrust* trust, const char* hostname, const BoltLog* log, const char* id);
 
 void BoltSecurityContext_destroy(BoltSecurityContext* context);
 

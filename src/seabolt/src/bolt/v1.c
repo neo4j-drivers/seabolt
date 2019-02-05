@@ -468,6 +468,7 @@ struct BoltProtocolV1State* BoltProtocolV1_create_state()
 
     state->next_request_id = 0;
     state->response_counter = 0;
+    state->record_counter = 0;
 
     state->run_request = create_run_message("", 0, 0);
     state->begin_request = create_run_message("BEGIN", 5, 0);

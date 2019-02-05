@@ -20,6 +20,7 @@
 
 #include <limits.h>
 #include <memory.h>
+#include <string.h>
 
 #include "buffering.h"
 #include "mem.h"
@@ -45,7 +46,7 @@ void BoltBuffer_compact(BoltBuffer* buffer)
     if (buffer->cursor>0) {
         int available = buffer->extent-buffer->cursor;
         if (available<buffer->cursor) {
-            memcpy(&buffer->data[0], &buffer->data[buffer->cursor], (size_t) (available));
+            memmove(buffer->data, buffer->data+buffer->cursor, (size_t) available);
             buffer->cursor = 0;
             buffer->extent = available;
         }

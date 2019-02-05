@@ -103,8 +103,10 @@ int verify_callback(int preverify_ok, X509_STORE_CTX* ctx)
 }
 
 BoltSecurityContext*
-BoltSecurityContext_create(struct BoltTrust* trust, const char* hostname, const struct BoltLog* log)
+BoltSecurityContext_create(struct BoltTrust* trust, const char* hostname, const struct BoltLog* log, const char* id)
 {
+    UNUSED(id);
+
     SSL_CTX* context = NULL;
     X509_STORE* store = NULL;
     const SSL_METHOD* ctx_init_method = NULL;

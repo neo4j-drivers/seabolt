@@ -150,6 +150,8 @@ void _close(BoltConnection* connection)
 
     if (connection->comm!=NULL) {
         BoltCommunication_close(connection->comm, BoltConnection_id(connection));
+        BoltCommunication_destroy(connection->comm);
+        connection->comm = NULL;
     }
 
     BoltTime_get_time(&connection->metrics->time_closed);
@@ -275,10 +277,6 @@ void BoltConnection_close(BoltConnection* connection)
     if (connection->address!=NULL) {
         BoltAddress_destroy((struct BoltAddress*) connection->address);
         connection->address = NULL;
-    }
-    if (connection->comm!=NULL) {
-        BoltCommunication_destroy(connection->comm);
-        connection->comm = NULL;
     }
     if (connection->id!=NULL) {
         BoltMem_deallocate(connection->id, MAX_ID_LEN);

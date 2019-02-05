@@ -174,12 +174,16 @@ foreach (target ${SEABOLT_SHARED} ${SEABOLT_STATIC})
         target_include_directories(${target}
                 PRIVATE
                 ${OPENSSL_SHARED_INCLUDE_DIR})
+    endif ()
 
-        if (ON_WINDOWS)
-            target_link_libraries(${target}
-                    PUBLIC
-                    crypt32)
-        endif ()
+    if (WITH_TLS_SUPPORT AND WITH_TLS_SECURE_CHANNEL)
+        target_compile_definitions(${target}
+                PRIVATE
+                SECURITY_WIN32)
+
+        target_link_libraries(${target}
+                PUBLIC
+                secur32 crypt32)
     endif ()
 
     target_include_directories(${target}
@@ -252,20 +256,18 @@ add_custom_command(
         -P ${PROJECT_SOURCE_DIR}/cmake/PkgConfigFiles.cmake
 )
 
-if (NOT ON_WINDOWS)
-    add_custom_command(
-            TARGET ${SEABOLT_STATIC} POST_BUILD
-            COMMAND
-            ${CMAKE_COMMAND}
-            -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-            -D NAME=${SEABOLT_NAME}-static
-            -D VERSION=${PROJECT_VERSION}
-            -D LIB_DIR=${LIBDIR_RELATIVE_PKGCONFIGDIR}
-            -D INCLUDE_DIR=${INCLUDEDIR_RELATIVE_PKGCONFIGDIR}
-            -D OUTPUT_NAME=$<TARGET_FILE_NAME:${SEABOLT_STATIC}>
-            -D LIBRARIES="$<TARGET_PROPERTY:${SEABOLT_STATIC},INTERFACE_LINK_LIBRARIES>"
-            -D INPUT_FILE=${PROJECT_SOURCE_DIR}/cmake/seabolt-static.pc.in
-            -D OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}-static.pc
-            -P ${PROJECT_SOURCE_DIR}/cmake/PkgConfigFiles.cmake
-    )
-endif ()
+add_custom_command(
+        TARGET ${SEABOLT_STATIC} POST_BUILD
+        COMMAND
+        ${CMAKE_COMMAND}
+        -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -D NAME=${SEABOLT_NAME}-static
+        -D VERSION=${PROJECT_VERSION}
+        -D LIB_DIR=${LIBDIR_RELATIVE_PKGCONFIGDIR}
+        -D INCLUDE_DIR=${INCLUDEDIR_RELATIVE_PKGCONFIGDIR}
+        -D OUTPUT_NAME=$<TARGET_FILE_NAME:${SEABOLT_STATIC}>
+        -D LIBRARIES="$<TARGET_PROPERTY:${SEABOLT_STATIC},INTERFACE_LINK_LIBRARIES>"
+        -D INPUT_FILE=${PROJECT_SOURCE_DIR}/cmake/seabolt-static.pc.in
+        -D OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}-static.pc
+        -P ${PROJECT_SOURCE_DIR}/cmake/PkgConfigFiles.cmake
+)

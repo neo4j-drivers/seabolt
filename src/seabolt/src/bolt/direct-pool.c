@@ -185,7 +185,7 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
         pool->connections[i] = BoltConnection_create();
     }
     if (config->transport==BOLT_TRANSPORT_ENCRYPTED) {
-        pool->sec_context = BoltSecurityContext_create(config->trust, pool->address->host, config->log);
+        pool->sec_context = BoltSecurityContext_create(config->trust, pool->address->host, config->log, id);
 
         // assign ssl_context to all connections
         for (int i = 0; i<config->max_pool_size; i++) {
