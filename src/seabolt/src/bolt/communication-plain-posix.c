@@ -75,6 +75,7 @@ int socket_ignore_sigpipe(void** replaced_action)
     ignore_act.sa_flags = 0;
     return sigaction(SIGPIPE, &ignore_act, *replaced_action);
 #endif
+    UNUSED(replaced_action);
     return BOLT_SUCCESS;
 }
 
@@ -88,6 +89,7 @@ int socket_restore_sigpipe(void** action_to_restore)
         return result;
     }
 #endif
+    UNUSED(action_to_restore);
     return BOLT_SUCCESS;
 }
 
