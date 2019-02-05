@@ -90,7 +90,7 @@ SEABOLT_EXPORT int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_reso
  * @return address family (AF_INET or AF_INET6) or -1 on error
  */
 SEABOLT_EXPORT int32_t
-BoltAddress_copy_resolved_host(BoltAddress* address, int32_t index, char* buffer, uint64_t buffer_size);
+BoltAddress_copy_resolved_host(BoltAddress* address, int32_t index, char* buffer, int32_t buffer_size);
 
 /**
  * Destroys the passed \ref BoltAddress instance.

@@ -23,6 +23,7 @@
 #include "address-private.h"
 #include "log-private.h"
 #include "mem.h"
+#include "name.h"
 #include "sync.h"
 
 #define DEFAULT_BOLT_PORT "7687"
@@ -46,6 +47,13 @@ BoltAddress* BoltAddress_create(const char* host, const char* port)
     address->n_resolved_hosts = 0;
     address->resolved_hosts = NULL;
     address->resolved_port = 0;
+    address->lock = NULL;
+    return address;
+}
+
+BoltAddress* BoltAddress_create_with_lock(const char* host, const char* port)
+{
+    BoltAddress* address = BoltAddress_create(host, port);
     BoltSync_mutex_create(&address->lock);
     return address;
 }
@@ -83,7 +91,9 @@ BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, uint64_t e
 
 int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* log)
 {
-    BoltSync_mutex_lock(&address->lock);
+    if (address->lock!=NULL) {
+        BoltSync_mutex_lock(&address->lock);
+    }
 
     if (strchr(address->host, ':')==NULL) {
         BoltLog_info(log, "[addr]: Resolving address %s:%s", address->host, address->port);
@@ -160,23 +170,21 @@ int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* 
         *n_resolved = address->n_resolved_hosts;
     }
 
-    BoltSync_mutex_unlock(&address->lock);
+    if (address->lock!=NULL) {
+        BoltSync_mutex_unlock(&address->lock);
+    }
 
     return gai_status;
 }
 
 int32_t BoltAddress_copy_resolved_host(BoltAddress* address, int32_t index, char* buffer,
-        uint64_t buffer_size)
+        int32_t buffer_size)
 {
-    struct sockaddr_storage* resolved_host_storage = &address->resolved_hosts[index];
-    const struct sockaddr* resolved_host = (const struct sockaddr*) resolved_host_storage;
-    const socklen_t resolved_host_size =
-            resolved_host_storage->ss_family==AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
-    const int status = getnameinfo(resolved_host, resolved_host_size, buffer, (socklen_t) buffer_size,
-            NULL, 0, NI_NUMERICHOST);
+    struct sockaddr_storage* resolved_host = &address->resolved_hosts[index];
+    int status = get_address_components(resolved_host, buffer, (int) buffer_size, NULL, 0);
     switch (status) {
     case 0:
-        return resolved_host_storage->ss_family;
+        return resolved_host->ss_family;
     default:
         return -1;
     }
@@ -190,7 +198,10 @@ void BoltAddress_destroy(BoltAddress* address)
         address->n_resolved_hosts = 0;
     }
 
-    BoltSync_mutex_destroy(&address->lock);
+    if (address->lock!=NULL) {
+        BoltSync_mutex_destroy(&address->lock);
+    }
+
     BoltMem_deallocate((char*) address->host, strlen(address->host)+1);
     BoltMem_deallocate((char*) address->port, strlen(address->port)+1);
     BoltMem_deallocate(address, sizeof(BoltAddress));

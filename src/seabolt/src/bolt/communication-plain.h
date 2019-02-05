@@ -16,29 +16,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef SEABOLT_COMMUNICATION_PLAIN_H
+#define SEABOLT_COMMUNICATION_PLAIN_H
 
-#include "bolt-private.h"
-#include "lifecycle.h"
 #include "communication.h"
-#include "communication-secure.h"
+#include "config.h"
 
-void Bolt_startup()
-{
-#if USE_WINSOCK
-    WSADATA data;
-    WSAStartup(MAKEWORD(2, 2), &data);
-#endif
-    BoltCommunication_startup();
-    BoltSecurityContext_startup();
-}
+typedef struct PlainCommunicationContext {
+    BoltAddress* local_endpoint;
+    BoltAddress* remote_endpoint;
+    int fd_socket;
 
-void Bolt_shutdown()
-{
-#if USE_WINSOCK
-    WSACleanup();
-#endif
+    void* action_to_restore;
+} PlainCommunicationContext;
 
-    BoltSecurityContext_shutdown();
-    BoltCommunication_shutdown();
-}
+BoltCommunication* BoltCommunication_create_plain(BoltSocketOptions* socket_options, BoltLog* log);
 
+#endif //SEABOLT_COMMUNICATION_PLAIN_H

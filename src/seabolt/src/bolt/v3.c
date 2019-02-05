@@ -283,6 +283,7 @@ struct BoltProtocolV3State* BoltProtocolV3_create_state()
 
     state->next_request_id = 0;
     state->response_counter = 0;
+    state->record_counter = 0;
 
     state->begin_request = BoltMessage_create(BOLT_V3_BEGIN, 1);
     _clear_begin_tx(state->begin_request);

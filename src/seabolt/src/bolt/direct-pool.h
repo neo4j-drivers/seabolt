@@ -24,6 +24,7 @@
 #ifndef SEABOLT_POOLING_H
 #define SEABOLT_POOLING_H
 
+#include "communication-secure.h"
 #include "connector.h"
 #include "sync.h"
 
@@ -37,7 +38,7 @@ struct BoltDirectPool {
     struct BoltAddress* address;
     const struct BoltValue* auth_token;
     const struct BoltConfig* config;
-    struct ssl_ctx_st* ssl_context;
+    BoltSecurityContext* sec_context;
     int size;
     BoltConnection** connections;
 };

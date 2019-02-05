@@ -46,4 +46,20 @@
  */
 SEABOLT_EXPORT BoltValue* BoltAuth_basic(const char* username, const char* password, const char* realm);
 
+/**
+ * Generates an authentication token that can be used towards servers that has disabled authentication
+ *
+ * Returned \ref BoltValue is a dictionary that contains the following key-value pairs.
+ * @verbatim embed:rst:leading-asterisk
+ * =============  ==============================
+ * Key            Value
+ * =============  ==============================
+ * "scheme"       "none"
+ * =============  ==============================
+ * @endverbatim
+ *
+ * @return a constructed \ref BoltValue that can be used as an authentication token
+ */
+SEABOLT_EXPORT BoltValue* BoltAuth_none();
+
 #endif // SEABOLT_AUTH

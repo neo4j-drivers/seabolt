@@ -35,6 +35,7 @@ extern "C"
 #include "bolt/string-builder.h"
 #include "bolt/direct-pool.h"
 #include "bolt/v3.h"
+#include "bolt/communication.h"
 }
 
 #define SETTING(name, default_value) ((char*)((getenv(name) == nullptr) ? (default_value) : getenv(name)))
@@ -45,6 +46,7 @@ extern "C"
 #define BOLT_USER       SETTING("BOLT_USER", "neo4j")
 #define BOLT_PASSWORD   SETTING("BOLT_PASSWORD", "password")
 #define BOLT_USER_AGENT SETTING("BOLT_USER_AGENT", "seabolt/1.0.0a")
+#define BOLT_LOG        SETTING("BOLT_LOG", "error")
 
 static struct BoltAddress BOLT_IPV6_ADDRESS{(char*) BOLT_IPV6_HOST, (char*) BOLT_PORT, 0, NULL, 0, NULL};
 

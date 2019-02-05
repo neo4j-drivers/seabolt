@@ -400,8 +400,9 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 auto failure_data = BoltConnection_failure(connection);
                 REQUIRE(failure_data!=nullptr);
 
-                struct BoltValue* code = BoltDictionary_value_by_key(failure_data, "code", (int32_t)strlen("code"));
-                struct BoltValue* message = BoltDictionary_value_by_key(failure_data, "message", (int32_t)strlen("message"));
+                struct BoltValue* code = BoltDictionary_value_by_key(failure_data, "code", (int32_t) strlen("code"));
+                struct BoltValue* message = BoltDictionary_value_by_key(failure_data, "message",
+                        (int32_t) strlen("message"));
                 REQUIRE(code!=nullptr);
                 REQUIRE(BoltValue_type(code)==BOLT_STRING);
                 REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError",
@@ -421,8 +422,9 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 struct BoltValue* failure_data = BoltConnection_failure(connection);
                 REQUIRE(failure_data!=nullptr);
 
-                struct BoltValue* code = BoltDictionary_value_by_key(failure_data, "code", (int32_t)strlen("code"));
-                struct BoltValue* message = BoltDictionary_value_by_key(failure_data, "message", (int32_t)strlen("message"));
+                struct BoltValue* code = BoltDictionary_value_by_key(failure_data, "code", (int32_t) strlen("code"));
+                struct BoltValue* message = BoltDictionary_value_by_key(failure_data, "message",
+                        (int32_t) strlen("message"));
                 REQUIRE(code!=nullptr);
                 REQUIRE(BoltValue_type(code)==BOLT_STRING);
                 REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError",
@@ -448,8 +450,9 @@ SCENARIO("Test FAILURE", "[integration][ipv6][secure]")
                 auto failure_data = BoltConnection_failure(connection);
                 REQUIRE(failure_data!=nullptr);
 
-                struct BoltValue* code = BoltDictionary_value_by_key(failure_data, "code", (int32_t)strlen("code"));
-                struct BoltValue* message = BoltDictionary_value_by_key(failure_data, "message", (int32_t)strlen("message"));
+                struct BoltValue* code = BoltDictionary_value_by_key(failure_data, "code", (int32_t) strlen("code"));
+                struct BoltValue* message = BoltDictionary_value_by_key(failure_data, "message",
+                        (int32_t) strlen("message"));
                 REQUIRE(code!=nullptr);
                 REQUIRE(BoltValue_type(code)==BOLT_STRING);
                 REQUIRE(BoltString_equals(code, "Neo.ClientError.Statement.SyntaxError",

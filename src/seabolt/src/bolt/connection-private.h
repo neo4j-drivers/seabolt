@@ -19,6 +19,8 @@
 #ifndef SEABOLT_CONNECTION_PRIVATE_H
 #define SEABOLT_CONNECTION_PRIVATE_H
 
+#include "communication.h"
+#include "communication-secure.h"
 #include "connection.h"
 #include "status-private.h"
 
@@ -43,23 +45,16 @@ struct BoltConnection {
     /// Transport type for this connection
     BoltTransport transport;
 
-    /// Socket options
-    const BoltSocketOptions* sock_opts;
-
     const BoltAddress* address;
-    const BoltAddress* local_address;
-    const BoltAddress* resolved_address;
     char* id;
 
     const BoltLog* log;
 
-    int owns_ssl_context;
     /// The security context (secure connections only)
-    struct ssl_ctx_st* ssl_context;
-    /// A secure socket wrapper (secure connections only)
-    struct ssl_st* ssl;
-    /// The raw socket that backs this connection
-    int socket;
+    BoltSecurityContext* sec_context;
+
+    /// The communication object
+    BoltCommunication* comm;
 
     /// The protocol version used for this connection
     int32_t protocol_version;

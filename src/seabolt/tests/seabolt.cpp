@@ -24,6 +24,49 @@
 #include <integration.hpp>
 #include "catch.hpp"
 
+void log_to_stderr(void* state, const char* message)
+{
+    UNUSED(state);
+    fprintf(stderr, "%s\n", message);
+}
+
+struct BoltLog* create_logger()
+{
+    struct BoltLog* log = BoltLog_create(0);
+    int debug = 0;
+    int warn = 0;
+    int info = 0;
+    int error = 0;
+
+    if (strcmp(BOLT_LOG, "error")==0) {
+        error = 1;
+    }
+
+    if (strcmp(BOLT_LOG, "warning")==0) {
+        error = 1;
+        warn = 1;
+    }
+
+    if (strcmp(BOLT_LOG, "info")==0) {
+        error = 1;
+        warn = 1;
+        info = 1;
+    }
+
+    if (strcmp(BOLT_LOG, "debug")==0) {
+        error = 1;
+        warn = 1;
+        info = 1;
+        debug = 1;
+    }
+
+    BoltLog_set_debug_func(log, debug ? log_to_stderr : NULL);
+    BoltLog_set_warning_func(log, warn ? log_to_stderr : NULL);
+    BoltLog_set_info_func(log, info ? log_to_stderr : NULL);
+    BoltLog_set_error_func(log, error ? log_to_stderr : NULL);
+    return log;
+}
+
 struct BoltAddress* bolt_get_address(const char* host, const char* port)
 {
     struct BoltAddress* address = BoltAddress_create(host, port);
@@ -37,7 +80,7 @@ struct BoltConnection* bolt_open_b(BoltTransport transport, const char* host, co
     struct BoltTrust trust{nullptr, 0, 1, 1};
     struct BoltAddress* address = bolt_get_address(host, port);
     struct BoltConnection* connection = BoltConnection_create();
-    BoltConnection_open(connection, transport, address, &trust, NULL, NULL);
+    BoltConnection_open(connection, transport, address, &trust, create_logger(), NULL);
     BoltAddress_destroy(address);
     REQUIRE(connection->status->state==BOLT_CONNECTION_STATE_CONNECTED);
     return connection;
@@ -55,7 +98,8 @@ struct BoltConnection* bolt_open_init_b(BoltTransport transport, const char* hos
 struct BoltConnection* bolt_open_init_default()
 {
     struct BoltValue* auth_token = BoltAuth_basic(BOLT_USER, BOLT_PASSWORD, NULL);
-    struct BoltConnection* connection = bolt_open_init_b(BOLT_TRANSPORT_ENCRYPTED, BOLT_IPV6_HOST, BOLT_PORT, BOLT_USER_AGENT, auth_token);
+    struct BoltConnection* connection = bolt_open_init_b(BOLT_TRANSPORT_ENCRYPTED, BOLT_IPV6_HOST, BOLT_PORT,
+            BOLT_USER_AGENT, auth_token);
     BoltValue_destroy(auth_token);
     return connection;
 }
@@ -63,5 +107,8 @@ struct BoltConnection* bolt_open_init_default()
 void bolt_close_and_destroy_b(struct BoltConnection* connection)
 {
     BoltConnection_close(connection);
+    if (connection->log!=NULL) {
+        BoltLog_destroy((BoltLog*) connection->log);
+    }
     BoltConnection_destroy(connection);
 }

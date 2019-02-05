@@ -89,7 +89,7 @@ endif ()
 
 include(CMakeDependentOption)
 option(WITH_TLS_SUPPORT "Build seabolt with TLS support" ON)
-cmake_dependent_option(WITH_TLS_SECURE_CHANNEL "Use Windows Secure Channel for TLS support" OFF "WITH_TLS_SUPPORT;ON_WINDOWS;NOT WITH_TLS_OPENSSL" OFF)
+cmake_dependent_option(WITH_TLS_SECURE_CHANNEL "Use Windows Secure Channel for TLS support" ON "WITH_TLS_SUPPORT;ON_WINDOWS;NOT WITH_TLS_OPENSSL" OFF)
 cmake_dependent_option(WITH_TLS_OPENSSL "Use OPENSSL for TLS support" ON "WITH_TLS_SUPPORT;NOT WITH_TLS_SECURE_CHANNEL" OFF)
 
 if (WITH_TLS_SUPPORT)
@@ -167,7 +167,8 @@ install(
         ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}.pc
         DESTINATION ${INSTALL_PKGCONFIGDIR}
         COMPONENT dev)
-if (NOT ON_WINDOWS)
+
+if (NOT ON_WINDOWS OR WITH_TLS_SECURE_CHANNEL)
     install(
             FILES
             ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_PKGCONFIGDIR}/${SEABOLT_NAME}-static.pc

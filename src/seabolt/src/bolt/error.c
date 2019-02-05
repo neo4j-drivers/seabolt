@@ -72,6 +72,8 @@ const char* BoltError_get_string(int32_t code)
         return "connection acquisition from the connection pool timed out";
     case BOLT_ADDRESS_NOT_RESOLVED:
         return "address resolution failed";
+    case BOLT_ADDRESS_NAME_INFO_FAILED:
+        return "name info call on address failed";
     case BOLT_ROUTING_UNABLE_TO_RETRIEVE_ROUTING_TABLE:
         return "routing table retrieval failed";
     case BOLT_ROUTING_NO_SERVERS_TO_SELECT:

@@ -44,6 +44,24 @@ void BoltStatus_destroy(BoltStatus* status)
     BoltMem_deallocate(status, sizeof(BoltStatus));
 }
 
+void BoltStatus_set_error(BoltStatus* status, int error)
+{
+    status->error = error;
+    status->error_ctx[0] = '\0';
+}
+
+void BoltStatus_set_error_with_ctx(BoltStatus* status, int error, const char* error_ctx_format, ...)
+{
+    status->error = error;
+    status->error_ctx[0] = '\0';
+    if (error_ctx_format!=NULL) {
+        va_list args;
+        va_start(args, error_ctx_format);
+        vsnprintf(status->error_ctx, status->error_ctx_size, error_ctx_format, args);
+        va_end(args);
+    }
+}
+
 BoltConnectionState BoltStatus_get_state(BoltStatus* status)
 {
     return status->state;

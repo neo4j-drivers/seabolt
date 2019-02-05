@@ -16,15 +16,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef SEABOLT_ALL_TLS_H
-#define SEABOLT_ALL_TLS_H
+#ifndef SEABOLT_NAME_H
+#define SEABOLT_NAME_H
 
-#include "bolt-private.h"
-#include "log.h"
+int get_address_components(const struct sockaddr_storage* address, char* host_buffer, int host_buffer_size,
+        char* port_buffer, int port_buffer_size);
 
-SEABOLT_EXPORT struct ssl_ctx_st*
-create_ssl_ctx(struct BoltTrust* trust, const char* hostname, const struct BoltLog* log, const char* id);
-
-SEABOLT_EXPORT void free_ssl_context(struct ssl_ctx_st* ctx);
-
-#endif //SEABOLT_ALL_TLS_H
+#endif //SEABOLT_NAME_H

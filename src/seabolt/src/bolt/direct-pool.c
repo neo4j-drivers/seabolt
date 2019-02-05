@@ -28,7 +28,6 @@
 #include "protocol.h"
 #include "sync.h"
 #include "time.h"
-#include "tls.h"
 
 #define MAX_ID_LEN 16
 
@@ -178,7 +177,7 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
     BoltSync_cond_create(&pool->released_cond);
     pool->id = id;
     pool->config = config;
-    pool->address = BoltAddress_create(address->host, address->port);
+    pool->address = BoltAddress_create_with_lock(address->host, address->port);
     pool->auth_token = auth_token;
     pool->size = config->max_pool_size;
     pool->connections = (struct BoltConnection**) BoltMem_allocate(config->max_pool_size*sizeof(BoltConnection*));
@@ -186,16 +185,15 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
         pool->connections[i] = BoltConnection_create();
     }
     if (config->transport==BOLT_TRANSPORT_ENCRYPTED) {
-        pool->ssl_context = create_ssl_ctx(config->trust, address->host, config->log, id);
+        pool->sec_context = BoltSecurityContext_create(config->trust, pool->address->host, config->log, id);
 
         // assign ssl_context to all connections
         for (int i = 0; i<config->max_pool_size; i++) {
-            pool->connections[0]->ssl_context = pool->ssl_context;
-            pool->connections[0]->owns_ssl_context = 0;
+            pool->connections[0]->sec_context = pool->sec_context;
         }
     }
     else {
-        pool->ssl_context = NULL;
+        pool->sec_context = NULL;
     }
     return pool;
 }
@@ -209,8 +207,8 @@ void BoltDirectPool_destroy(struct BoltDirectPool* pool)
         BoltConnection_destroy(pool->connections[index]);
     }
     BoltMem_deallocate(pool->connections, pool->size*sizeof(BoltConnection*));
-    if (pool->ssl_context!=NULL) {
-        free_ssl_context(pool->ssl_context);
+    if (pool->sec_context!=NULL) {
+        BoltSecurityContext_destroy(pool->sec_context);
     }
     BoltAddress_destroy(pool->address);
     BoltMem_deallocate(pool->id, MAX_ID_LEN);

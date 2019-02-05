@@ -25,49 +25,22 @@
 #include "mem.h"
 #include "protocol.h"
 #include "time.h"
-#include "tls.h"
 #include "v1.h"
 #include "v2.h"
 #include "v3.h"
 #include "atomic.h"
+#include "communication-plain.h"
 
 #define INITIAL_TX_BUFFER_SIZE 8192
 #define INITIAL_RX_BUFFER_SIZE 8192
 #define ERROR_CTX_SIZE 1024
 
-#define MAX_IPADDR_LEN 64
 #define MAX_ID_LEN 32
-
-#define SOCKET(domain, type, protocol) socket(domain, type, protocol)
-#define CONNECT(socket, address, address_size) connect(socket, address, address_size)
-#define SHUTDOWN(socket, how) shutdown(socket, how)
-#ifdef MSG_NOSIGNAL
-#define TRANSMIT(socket, data, size, flags) (int)(send(socket, data, (size_t)(size), flags | MSG_NOSIGNAL))
-#define RECEIVE(socket, buffer, size, flags) (int)(recv(socket, buffer, (size_t)(size), flags | MSG_NOSIGNAL))
-#else
-#define TRANSMIT(socket, data, size, flags) (int)(send(socket, data, (size_t)(size), flags))
-#define RECEIVE(socket, buffer, size, flags) (int)(recv(socket, buffer, (size_t)(size), flags))
-#endif
-#define TRANSMIT_S(socket, data, size, flags) SSL_write(socket, data, size)
-#define RECEIVE_S(socket, buffer, size, flags) SSL_read(socket, buffer, size)
-#define ADDR_SIZE(address) address->ss_family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6)
-#if USE_WINSOCK
-#define GETSOCKETOPT(socket, level, optname, optval, optlen) getsockopt(socket, level, optname, (char *)(optval), optlen)
-#define SETSOCKETOPT(socket, level, optname, optval, optlen) setsockopt(socket, level, optname, (const char *)(optval), optlen)
-#define CLOSE(socket) closesocket(socket)
-#else
-#define GETSOCKETOPT(socket, level, optname, optval, optlen) getsockopt(socket, level, optname, (void *)optval, (unsigned int*)optlen)
-#define SETSOCKETOPT(socket, level, optname, optval, optlen) setsockopt(socket, level, optname, (const void *)optval, optlen)
-#define CLOSE(socket) close(socket)
-#endif
 
 #define TRY(code, error_ctx_fmt, file, line) { \
     int status_try = (code); \
     if (status_try != BOLT_SUCCESS) { \
-        if (status_try == -1) { \
-            int last_error = _last_error_code(); \
-            _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error), error_ctx_fmt, file, line, last_error); \
-        } else if (status_try == BOLT_STATUS_SET) { \
+        if (status_try == BOLT_STATUS_SET) { \
             return -1; \
         } else { \
             _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, status_try, error_ctx_fmt, file, line, -1); \
@@ -76,106 +49,7 @@
     } \
 }
 
-#ifndef SHUT_RDWR
-#define SHUT_RDWR SD_BOTH
-#endif
-
 static int64_t id_seq = 0;
-
-int _transform_error(int error_code)
-{
-#if USE_WINSOCK
-    switch (error_code) {
-    case WSAEACCES:
-        return BOLT_PERMISSION_DENIED;
-    case WSAEAFNOSUPPORT:
-    case WSAEINVAL:
-    case WSAEPROTONOSUPPORT:
-        return BOLT_UNSUPPORTED;
-    case WSAEMFILE:
-        return BOLT_OUT_OF_FILES;
-    case WSAENOBUFS:
-    case WSA_NOT_ENOUGH_MEMORY:
-        return BOLT_OUT_OF_MEMORY;
-    case WSAECONNREFUSED:
-        return BOLT_CONNECTION_REFUSED;
-    case WSAEINTR:
-        return BOLT_INTERRUPTED;
-    case WSAECONNRESET:
-        return BOLT_CONNECTION_RESET;
-    case WSAENETUNREACH:
-    case WSAENETRESET:
-    case WSAENETDOWN:
-        return BOLT_NETWORK_UNREACHABLE;
-    case WSAEWOULDBLOCK:
-    case WSAETIMEDOUT:
-        return BOLT_TIMED_OUT;
-    default:
-        return BOLT_UNKNOWN_ERROR;
-    }
-#else
-    switch (error_code) {
-    case EACCES:
-    case EPERM:
-        return BOLT_PERMISSION_DENIED;
-    case EAFNOSUPPORT:
-    case EINVAL:
-    case EPROTONOSUPPORT:
-        return BOLT_UNSUPPORTED;
-    case EMFILE:
-    case ENFILE:
-        return BOLT_OUT_OF_FILES;
-    case ENOBUFS:
-    case ENOMEM:
-        return BOLT_OUT_OF_MEMORY;
-    case ECONNREFUSED:
-        return BOLT_CONNECTION_REFUSED;
-    case ECONNRESET:
-        return BOLT_CONNECTION_RESET;
-    case EINTR:
-        return BOLT_INTERRUPTED;
-    case ENETUNREACH:
-        return BOLT_NETWORK_UNREACHABLE;
-    case EAGAIN:
-    case ETIMEDOUT:
-        return BOLT_TIMED_OUT;
-    default:
-        return BOLT_UNKNOWN_ERROR;
-    }
-#endif
-}
-
-int _last_error_code()
-{
-#if USE_WINSOCK
-    return WSAGetLastError();
-#else
-    return errno;
-#endif
-}
-
-int _last_error_code_ssl(BoltConnection* connection, int ssl_ret, int* ssl_error_code, int* last_error)
-{
-    // On windows, SSL_get_error resets WSAGetLastError so we're left without an error code after
-    // asking error code - so we're saving it here in case.
-    int last_error_saved = _last_error_code();
-    *ssl_error_code = SSL_get_error(connection->ssl, ssl_ret);
-    switch (*ssl_error_code) {
-    case SSL_ERROR_NONE:
-        return BOLT_SUCCESS;
-    case SSL_ERROR_SYSCALL:
-    case SSL_ERROR_WANT_READ:
-    case SSL_ERROR_WANT_WRITE: {
-        *last_error = _last_error_code();
-        if (*last_error==0) {
-            *last_error = last_error_saved;
-        }
-        return _transform_error(*last_error);
-    }
-    default:
-        return BOLT_TLS_ERROR;
-    }
-}
 
 void _status_changed(BoltConnection* connection)
 {
@@ -245,255 +119,9 @@ void _set_status_with_ctx(BoltConnection* connection, BoltConnectionState status
     }
 }
 
-int _socket_configure(BoltConnection* connection)
+void _set_status_from_comm(BoltConnection* connection, BoltConnectionState state)
 {
-    const int YES = 1, NO = 0;
-
-    // Enable TCP_NODELAY
-    TRY(SETSOCKETOPT(connection->socket, IPPROTO_TCP, TCP_NODELAY, &YES, sizeof(YES)),
-            "_socket_configure(%s:%d), set tcp_nodelay error code: %d", __FILE__, __LINE__);
-
-#ifdef SO_NOSIGPIPE
-    // Disable PIPE signals
-    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_NOSIGPIPE, &NO, sizeof(NO)),
-            "_socket_configure(%s:%d), set so_nosigpipe error code: %d", __FILE__, __LINE__);
-#endif
-
-    // Set keep-alive accordingly, default: TRUE
-    if (connection->sock_opts==NULL || connection->sock_opts->keep_alive) {
-        TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_KEEPALIVE, &YES, sizeof(YES)),
-                "_socket_configure(%s:%d), set so_keepalive error code: %d", __FILE__, __LINE__);
-    }
-    else {
-        TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_KEEPALIVE, &NO, sizeof(NO)),
-                "_socket_configure(%s:%d), set so_keepalive error code: %d", __FILE__, __LINE__);
-    }
-
-#if USE_WINSOCK
-    int recv_timeout, send_timeout;
-    int recv_timeout_size = sizeof(int), send_timeout_size = sizeof(int);
-    if (connection->sock_opts!=NULL) {
-        recv_timeout = connection->sock_opts->recv_timeout;
-        send_timeout = connection->sock_opts->send_timeout;
-    }
-    else {
-        recv_timeout = 0;
-        send_timeout = 0;
-    }
-#else
-    // Set send and receive timeouts
-    struct timeval recv_timeout, send_timeout;
-    int recv_timeout_size = sizeof(struct timeval), send_timeout_size = sizeof(struct timeval);
-    if (connection->sock_opts!=NULL) {
-        recv_timeout.tv_sec = connection->sock_opts->recv_timeout/1000;
-        recv_timeout.tv_usec = (connection->sock_opts->recv_timeout%1000)*1000;
-        send_timeout.tv_sec = connection->sock_opts->send_timeout/1000;
-        send_timeout.tv_usec = (connection->sock_opts->send_timeout%1000)*1000;
-    }
-    else {
-        recv_timeout.tv_sec = 0;
-        recv_timeout.tv_usec = 0;
-        send_timeout.tv_sec = 0;
-        send_timeout.tv_usec = 0;
-    }
-#endif
-
-    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, recv_timeout_size),
-            "_socket_configure(%s:%d), set so_rcvtimeo error code: %d", __FILE__, __LINE__);
-    TRY(SETSOCKETOPT(connection->socket, SOL_SOCKET, SO_SNDTIMEO, &send_timeout, send_timeout_size),
-            "_socket_configure(%s:%d), set so_sndtimeo error code: %d", __FILE__, __LINE__);
-
-    return BOLT_SUCCESS;
-}
-
-int _socket_set_mode(BoltConnection* connection, int blocking)
-{
-    int status = 0;
-
-#if USE_WINSOCK
-    u_long non_blocking = blocking ? 0 : 1;
-    status = ioctlsocket(connection->socket, FIONBIO, &non_blocking);
-#else
-    const int flags = fcntl(connection->socket, F_GETFL, 0);
-    if ((flags & O_NONBLOCK) && !blocking) {
-        return 0;
-    }
-    if (!(flags & O_NONBLOCK) && blocking) {
-        return 0;
-    }
-    status = fcntl(connection->socket, F_SETFL, blocking ? flags ^ O_NONBLOCK : flags | O_NONBLOCK);
-#endif
-
-    return status;
-}
-
-int _open(BoltConnection* connection, BoltTransport transport, const struct sockaddr_storage* address)
-{
-    memset(connection->metrics, 0, sizeof(BoltConnectionMetrics));
-    connection->transport = transport;
-    switch (address->ss_family) {
-    case AF_INET:
-    case AF_INET6: {
-        char host_string[NI_MAXHOST];
-        char port_string[NI_MAXSERV];
-        getnameinfo((const struct sockaddr*) (address), ADDR_SIZE(address),
-                host_string, NI_MAXHOST, port_string, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
-        BoltLog_info(connection->log, "[%s]: Opening %s connection to %s at port %s", BoltConnection_id(connection),
-                address->ss_family==AF_INET ? "IPv4" : "IPv6", &host_string, &port_string);
-        break;
-    }
-    default:
-        BoltLog_error(connection->log, "[%s]: Unsupported address family %d", BoltConnection_id(connection),
-                address->ss_family);
-        _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, BOLT_UNSUPPORTED, "_open(%s:%d)", __FILE__,
-                __LINE__);
-        return BOLT_STATUS_SET;
-    }
-    connection->socket = (int) SOCKET(address->ss_family, SOCK_STREAM, IPPROTO_TCP);
-    if (connection->socket==-1) {
-        int last_error_code = _last_error_code();
-        _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error_code),
-                "_open(%s:%d), socket error code: %d", __FILE__, __LINE__, last_error_code);
-        return BOLT_STATUS_SET;
-    }
-
-    if (connection->sock_opts!=NULL && connection->sock_opts->connect_timeout>0) {
-        // enable non-blocking mode
-        TRY(_socket_set_mode(connection, 0), "_open(%s:%d), _socket_set_mode error code: %d", __FILE__, __LINE__);
-
-        // initiate connection
-        int status = CONNECT(connection->socket, (struct sockaddr*) (address), ADDR_SIZE(address));
-        if (status==-1) {
-            int error_code = _last_error_code();
-            switch (error_code) {
-#if USE_WINSOCK
-            case WSAEWOULDBLOCK: {
-                break;
-            }
-#else
-                case EINPROGRESS: {
-                    break;
-                }
-#endif
-            default:
-                _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(error_code),
-                        "_open(%s:%d), connect error code: %d", __FILE__, __LINE__, error_code);
-                return BOLT_STATUS_SET;
-            }
-        }
-
-        if (status) {
-            // connection in progress
-            fd_set write_set;
-            FD_ZERO(&write_set);
-            FD_SET(connection->socket, &write_set);
-
-            struct timeval timeout;
-            timeout.tv_sec = connection->sock_opts->connect_timeout/1000;
-            timeout.tv_usec = (connection->sock_opts->connect_timeout%1000)*1000;
-
-            status = select(FD_SETSIZE, NULL, &write_set, NULL, &timeout);
-            switch (status) {
-            case 0: {
-                //timeout expired
-                BoltLog_info(connection->log, "[%s]: Connect timed out", BoltConnection_id(connection));
-                _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, BOLT_TIMED_OUT, "_open(%s:%d)",
-                        __FILE__, __LINE__);
-                return BOLT_STATUS_SET;
-            }
-            case 1: {
-                int so_error;
-                int so_error_len = sizeof(int);
-
-                TRY(GETSOCKETOPT(connection->socket, SOL_SOCKET, SO_ERROR, &so_error, &so_error_len),
-                        "_open(%s:%d), getsocketopt error code: %d", __FILE__, __LINE__);
-                if (so_error!=0) {
-                    _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(so_error),
-                            "_open(%s:%d), socket error code: %d", __FILE__, __LINE__, so_error);
-                    return BOLT_STATUS_SET;
-                }
-
-                break;
-            }
-            default: {
-                int last_error = _last_error_code();
-                _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
-                        "_open(%s:%d), select error code: %d", __FILE__, __LINE__, last_error);
-                return BOLT_STATUS_SET;
-            }
-            }
-        }
-
-        // revert to blocking mode
-        TRY(_socket_set_mode(connection, 1), "_open(%s:%d), _socket_set_mode error code: %d", __FILE__, __LINE__);
-    }
-    else {
-        TRY(CONNECT(connection->socket, (struct sockaddr*) (address), ADDR_SIZE(address)),
-                "_open(%s:%d), connect error code: %d", __FILE__, __LINE__);
-    }
-
-    TRY(_socket_configure(connection), "_open(%s:%d), _socket_configure error code: %d", __FILE__, __LINE__);
-    BoltTime_get_time(&connection->metrics->time_opened);
-    connection->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
-    connection->rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
-    return BOLT_SUCCESS;
-}
-
-int _secure(BoltConnection* connection, struct BoltTrust* trust)
-{
-    int status = 1;
-
-    BoltLog_info(connection->log, "[%s]: Securing socket", BoltConnection_id(connection));
-
-    if (connection->ssl_context==NULL) {
-        connection->ssl_context = create_ssl_ctx(trust, connection->address->host, connection->log, connection->id);
-        connection->owns_ssl_context = 1;
-    }
-
-    connection->ssl = SSL_new(connection->ssl_context);
-
-    // Link to underlying socket
-    if (status) {
-        status = SSL_set_fd(connection->ssl, connection->socket);
-
-        if (!status) {
-            _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, BOLT_TLS_ERROR,
-                    "_secure(%s:%d), SSL_set_fd returned: %d", __FILE__, __LINE__, status);
-
-        }
-    }
-
-    // Enable SNI
-    if (status) {
-        status = SSL_set_tlsext_host_name(connection->ssl, connection->address->host);
-
-        if (!status) {
-            _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, BOLT_TLS_ERROR,
-                    "_secure(%s:%d), SSL_set_tlsext_host_name returned: %d", __FILE__, __LINE__, status);
-
-        }
-    }
-
-    if (status) {
-        status = SSL_connect(connection->ssl);
-        if (status==1) {
-            return 0;
-        }
-
-        _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, BOLT_TLS_ERROR,
-                "_secure(%s:%d), SSL_connect returned: %d",
-                __FILE__, __LINE__, status);
-    }
-
-    SSL_free(connection->ssl);
-    if (connection->owns_ssl_context) {
-        SSL_CTX_free(connection->ssl_context);
-    }
-    connection->owns_ssl_context = 0;
-    connection->ssl_context = NULL;
-    connection->ssl = NULL;
-
-    return -1;
+    _set_status_with_ctx(connection, state, connection->comm->status->error, connection->comm->status->error_ctx);
 }
 
 void _close(BoltConnection* connection)
@@ -520,265 +148,14 @@ void _close(BoltConnection* connection)
         connection->protocol_version = 0;
     }
 
-#if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
-    struct sigaction ignore_act, previous_act;
-    memset(&ignore_act, '\0', sizeof(ignore_act));
-    memset(&previous_act, '\0', sizeof(previous_act));
-    ignore_act.sa_handler = SIG_IGN;
-    ignore_act.sa_flags = 0;
-    if (sigaction(SIGPIPE, &ignore_act, &previous_act)<0) {
-        int last_error = _last_error_code();
-        _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
-                "_send(%s:%d), unable to install ignore handler for SIGPIPE: %d", __FILE__, __LINE__,
-                last_error);
+    if (connection->comm!=NULL) {
+        BoltCommunication_close(connection->comm, BoltConnection_id(connection));
+        BoltCommunication_destroy(connection->comm);
+        connection->comm = NULL;
     }
-#endif
 
-    switch (connection->transport) {
-    case BOLT_TRANSPORT_PLAINTEXT: {
-        SHUTDOWN(connection->socket, SHUT_RDWR);
-        CLOSE(connection->socket);
-        break;
-    }
-    case BOLT_TRANSPORT_ENCRYPTED: {
-        if (connection->ssl!=NULL) {
-            SSL_shutdown(connection->ssl);
-            SSL_free(connection->ssl);
-            connection->ssl = NULL;
-        }
-        if (connection->ssl_context!=NULL && connection->owns_ssl_context) {
-            SSL_CTX_free(connection->ssl_context);
-            connection->ssl_context = NULL;
-            connection->owns_ssl_context = 0;
-        }
-        SHUTDOWN(connection->socket, SHUT_RDWR);
-        CLOSE(connection->socket);
-        break;
-    }
-    }
     BoltTime_get_time(&connection->metrics->time_closed);
-    connection->socket = 0;
     _set_status(connection, BOLT_CONNECTION_STATE_DISCONNECTED, BOLT_SUCCESS);
-
-#if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
-    if (sigaction(SIGPIPE, &previous_act, NULL)<0) {
-        int last_error = _last_error_code();
-        _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
-                "_send(%s:%d), unable to revert to previous handler for SIGPIPE: %d", __FILE__, __LINE__,
-                last_error);
-    }
-#endif
-}
-
-int _send(BoltConnection* connection, const char* data, int size)
-{
-    if (size==0) {
-        return BOLT_SUCCESS;
-    }
-
-#if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
-    struct sigaction ignore_act, previous_act;
-#if defined(MSG_NOSIGNAL)
-    if (connection->transport==BOLT_TRANSPORT_ENCRYPTED) {
-#endif
-        memset(&ignore_act, '\0', sizeof(ignore_act));
-        memset(&previous_act, '\0', sizeof(previous_act));
-        ignore_act.sa_handler = SIG_IGN;
-        ignore_act.sa_flags = 0;
-        if (sigaction(SIGPIPE, &ignore_act, &previous_act)<0) {
-            int last_error = _last_error_code();
-            _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
-                    "_send(%s:%d), unable to install ignore handler for SIGPIPE: %d", __FILE__, __LINE__,
-                    last_error);
-            return BOLT_STATUS_SET;
-        }
-#if defined(MSG_NOSIGNAL)
-    }
-#endif
-#endif
-    int status = BOLT_SUCCESS;
-    int remaining = size;
-    int total_sent = 0;
-    while (total_sent<size) {
-        int sent = 0;
-        switch (connection->transport) {
-        case BOLT_TRANSPORT_PLAINTEXT: {
-            sent = TRANSMIT(connection->socket, data+total_sent, remaining, 0);
-            break;
-        }
-        case BOLT_TRANSPORT_ENCRYPTED: {
-            sent = TRANSMIT_S(connection->ssl, data+total_sent, remaining, 0);
-            break;
-        }
-        }
-
-        if (sent>=0) {
-            connection->metrics->bytes_sent += sent;
-            total_sent += sent;
-            remaining -= sent;
-        }
-        else {
-            switch (connection->transport) {
-            case BOLT_TRANSPORT_PLAINTEXT: {
-                int last_error = _last_error_code();
-                _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
-                        "_send(%s:%d), send error code: %d", __FILE__, __LINE__, last_error);
-                BoltLog_error(connection->log, "[%s]: Socket error %d on transmit", BoltConnection_id(connection),
-                        connection->status->error);
-                break;
-            }
-            case BOLT_TRANSPORT_ENCRYPTED: {
-                int last_error = 0, ssl_error = 0;
-                int last_error_transformed = _last_error_code_ssl(connection, sent, &ssl_error, &last_error);
-                _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, last_error_transformed,
-                        "_send(%s:%d), send_s error code: %d, underlying error code: %d", __FILE__, __LINE__, ssl_error,
-                        last_error);
-                BoltLog_error(connection->log, "[%s]: SSL error %d on transmit", BoltConnection_id(connection),
-                        connection->status->error);
-                break;
-            }
-            }
-
-            status = BOLT_TRANSPORT_UNSUPPORTED;
-            break;
-        }
-    }
-    if (status==BOLT_SUCCESS) {
-        BoltLog_info(connection->log, "[%s]: (Sent %d of %d bytes)", BoltConnection_id(connection), total_sent, size);
-    }
-#if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
-#if defined(MSG_NOSIGNAL)
-    if (connection->transport==BOLT_TRANSPORT_ENCRYPTED) {
-#endif
-        if (sigaction(SIGPIPE, &previous_act, NULL)<0) {
-            int last_error = _last_error_code();
-            _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
-                    "_send(%s:%d), unable to revert to previous handler for SIGPIPE: %d", __FILE__, __LINE__,
-                    last_error);
-            return BOLT_STATUS_SET;
-        }
-#if defined(MSG_NOSIGNAL)
-    }
-#endif
-#endif
-    return status;
-}
-
-/**
- * Attempt to receive between min_size and max_size bytes.
- *
- * @param connection
- * @param buffer
- * @param min_size
- * @param max_size
- * @return
- */
-int _receive(BoltConnection* connection, char* buffer, int min_size, int max_size, int* received)
-{
-    if (min_size==0) {
-        return BOLT_SUCCESS;
-    }
-
-#if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
-    struct sigaction ignore_act, previous_act;
-#if defined(MSG_NOSIGNAL)
-    if (connection->transport==BOLT_TRANSPORT_ENCRYPTED) {
-#endif
-        memset(&ignore_act, '\0', sizeof(ignore_act));
-        memset(&previous_act, '\0', sizeof(previous_act));
-        ignore_act.sa_handler = SIG_IGN;
-        ignore_act.sa_flags = 0;
-        if (sigaction(SIGPIPE, &ignore_act, &previous_act)<0) {
-            int last_error = _last_error_code();
-            _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
-                    "_send(%s:%d), unable to install ignore handler for SIGPIPE: %d", __FILE__, __LINE__,
-                    last_error);
-            return BOLT_STATUS_SET;
-        }
-#if defined(MSG_NOSIGNAL)
-    }
-#endif
-#endif
-
-    int status = BOLT_SUCCESS;
-    int max_remaining = max_size;
-    int total_received = 0;
-    while (total_received<min_size) {
-        int single_received = 0;
-        switch (connection->transport) {
-        case BOLT_TRANSPORT_PLAINTEXT:
-            single_received = RECEIVE(connection->socket, buffer+total_received, max_remaining, 0);
-            break;
-        case BOLT_TRANSPORT_ENCRYPTED:
-            single_received = RECEIVE_S(connection->ssl, buffer+total_received, max_remaining, 0);
-            break;
-        }
-        if (single_received>0) {
-            connection->metrics->bytes_received += single_received;
-            total_received += single_received;
-            max_remaining -= single_received;
-        }
-        else if (single_received==0) {
-            BoltLog_info(connection->log, "[%s]: Detected end of transmission", BoltConnection_id(connection));
-            _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DISCONNECTED, BOLT_END_OF_TRANSMISSION,
-                    "_receive(%s:%d), receive returned 0", __FILE__, __LINE__);
-            status = BOLT_STATUS_SET;
-            break;
-        }
-        else {
-            switch (connection->transport) {
-            case BOLT_TRANSPORT_PLAINTEXT: {
-                int last_error = _last_error_code();
-                _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
-                        "_receive(%s:%d), receive error code: %d", __FILE__, __LINE__, last_error);
-                BoltLog_error(connection->log, "[%s]: Socket error %d on receive", BoltConnection_id(connection),
-                        connection->status->error);
-                break;
-            }
-            case BOLT_TRANSPORT_ENCRYPTED: {
-                int last_error = 0, ssl_error = 0;
-                int last_error_transformed = _last_error_code_ssl(connection, single_received, &ssl_error,
-                        &last_error);
-                _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, last_error_transformed,
-                        "_receive(%s:%d), receive_s error code: %d, underlying error code: %d", __FILE__, __LINE__,
-                        ssl_error, last_error);
-                BoltLog_error(connection->log, "[%s]: SSL error %d on receive", BoltConnection_id(connection),
-                        connection->status->error);
-                break;
-            }
-            }
-            status = BOLT_STATUS_SET;
-            break;
-        }
-    }
-    if (status==BOLT_SUCCESS) {
-        if (min_size==max_size) {
-            BoltLog_info(connection->log, "[%s]: Received %d of %d bytes", BoltConnection_id(connection),
-                    total_received,
-                    max_size);
-        }
-        else {
-            BoltLog_info(connection->log, "[%s]: Received %d of %d..%d bytes", BoltConnection_id(connection),
-                    total_received, min_size, max_size);
-        }
-    }
-    *received = total_received;
-#if USE_POSIXSOCK && !defined(SO_NOSIGPIPE)
-#if defined(MSG_NOSIGNAL)
-    if (connection->transport==BOLT_TRANSPORT_ENCRYPTED) {
-#endif
-        if (sigaction(SIGPIPE, &previous_act, NULL)<0) {
-            int last_error = _last_error_code();
-            _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, _transform_error(last_error),
-                    "_send(%s:%d), unable to revert to previous handler for SIGPIPE: %d", __FILE__, __LINE__,
-                    last_error);
-            return BOLT_STATUS_SET;
-        }
-#if defined(MSG_NOSIGNAL)
-    }
-#endif
-#endif
-    return status;
 }
 
 int handshake_b(BoltConnection* connection, int32_t _1, int32_t _2, int32_t _3, int32_t _4)
@@ -790,22 +167,29 @@ int handshake_b(BoltConnection* connection, int32_t _1, int32_t _2, int32_t _3, 
     memcpy_be(&handshake[0x08], &_2, 4);
     memcpy_be(&handshake[0x0C], &_3, 4);
     memcpy_be(&handshake[0x10], &_4, 4);
-    TRY(_send(connection, &handshake[0], 20), "handshake_b(%s:%d), _send error code: %d", __FILE__, __LINE__);
+    int status = BoltCommunication_send(connection->comm, handshake, 20, BoltConnection_id(connection));
+    if (status!=BOLT_SUCCESS) {
+        _set_status_from_comm(connection, BOLT_CONNECTION_STATE_DEFUNCT);
+        return BOLT_STATUS_SET;
+    }
     int received = 0;
-    TRY(_receive(connection, &handshake[0], 4, 4, &received), "handshake_b(%s:%d), _receive error code: %d", __FILE__,
-            __LINE__);
+    status = BoltCommunication_receive(connection->comm, handshake, 4, 4, &received, BoltConnection_id(connection));
+    if (status!=BOLT_SUCCESS) {
+        _set_status_from_comm(connection, BOLT_CONNECTION_STATE_DEFUNCT);
+        return BOLT_STATUS_SET;
+    }
     memcpy_be(&connection->protocol_version, &handshake[0], 4);
     BoltLog_info(connection->log, "[%s]: <SET protocol_version=%d>", BoltConnection_id(connection),
             connection->protocol_version);
     switch (connection->protocol_version) {
     case 1:
-        connection->protocol = BoltProtocolV1_create_protocol(connection);
+        connection->protocol = BoltProtocolV1_create_protocol();
         return BOLT_SUCCESS;
     case 2:
-        connection->protocol = BoltProtocolV2_create_protocol(connection);
+        connection->protocol = BoltProtocolV2_create_protocol();
         return BOLT_SUCCESS;
     case 3:
-        connection->protocol = BoltProtocolV3_create_protocol(connection);
+        connection->protocol = BoltProtocolV3_create_protocol();
         return BOLT_SUCCESS;
     default:
         _close(connection);
@@ -820,6 +204,7 @@ BoltConnection* BoltConnection_create()
     memset(connection, 0, size);
     connection->status = BoltStatus_create_with_ctx(ERROR_CTX_SIZE);
     connection->metrics = BoltMem_allocate(sizeof(BoltConnectionMetrics));
+    memset(connection->metrics, 0, sizeof(BoltConnectionMetrics));
     return connection;
 }
 
@@ -838,7 +223,7 @@ int32_t
 BoltConnection_open(BoltConnection* connection, BoltTransport transport, struct BoltAddress* address,
         struct BoltTrust* trust, struct BoltLog* log, struct BoltSocketOptions* sock_opts)
 {
-    if (connection->status!=BOLT_CONNECTION_STATE_DISCONNECTED) {
+    if (connection->status->state!=BOLT_CONNECTION_STATE_DISCONNECTED) {
         BoltConnection_close(connection);
     }
     // Id buffer composed of local&remote Endpoints
@@ -847,57 +232,33 @@ BoltConnection_open(BoltConnection* connection, BoltTransport transport, struct 
     connection->log = log;
     // Store connection info
     connection->address = BoltAddress_create(address->host, address->port);
-    // Store socket options
-    connection->sock_opts = sock_opts;
-    for (int i = 0; i<address->n_resolved_hosts; i++) {
-        const int opened = _open(connection, transport, &address->resolved_hosts[i]);
-        if (opened==BOLT_SUCCESS) {
-            if (connection->transport==BOLT_TRANSPORT_ENCRYPTED) {
-                const int secured = _secure(connection, trust);
-                if (secured==0) {
-                    TRY(handshake_b(connection, 3, 2, 1, 0), "BoltConnection_open(%s:%d), handshake_b error code: %d",
-                            __FILE__, __LINE__);
-                }
-                else {
-                    return connection->status->error;
-                }
-            }
-            else {
-                TRY(handshake_b(connection, 3, 2, 1, 0), "BoltConnection_open(%s:%d), handshake_b error code: %d",
-                        __FILE__, __LINE__);
-            }
 
-            char resolved_host[MAX_IPADDR_LEN], resolved_port[6];
-            int resolved_family = BoltAddress_copy_resolved_host(address, i, resolved_host, MAX_IPADDR_LEN);
-            sprintf(resolved_port, "%d", address->resolved_port);
-            connection->resolved_address = BoltAddress_create(resolved_host, resolved_port);
-            BoltLog_info(connection->log, "[%s]: Remote endpoint is %s:%s", BoltConnection_id(connection),
-                    resolved_host, resolved_port);
-
-            struct sockaddr_storage local_addr;
-            socklen_t local_addr_size =
-                    resolved_family==AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
-            TRY(getsockname(connection->socket, (struct sockaddr*) &local_addr, &local_addr_size),
-                    "BoltConnection_open(%s:%d), getsockname error code: %d", __FILE__, __LINE__);
-
-            char local_host[MAX_IPADDR_LEN], local_port[6];
-            TRY(getnameinfo((const struct sockaddr*) &local_addr, local_addr_size, local_host, MAX_IPADDR_LEN,
-                    local_port, 6, NI_NUMERICHOST | NI_NUMERICSERV),
-                    "BoltConnection_open(%s:%d), getnameinfo error code: %d", __FILE__, __LINE__);
-            connection->local_address = BoltAddress_create(local_host, local_port);
-            BoltLog_info(connection->log, "[%s]: Local endpoint is %s:%s", BoltConnection_id(connection), local_host,
-                    local_port);
-
-            _set_status(connection, BOLT_CONNECTION_STATE_CONNECTED, BOLT_SUCCESS);
-            break;
-        }
+    switch (transport) {
+    case BOLT_TRANSPORT_PLAINTEXT:
+        connection->comm = BoltCommunication_create_plain(sock_opts, log);
+        break;
+    case BOLT_TRANSPORT_ENCRYPTED:
+        connection->comm = BoltCommunication_create_secure(connection->sec_context, trust, sock_opts, log,
+                connection->address->host, connection->id);
+        break;
     }
-    if (connection->status->state==BOLT_CONNECTION_STATE_DISCONNECTED) {
-        _set_status_with_ctx(connection, BOLT_CONNECTION_STATE_DEFUNCT, BOLT_NO_VALID_ADDRESS,
-                "BoltConnection_open(%s:%d)", __FILE__,
+
+    int status = BoltCommunication_open(connection->comm, address, connection->id);
+    if (status==BOLT_SUCCESS) {
+        BoltTime_get_time(&connection->metrics->time_opened);
+        connection->tx_buffer = BoltBuffer_create(INITIAL_TX_BUFFER_SIZE);
+        connection->rx_buffer = BoltBuffer_create(INITIAL_RX_BUFFER_SIZE);
+
+        TRY(handshake_b(connection, 3, 2, 1, 0), "BoltConnection_open(%s:%d), handshake_b error code: %d", __FILE__,
                 __LINE__);
-        return -1;
+
+        _set_status(connection, BOLT_CONNECTION_STATE_CONNECTED, BOLT_SUCCESS);
     }
+    else {
+        _set_status_from_comm(connection, BOLT_CONNECTION_STATE_DEFUNCT);
+        return BOLT_STATUS_SET;
+    }
+
     return connection->status->state==BOLT_CONNECTION_STATE_READY ? BOLT_SUCCESS : connection->status->error;
 }
 
@@ -918,14 +279,6 @@ void BoltConnection_close(BoltConnection* connection)
         BoltAddress_destroy((struct BoltAddress*) connection->address);
         connection->address = NULL;
     }
-    if (connection->resolved_address!=NULL) {
-        BoltAddress_destroy((struct BoltAddress*) connection->resolved_address);
-        connection->resolved_address = NULL;
-    }
-    if (connection->local_address!=NULL) {
-        BoltAddress_destroy((struct BoltAddress*) connection->local_address);
-        connection->local_address = NULL;
-    }
     if (connection->id!=NULL) {
         BoltMem_deallocate(connection->id, MAX_ID_LEN);
         connection->id = NULL;
@@ -935,10 +288,14 @@ void BoltConnection_close(BoltConnection* connection)
 int32_t BoltConnection_send(BoltConnection* connection)
 {
     int size = BoltBuffer_unloadable(connection->tx_buffer);
-    TRY(_send(connection, BoltBuffer_unload_pointer(connection->tx_buffer, size), size),
-            "BoltConnection_send(%s:%d), _send error code: %d", __FILE__, __LINE__);
+    int status = BoltCommunication_send(connection->comm, BoltBuffer_unload_pointer(connection->tx_buffer, size), size,
+            BoltConnection_id(connection));
+    if (status!=BOLT_SUCCESS) {
+        _set_status_from_comm(connection, BOLT_CONNECTION_STATE_DEFUNCT);
+        status = BOLT_STATUS_SET;
+    }
     BoltBuffer_compact(connection->tx_buffer);
-    return 0;
+    return status;
 }
 
 int BoltConnection_receive(BoltConnection* connection, char* buffer, int size)
@@ -955,8 +312,13 @@ int BoltConnection_receive(BoltConnection* connection, char* buffer, int size)
             }
             max_size = delta>max_size ? delta : max_size;
             int received = 0;
-            TRY(_receive(connection, BoltBuffer_load_pointer(connection->rx_buffer, max_size), delta, max_size,
-                    &received), "BoltConnection_receive(%s:%d), _receive error code: %d", __FILE__, __LINE__);
+            int status = BoltCommunication_receive(connection->comm,
+                    BoltBuffer_load_pointer(connection->rx_buffer, max_size), delta, max_size,
+                    &received, BoltConnection_id(connection));
+            if (status!=BOLT_SUCCESS) {
+                _set_status_from_comm(connection, BOLT_CONNECTION_STATE_DEFUNCT);
+                return BOLT_STATUS_SET;
+            }
             // adjust the buffer extent based on the actual amount of data received
             connection->rx_buffer->extent = connection->rx_buffer->extent-max_size+received;
             delta -= received;
@@ -1210,12 +572,12 @@ const BoltAddress* BoltConnection_address(BoltConnection* connection)
 
 const BoltAddress* BoltConnection_remote_endpoint(BoltConnection* connection)
 {
-    return connection->resolved_address;
+    return connection->comm!=NULL ? BoltCommunication_remote_endpoint(connection->comm) : NULL;
 }
 
 const BoltAddress* BoltConnection_local_endpoint(BoltConnection* connection)
 {
-    return connection->local_address;
+    return connection->comm!=NULL ? BoltCommunication_local_endpoint(connection->comm) : NULL;
 }
 
 const char* BoltConnection_last_bookmark(BoltConnection* connection)
