@@ -116,15 +116,24 @@ struct BoltLog* create_logger(int enabled)
     BoltLog_set_warning_func(log, enabled ? log_to_stderr : NULL);
     BoltLog_set_info_func(log, enabled ? log_to_stderr : NULL);
     BoltLog_set_error_func(log, log_to_stderr);
-//    log->debug_enabled = enabled;
-//    log->info_enabled = enabled;
-//    log->warning_enabled = enabled;
-//    log->error_enabled = enabled;
-//    log->debug_logger = log_to_stderr;
-//    log->info_logger = log_to_stderr;
-//    log->warning_logger = log_to_stderr;
-//    log->error_logger = log_to_stderr;
     return log;
+}
+
+void app_help()
+{
+    fprintf(stderr, "seabolt help\n");
+    fprintf(stderr, "seabolt debug <cypher>\n");
+    fprintf(stderr, "seabolt perf <warmup_times> <actual_times> <cypher>\n");
+    fprintf(stderr, "seabolt run <cypher>\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "supported environment variables\n");
+    fprintf(stderr, "  %-16s: 0 for Direct Driver, 1 for Routing (Default: 0)\n", "BOLT_ROUTING");
+    fprintf(stderr, "  %-16s: WRITE for write mode, READ for read mode (Default: WRITE)\n", "BOLT_ACCESS_MODE");
+    fprintf(stderr, "  %-16s: 0 for non-encrypted communication, 1 for TLS (Default: 1)\n", "BOLT_SECURE");
+    fprintf(stderr, "  %-16s: Hostname to connect to (Default: localhost)\n", "BOLT_HOST");
+    fprintf(stderr, "  %-16s: Port to connect to (Default: 7687)\n", "BOLT_PORT");
+    fprintf(stderr, "  %-16s: Username, set to empty to disable authentication token (Default: neo4j)\n", "BOLT_USER");
+    fprintf(stderr, "  %-16s: Password\n", "BOLT_PASSWORD");
 }
 
 struct Application* app_create(int argc, char** argv)
@@ -136,6 +145,20 @@ struct Application* app_create(int argc, char** argv)
     const char* BOLT_CONFIG_PORT = getenv_or_default("BOLT_PORT", "7687");
     const char* BOLT_CONFIG_USER = getenv_or_default("BOLT_USER", "neo4j");
     const char* BOLT_CONFIG_PASSWORD = getenv("BOLT_PASSWORD");
+
+    // Verify environment variables
+    int valid_config = strcmp(BOLT_CONFIG_ROUTING, "")!=0 && strcmp(BOLT_CONFIG_ACCESS_MODE, "")!=0
+            && strcmp(BOLT_CONFIG_SECURE, "")!=0 && strcmp(BOLT_CONFIG_HOST, "")!=0 && strcmp(BOLT_CONFIG_PORT, "")!=0;
+    if (!valid_config) {
+        app_help();
+        exit(EXIT_FAILURE);
+    }
+
+    // Verify password is provided when user is set
+    if (strcmp(BOLT_CONFIG_USER, "")!=0 && (BOLT_CONFIG_PASSWORD==NULL || strcmp(BOLT_CONFIG_PASSWORD, "")==0)) {
+        app_help();
+        exit(EXIT_FAILURE);
+    }
 
     struct Application* app = malloc(sizeof(struct Application));
 
@@ -197,7 +220,14 @@ struct Application* app_create(int argc, char** argv)
     BoltConfig_set_max_pool_size(config, 10);
     BoltConfig_set_log(config, log);
 
-    struct BoltValue* auth_token = BoltAuth_basic(BOLT_CONFIG_USER, BOLT_CONFIG_PASSWORD, NULL);
+    struct BoltValue* auth_token = NULL;
+    if (strcmp(BOLT_CONFIG_USER, "")!=0) {
+        auth_token = BoltAuth_basic(BOLT_CONFIG_USER, BOLT_CONFIG_PASSWORD, NULL);
+    }
+    else {
+        auth_token = BoltAuth_none();
+    }
+
     struct BoltAddress* address = BoltAddress_create((char*) BOLT_CONFIG_HOST, (char*) BOLT_CONFIG_PORT);
 
     app->connector = BoltConnector_create(address, auth_token, config);
@@ -356,7 +386,6 @@ int app_run(struct Application* app, const char* cypher)
 long run_fetch(const struct Application* app, const char* cypher)
 {
     long record_count = 0;
-    //BoltConnection_load_bookmark(bolt->connection, "tx:1234");
     BoltConnection_load_begin_request(app->connection);
     BoltConnection_set_run_cypher(app->connection, cypher, strlen(cypher), 0);
     BoltConnection_load_run_request(app->connection);
@@ -409,15 +438,6 @@ int app_perf(struct Application* app, long warmup_times, long actual_times, cons
     return 0;
 }
 
-void app_help()
-{
-    fprintf(stderr, "seabolt help\n");
-    fprintf(stderr, "seabolt debug <cypher>\n");
-    fprintf(stderr, "seabolt perf <warmup_times> <actual_times> <cypher>\n");
-    fprintf(stderr, "seabolt run <cypher>\n");
-    exit(EXIT_SUCCESS);
-}
-
 int main(int argc, char* argv[])
 {
     Bolt_startup();
@@ -428,7 +448,7 @@ int main(int argc, char* argv[])
     case CMD_NONE:
     case CMD_HELP:
         app_help();
-        break;
+        exit(EXIT_SUCCESS);
     case CMD_DEBUG:
         app_debug(app, argv[app->first_arg_index]);
         break;
