@@ -46,6 +46,7 @@ extern "C"
 #define BOLT_USER       SETTING("BOLT_USER", "neo4j")
 #define BOLT_PASSWORD   SETTING("BOLT_PASSWORD", "password")
 #define BOLT_USER_AGENT SETTING("BOLT_USER_AGENT", "seabolt/1.0.0a")
+#define BOLT_LOG        SETTING("BOLT_LOG", "error")
 
 static struct BoltAddress BOLT_IPV6_ADDRESS{(char*) BOLT_IPV6_HOST, (char*) BOLT_PORT, 0, NULL, 0, NULL};
 

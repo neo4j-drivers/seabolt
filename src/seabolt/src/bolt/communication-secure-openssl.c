@@ -264,7 +264,7 @@ int secure_openssl_open(BoltCommunication* comm, const struct sockaddr_storage* 
     }
 
     if (ctx->sec_ctx==NULL) {
-        ctx->sec_ctx = BoltSecurityContext_create(ctx->trust, ctx->hostname, comm->log);
+        ctx->sec_ctx = BoltSecurityContext_create(ctx->trust, ctx->hostname, comm->log, ctx->id);
         ctx->owns_sec_ctx = 1;
     }
 
@@ -377,8 +377,8 @@ int secure_openssl_destroy(BoltCommunication* comm)
     if (ctx!=NULL) {
         BoltCommunication_destroy(ctx->plain_comm);
 
-        BoltMem_deallocate(ctx->hostname, strlen(ctx->hostname));
-        BoltMem_deallocate(ctx->id, strlen(ctx->id));
+        BoltMem_deallocate(ctx->hostname, strlen(ctx->hostname)+1);
+        BoltMem_deallocate(ctx->id, strlen(ctx->id)+1);
 
         BoltMem_deallocate(ctx, sizeof(OpenSSLContext));
         comm->context = NULL;
