@@ -262,7 +262,7 @@ add_custom_command(
         -P ${PROJECT_SOURCE_DIR}/cmake/PkgConfigFiles.cmake
 )
 
-if (NOT_ON_WINDOWS OR WITH_TLS_SECURE_CHANNEL)
+if (NOT ON_WINDOWS OR WITH_TLS_SECURE_CHANNEL)
     add_custom_command(
             TARGET ${SEABOLT_STATIC} POST_BUILD
             COMMAND
