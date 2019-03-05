@@ -21,6 +21,13 @@
 
 #include "config.h"
 
+/**
+ * Use BOLT_SCHEME_CONNECTION to establish connections on-demand to a single server without
+ * any connection pooling kicking in. The returned connection will behave as
+ * BOLT_SCHEME_DIRECT.
+ */
+#define BOLT_SCHEME_DIRECT_UNPOOLED 2
+
 struct BoltTrust {
     char* certs;
     uint64_t certs_len;
