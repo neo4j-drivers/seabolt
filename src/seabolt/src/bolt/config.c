@@ -143,7 +143,7 @@ int32_t BoltTrust_set_skip_verify_hostname(BoltTrust* trust, int32_t skip_verify
 BoltConfig* BoltConfig_create()
 {
     BoltConfig* config = BoltMem_allocate(sizeof(BoltConfig));
-    config->mode = BOLT_MODE_DIRECT;
+    config->scheme = BOLT_SCHEME_DIRECT;
     config->transport = BOLT_TRANSPORT_ENCRYPTED;
     config->trust = NULL;
     config->user_agent = NULL;
@@ -161,7 +161,7 @@ BoltConfig* BoltConfig_clone(BoltConfig* config)
 {
     BoltConfig* clone = BoltConfig_create();
     if (config!=NULL) {
-        BoltConfig_set_mode(clone, config->mode);
+        BoltConfig_set_scheme(clone, config->scheme);
         BoltConfig_set_transport(clone, config->transport);
         BoltConfig_set_trust(clone, config->trust);
         BoltConfig_set_user_agent(clone, config->user_agent);
@@ -199,14 +199,14 @@ void BoltConfig_destroy(BoltConfig* config)
     BoltMem_deallocate(config, sizeof(BoltConfig));
 }
 
-BoltMode BoltConfig_get_mode(BoltConfig* config)
+BoltScheme BoltConfig_get_scheme(BoltConfig* config)
 {
-    return config->mode;
+    return config->scheme;
 }
 
-int32_t BoltConfig_set_mode(BoltConfig* config, BoltMode mode)
+int32_t BoltConfig_set_scheme(BoltConfig* config, BoltScheme scheme)
 {
-    config->mode = mode;
+    config->scheme = scheme;
     return BOLT_SUCCESS;
 }
 

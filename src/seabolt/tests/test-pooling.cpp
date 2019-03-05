@@ -27,7 +27,7 @@ SCENARIO("Test using a pooled connection", "[integration][ipv6][secure][pooling]
     GIVEN("a new connection pool") {
         const auto auth_token = BoltAuth_basic(BOLT_USER, BOLT_PASSWORD, NULL);
         struct BoltTrust trust{nullptr, 0, 1, 1};
-        struct BoltConfig config{BOLT_MODE_DIRECT, BOLT_TRANSPORT_ENCRYPTED, &trust, BOLT_USER_AGENT, nullptr, nullptr,
+        struct BoltConfig config{BOLT_SCHEME_DIRECT, BOLT_TRANSPORT_ENCRYPTED, &trust, BOLT_USER_AGENT, nullptr, nullptr,
                                  nullptr,
                                  10, 0, 0, NULL};
         struct BoltConnector* connector = BoltConnector_create(&BOLT_IPV6_ADDRESS, auth_token, &config);
@@ -55,7 +55,7 @@ SCENARIO("Test reusing a pooled connection", "[integration][ipv6][secure][poolin
     GIVEN("a new connection pool with one entry") {
         const auto auth_token = BoltAuth_basic(BOLT_USER, BOLT_PASSWORD, NULL);
         struct BoltTrust trust{nullptr, 0, 1, 1};
-        struct BoltConfig config{BOLT_MODE_DIRECT, BOLT_TRANSPORT_ENCRYPTED, &trust, BOLT_USER_AGENT, nullptr, nullptr,
+        struct BoltConfig config{BOLT_SCHEME_DIRECT, BOLT_TRANSPORT_ENCRYPTED, &trust, BOLT_USER_AGENT, nullptr, nullptr,
                                  nullptr,
                                  1, 0, 0, NULL};
         struct BoltConnector* connector = BoltConnector_create(&BOLT_IPV6_ADDRESS, auth_token, &config);
@@ -89,7 +89,7 @@ SCENARIO("Test reusing a pooled connection that was abandoned", "[integration][i
     GIVEN("a new connection pool with one entry") {
         const auto auth_token = BoltAuth_basic(BOLT_USER, BOLT_PASSWORD, NULL);
         struct BoltTrust trust{nullptr, 0, 1, 1};
-        struct BoltConfig config{BOLT_MODE_DIRECT, BOLT_TRANSPORT_ENCRYPTED, &trust, BOLT_USER_AGENT, nullptr, nullptr,
+        struct BoltConfig config{BOLT_SCHEME_DIRECT, BOLT_TRANSPORT_ENCRYPTED, &trust, BOLT_USER_AGENT, nullptr, nullptr,
                                  nullptr, 1, 0, 0, NULL};
         struct BoltConnector* connector = BoltConnector_create(&BOLT_IPV6_ADDRESS, auth_token, &config);
         WHEN("a connection is acquired, released and acquired again") {
@@ -134,7 +134,7 @@ SCENARIO("Test running out of connections", "[integration][ipv6][secure][pooling
     GIVEN("a new connection pool with one entry") {
         const auto auth_token = BoltAuth_basic(BOLT_USER, BOLT_PASSWORD, NULL);
         struct BoltTrust trust{nullptr, 0, 1, 1};
-        struct BoltConfig config{BOLT_MODE_DIRECT, BOLT_TRANSPORT_ENCRYPTED, &trust, BOLT_USER_AGENT, nullptr, nullptr,
+        struct BoltConfig config{BOLT_SCHEME_DIRECT, BOLT_TRANSPORT_ENCRYPTED, &trust, BOLT_USER_AGENT, nullptr, nullptr,
                                  nullptr,
                                  1, 0, 0, NULL};
         struct BoltConnector* connector = BoltConnector_create(&BOLT_IPV6_ADDRESS, auth_token, &config);

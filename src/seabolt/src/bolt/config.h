@@ -26,15 +26,23 @@
 /**
  * The operating mode of the connector.
  */
-typedef int32_t BoltMode;
+typedef int32_t BoltScheme;
 /**
- * Use BOLT_MODE_DIRECT to establish direct connections towards a single server
+ * Use BOLT_SCHEME_DIRECT to establish direct connections towards a single server
  */
-#define BOLT_MODE_DIRECT    0
+#define BOLT_SCHEME_DIRECT    0
+
+#ifndef SEABOLT_NO_DEPRECATED
 /**
- * Use BOLT_MODE_ROUTING to establish routing connections towards a casual cluster.
+ * Use BOLT_SCHEME_ROUTING to establish routing connections towards a casual cluster.
+ * This is deprecated, please use BOLT_SCHEME_NEO4J instead.
  */
-#define BOLT_MODE_ROUTING   1
+#define BOLT_SCHEME_ROUTING  1
+#endif
+/**
+ * Use BOLT_SCHEME_NEO4J to establish routing first connections towards a neo4j server.
+ */
+#define BOLT_SCHEME_NEO4J     1
 
 /**
  * The transport to use for established connections.
@@ -206,21 +214,21 @@ SEABOLT_EXPORT BoltConfig* BoltConfig_create();
 SEABOLT_EXPORT void BoltConfig_destroy(BoltConfig* config);
 
 /**
- * Gets the configured \ref BoltMode "mode".
+ * Gets the configured \ref BoltScheme "scheme".
  *
  * @param config the config instance to query.
- * @return the configured \ref BoltMode "mode".
+ * @return the configured \ref BoltScheme "scheme".
  */
-SEABOLT_EXPORT BoltMode BoltConfig_get_mode(BoltConfig* config);
+SEABOLT_EXPORT BoltScheme BoltConfig_get_scheme(BoltConfig* config);
 
 /**
- * Sets the configured \ref BoltMode "mode".
+ * Sets the configured \ref BoltScheme "scheme".
  *
  * @param config the config instance to modify.
- * @param mode the \ref BoltMode "mode" to set.
+ * @param mode the \ref BoltScheme "scheme" to set.
  * @returns \ref BOLT_SUCCESS when the operation is successful, or another positive error code identifying the reason.
  */
-SEABOLT_EXPORT int32_t BoltConfig_set_mode(BoltConfig* config, BoltMode mode);
+SEABOLT_EXPORT int32_t BoltConfig_set_scheme(BoltConfig* config, BoltScheme scheme);
 
 /**
  * Gets the configured \ref BoltTransport "transport".

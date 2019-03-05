@@ -213,7 +213,7 @@ struct Application* app_create(int argc, char** argv)
 
     BoltLog* log = create_logger(app->command==CMD_DEBUG);
     BoltConfig* config = BoltConfig_create();
-    BoltConfig_set_mode(config, (strcmp(BOLT_CONFIG_ROUTING, "1")==0) ? BOLT_MODE_ROUTING : BOLT_MODE_DIRECT);
+    BoltConfig_set_scheme(config, (strcmp(BOLT_CONFIG_ROUTING, "1")==0) ? BOLT_SCHEME_NEO4J : BOLT_SCHEME_DIRECT);
     BoltConfig_set_transport(config,
             (strcmp(BOLT_CONFIG_SECURE, "1")==0) ? BOLT_TRANSPORT_ENCRYPTED : BOLT_TRANSPORT_PLAINTEXT);
     BoltConfig_set_user_agent(config, "seabolt/" SEABOLT_VERSION);

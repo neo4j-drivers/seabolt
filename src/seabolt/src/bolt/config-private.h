@@ -43,7 +43,7 @@ struct BoltSocketOptions {
 };
 
 struct BoltConfig {
-    BoltMode mode;
+    BoltScheme scheme;
     BoltTransport transport;
     struct BoltTrust* trust;
     char* user_agent;
