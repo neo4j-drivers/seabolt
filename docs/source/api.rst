@@ -32,10 +32,6 @@ BoltAddress
 
 .. doxygenfunction:: BoltAddress_port
 
-.. doxygenfunction:: BoltAddress_resolve
-
-.. doxygenfunction:: BoltAddress_copy_resolved_host
-
 
 BoltAddressSet
 --------------
@@ -127,16 +123,6 @@ BoltConnection
 --------------
 
 .. doxygentypedef:: BoltConnection
-
-.. doxygenfunction:: BoltConnection_create
-
-.. doxygenfunction:: BoltConnection_destroy
-
-.. doxygenfunction:: BoltConnection_open
-
-.. doxygenfunction:: BoltConnection_close
-
-.. doxygenfunction:: BoltConnection_init
 
 .. doxygenfunction:: BoltConnection_send
 

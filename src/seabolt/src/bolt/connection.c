@@ -30,6 +30,7 @@
 #include "v3.h"
 #include "atomic.h"
 #include "communication-plain.h"
+#include "communication-secure.h"
 
 #define INITIAL_TX_BUFFER_SIZE 8192
 #define INITIAL_RX_BUFFER_SIZE 8192
@@ -240,6 +241,9 @@ BoltConnection_open(BoltConnection* connection, BoltTransport transport, struct 
     case BOLT_TRANSPORT_ENCRYPTED:
         connection->comm = BoltCommunication_create_secure(connection->sec_context, trust, sock_opts, log,
                 connection->address->host, connection->id);
+        break;
+    case BOLT_TRANSPORT_MOCKED:
+        // Expect connection->comm to be explicitly set by the caller
         break;
     }
 
