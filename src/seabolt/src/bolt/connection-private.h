@@ -48,6 +48,7 @@ struct BoltConnectionMetrics {
 struct BoltConnection {
     /// The agent currently responsible for using this connection
     const void* agent;
+    BoltAccessMode access_mode;
 
     /// Transport type for this connection
     BoltTransport transport;

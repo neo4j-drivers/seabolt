@@ -242,8 +242,7 @@ endif ()
 include(GenerateExportHeader)
 generate_export_header(${SEABOLT_SHARED}
         BASE_NAME seabolt
-        EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-exports.h"
-        DEFINE_NO_DEPRECATED)
+        EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-exports.h")
 target_compile_definitions(${SEABOLT_STATIC}
         PUBLIC
         SEABOLT_STATIC_DEFINE)
