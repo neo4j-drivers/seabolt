@@ -30,7 +30,7 @@ SCENARIO("BoltConnection")
         }
 
         THEN("status is not null") {
-            REQUIRE(connection->status!=NULL);
+            REQUIRE(connection->status!=nullptr);
         }
 
         THEN("status->state should be DISCONNECTED") {
@@ -42,11 +42,11 @@ SCENARIO("BoltConnection")
         }
 
         THEN("status->error_ctx should not be NULL") {
-            REQUIRE(connection->status->error_ctx!=NULL);
+            REQUIRE(connection->status->error_ctx!=nullptr);
         }
 
         THEN("metrics is not null") {
-            REQUIRE(connection->metrics!=NULL);
+            REQUIRE(connection->metrics!=nullptr);
         }
 
         BoltConnection_destroy(connection);
