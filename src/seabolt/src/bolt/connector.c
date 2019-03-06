@@ -123,7 +123,9 @@ BoltConnection* BoltConnector_acquire(BoltConnector* connector, BoltAccessMode m
 void BoltConnector_release(BoltConnector* connector, BoltConnection* connection)
 {
     // Reset access mode stored in connection to its default value
-    connection->access_mode = BOLT_ACCESS_MODE_WRITE;
+    if (connection!=NULL) {
+        connection->access_mode = BOLT_ACCESS_MODE_WRITE;
+    }
 
     switch (connector->config->scheme) {
     case BOLT_SCHEME_DIRECT:
