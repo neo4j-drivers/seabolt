@@ -48,6 +48,37 @@ BoltAddress* BoltAddress_create_with_lock(const char* host, const char* port);
 
 BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, uint64_t endpoint_len);
 
+/**
+ * Resolves the original host and port into one or more IP addresses and
+ * a port number.
+ *
+ * This can be carried out more than once on the same
+ * address. Any newly-resolved addresses will replace any previously stored.
+ *
+ * The name resolution is a synchronized operation, i.e. concurrent resolution requests on the same
+ * instance are protected by a mutex.
+ *
+ * @param address the instance to be resolved.
+ * @param n_resolved number of resolved addresses that will be set upon successful resolution.
+ * @param log an optional \ref BoltLog instance to be used for logging purposes.
+ * @returns 0 for success, and non-zero error codes returned from getaddrinfo call on error.
+ */
+int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* log);
 
+/**
+ * Copies the textual representation of the resolved IP address at the specified index into an already
+ * allocated buffer.
+ *
+ * If successful, AF_INET or AF_INET6 is returned depending on the address family. If unsuccessful, -1 is returned.
+ * Failure may be a result of a system problem or because the supplied buffer is too small for the address.
+ *
+ * @param address the instance to be queried.
+ * @param index index of the resolved IP address
+ * @param buffer destination buffer to write the IP address's string representation
+ * @param buffer_size size of the buffer
+ * @return address family (AF_INET or AF_INET6) or -1 on error
+ */
+int32_t
+BoltAddress_copy_resolved_host(BoltAddress* address, int32_t index, char* buffer, int32_t buffer_size);
 
 #endif //SEABOLT_ADDRESS_PRIVATE_H

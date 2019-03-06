@@ -32,10 +32,6 @@ BoltAddress
 
 .. doxygenfunction:: BoltAddress_port
 
-.. doxygenfunction:: BoltAddress_resolve
-
-.. doxygenfunction:: BoltAddress_copy_resolved_host
-
 
 BoltAddressSet
 --------------
@@ -78,9 +74,9 @@ BoltConfig
 
 .. doxygenfunction:: BoltConfig_destroy
 
-.. doxygenfunction:: BoltConfig_get_mode
+.. doxygenfunction:: BoltConfig_get_scheme
 
-.. doxygenfunction:: BoltConfig_set_mode
+.. doxygenfunction:: BoltConfig_set_scheme
 
 .. doxygenfunction:: BoltConfig_get_transport
 
@@ -127,16 +123,6 @@ BoltConnection
 --------------
 
 .. doxygentypedef:: BoltConnection
-
-.. doxygenfunction:: BoltConnection_create
-
-.. doxygenfunction:: BoltConnection_destroy
-
-.. doxygenfunction:: BoltConnection_open
-
-.. doxygenfunction:: BoltConnection_close
-
-.. doxygenfunction:: BoltConnection_init
 
 .. doxygenfunction:: BoltConnection_send
 
@@ -300,14 +286,16 @@ BoltLog
 .. doxygenfunction:: BoltLog_set_debug_func
 
 
-BoltMode
+BoltScheme
 --------
 
-.. doxygentypedef:: BoltMode
+.. doxygentypedef:: BoltScheme
 
-.. doxygendefine:: BOLT_MODE_DIRECT
+.. doxygendefine:: BOLT_SCHEME_DIRECT
 
-.. doxygendefine:: BOLT_MODE_ROUTING
+.. doxygendefine:: BOLT_SCHEME_ROUTING
+
+.. doxygendefine:: BOLT_SCHEME_NEO4J
 
 
 BoltSocketOptions

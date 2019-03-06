@@ -21,12 +21,14 @@ list(APPEND private_source_files
         ${CMAKE_CURRENT_LIST_DIR}/bolt/connector.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/communication.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/communication-plain.c
+        ${CMAKE_CURRENT_LIST_DIR}/bolt/communication-mock.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/direct-pool.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/error.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/lifecycle.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/log.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/mem.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/name.c
+        ${CMAKE_CURRENT_LIST_DIR}/bolt/no-pool.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/packstream.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/protocol.c
         ${CMAKE_CURRENT_LIST_DIR}/bolt/routing-pool.c
@@ -240,8 +242,7 @@ endif ()
 include(GenerateExportHeader)
 generate_export_header(${SEABOLT_SHARED}
         BASE_NAME seabolt
-        EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-exports.h"
-        DEFINE_NO_DEPRECATED)
+        EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/${INSTALL_INCLUDEDIR}/bolt/bolt-exports.h")
 target_compile_definitions(${SEABOLT_STATIC}
         PUBLIC
         SEABOLT_STATIC_DEFINE)

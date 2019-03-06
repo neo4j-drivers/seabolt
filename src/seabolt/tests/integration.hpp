@@ -36,6 +36,7 @@ extern "C"
 #include "bolt/direct-pool.h"
 #include "bolt/v3.h"
 #include "bolt/communication.h"
+#include "bolt/communication-mock.h"
 }
 
 #define SETTING(name, default_value) ((char*)((getenv(name) == nullptr) ? (default_value) : getenv(name)))
@@ -60,6 +61,8 @@ struct BoltConnection* bolt_open_init_b(BoltTransport transport, const char* hos
         const char* user_agent, const struct BoltValue* auth_token);
 
 struct BoltConnection* bolt_open_init_default();
+
+struct BoltConnection* bolt_open_init_mocked(int32_t bolt_version, BoltLog* logger);
 
 struct BoltValue* bolt_basic_auth(const char* username, const char* password);
 

@@ -37,6 +37,10 @@
 #define TX_TIMEOUT_KEY_SIZE 10
 #define TX_METADATA_KEY "tx_metadata"
 #define TX_METADATA_KEY_SIZE 11
+#define MODE_KEY "mode"
+#define MODE_KEY_SIZE 4
+#define READ_MODE_VALUE "r"
+#define READ_MODE_VALUE_SIZE 1
 #define BOOKMARK_KEY "bookmark"
 #define BOOKMARK_KEY_SIZE 8
 #define FIELDS_KEY "fields"
@@ -494,8 +498,7 @@ int _set_tx_timeout(struct BoltValue* metadata, int64_t tx_timeout)
     }
 
     if (tx_timeout_value==NULL) {
-        int32_t
-                index = metadata->size;
+        int32_t index = metadata->size;
         BoltValue_format_as_Dictionary(metadata, metadata->size+1);
         BoltDictionary_set_key(metadata, index, TX_TIMEOUT_KEY, TX_TIMEOUT_KEY_SIZE);
         tx_timeout_value = BoltDictionary_value(metadata, index);
@@ -544,6 +547,23 @@ int _set_tx_metadata(struct BoltValue* metadata, struct BoltValue* tx_metadata)
     return BOLT_SUCCESS;
 }
 
+int _set_access_mode(struct BoltValue* metadata, BoltAccessMode access_mode)
+{
+    if (access_mode==BOLT_ACCESS_MODE_READ) {
+        struct BoltValue* mode_value = BoltDictionary_value_by_key(metadata, MODE_KEY, MODE_KEY_SIZE);
+        if (mode_value==NULL) {
+            int32_t index = metadata->size;
+            BoltValue_format_as_Dictionary(metadata, metadata->size+1);
+            BoltDictionary_set_key(metadata, index, MODE_KEY, MODE_KEY_SIZE);
+            mode_value = BoltDictionary_value(metadata, index);
+        }
+
+        BoltValue_format_as_String(mode_value, READ_MODE_VALUE, READ_MODE_VALUE_SIZE);
+
+    }
+    return BOLT_SUCCESS;
+}
+
 int BoltProtocolV3_set_begin_tx_bookmark(struct BoltConnection* connection, struct BoltValue* bookmark_list)
 {
     struct BoltProtocolV3State* state = BoltProtocolV3_state(connection);
@@ -569,6 +589,8 @@ int BoltProtocolV3_set_begin_tx_metadata(struct BoltConnection* connection, stru
 int BoltProtocolV3_load_begin_tx(struct BoltConnection* connection)
 {
     struct BoltProtocolV3State* state = BoltProtocolV3_state(connection);
+    struct BoltValue* metadata = BoltMessage_param(state->begin_request, 0);
+    TRY(_set_access_mode(metadata, connection->access_mode));
     TRY(BoltProtocolV3_load_message(connection, state->begin_request, 0));
     return BOLT_SUCCESS;
 }
@@ -643,6 +665,8 @@ BoltProtocolV3_set_run_cypher_parameter(struct BoltConnection* connection, int32
 int BoltProtocolV3_load_run(struct BoltConnection* connection)
 {
     struct BoltProtocolV3State* state = BoltProtocolV3_state(connection);
+    struct BoltValue* metadata = BoltMessage_param(state->run_request, 2);
+    TRY(_set_access_mode(metadata, connection->access_mode));
     TRY(BoltProtocolV3_load_message(connection, state->run_request, 0));
     return BOLT_SUCCESS;
 }
@@ -906,7 +930,7 @@ void BoltProtocolV3_extract_metadata(struct BoltConnection* connection, struct B
                     * point to the same buffer (and that is undefined in `snprintf`):
                     */
                     while (*old_connection_id) {
-                        *state_connection_id++=*old_connection_id++;
+                        *state_connection_id++ = *old_connection_id++;
                     }
                     snprintf(state_connection_id, MAX_CONNECTION_ID_SIZE, "%s%s", CONNECTION_ID_SEPARATOR,
                             new_connection_id);

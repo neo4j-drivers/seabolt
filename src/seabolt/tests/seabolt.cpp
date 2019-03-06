@@ -104,6 +104,18 @@ struct BoltConnection* bolt_open_init_default()
     return connection;
 }
 
+struct BoltConnection* bolt_open_init_mocked(int32_t bolt_version, BoltLog* logger)
+{
+    BoltAddress* address = bolt_get_address("localhost", "7687");
+    BoltConnection* connection = BoltConnection_create();
+    connection->comm = BoltCommunication_create_mock(bolt_version, NULL, logger);
+    BoltConnection_open(connection, BOLT_TRANSPORT_MOCKED, address, NULL, logger, NULL);
+    strcpy(connection->id, "id-0");
+    connection->status->state = BOLT_CONNECTION_STATE_READY;
+    BoltAddress_destroy(address);
+    return connection;
+}
+
 void bolt_close_and_destroy_b(struct BoltConnection* connection)
 {
     BoltConnection_close(connection);
