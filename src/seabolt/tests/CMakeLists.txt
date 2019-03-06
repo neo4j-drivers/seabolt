@@ -6,6 +6,7 @@ target_sources(seabolt-test
         ${CMAKE_CURRENT_LIST_DIR}/test-addressing.cpp
         ${CMAKE_CURRENT_LIST_DIR}/test-chunking-v1.cpp
         ${CMAKE_CURRENT_LIST_DIR}/test-communication.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/test-connection.cpp
         ${CMAKE_CURRENT_LIST_DIR}/test-direct.cpp
         ${CMAKE_CURRENT_LIST_DIR}/test-pooling.cpp
         ${CMAKE_CURRENT_LIST_DIR}/test-values.cpp

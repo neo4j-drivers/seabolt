@@ -203,6 +203,7 @@ BoltConnection* BoltConnection_create()
     const size_t size = sizeof(BoltConnection);
     BoltConnection* connection = BoltMem_allocate(size);
     memset(connection, 0, size);
+    connection->access_mode = BOLT_ACCESS_MODE_WRITE;
     connection->status = BoltStatus_create_with_ctx(ERROR_CTX_SIZE);
     connection->metrics = BoltMem_allocate(sizeof(BoltConnectionMetrics));
     memset(connection->metrics, 0, sizeof(BoltConnectionMetrics));
