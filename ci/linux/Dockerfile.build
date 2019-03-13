@@ -1,11 +1,11 @@
-FROM alpine:3.8 AS build
+FROM alpine:3.9 AS build
 RUN apk add --no-cache ca-certificates cmake make g++ openssl-dev git
 ADD . /tmp/seabolt
 WORKDIR /tmp/seabolt/build-docker
 RUN cmake -D CMAKE_BUILD_TYPE=Debug -D CMAKE_INSTALL_PREFIX=dist /tmp/seabolt \
     && cmake --build . --target install
 
-FROM alpine:3.8
+FROM alpine:3.9
 RUN apk add --no-cache bash python3 openjdk8 \
     && python3 -m pip install boltkit==1.2.0
 ENV NEOCTRLARGS="-e 3.4"
