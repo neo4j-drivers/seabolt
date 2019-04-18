@@ -248,6 +248,9 @@ int secure_openssl_last_error(BoltCommunication* comm, int ssl_ret, int* ssl_err
         }
         return ctx->plain_comm->transform_error(ctx->plain_comm, *last_error);
     }
+    case SSL_ERROR_ZERO_RETURN: {
+        return BOLT_END_OF_TRANSMISSION;
+    }
     default:
         return BOLT_TLS_ERROR;
     }
