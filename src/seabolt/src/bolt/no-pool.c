@@ -36,7 +36,7 @@ static int64_t pool_seq = 0;
 int find_open_connection(struct BoltNoPool* pool, struct BoltConnection* connection)
 {
     for (int i = 0; i<pool->size; i++) {
-        struct BoltConnection* candidate = pool->connections[i];
+        BoltConnection* candidate = (BoltConnection*) pool->connections[i];
         if (candidate==connection) {
             return i;
         }
@@ -67,8 +67,9 @@ void BoltNoPool_destroy(struct BoltNoPool* pool)
             pool->address->host,
             pool->address->port);
     for (int index = 0; index<pool->size; index++) {
-        BoltConnection_close(pool->connections[index]);
-        BoltConnection_destroy(pool->connections[index]);
+        BoltConnection* connection = (BoltConnection*)pool->connections[index];
+        BoltConnection_close(connection);
+        BoltConnection_destroy(connection);
     }
     BoltMem_deallocate(pool->connections, pool->size*sizeof(BoltConnection*));
     BoltAddress_destroy(pool->address);

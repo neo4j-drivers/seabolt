@@ -22,8 +22,8 @@
 #include "address-set.h"
 
 struct BoltAddressSet {
-    int32_t size;
-    struct BoltAddress** elements;
+    volatile int32_t size;
+    volatile BoltAddress** elements;
 };
 
 #define SIZE_OF_ADDRESS_SET sizeof(struct BoltAddressSet)

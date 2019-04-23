@@ -84,7 +84,7 @@ int BoltCommunication_open(BoltCommunication* comm, BoltAddress* address, const 
 
     int status = BOLT_SUCCESS;
     for (int i = 0; i<address->n_resolved_hosts; i++) {
-        status = _open(comm, &address->resolved_hosts[i], id);
+        status = _open(comm, (struct sockaddr_storage*) &address->resolved_hosts[i], id);
         if (status==BOLT_SUCCESS) {
             BoltAddress* remote = comm->get_remote_endpoint(comm);
             BoltLog_info(comm->log, "[%s]: Remote endpoint is %s:%s", id, remote->host, remote->port);

@@ -37,8 +37,8 @@ struct BoltNoPool {
     struct BoltAddress* address;
     const struct BoltValue* auth_token;
     const struct BoltConfig* config;
-    int size;
-    BoltConnection** connections;
+    volatile int size;
+    volatile BoltConnection** connections;
 };
 
 #define SIZE_OF_NO_POOL sizeof(struct BoltNoPool)

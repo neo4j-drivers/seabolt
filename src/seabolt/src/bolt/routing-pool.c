@@ -34,24 +34,23 @@
 
 int BoltRoutingPool_ensure_server(struct BoltRoutingPool* pool, const struct BoltAddress* server)
 {
-    int index = BoltAddressSet_index_of(pool->servers, server);
+    BoltAddressSet* servers = (BoltAddressSet*) pool->servers;
+
+    int index = BoltAddressSet_index_of(servers, server);
     while (index<0) {
         // Release read lock
         BoltSync_rwlock_rdunlock(&pool->rwlock);
 
         if (BoltSync_rwlock_timedwrlock(&pool->rwlock, WRITE_LOCK_TIMEOUT)) {
             // Check once more if any other thread added this server in the mean-time
-            index = BoltAddressSet_index_of(pool->servers, server);
+            index = BoltAddressSet_index_of(servers, server);
             if (index<0) {
                 // Add and return the index (which is always the end of the set - there's no ordering in place)
-                index = BoltAddressSet_add(pool->servers, server);
+                index = BoltAddressSet_add(servers, server);
 
                 // Expand the direct pools and create a new one for this server
-                pool->server_pools = (struct BoltDirectPool**) BoltMem_reallocate(pool->server_pools,
-                        (pool->servers->size-1)*
-                                SIZE_OF_DIRECT_POOL_PTR,
-                        (pool->servers->size)*
-                                SIZE_OF_DIRECT_POOL_PTR);
+                pool->server_pools = BoltMem_reallocate(pool->server_pools,
+                        (pool->servers->size-1)*SIZE_OF_DIRECT_POOL_PTR, (pool->servers->size)*SIZE_OF_DIRECT_POOL_PTR);
                 pool->server_pools[index] = BoltDirectPool_create(server, pool->auth_token, pool->config);
             }
 
@@ -176,7 +175,7 @@ int BoltRoutingPool_update_routing_table(struct BoltRoutingPool* pool)
         BoltLog_debug(pool->config->log, "[routing]: trying routing table update from server '%s:%s'",
                 routers->elements[i]->host, routers->elements[i]->port);
 
-        int status = BoltRoutingPool_update_routing_table_from(pool, routers->elements[i]);
+        int status = BoltRoutingPool_update_routing_table_from(pool, (BoltAddress*) routers->elements[i]);
         if (status==BOLT_SUCCESS) {
             result = BOLT_SUCCESS;
             break;
@@ -197,31 +196,30 @@ void BoltRoutingPool_cleanup(struct BoltRoutingPool* pool)
     BoltAddressSet_add_all(active_servers, pool->routing_table->writers);
     BoltAddressSet_add_all(active_servers, pool->routing_table->readers);
 
-    struct BoltAddressSet* old_servers = pool->servers;
-    struct BoltDirectPool** old_server_pools = pool->server_pools;
+    volatile BoltAddressSet* old_servers = pool->servers;
+    volatile BoltDirectPool** old_server_pools = pool->server_pools;
     int old_size = old_servers->size;
 
     int cleanup_count = 0;
     int* cleanup_marker = (int*) BoltMem_allocate(old_size*sizeof(int));
     for (int i = 0; i<old_size; i++) {
-        cleanup_marker[i] = BoltAddressSet_index_of(active_servers, old_servers->elements[i])<0
-                && BoltDirectPool_connections_in_use(old_server_pools[i])==0;
+        cleanup_marker[i] = BoltAddressSet_index_of(active_servers, (BoltAddress*) old_servers->elements[i])<0
+                && BoltDirectPool_connections_in_use((BoltDirectPool*) old_server_pools[i])==0;
         cleanup_count = cleanup_count+cleanup_marker[i];
     }
 
     if (cleanup_count>0) {
         int new_size = old_size-cleanup_count;
 
-        struct BoltAddressSet* new_servers = BoltAddressSet_create();
-        struct BoltDirectPool** new_server_pools = (struct BoltDirectPool**) BoltMem_allocate(
-                new_size*SIZE_OF_DIRECT_POOL_PTR);
+        volatile BoltAddressSet* new_servers = BoltAddressSet_create();
+        volatile BoltDirectPool** new_server_pools = BoltMem_allocate(new_size*SIZE_OF_DIRECT_POOL_PTR);
 
         for (int i = 0; i<old_size; i++) {
             if (cleanup_marker[i]) {
                 continue;
             }
 
-            int index = BoltAddressSet_add(new_servers, old_servers->elements[i]);
+            int index = BoltAddressSet_add((BoltAddressSet*) new_servers, (BoltAddress*) old_servers->elements[i]);
             new_server_pools[index] = old_server_pools[i];
         }
 
@@ -230,11 +228,11 @@ void BoltRoutingPool_cleanup(struct BoltRoutingPool* pool)
 
         for (int i = 0; i<old_size; i++) {
             if (cleanup_marker[i]) {
-                BoltDirectPool_destroy(old_server_pools[i]);
+                BoltDirectPool_destroy((BoltDirectPool*) old_server_pools[i]);
             }
         }
 
-        BoltAddressSet_destroy(old_servers);
+        BoltAddressSet_destroy((BoltAddressSet*) old_servers);
         BoltMem_deallocate(old_server_pools, old_size*SIZE_OF_DIRECT_POOL_PTR);
     }
 
@@ -295,11 +293,11 @@ struct BoltAddress* BoltRoutingPool_select_least_connected(struct BoltRoutingPoo
 
     while (1) {
         // Pick the current server
-        struct BoltAddress* server = servers->elements[index];
+        BoltAddress* server = (BoltAddress*) servers->elements[index];
 
         // Retrieve related direct pool
         int pool_index = BoltRoutingPool_ensure_server(pool, server);
-        struct BoltDirectPool* server_pool = pool->server_pools[pool_index];
+        BoltDirectPool* server_pool = (BoltDirectPool*) pool->server_pools[pool_index];
 
         // Compare in use connections to what we currently have and update if this is less
         int server_active_connections = BoltDirectPool_connections_in_use(server_pool);
@@ -462,10 +460,10 @@ BoltRoutingPool_create(struct BoltAddress* address, const struct BoltValue* auth
 void BoltRoutingPool_destroy(struct BoltRoutingPool* pool)
 {
     for (int i = 0; i<pool->servers->size; i++) {
-        BoltDirectPool_destroy(pool->server_pools[i]);
+        BoltDirectPool_destroy((BoltDirectPool*) pool->server_pools[i]);
     }
     BoltMem_deallocate(pool->server_pools, pool->servers->size*SIZE_OF_DIRECT_POOL_PTR);
-    BoltAddressSet_destroy(pool->servers);
+    BoltAddressSet_destroy((BoltAddressSet*) pool->servers);
 
     RoutingTable_destroy(pool->routing_table);
 
@@ -500,7 +498,7 @@ BoltConnection* BoltRoutingPool_acquire(struct BoltRoutingPool* pool, BoltAccess
 
     BoltConnection* connection = NULL;
     if (result==BOLT_SUCCESS) {
-        connection = BoltDirectPool_acquire(pool->server_pools[server_pool_index], status);
+        connection = BoltDirectPool_acquire((BoltDirectPool*) pool->server_pools[server_pool_index], status);
         if (connection!=NULL) {
             result = BOLT_SUCCESS;
             connection->on_error_cb_state = pool;
@@ -540,7 +538,7 @@ int BoltRoutingPool_release(struct BoltRoutingPool* pool, struct BoltConnection*
         BoltConnection_close(connection);
     }
     else {
-        result = BoltDirectPool_release(pool->server_pools[server_pool_index], connection);
+        result = BoltDirectPool_release((BoltDirectPool*) pool->server_pools[server_pool_index], connection);
     }
 
     BoltSync_rwlock_rdunlock(&pool->rwlock);
