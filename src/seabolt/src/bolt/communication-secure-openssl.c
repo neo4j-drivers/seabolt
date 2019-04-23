@@ -124,8 +124,8 @@ BoltSecurityContext_create(struct BoltTrust* trust, const char* hostname, const 
     }
 
     // set auto retry
-    ulong new_mode = (ulong) SSL_CTX_set_mode(context, SSL_MODE_AUTO_RETRY);
-    if ((new_mode & (ulong) SSL_MODE_AUTO_RETRY)!=SSL_MODE_AUTO_RETRY) {
+    unsigned long new_mode = (unsigned long) SSL_CTX_set_mode(context, SSL_MODE_AUTO_RETRY);
+    if ((new_mode & (unsigned long) SSL_MODE_AUTO_RETRY)!=SSL_MODE_AUTO_RETRY) {
         BoltLog_warning(log, "[%s]: Unable to set SSL_MODE_AUTO_RETRY");
     }
 
