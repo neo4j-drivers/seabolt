@@ -27,4 +27,4 @@ ADD run_tests.sh /seabolt/
 COPY --from=build /tmp/seabolt/build-docker/bin /seabolt/build/bin/
 COPY --from=build /tmp/seabolt/build-docker/dist /seabolt/build/dist/
 WORKDIR /seabolt
-CMD PYTHON=python3 JAVA_HOME=/java/jdk-`echo $NEOCTRLARGS | grep -Po "(-e)?(\s*)\K(\d\.\d)(.\d)?"` ./run_tests.sh
+CMD PYTHON=python3 JAVA_HOME=/java/jdk-`echo $NEOCTRLARGS | sed -E 's/-e\s*//g' | cut -d. -f1,2` ./run_tests.sh
