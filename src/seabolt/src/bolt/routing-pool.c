@@ -340,7 +340,6 @@ void BoltRoutingPool_forget_server(struct BoltRoutingPool* pool, const struct Bo
     }
 
     RoutingTable_forget_server(pool->routing_table, server);
-    BoltRoutingPool_cleanup(pool);
 
     // Unlock
     BoltSync_rwlock_wrunlock(&pool->rwlock);
@@ -356,7 +355,6 @@ void BoltRoutingPool_forget_writer(struct BoltRoutingPool* pool, const struct Bo
     }
 
     RoutingTable_forget_writer(pool->routing_table, server);
-    BoltRoutingPool_cleanup(pool);
 
     // Unlock
     BoltSync_rwlock_wrunlock(&pool->rwlock);
