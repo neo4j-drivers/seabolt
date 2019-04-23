@@ -36,7 +36,7 @@ static int64_t pool_seq = 0;
 int find_open_connection(struct BoltNoPool* pool, struct BoltConnection* connection)
 {
     for (int i = 0; i<pool->size; i++) {
-        BoltConnection* candidate = (BoltConnection*) pool->connections[i];
+        BoltConnection*candidate = (BoltConnection*) pool->connections[i];
         if (candidate==connection) {
             return i;
         }
@@ -67,11 +67,11 @@ void BoltNoPool_destroy(struct BoltNoPool* pool)
             pool->address->host,
             pool->address->port);
     for (int index = 0; index<pool->size; index++) {
-        BoltConnection* connection = (BoltConnection*)pool->connections[index];
+        BoltConnection*connection = (BoltConnection*) pool->connections[index];
         BoltConnection_close(connection);
         BoltConnection_destroy(connection);
     }
-    BoltMem_deallocate(pool->connections, pool->size*sizeof(BoltConnection*));
+    BoltMem_deallocate((void*) pool->connections, pool->size*sizeof(BoltConnection*));
     BoltAddress_destroy(pool->address);
     BoltMem_deallocate(pool->id, MAX_ID_LEN);
     BoltSync_mutex_destroy(&pool->mutex);
@@ -81,7 +81,7 @@ void BoltNoPool_destroy(struct BoltNoPool* pool)
 BoltConnection* BoltNoPool_acquire(struct BoltNoPool* pool, BoltStatus* status)
 {
     int pool_error = BOLT_SUCCESS;
-    BoltConnection* connection = NULL;
+    BoltConnection*connection = NULL;
 
     BoltLog_info(pool->config->log, "[%s]: Acquiring connection towards %s:%s", pool->id,
             pool->address->host, pool->address->port);
@@ -123,7 +123,7 @@ BoltConnection* BoltNoPool_acquire(struct BoltNoPool* pool, BoltStatus* status)
 
         BoltSync_mutex_lock(&pool->mutex);
         int index = pool->size;
-        pool->connections = BoltMem_reallocate(pool->connections, pool->size*sizeof(BoltConnection*),
+        pool->connections = BoltMem_reallocate((void*) pool->connections, pool->size*sizeof(BoltConnection*),
                 (pool->size+1)*sizeof(BoltConnection*));
         pool->size = pool->size+1;
         pool->connections[index] = connection;
@@ -160,7 +160,7 @@ int BoltNoPool_release(struct BoltNoPool* pool, struct BoltConnection* connectio
         for (int i = index; i<pool->size-1; i++) {
             pool->connections[i] = pool->connections[i+1];
         }
-        pool->connections = BoltMem_reallocate(pool->connections, pool->size*sizeof(BoltConnection*),
+        pool->connections = BoltMem_reallocate((void*) pool->connections, pool->size*sizeof(BoltConnection*),
                 (pool->size-1)*sizeof(BoltConnection*));
         pool->size = pool->size-1;
     }

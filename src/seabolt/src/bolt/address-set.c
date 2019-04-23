@@ -35,7 +35,7 @@ void BoltAddressSet_destroy(BoltAddressSet* set)
     for (int i = 0; i<set->size; i++) {
         BoltAddress_destroy((BoltAddress*) set->elements[i]);
     }
-    BoltMem_deallocate(set->elements, set->size*sizeof(BoltAddress*));
+    BoltMem_deallocate((void*) set->elements, set->size*sizeof(BoltAddress*));
     BoltMem_deallocate(set, SIZE_OF_ADDRESS_SET);
 }
 
@@ -47,7 +47,7 @@ int32_t BoltAddressSet_size(BoltAddressSet* set)
 int32_t BoltAddressSet_index_of(BoltAddressSet* set, const BoltAddress* address)
 {
     for (int i = 0; i<set->size; i++) {
-        BoltAddress* current = (BoltAddress*) set->elements[i];
+        BoltAddress*current = (BoltAddress*) set->elements[i];
 
         if (strcmp(address->host, current->host)==0 && strcmp(address->port, current->port)==0) {
             return i;
@@ -60,7 +60,7 @@ int32_t BoltAddressSet_index_of(BoltAddressSet* set, const BoltAddress* address)
 int32_t BoltAddressSet_add(BoltAddressSet* set, const BoltAddress* address)
 {
     if (BoltAddressSet_index_of(set, address)==-1) {
-        set->elements = BoltMem_reallocate(set->elements, set->size*sizeof(BoltAddress*),
+        set->elements = BoltMem_reallocate((void*) set->elements, set->size*sizeof(BoltAddress*),
                 (set->size+1)*sizeof(BoltAddress*));
         set->elements[set->size] = BoltAddress_create(address->host, address->port);
         set->size++;
@@ -86,7 +86,7 @@ int32_t BoltAddressSet_remove(BoltAddressSet* set, const BoltAddress* address)
         }
 
         BoltAddress_destroy((BoltAddress*) set->elements[index]);
-        BoltMem_deallocate(old_elements, set->size*sizeof(BoltAddress*));
+        BoltMem_deallocate((void*) old_elements, set->size*sizeof(BoltAddress*));
         set->elements = new_elements;
         set->size--;
         return index;
@@ -100,7 +100,7 @@ void BoltAddressSet_replace(BoltAddressSet* dest, BoltAddressSet* source)
         BoltAddress_destroy((BoltAddress*) dest->elements[i]);
     }
 
-    dest->elements = BoltMem_reallocate(dest->elements, dest->size*sizeof(BoltAddress*),
+    dest->elements = BoltMem_reallocate((void*) dest->elements, dest->size*sizeof(BoltAddress*),
             source->size*sizeof(BoltAddress*));
     for (int i = 0; i<source->size; i++) {
         dest->elements[i] = BoltAddress_create(source->elements[i]->host, source->elements[i]->port);

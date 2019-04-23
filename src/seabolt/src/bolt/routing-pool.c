@@ -34,7 +34,7 @@
 
 int BoltRoutingPool_ensure_server(struct BoltRoutingPool* pool, const struct BoltAddress* server)
 {
-    BoltAddressSet* servers = (BoltAddressSet*) pool->servers;
+    BoltAddressSet*servers = (BoltAddressSet*) pool->servers;
 
     int index = BoltAddressSet_index_of(servers, server);
     while (index<0) {
@@ -49,7 +49,7 @@ int BoltRoutingPool_ensure_server(struct BoltRoutingPool* pool, const struct Bol
                 index = BoltAddressSet_add(servers, server);
 
                 // Expand the direct pools and create a new one for this server
-                pool->server_pools = BoltMem_reallocate(pool->server_pools,
+                pool->server_pools = BoltMem_reallocate((void*) pool->server_pools,
                         (pool->servers->size-1)*SIZE_OF_DIRECT_POOL_PTR, (pool->servers->size)*SIZE_OF_DIRECT_POOL_PTR);
                 pool->server_pools[index] = BoltDirectPool_create(server, pool->auth_token, pool->config);
             }
@@ -233,7 +233,7 @@ void BoltRoutingPool_cleanup(struct BoltRoutingPool* pool)
         }
 
         BoltAddressSet_destroy((BoltAddressSet*) old_servers);
-        BoltMem_deallocate(old_server_pools, old_size*SIZE_OF_DIRECT_POOL_PTR);
+        BoltMem_deallocate((void*) old_server_pools, old_size*SIZE_OF_DIRECT_POOL_PTR);
     }
 
     BoltMem_deallocate(cleanup_marker, old_size*sizeof(int));
@@ -462,7 +462,7 @@ void BoltRoutingPool_destroy(struct BoltRoutingPool* pool)
     for (int i = 0; i<pool->servers->size; i++) {
         BoltDirectPool_destroy((BoltDirectPool*) pool->server_pools[i]);
     }
-    BoltMem_deallocate(pool->server_pools, pool->servers->size*SIZE_OF_DIRECT_POOL_PTR);
+    BoltMem_deallocate((void*) pool->server_pools, pool->servers->size*SIZE_OF_DIRECT_POOL_PTR);
     BoltAddressSet_destroy((BoltAddressSet*) pool->servers);
 
     RoutingTable_destroy(pool->routing_table);
@@ -496,7 +496,7 @@ BoltConnection* BoltRoutingPool_acquire(struct BoltRoutingPool* pool, BoltAccess
         }
     }
 
-    BoltConnection* connection = NULL;
+    BoltConnection*connection = NULL;
     if (result==BOLT_SUCCESS) {
         connection = BoltDirectPool_acquire((BoltDirectPool*) pool->server_pools[server_pool_index], status);
         if (connection!=NULL) {
