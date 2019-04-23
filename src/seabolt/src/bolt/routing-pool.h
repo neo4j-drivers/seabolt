@@ -33,8 +33,8 @@ struct BoltRoutingPool {
     int64_t readers_offset;
     int64_t writers_offset;
 
-    struct BoltAddressSet* servers;
-    struct BoltDirectPool** server_pools;
+    volatile BoltAddressSet* servers;
+    volatile BoltDirectPool** server_pools;
 
     rwlock_t rwlock;
 };

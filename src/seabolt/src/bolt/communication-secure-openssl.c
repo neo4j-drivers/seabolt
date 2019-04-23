@@ -123,6 +123,12 @@ BoltSecurityContext_create(struct BoltTrust* trust, const char* hostname, const 
         return NULL;
     }
 
+    // set auto retry
+    unsigned long new_mode = (unsigned long) SSL_CTX_set_mode(context, SSL_MODE_AUTO_RETRY);
+    if ((new_mode & (unsigned long) SSL_MODE_AUTO_RETRY)!=SSL_MODE_AUTO_RETRY) {
+        BoltLog_warning(log, "[%s]: Unable to set SSL_MODE_AUTO_RETRY");
+    }
+
     // load trusted certificates
     int status = 1;
     if (trust!=NULL && trust->certs!=NULL && trust->certs_len!=0) {
@@ -246,7 +252,13 @@ int secure_openssl_last_error(BoltCommunication* comm, int ssl_ret, int* ssl_err
         if (*last_error==0) {
             *last_error = last_error_saved;
         }
+        if (*last_error==0) {
+            return BOLT_END_OF_TRANSMISSION;
+        }
         return ctx->plain_comm->transform_error(ctx->plain_comm, *last_error);
+    }
+    case SSL_ERROR_ZERO_RETURN: {
+        return BOLT_END_OF_TRANSMISSION;
     }
     default:
         return BOLT_TLS_ERROR;

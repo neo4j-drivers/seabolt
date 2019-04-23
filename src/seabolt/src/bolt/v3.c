@@ -63,7 +63,7 @@
 #define MAX_CONNECTION_ID_SIZE 200
 #define MAX_LOGGED_RECORDS 3
 
-#define char_to_uint16be(array) ((uint8_t)(header[0]) << 8) | (uint8_t)(header[1]);
+#define char_to_uint16be(array) ((uint8_t)(header[0]) << 8) | (uint8_t)(header[1])
 
 #define TRY(code) { int status_try = (code); if (status_try != BOLT_SUCCESS) { return status_try; } }
 
@@ -1012,7 +1012,6 @@ int BoltProtocolV3_fetch(struct BoltConnection* connection, BoltRequest request_
         char header[2];
         int status = BoltConnection_receive(connection, &header[0], 2);
         if (status!=BOLT_SUCCESS) {
-            BoltLog_error(connection->log, "[%s]: Could not fetch chunk header", BoltConnection_id(connection));
             return -1;
         }
         uint16_t chunk_size = char_to_uint16be(header);
@@ -1021,12 +1020,10 @@ int BoltProtocolV3_fetch(struct BoltConnection* connection, BoltRequest request_
             status = BoltConnection_receive(connection, BoltBuffer_load_pointer(state->rx_buffer, chunk_size),
                     chunk_size);
             if (status!=BOLT_SUCCESS) {
-                BoltLog_error(connection->log, "[%s]: Could not fetch chunk data", BoltConnection_id(connection));
                 return -1;
             }
             status = BoltConnection_receive(connection, &header[0], 2);
             if (status!=BOLT_SUCCESS) {
-                BoltLog_error(connection->log, "[%s]: Could not fetch chunk header", BoltConnection_id(connection));
                 return -1;
             }
             chunk_size = char_to_uint16be(header);

@@ -49,6 +49,8 @@ int socket_transform_error(BoltCommunication* comm, int error_code)
         return BOLT_CONNECTION_REFUSED;
     case ECONNRESET:
         return BOLT_CONNECTION_RESET;
+    case EPIPE:
+        return BOLT_CONNECTION_RESET;
     case EINTR:
         return BOLT_INTERRUPTED;
     case ENETUNREACH:

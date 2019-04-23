@@ -233,8 +233,10 @@ TEST_CASE("communication", "[unit]")
             BoltAddress* remote = BoltAddress_create("127.0.0.1", "7687");
             remote->n_resolved_hosts = 2;
             remote->resolved_hosts = (struct sockaddr_storage*) malloc(2*sizeof(struct sockaddr_storage));
-            remote->resolved_hosts[0] = remote1->resolved_hosts[0];
-            remote->resolved_hosts[1] = remote2->resolved_hosts[0];
+            memcpy((void*) &remote->resolved_hosts[0], (void*) &remote1->resolved_hosts[0],
+                    sizeof(struct sockaddr_storage));
+            memcpy((void*) &remote->resolved_hosts[1], (void*) &remote2->resolved_hosts[0],
+                    sizeof(struct sockaddr_storage));
 
             test_ctx->reset();
 

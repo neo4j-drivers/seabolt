@@ -122,22 +122,16 @@ int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* 
                 continue;
             }
         }
-        if (address->resolved_hosts==NULL) {
-            address->resolved_hosts = (struct sockaddr_storage*) BoltMem_allocate(count*SOCKADDR_STORAGE_SIZE);
-        }
-        else {
-            address->resolved_hosts = (struct sockaddr_storage*) BoltMem_reallocate(address->resolved_hosts,
-                    address->n_resolved_hosts*SOCKADDR_STORAGE_SIZE,
-                    count*SOCKADDR_STORAGE_SIZE);
-        }
+        address->resolved_hosts = BoltMem_reallocate((void*) address->resolved_hosts,
+                address->n_resolved_hosts*SOCKADDR_STORAGE_SIZE,
+                count*SOCKADDR_STORAGE_SIZE);
         address->n_resolved_hosts = count;
         size_t p = 0;
         for (struct addrinfo* ai_node = ai; ai_node!=NULL; ai_node = ai_node->ai_next) {
             switch (ai_node->ai_family) {
             case AF_INET:
             case AF_INET6: {
-                struct sockaddr_storage* target = &address->resolved_hosts[p];
-                memcpy(target, ai_node->ai_addr, ai_node->ai_addrlen);
+                memcpy((void*) &address->resolved_hosts[p], ai_node->ai_addr, ai_node->ai_addrlen);
                 break;
             }
             default:
@@ -159,7 +153,7 @@ int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* 
     }
 
     if (address->n_resolved_hosts>0) {
-        struct sockaddr_storage* resolved = &address->resolved_hosts[0];
+        struct sockaddr_storage* resolved = (struct sockaddr_storage*) &address->resolved_hosts[0];
         const uint16_t resolved_port = resolved->ss_family==AF_INET ?
                                        ((struct sockaddr_in*) (resolved))->sin_port
                                                                     : ((struct sockaddr_in6*) (resolved))->sin6_port;
@@ -180,7 +174,7 @@ int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* 
 int32_t BoltAddress_copy_resolved_host(BoltAddress* address, int32_t index, char* buffer,
         int32_t buffer_size)
 {
-    struct sockaddr_storage* resolved_host = &address->resolved_hosts[index];
+    struct sockaddr_storage* resolved_host = (struct sockaddr_storage*) &address->resolved_hosts[index];
     int status = get_address_components(resolved_host, buffer, (int) buffer_size, NULL, 0);
     switch (status) {
     case 0:
@@ -193,7 +187,7 @@ int32_t BoltAddress_copy_resolved_host(BoltAddress* address, int32_t index, char
 void BoltAddress_destroy(BoltAddress* address)
 {
     if (address->resolved_hosts!=NULL) {
-        address->resolved_hosts = (struct sockaddr_storage*) BoltMem_deallocate(address->resolved_hosts,
+        address->resolved_hosts = BoltMem_deallocate((void*) address->resolved_hosts,
                 address->n_resolved_hosts*SOCKADDR_STORAGE_SIZE);
         address->n_resolved_hosts = 0;
     }
