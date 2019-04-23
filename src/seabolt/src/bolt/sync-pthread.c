@@ -65,17 +65,14 @@ int BoltSync_mutex_trylock(mutex_t* mutex)
 int BoltSync_rwlock_create(rwlock_t* rwlock)
 {
     *rwlock = BoltMem_allocate(sizeof(pthread_rwlock_t));
-
-    pthread_rwlockattr_t rwlock_attr;
-    pthread_rwlockattr_init(&rwlock_attr);
-
-    return pthread_rwlock_init(*rwlock, &rwlock_attr)==0;
+    return pthread_rwlock_init(*rwlock, NULL)==0;
 }
 
 int BoltSync_rwlock_destroy(rwlock_t* rwlock)
 {
     int status = pthread_rwlock_destroy(*rwlock)==0;
     BoltMem_deallocate(*rwlock, sizeof(pthread_rwlock_t));
+    *rwlock = NULL;
     return status;
 }
 
