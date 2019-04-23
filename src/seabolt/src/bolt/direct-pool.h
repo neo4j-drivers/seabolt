@@ -28,10 +28,7 @@
 #include "connector.h"
 #include "sync.h"
 
-/**
- * Connection pool (experimental)
- */
-struct BoltDirectPool {
+typedef struct BoltDirectPool {
     mutex_t mutex;
     cond_t released_cond;
     char* id;
@@ -41,7 +38,7 @@ struct BoltDirectPool {
     BoltSecurityContext* sec_context;
     int size;
     BoltConnection** connections;
-};
+} BoltDirectPool;
 
 #define SIZE_OF_DIRECT_POOL sizeof(struct BoltDirectPool)
 #define SIZE_OF_DIRECT_POOL_PTR sizeof(struct BoltDirectPool*)
