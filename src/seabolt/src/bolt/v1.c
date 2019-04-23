@@ -163,8 +163,8 @@ void ensure_failure_data(struct BoltProtocolV1State* state)
     if (state->failure_data==NULL) {
         state->failure_data = BoltValue_create();
         BoltValue_format_as_Dictionary(state->failure_data, 2);
-        BoltDictionary_set_key(state->failure_data, 0, "code", (int32_t)strlen("code"));
-        BoltDictionary_set_key(state->failure_data, 1, "message", (int32_t)strlen("message"));
+        BoltDictionary_set_key(state->failure_data, 0, "code", (int32_t) strlen("code"));
+        BoltDictionary_set_key(state->failure_data, 1, "message", (int32_t) strlen("message"));
     }
 }
 
@@ -276,7 +276,7 @@ struct BoltValue* BoltProtocolV1_set_run_cypher_parameter(struct BoltConnection*
 {
     struct BoltProtocolV1State* state = BoltProtocolV1_state(connection);
     struct BoltValue* params = BoltMessage_param(state->run_request, 1);
-    BoltDictionary_set_key(params, index, name, (int32_t)name_size);
+    BoltDictionary_set_key(params, index, name, (int32_t) name_size);
     return BoltDictionary_value(params, index);
 }
 
@@ -691,7 +691,6 @@ int BoltProtocolV1_fetch(struct BoltConnection* connection, BoltRequest request_
         char header[2];
         int status = BoltConnection_receive(connection, &header[0], 2);
         if (status!=BOLT_SUCCESS) {
-            BoltLog_error(connection->log, "[%s]: Could not fetch chunk header", BoltConnection_id(connection));
             return -1;
         }
         uint16_t chunk_size = char_to_uint16be(header);
@@ -700,12 +699,10 @@ int BoltProtocolV1_fetch(struct BoltConnection* connection, BoltRequest request_
             status = BoltConnection_receive(connection, BoltBuffer_load_pointer(state->rx_buffer, chunk_size),
                     chunk_size);
             if (status!=BOLT_SUCCESS) {
-                BoltLog_error(connection->log, "[%s]: Could not fetch chunk data", BoltConnection_id(connection));
                 return -1;
             }
             status = BoltConnection_receive(connection, &header[0], 2);
             if (status!=BOLT_SUCCESS) {
-                BoltLog_error(connection->log, "[%s]: Could not fetch chunk header", BoltConnection_id(connection));
                 return -1;
             }
             chunk_size = char_to_uint16be(header);
