@@ -34,15 +34,12 @@
 
 int BoltRoutingPool_ensure_server(struct BoltRoutingPool* pool, const struct BoltAddress* server)
 {
-    int index = -1;
+    int index = BoltAddressSet_index_of(pool->servers, server);
     while (index<0) {
-        index = BoltAddressSet_index_of(pool->servers, server);
-
         // Release read lock
         BoltSync_rwlock_rdunlock(&pool->rwlock);
 
         if (BoltSync_rwlock_timedwrlock(&pool->rwlock, WRITE_LOCK_TIMEOUT)) {
-
             // Check once more if any other thread added this server in the mean-time
             index = BoltAddressSet_index_of(pool->servers, server);
             if (index<0) {
