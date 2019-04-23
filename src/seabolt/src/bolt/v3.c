@@ -63,7 +63,7 @@
 #define MAX_CONNECTION_ID_SIZE 200
 #define MAX_LOGGED_RECORDS 3
 
-#define char_to_uint16be(array) ((uint8_t)(header[0]) << 8) | (uint8_t)(header[1]);
+#define char_to_uint16be(array) ((uint8_t)(header[0]) << 8) | (uint8_t)(header[1])
 
 #define TRY(code) { int status_try = (code); if (status_try != BOLT_SUCCESS) { return status_try; } }
 
