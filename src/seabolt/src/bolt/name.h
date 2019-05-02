@@ -19,7 +19,7 @@
 #ifndef SEABOLT_NAME_H
 #define SEABOLT_NAME_H
 
-int get_address_components(const struct sockaddr_storage* address, char* host_buffer, int host_buffer_size,
+int get_address_components(volatile const struct sockaddr_storage* address, char* host_buffer, int host_buffer_size,
         char* port_buffer, int port_buffer_size);
 
 #endif //SEABOLT_NAME_H

@@ -54,13 +54,13 @@ BoltConnector_create(BoltAddress* address, BoltValue* auth_token, struct BoltCon
 
     switch (connector->config->scheme) {
     case BOLT_SCHEME_DIRECT:
-        connector->pool_state = BoltDirectPool_create(address, connector->auth_token, connector->config);
+        connector->pool_state = BoltDirectPool_create(connector->address, connector->auth_token, connector->config);
         break;
     case BOLT_SCHEME_NEO4J:
-        connector->pool_state = BoltRoutingPool_create(address, connector->auth_token, connector->config);
+        connector->pool_state = BoltRoutingPool_create(connector->address, connector->auth_token, connector->config);
         break;
     case BOLT_SCHEME_DIRECT_UNPOOLED:
-        connector->pool_state = BoltNoPool_create(address, connector->auth_token, connector->config);
+        connector->pool_state = BoltNoPool_create(connector->address, connector->auth_token, connector->config);
         break;
     default:
         // TODO: Set some status

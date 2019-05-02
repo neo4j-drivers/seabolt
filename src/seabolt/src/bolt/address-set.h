@@ -38,6 +38,6 @@ typedef struct BoltAddressSet BoltAddressSet;
  * @returns -1 if the provided address is already a member of the set, or the index at which the given address
  * is added.
  */
-SEABOLT_EXPORT int32_t BoltAddressSet_add(BoltAddressSet* set, const BoltAddress* address);
+SEABOLT_EXPORT int32_t BoltAddressSet_add(volatile BoltAddressSet* set, volatile const BoltAddress* address);
 
 #endif //SEABOLT_ALL_ADDRESS_SET_H
