@@ -153,7 +153,7 @@ int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* 
     }
 
     if (address->n_resolved_hosts>0) {
-        struct sockaddr_storage* resolved = (struct sockaddr_storage*) &address->resolved_hosts[0];
+        volatile struct sockaddr_storage* resolved = &address->resolved_hosts[0];
         const uint16_t resolved_port = resolved->ss_family==AF_INET ?
                                        ((struct sockaddr_in*) (resolved))->sin_port
                                                                     : ((struct sockaddr_in6*) (resolved))->sin6_port;
@@ -174,7 +174,7 @@ int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* 
 int32_t BoltAddress_copy_resolved_host(BoltAddress* address, int32_t index, char* buffer,
         int32_t buffer_size)
 {
-    struct sockaddr_storage* resolved_host = (struct sockaddr_storage*) &address->resolved_hosts[index];
+    volatile struct sockaddr_storage* resolved_host = &address->resolved_hosts[index];
     int status = get_address_components(resolved_host, buffer, (int) buffer_size, NULL, 0);
     switch (status) {
     case 0:

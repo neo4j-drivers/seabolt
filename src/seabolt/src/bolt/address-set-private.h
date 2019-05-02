@@ -29,18 +29,18 @@ struct BoltAddressSet {
 #define SIZE_OF_ADDRESS_SET sizeof(struct BoltAddressSet)
 #define SIZE_OF_ADDRESS_SET_PTR sizeof(struct BoltAddressSet*)
 
-BoltAddressSet* BoltAddressSet_create();
+volatile BoltAddressSet* BoltAddressSet_create();
 
-void BoltAddressSet_destroy(BoltAddressSet* set);
+void BoltAddressSet_destroy(volatile BoltAddressSet* set);
 
-int32_t BoltAddressSet_size(BoltAddressSet* set);
+int32_t BoltAddressSet_size(volatile BoltAddressSet* set);
 
-int32_t BoltAddressSet_index_of(BoltAddressSet* set, const BoltAddress* address);
+int32_t BoltAddressSet_index_of(volatile BoltAddressSet* set, volatile const BoltAddress* address);
 
-int32_t BoltAddressSet_remove(BoltAddressSet* set, const BoltAddress* address);
+int32_t BoltAddressSet_remove(volatile BoltAddressSet* set, volatile const BoltAddress* address);
 
-void BoltAddressSet_replace(BoltAddressSet* destination, BoltAddressSet* source);
+void BoltAddressSet_replace(volatile BoltAddressSet* destination, volatile BoltAddressSet* source);
 
-void BoltAddressSet_add_all(BoltAddressSet* destination, BoltAddressSet* source);
+void BoltAddressSet_add_all(volatile BoltAddressSet* destination, volatile BoltAddressSet* source);
 
 #endif //SEABOLT_ADDRESS_SET_PRIVATE_H

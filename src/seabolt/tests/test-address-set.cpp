@@ -28,7 +28,7 @@ SCENARIO("BoltAddressSet")
     struct BoltAddress* localhost7690 = BoltAddress_create("localhost", "7690");
 
     WHEN("constructed") {
-        struct BoltAddressSet* set = BoltAddressSet_create();
+        volatile BoltAddressSet* set = BoltAddressSet_create();
 
         THEN("it should have size = 0") {
             REQUIRE(set->size==0);
@@ -44,7 +44,7 @@ SCENARIO("BoltAddressSet")
     }
 
     GIVEN("a newly constructed BoltAddressSet") {
-        struct BoltAddressSet* set = BoltAddressSet_create();
+        volatile BoltAddressSet* set = BoltAddressSet_create();
 
         WHEN("BoltAddress[localhost,7687] is added") {
             BoltAddressSet_add(set, localhost7687);
@@ -95,7 +95,7 @@ SCENARIO("BoltAddressSet")
     }
 
     GIVEN("A BoltAddressSet with 3 addresses") {
-        struct BoltAddressSet* set = BoltAddressSet_create();
+        volatile BoltAddressSet* set = BoltAddressSet_create();
 
         BoltAddressSet_add(set, localhost7687);
         BoltAddressSet_add(set, localhost7688);
@@ -141,11 +141,11 @@ SCENARIO("BoltAddressSet")
     }
 
     GIVEN("Two different BoltAddressSets") {
-        struct BoltAddressSet* set1 = BoltAddressSet_create();
+        volatile BoltAddressSet* set1 = BoltAddressSet_create();
         REQUIRE(BoltAddressSet_add(set1, localhost7687)==0);
         REQUIRE(BoltAddressSet_add(set1, localhost7688)==1);
 
-        struct BoltAddressSet* set2 = BoltAddressSet_create();
+        volatile BoltAddressSet* set2 = BoltAddressSet_create();
         REQUIRE(BoltAddressSet_add(set2, localhost7689)==0);
 
         WHEN("set1 is updated from set2") {
@@ -170,10 +170,10 @@ SCENARIO("BoltAddressSet")
     }
 
     GIVEN("Two different BoltAddressSets") {
-        struct BoltAddressSet* set1 = BoltAddressSet_create();
+        volatile BoltAddressSet* set1 = BoltAddressSet_create();
         REQUIRE(BoltAddressSet_add(set1, localhost7689)==0);
 
-        struct BoltAddressSet* set2 = BoltAddressSet_create();
+        volatile BoltAddressSet* set2 = BoltAddressSet_create();
         REQUIRE(BoltAddressSet_add(set2, localhost7687)==0);
         REQUIRE(BoltAddressSet_add(set2, localhost7688)==1);
         REQUIRE(BoltAddressSet_add(set2, localhost7689)==2);

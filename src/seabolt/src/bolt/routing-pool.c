@@ -34,7 +34,7 @@
 
 int BoltRoutingPool_ensure_server(struct BoltRoutingPool* pool, const struct BoltAddress* server)
 {
-    BoltAddressSet*servers = (BoltAddressSet*) pool->servers;
+    volatile BoltAddressSet* servers = pool->servers;
 
     int index = BoltAddressSet_index_of(servers, server);
     while (index<0) {
@@ -154,7 +154,7 @@ int BoltRoutingPool_update_routing_table(struct BoltRoutingPool* pool)
     int result = BOLT_ROUTING_UNABLE_TO_RETRIEVE_ROUTING_TABLE;
 
     // discover initial routers which pass through address resolver
-    struct BoltAddressSet* initial_routers = BoltAddressSet_create();
+    volatile BoltAddressSet* initial_routers = BoltAddressSet_create();
     // first try to resolve using address resolver callback if specified
     BoltAddressResolver_resolve(pool->config->address_resolver, pool->address, initial_routers);
     // if nothing got added to the initial router addresses, add the connector hostname and port
@@ -163,7 +163,7 @@ int BoltRoutingPool_update_routing_table(struct BoltRoutingPool* pool)
     }
 
     // Create a set of servers to update the routing table from
-    struct BoltAddressSet* routers = BoltAddressSet_create();
+    volatile BoltAddressSet* routers = BoltAddressSet_create();
 
     // First add routers present in the routing table
     BoltAddressSet_add_all(routers, pool->routing_table->routers);
@@ -191,7 +191,7 @@ int BoltRoutingPool_update_routing_table(struct BoltRoutingPool* pool)
 
 void BoltRoutingPool_cleanup(struct BoltRoutingPool* pool)
 {
-    struct BoltAddressSet* active_servers = BoltAddressSet_create();
+    volatile BoltAddressSet* active_servers = BoltAddressSet_create();
     BoltAddressSet_add_all(active_servers, pool->routing_table->routers);
     BoltAddressSet_add_all(active_servers, pool->routing_table->writers);
     BoltAddressSet_add_all(active_servers, pool->routing_table->readers);
@@ -282,7 +282,7 @@ int BoltRoutingPool_ensure_routing_table(struct BoltRoutingPool* pool, BoltAcces
 }
 
 struct BoltAddress* BoltRoutingPool_select_least_connected(struct BoltRoutingPool* pool,
-        struct BoltAddressSet* servers, int offset)
+        volatile BoltAddressSet* servers, int offset)
 {
     // Start at an index that round-robins
     int start_index = offset%servers->size;
@@ -437,7 +437,7 @@ void BoltRoutingPool_connection_error_handler(struct BoltConnection* connection,
 }
 
 struct BoltRoutingPool*
-BoltRoutingPool_create(struct BoltAddress* address, const struct BoltValue* auth_token, const struct BoltConfig* config)
+BoltRoutingPool_create(const struct BoltAddress* address, const struct BoltValue* auth_token, const struct BoltConfig* config)
 {
     struct BoltRoutingPool* pool = (struct BoltRoutingPool*) BoltMem_allocate(SIZE_OF_ROUTING_POOL);
 
@@ -496,7 +496,7 @@ BoltConnection* BoltRoutingPool_acquire(struct BoltRoutingPool* pool, BoltAccess
         }
     }
 
-    BoltConnection*connection = NULL;
+    BoltConnection* connection = NULL;
     if (result==BOLT_SUCCESS) {
         connection = BoltDirectPool_acquire((BoltDirectPool*) pool->server_pools[server_pool_index], status);
         if (connection!=NULL) {

@@ -23,13 +23,14 @@
 #include "address.h"
 #include "values.h"
 #include "atomic.h"
+#include "routing-table.h"
 
 struct BoltRoutingPool {
-    struct BoltAddress* address;
+    const struct BoltAddress* address;
     const struct BoltConfig* config;
     const struct BoltValue* auth_token;
 
-    struct RoutingTable* routing_table;
+    volatile RoutingTable* routing_table;
     int64_t readers_offset;
     int64_t writers_offset;
 
@@ -43,7 +44,7 @@ struct BoltRoutingPool {
 #define SIZE_OF_ROUTING_POOL_PTR sizeof(struct BoltRoutingConnectionPool*)
 
 struct BoltRoutingPool*
-BoltRoutingPool_create(struct BoltAddress* address, const struct BoltValue* auth_token,
+BoltRoutingPool_create(const struct BoltAddress* address, const struct BoltValue* auth_token,
         const struct BoltConfig* config);
 
 void BoltRoutingPool_destroy(struct BoltRoutingPool* pool);

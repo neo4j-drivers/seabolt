@@ -22,7 +22,7 @@
 #include "address-set-private.h"
 #include "mem.h"
 
-BoltAddressSet* BoltAddressSet_create()
+volatile BoltAddressSet* BoltAddressSet_create()
 {
     struct BoltAddressSet* set = (struct BoltAddressSet*) BoltMem_allocate(SIZE_OF_ADDRESS_SET);
     set->size = 0;
@@ -30,24 +30,24 @@ BoltAddressSet* BoltAddressSet_create()
     return set;
 }
 
-void BoltAddressSet_destroy(BoltAddressSet* set)
+void BoltAddressSet_destroy(volatile BoltAddressSet* set)
 {
     for (int i = 0; i<set->size; i++) {
         BoltAddress_destroy((BoltAddress*) set->elements[i]);
     }
     BoltMem_deallocate((void*) set->elements, set->size*sizeof(BoltAddress*));
-    BoltMem_deallocate(set, SIZE_OF_ADDRESS_SET);
+    BoltMem_deallocate((void*) set, SIZE_OF_ADDRESS_SET);
 }
 
-int32_t BoltAddressSet_size(BoltAddressSet* set)
+int32_t BoltAddressSet_size(volatile BoltAddressSet* set)
 {
     return set->size;
 }
 
-int32_t BoltAddressSet_index_of(BoltAddressSet* set, const BoltAddress* address)
+int32_t BoltAddressSet_index_of(volatile BoltAddressSet* set, volatile const BoltAddress* address)
 {
     for (int i = 0; i<set->size; i++) {
-        BoltAddress*current = (BoltAddress*) set->elements[i];
+        volatile BoltAddress* current = set->elements[i];
 
         if (strcmp(address->host, current->host)==0 && strcmp(address->port, current->port)==0) {
             return i;
@@ -57,7 +57,7 @@ int32_t BoltAddressSet_index_of(BoltAddressSet* set, const BoltAddress* address)
     return -1;
 }
 
-int32_t BoltAddressSet_add(BoltAddressSet* set, const BoltAddress* address)
+int32_t BoltAddressSet_add(volatile BoltAddressSet* set, volatile const BoltAddress* address)
 {
     if (BoltAddressSet_index_of(set, address)==-1) {
         set->elements = BoltMem_reallocate((void*) set->elements, set->size*sizeof(BoltAddress*),
@@ -70,7 +70,7 @@ int32_t BoltAddressSet_add(BoltAddressSet* set, const BoltAddress* address)
     return -1;
 }
 
-int32_t BoltAddressSet_remove(BoltAddressSet* set, const BoltAddress* address)
+int32_t BoltAddressSet_remove(volatile BoltAddressSet* set, volatile const BoltAddress* address)
 {
     int index = BoltAddressSet_index_of(set, address);
     if (index>=0) {
@@ -94,7 +94,7 @@ int32_t BoltAddressSet_remove(BoltAddressSet* set, const BoltAddress* address)
     return -1;
 }
 
-void BoltAddressSet_replace(BoltAddressSet* dest, BoltAddressSet* source)
+void BoltAddressSet_replace(volatile BoltAddressSet* dest, volatile BoltAddressSet* source)
 {
     for (int i = 0; i<dest->size; i++) {
         BoltAddress_destroy((BoltAddress*) dest->elements[i]);
@@ -108,7 +108,7 @@ void BoltAddressSet_replace(BoltAddressSet* dest, BoltAddressSet* source)
     dest->size = source->size;
 }
 
-void BoltAddressSet_add_all(BoltAddressSet* destination, BoltAddressSet* source)
+void BoltAddressSet_add_all(volatile BoltAddressSet* destination, volatile BoltAddressSet* source)
 {
     for (int i = 0; i<source->size; i++) {
         BoltAddressSet_add(destination, (BoltAddress*) source->elements[i]);

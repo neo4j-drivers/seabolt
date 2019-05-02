@@ -22,27 +22,27 @@
 #include "connector.h"
 #include "values.h"
 
-struct RoutingTable {
+typedef struct RoutingTable {
     int64_t expires;
     int64_t last_updated;
-    struct BoltAddressSet* readers;
-    struct BoltAddressSet* writers;
-    struct BoltAddressSet* routers;
-};
+    volatile BoltAddressSet* readers;
+    volatile BoltAddressSet* writers;
+    volatile BoltAddressSet* routers;
+} RoutingTable;
 
 #define SIZE_OF_ROUTING_TABLE sizeof(struct RoutingTable)
 #define SIZE_OF_ROUTING_TABLE_PTR sizeof(struct RoutingTable*)
 
-struct RoutingTable* RoutingTable_create();
+volatile RoutingTable* RoutingTable_create();
 
-void RoutingTable_destroy(struct RoutingTable* state);
+void RoutingTable_destroy(volatile RoutingTable* state);
 
-int RoutingTable_update(struct RoutingTable* state, struct BoltValue* response);
+int RoutingTable_update(volatile RoutingTable* state, struct BoltValue* response);
 
-int RoutingTable_is_expired(struct RoutingTable* state, BoltAccessMode mode);
+int RoutingTable_is_expired(volatile RoutingTable* state, BoltAccessMode mode);
 
-void RoutingTable_forget_server(struct RoutingTable* state, const struct BoltAddress* address);
+void RoutingTable_forget_server(volatile RoutingTable* state, const struct BoltAddress* address);
 
-void RoutingTable_forget_writer(struct RoutingTable* state, const struct BoltAddress* address);
+void RoutingTable_forget_writer(volatile RoutingTable* state, const struct BoltAddress* address);
 
 #endif //SEABOLT_ALL_ROUTING_TABLE_H

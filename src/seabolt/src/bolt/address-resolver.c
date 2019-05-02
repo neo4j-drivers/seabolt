@@ -44,10 +44,11 @@ void BoltAddressResolver_destroy(BoltAddressResolver* resolver)
     BoltMem_deallocate(resolver, sizeof(BoltAddressResolver));
 }
 
-void BoltAddressResolver_resolve(BoltAddressResolver* resolver, BoltAddress* address, struct BoltAddressSet* resolved)
+void BoltAddressResolver_resolve(BoltAddressResolver* resolver, const BoltAddress* address,
+        volatile BoltAddressSet* resolved)
 {
     if (resolver!=NULL && resolver->resolver!=NULL) {
-        resolver->resolver(resolver->state, address, resolved);
+        resolver->resolver(resolver->state, (BoltAddress*) address, (BoltAddressSet*) resolved);
     }
 }
 

@@ -28,7 +28,7 @@ struct BoltAddressResolver {
 
 BoltAddressResolver* BoltAddressResolver_clone(BoltAddressResolver* resolver);
 
-void BoltAddressResolver_resolve(BoltAddressResolver* resolver, BoltAddress* address,
-        BoltAddressSet* resolved);
+void BoltAddressResolver_resolve(BoltAddressResolver* resolver, const BoltAddress* address,
+        volatile BoltAddressSet* resolved);
 
 #endif //SEABOLT_ADDRESS_RESOLVER_PRIVATE_H

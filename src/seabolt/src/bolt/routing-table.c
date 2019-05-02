@@ -38,9 +38,9 @@
 #define ADDRESSES_KEY "addresses"
 #define ADDRESSES_KEY_LEN 9
 
-struct RoutingTable* RoutingTable_create()
+volatile RoutingTable* RoutingTable_create()
 {
-    struct RoutingTable* table = (struct RoutingTable*) BoltMem_allocate(SIZE_OF_ROUTING_TABLE);
+    struct RoutingTable* table = (RoutingTable*) BoltMem_allocate(SIZE_OF_ROUTING_TABLE);
     table->expires = 0;
     table->last_updated = 0;
     table->readers = BoltAddressSet_create();
@@ -49,15 +49,15 @@ struct RoutingTable* RoutingTable_create()
     return table;
 }
 
-void RoutingTable_destroy(struct RoutingTable* state)
+void RoutingTable_destroy(volatile RoutingTable* state)
 {
     BoltAddressSet_destroy(state->readers);
     BoltAddressSet_destroy(state->writers);
     BoltAddressSet_destroy(state->routers);
-    BoltMem_deallocate(state, SIZE_OF_ROUTING_TABLE);
+    BoltMem_deallocate((void*) state, SIZE_OF_ROUTING_TABLE);
 }
 
-int RoutingTable_update(struct RoutingTable* table, struct BoltValue* response)
+int RoutingTable_update(volatile RoutingTable* table, struct BoltValue* response)
 {
     int status = BOLT_SUCCESS;
     if (BoltValue_type(response)!=BOLT_DICTIONARY) {
@@ -81,9 +81,9 @@ int RoutingTable_update(struct RoutingTable* table, struct BoltValue* response)
         }
     }
 
-    struct BoltAddressSet* readers = BoltAddressSet_create();
-    struct BoltAddressSet* writers = BoltAddressSet_create();
-    struct BoltAddressSet* routers = BoltAddressSet_create();
+    volatile BoltAddressSet* readers = BoltAddressSet_create();
+    volatile BoltAddressSet* writers = BoltAddressSet_create();
+    volatile BoltAddressSet* routers = BoltAddressSet_create();
 
     for (int32_t i = 0; i<servers_value->size && status==BOLT_SUCCESS; i++) {
         struct BoltValue* server_value = BoltList_value(servers_value, i);
@@ -150,21 +150,21 @@ int RoutingTable_update(struct RoutingTable* table, struct BoltValue* response)
     return status;
 }
 
-int RoutingTable_is_expired(struct RoutingTable* state, BoltAccessMode mode)
+int RoutingTable_is_expired(volatile RoutingTable* state, BoltAccessMode mode)
 {
     return state->routers->size==0
             || (mode==BOLT_ACCESS_MODE_READ ? state->readers->size==0 : state->writers->size==0)
             || state->expires<=BoltTime_get_time_ms();
 }
 
-void RoutingTable_forget_server(struct RoutingTable* state, const struct BoltAddress* address)
+void RoutingTable_forget_server(volatile RoutingTable* state, const struct BoltAddress* address)
 {
     BoltAddressSet_remove(state->routers, address);
     BoltAddressSet_remove(state->readers, address);
     BoltAddressSet_remove(state->writers, address);
 }
 
-void RoutingTable_forget_writer(struct RoutingTable* state, const struct BoltAddress* address)
+void RoutingTable_forget_writer(volatile RoutingTable* state, const struct BoltAddress* address)
 {
     BoltAddressSet_remove(state->writers, address);
 }
