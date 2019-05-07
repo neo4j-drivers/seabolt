@@ -52,7 +52,11 @@ void close_pool_entry(struct BoltDirectPool* pool, int index)
 
 int find_unused_connection(struct BoltDirectPool* pool)
 {
-    for (int i = 0; i<pool->size; i++) {
+    if (BoltDirectPool_connections_in_use(pool)>=pool->max_size) {
+        return -1;
+    }
+
+    for (int i = 0; i<pool->max_size; i++) {
         struct BoltConnection* connection = pool->connections[i];
 
         if (connection->agent==NULL) {
@@ -80,7 +84,7 @@ int find_unused_connection(struct BoltDirectPool* pool)
 
 int find_connection(struct BoltDirectPool* pool, struct BoltConnection* connection)
 {
-    for (int i = 0; i<pool->size; i++) {
+    for (int i = 0; i<pool->max_size; i++) {
         struct BoltConnection* candidate = pool->connections[i];
         if (candidate==connection) {
             return i;
@@ -179,7 +183,8 @@ struct BoltDirectPool* BoltDirectPool_create(const struct BoltAddress* address, 
     pool->config = config;
     pool->address = BoltAddress_create_with_lock(address->host, address->port);
     pool->auth_token = auth_token;
-    pool->size = config->max_pool_size;
+    pool->max_size = config->max_pool_size;
+    pool->in_use_count = 0;
     pool->connections = (struct BoltConnection**) BoltMem_allocate(config->max_pool_size*sizeof(BoltConnection*));
     for (int i = 0; i<config->max_pool_size; i++) {
         pool->connections[i] = BoltConnection_create();
@@ -202,11 +207,11 @@ void BoltDirectPool_destroy(struct BoltDirectPool* pool)
 {
     BoltLog_info(pool->config->log, "[%s]: Destroying pool towards %s:%s", pool->id, pool->address->host,
             pool->address->port);
-    for (int index = 0; index<pool->size; index++) {
+    for (int index = 0; index<pool->max_size; index++) {
         close_pool_entry(pool, index);
         BoltConnection_destroy(pool->connections[index]);
     }
-    BoltMem_deallocate(pool->connections, pool->size*sizeof(BoltConnection*));
+    BoltMem_deallocate(pool->connections, pool->max_size*sizeof(BoltConnection*));
     if (pool->sec_context!=NULL) {
         BoltSecurityContext_destroy(pool->sec_context);
     }
@@ -302,6 +307,10 @@ BoltConnection* BoltDirectPool_acquire(struct BoltDirectPool* pool, BoltStatus* 
         break;
     }
 
+    if (connection!=NULL) {
+        BoltAtomic_increment(&pool->in_use_count);
+    }
+
     BoltSync_mutex_unlock(&pool->mutex);
 
     return connection;
@@ -323,18 +332,13 @@ int BoltDirectPool_release(struct BoltDirectPool* pool, struct BoltConnection* c
 
         BoltSync_cond_signal(&pool->released_cond);
     }
+    BoltAtomic_decrement(&pool->in_use_count);
     BoltSync_mutex_unlock(&pool->mutex);
     return index;
 }
 
 int BoltDirectPool_connections_in_use(struct BoltDirectPool* pool)
 {
-    int count = 0;
-    for (int i = 0; i<pool->size; i++) {
-        if (pool->connections[i]->agent!=NULL) {
-            count++;
-        }
-    }
-    return count;
+    return (int) BoltAtomic_add(&pool->in_use_count, 0);
 }
 
