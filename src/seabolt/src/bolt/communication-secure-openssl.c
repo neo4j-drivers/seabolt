@@ -24,11 +24,13 @@
 #include "status-private.h"
 #include "mem.h"
 #include "communication-plain.h"
+#include "sync.h"
 
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
+#include <pthread.h>
 
 typedef struct BoltSecurityContext {
     SSL_CTX* ssl_ctx;
@@ -209,10 +211,65 @@ void BoltSecurityContext_destroy(BoltSecurityContext* context)
     BoltMem_deallocate(context, sizeof(BoltSecurityContext));
 }
 
+#if OPENSSL_VERSION_NUMBER<0x10100000L
+
+static mutex_t* locks;
+
+unsigned long secure_openssl_id_callback(void);
+
+void secure_openssl_locking_callback(int mode, int type, const char* file, int line);
+
+void CRYPTO_thread_setup(void)
+{
+    int i;
+
+    locks = OPENSSL_malloc(CRYPTO_num_locks()*sizeof(mutex_t));
+    if (!locks) {
+        return;
+    }
+    for (i = 0; i<CRYPTO_num_locks(); i++) {
+        BoltSync_mutex_create(&locks[i]);
+    }
+
+    CRYPTO_set_id_callback(&secure_openssl_id_callback);
+    CRYPTO_set_locking_callback(&secure_openssl_locking_callback);
+}
+
+static void CRYPTO_thread_cleanup(void)
+{
+    int i;
+
+    CRYPTO_set_locking_callback(NULL);
+    for (i = 0; i<CRYPTO_num_locks(); i++)
+        BoltSync_mutex_destroy(&locks[i]);
+    OPENSSL_free(locks);
+}
+
+void secure_openssl_locking_callback(int mode, int type, const char* file, int line)
+{
+    UNUSED(file);
+    UNUSED(line);
+
+    if (mode & CRYPTO_LOCK) {
+        BoltSync_mutex_lock(&locks[type]);
+    }
+    else {
+        BoltSync_mutex_unlock(&locks[type]);
+    }
+}
+
+unsigned long secure_openssl_id_callback(void)
+{
+    return BoltThread_id();
+}
+
+#endif
+
 int BoltSecurityContext_startup()
 {
 #if OPENSSL_VERSION_NUMBER<0x10100000L
     SSL_library_init();
+    CRYPTO_thread_setup();
 #else
     OPENSSL_init_ssl(0, NULL);
 #endif
@@ -231,6 +288,9 @@ int BoltSecurityContext_startup()
 
 int BoltSecurityContext_shutdown()
 {
+#if OPENSSL_VERSION_NUMBER<0x10100000L
+    CRYPTO_thread_cleanup();
+#endif
     return BOLT_SUCCESS;
 }
 

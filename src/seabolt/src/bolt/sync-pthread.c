@@ -182,3 +182,8 @@ int BoltSync_cond_timedwait(cond_t* cond, mutex_t* mutex, int timeout_ms)
     }
     return pthread_cond_timedwait(*cond, *mutex, &timeout)==0;
 }
+
+unsigned long BoltThread_id()
+{
+    return (unsigned long) pthread_self();
+}

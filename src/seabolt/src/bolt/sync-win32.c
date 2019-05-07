@@ -144,7 +144,7 @@ int BoltSync_rwlock_wrunlock(rwlock_t* rwlock)
 int BoltSync_cond_create(cond_t* cond)
 {
     *cond = BoltMem_allocate(sizeof(CONDITION_VARIABLE));
-    InitializeConditionVariable((PCONDITION_VARIABLE) *cond);
+    InitializeConditionVariable((PCONDITION_VARIABLE)*cond);
     return 1;
 }
 
@@ -174,4 +174,9 @@ int BoltSync_cond_wait(cond_t* cond, mutex_t* mutex)
 int BoltSync_cond_timedwait(cond_t* cond, mutex_t* mutex, int timeout_ms)
 {
     return SleepConditionVariableCS(*cond, *mutex, timeout_ms);
+}
+
+unsigned long BoltThread_id()
+{
+    return (unsigned long) GetCurrentThreadId();
 }
