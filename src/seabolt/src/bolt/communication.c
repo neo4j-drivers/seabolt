@@ -78,13 +78,16 @@ int _open(BoltCommunication* comm, const struct sockaddr_storage* address, const
 
 int BoltCommunication_open(BoltCommunication* comm, BoltAddress* address, const char* id)
 {
-    if (address->n_resolved_hosts==0) {
+    if (BoltAddress_resolved_count(address)==0) {
         return BOLT_ADDRESS_NOT_RESOLVED;
     }
 
     int status = BOLT_SUCCESS;
-    for (int i = 0; i<address->n_resolved_hosts; i++) {
-        status = _open(comm, (struct sockaddr_storage*) &address->resolved_hosts[i], id);
+    int resolved_hosts = (int) BoltAddress_resolved_count(address);
+    struct sockaddr_storage resolved_host;
+    for (int i = 0; i<resolved_hosts; i++) {
+        BoltAddress_resolved_addr(address, i, &resolved_host);
+        status = _open(comm, &resolved_host, id);
         if (status==BOLT_SUCCESS) {
             BoltAddress* remote = comm->get_remote_endpoint(comm);
             BoltLog_info(comm->log, "[%s]: Remote endpoint is %s:%s", id, remote->host, remote->port);
