@@ -36,7 +36,7 @@ TEST_CASE("Direct Pool", "[unit]")
 
                 pool = BoltDirectPool_create(address, auth_token, config);
                 // fake the pool to believe all of its connections are in use
-                for (int i = 0; i<pool->size; i++) {
+                for (int i = 0; i<pool->max_size; i++) {
                     pool->connections[i]->agent = "USED";
                 }
 
@@ -59,7 +59,7 @@ TEST_CASE("Direct Pool", "[unit]")
 
                 pool = BoltDirectPool_create(address, auth_token, config);
                 // fake the pool to believe all of its connections are in use
-                for (int i = 0; i<pool->size; i++) {
+                for (int i = 0; i<pool->max_size; i++) {
                     pool->connections[i]->agent = "USED";
                 }
 

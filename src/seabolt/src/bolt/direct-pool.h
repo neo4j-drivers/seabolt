@@ -36,7 +36,8 @@ typedef struct BoltDirectPool {
     const struct BoltValue* auth_token;
     const struct BoltConfig* config;
     BoltSecurityContext* sec_context;
-    int size;
+    int max_size;
+    volatile int64_t in_use_count;
     BoltConnection** connections;
 } BoltDirectPool;
 
