@@ -30,7 +30,6 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
-#include <pthread.h>
 
 typedef struct BoltSecurityContext {
     SSL_CTX* ssl_ctx;
@@ -524,3 +523,14 @@ BoltCommunication* BoltCommunication_create_secure(BoltSecurityContext* sec_ctx,
 
     return comm;
 }
+
+#if defined(SEABOLT_STATIC_DEFINE) && defined(_MSC_VER)
+FILE * __cdecl __iob_func(void)
+{
+    FILE* _iob = (FILE*)malloc(3 * sizeof(FILE));
+    _iob[0] = *stdin;
+    _iob[1] = *stdout;
+    _iob[2] = *stderr;
+    return _iob;
+}
+#endif
