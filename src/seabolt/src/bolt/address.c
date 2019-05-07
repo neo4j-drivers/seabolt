@@ -54,7 +54,7 @@ BoltAddress* BoltAddress_create(const char* host, const char* port)
 BoltAddress* BoltAddress_create_with_lock(const char* host, const char* port)
 {
     BoltAddress* address = BoltAddress_create(host, port);
-    BoltSync_mutex_create(&address->lock);
+    BoltSync_rwlock_create(&address->lock);
     return address;
 }
 
@@ -92,7 +92,7 @@ BoltAddress* BoltAddress_create_from_string(const char* endpoint_str, uint64_t e
 int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* log)
 {
     if (address->lock!=NULL) {
-        BoltSync_mutex_lock(&address->lock);
+        BoltSync_rwlock_wrlock(&address->lock);
     }
 
     if (strchr(address->host, ':')==NULL) {
@@ -101,7 +101,7 @@ int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* 
     else {
         BoltLog_info(log, "[addr]: Resolving address [%s]:%s", address->host, address->port);
     }
-    static struct addrinfo hints;
+    struct addrinfo hints;
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
@@ -165,23 +165,70 @@ int32_t BoltAddress_resolve(BoltAddress* address, int32_t* n_resolved, BoltLog* 
     }
 
     if (address->lock!=NULL) {
-        BoltSync_mutex_unlock(&address->lock);
+        BoltSync_rwlock_wrunlock(&address->lock);
     }
 
     return gai_status;
 }
 
+int32_t BoltAddress_resolved_count(BoltAddress* address)
+{
+    if (address->lock!=NULL) {
+        BoltSync_rwlock_rdlock(&address->lock);
+    }
+
+    int32_t result = address->n_resolved_hosts;
+
+    if (address->lock!=NULL) {
+        BoltSync_rwlock_rdunlock(&address->lock);
+    }
+
+    return result;
+}
+
+int BoltAddress_resolved_addr(BoltAddress* address, int32_t index, struct sockaddr_storage* target)
+{
+    if (address->lock!=NULL) {
+        BoltSync_rwlock_rdlock(&address->lock);
+    }
+
+    int32_t result = 0;
+    if (address->n_resolved_hosts>index) {
+        memcpy(target, (const void*) &address->resolved_hosts[index], sizeof(struct sockaddr_storage));
+        result = 1;
+    }
+
+    if (address->lock!=NULL) {
+        BoltSync_rwlock_rdunlock(&address->lock);
+    }
+
+    return result;
+}
+
 int32_t BoltAddress_copy_resolved_host(BoltAddress* address, int32_t index, char* buffer,
         int32_t buffer_size)
 {
+    if (address->lock!=NULL) {
+        BoltSync_rwlock_rdlock(&address->lock);
+    }
+
+    int32_t result;
     volatile struct sockaddr_storage* resolved_host = &address->resolved_hosts[index];
     int status = get_address_components(resolved_host, buffer, (int) buffer_size, NULL, 0);
     switch (status) {
     case 0:
-        return resolved_host->ss_family;
+        result = resolved_host->ss_family;
+        break;
     default:
-        return -1;
+        result = -1;
+        break;
     }
+
+    if (address->lock!=NULL) {
+        BoltSync_rwlock_rdunlock(&address->lock);
+    }
+
+    return result;
 }
 
 void BoltAddress_destroy(BoltAddress* address)
@@ -193,7 +240,7 @@ void BoltAddress_destroy(BoltAddress* address)
     }
 
     if (address->lock!=NULL) {
-        BoltSync_mutex_destroy(&address->lock);
+        BoltSync_rwlock_destroy(&address->lock);
     }
 
     BoltMem_deallocate((char*) address->host, strlen(address->host)+1);
