@@ -19,6 +19,7 @@
 #include "communication-plain.h"
 #include "status-private.h"
 
+#include <pthread.h>
 #include <errno.h>
 
 int socket_last_error(BoltCommunication* comm)
@@ -66,16 +67,31 @@ int socket_transform_error(BoltCommunication* comm, int error_code)
 int socket_ignore_sigpipe(void** replaced_action)
 {
 #if !defined(SO_NOSIGPIPE)
-    if (*replaced_action==NULL) {
-        *replaced_action = malloc(sizeof(struct sigaction));
+    sigset_t sig_block, sig_restore, sig_pending;
+
+    sigemptyset(&sig_block);
+    sigaddset(&sig_block, SIGPIPE);
+
+    int result = pthread_sigmask(SIG_BLOCK, &sig_block, &sig_restore);
+    if (result!=0) {
+        return result;
     }
 
-    struct sigaction ignore_act;
-    memset(&ignore_act, '\0', sizeof(ignore_act));
-    memset(*replaced_action, '\0', sizeof(struct sigaction));
-    ignore_act.sa_handler = SIG_IGN;
-    ignore_act.sa_flags = 0;
-    return sigaction(SIGPIPE, &ignore_act, *replaced_action);
+    int sigpipe_pending = -1;
+    if (sigpending(&sig_pending)!=-1) {
+        sigpipe_pending = sigismember(&sig_pending, SIGPIPE);
+    }
+
+    if (sigpipe_pending==-1) {
+        pthread_sigmask(SIG_SETMASK, &sig_restore, NULL);
+        return -1;
+    }
+
+    if (*replaced_action==NULL) {
+        *replaced_action = malloc(sizeof(sigset_t));
+    }
+    memcpy(*replaced_action, &sig_restore, sizeof(sigset_t));
+    return 0;
 #endif
     UNUSED(replaced_action);
     return BOLT_SUCCESS;
@@ -85,10 +101,26 @@ int socket_restore_sigpipe(void** action_to_restore)
 {
 #if !defined(SO_NOSIGPIPE)
     if (action_to_restore!=NULL) {
-        int result = sigaction(SIGPIPE, *action_to_restore, NULL);
+        sigset_t sig_block;
+
+        sigemptyset(&sig_block);
+        sigaddset(&sig_block, SIGPIPE);
+
+        struct timespec ts;
+        ts.tv_sec = 0;
+        ts.tv_nsec = 0;
+
+        while (sigtimedwait(&sig_block, 0, &ts)==-1) {
+            if (errno!=EINTR) {
+                break;
+            }
+        }
+
+        pthread_sigmask(SIG_SETMASK, (sigset_t*) *action_to_restore, NULL);
+
         free(*action_to_restore);
         *action_to_restore = NULL;
-        return result;
+        return 0;
     }
 #endif
     UNUSED(action_to_restore);
