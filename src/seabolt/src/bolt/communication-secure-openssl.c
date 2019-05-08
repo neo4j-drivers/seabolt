@@ -214,9 +214,19 @@ void BoltSecurityContext_destroy(BoltSecurityContext* context)
 
 static mutex_t* locks;
 
-unsigned long secure_openssl_id_callback(void);
+struct CRYPTO_dynlock_value {
+    mutex_t mutex;
+};
 
-void secure_openssl_locking_callback(int mode, int type, const char* file, int line);
+static unsigned long secure_openssl_id_callback(void);
+
+static void secure_openssl_locking_callback(int mode, int type, const char* file, int line);
+
+static struct CRYPTO_dynlock_value* secure_openssl_create_mutex(const char* file, int line);
+
+static void secure_openssl_lock_mutext(int mode, struct CRYPTO_dynlock_value* l, const char* file, int line);
+
+static void secure_openssl_destroy_mutex(struct CRYPTO_dynlock_value* l, const char* file, int line);
 
 void CRYPTO_thread_setup(void)
 {
@@ -230,21 +240,31 @@ void CRYPTO_thread_setup(void)
         BoltSync_mutex_create(&locks[i]);
     }
 
-    CRYPTO_set_id_callback(&secure_openssl_id_callback);
-    CRYPTO_set_locking_callback(&secure_openssl_locking_callback);
+    CRYPTO_set_id_callback(secure_openssl_id_callback);
+    CRYPTO_set_locking_callback(secure_openssl_locking_callback);
+
+    CRYPTO_set_dynlock_create_callback(secure_openssl_create_mutex);
+    CRYPTO_set_dynlock_lock_callback(secure_openssl_lock_mutext);
+    CRYPTO_set_dynlock_destroy_callback(secure_openssl_destroy_mutex);
 }
 
-static void CRYPTO_thread_cleanup(void)
+void CRYPTO_thread_cleanup(void)
 {
-    int i;
+    CRYPTO_set_id_callback(NULL);
+    CRYPTO_set_locking_callback(NULL);
+
+    CRYPTO_set_dynlock_create_callback(NULL);
+    CRYPTO_set_dynlock_lock_callback(NULL);
+    CRYPTO_set_dynlock_destroy_callback(NULL);
 
     CRYPTO_set_locking_callback(NULL);
-    for (i = 0; i<CRYPTO_num_locks(); i++)
+    for (int i = 0; i<CRYPTO_num_locks(); i++) {
         BoltSync_mutex_destroy(&locks[i]);
+    }
     OPENSSL_free(locks);
 }
 
-void secure_openssl_locking_callback(int mode, int type, const char* file, int line)
+static void secure_openssl_locking_callback(int mode, int type, const char* file, int line)
 {
     UNUSED(file);
     UNUSED(line);
@@ -257,9 +277,43 @@ void secure_openssl_locking_callback(int mode, int type, const char* file, int l
     }
 }
 
-unsigned long secure_openssl_id_callback(void)
+static unsigned long secure_openssl_id_callback(void)
 {
     return BoltThread_id();
+}
+
+static struct CRYPTO_dynlock_value* secure_openssl_create_mutex(const char* file, int line)
+{
+    UNUSED(file);
+    UNUSED(line);
+
+    struct CRYPTO_dynlock_value* value;
+    value = (struct CRYPTO_dynlock_value*) malloc(sizeof(struct CRYPTO_dynlock_value));
+    if (!value) return NULL;
+    BoltSync_mutex_create(&value->mutex);
+    return value;
+}
+
+static void secure_openssl_lock_mutext(int mode, struct CRYPTO_dynlock_value* l, const char* file, int line)
+{
+    UNUSED(file);
+    UNUSED(line);
+
+    if (mode & CRYPTO_LOCK) {
+        BoltSync_mutex_lock(&l->mutex);
+    }
+    else {
+        BoltSync_mutex_unlock(&l->mutex);
+    }
+}
+
+static void secure_openssl_destroy_mutex(struct CRYPTO_dynlock_value* l, const char* file, int line)
+{
+    UNUSED(file);
+    UNUSED(line);
+
+    BoltSync_mutex_destroy(&l->mutex);
+    free(l);
 }
 
 #endif
@@ -267,8 +321,8 @@ unsigned long secure_openssl_id_callback(void)
 int BoltSecurityContext_startup()
 {
 #if OPENSSL_VERSION_NUMBER<0x10100000L
-    SSL_library_init();
     CRYPTO_thread_setup();
+    SSL_library_init();
 #else
     OPENSSL_init_ssl(0, NULL);
 #endif

@@ -20,7 +20,7 @@ if [[ -z "${PYTHON}" ]]; then
 fi
 
 if [[ -z "${NEOCTRLARGS}" ]]; then
-    NEO4J_VERSION="-e 3.4"
+    NEO4J_VERSION="-e 3.5"
 else
     NEO4J_VERSION="${NEOCTRLARGS}"
 fi
