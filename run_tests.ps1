@@ -186,7 +186,7 @@ try
     CheckBoltKit
     Compile
 
-    $Neo4jVersion = "-e 3.4"
+    $Neo4jVersion = "-e 3.5"
     If (Test-Path "env:NEOCTRLARGS") {
         $Neo4jVersion = $env:NEOCTRLARGS
     }
