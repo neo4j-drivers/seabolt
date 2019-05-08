@@ -292,7 +292,7 @@ int BoltRoutingPool_ensure_routing_table(struct BoltRoutingPool* pool, BoltAcces
 }
 
 struct BoltAddress* BoltRoutingPool_select_least_connected(struct BoltRoutingPool* pool,
-        volatile BoltAddressSet* servers, volatile int offset)
+        volatile BoltAddressSet* servers, volatile int64_t offset)
 {
     if (servers->size==0) {
         return NULL;

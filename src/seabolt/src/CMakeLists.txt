@@ -180,8 +180,13 @@ foreach (target ${SEABOLT_SHARED} ${SEABOLT_STATIC})
         if (ON_WINDOWS)
             target_link_libraries(${target}
                     PUBLIC
-                    crypt32
-                    legacy_stdio_definitions)
+                    crypt32)
+
+            if (MSVC)
+                target_link_libraries(${target}
+                        PUBLIC
+                        legacy_stdio_definitions)
+            endif ()
         endif ()
     endif ()
 
