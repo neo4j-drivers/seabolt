@@ -142,6 +142,11 @@ int BoltRoutingPool_update_routing_table_from(struct BoltRoutingPool* pool, stru
 
     if (status==BOLT_SUCCESS) {
         status = RoutingTable_update(pool->routing_table, response);
+        if (status!=BOLT_SUCCESS) {
+            BoltLog_warning(pool->config->log,
+                    "Unable to process routing table response from server '%s:%s' due to 0x%0x.", server->host,
+                    server->port, status);
+        }
     }
 
     BoltValue_destroy(response);
@@ -178,8 +183,8 @@ int BoltRoutingPool_update_routing_table(struct BoltRoutingPool* pool)
                 routers->elements[i]->host, routers->elements[i]->port);
 
         int status = BoltRoutingPool_update_routing_table_from(pool, (BoltAddress*) routers->elements[i]);
-        if (status==BOLT_SUCCESS) {
-            result = BOLT_SUCCESS;
+        if (status==BOLT_SUCCESS || status==BOLT_PERMISSION_DENIED) {
+            result = status;
             break;
         }
     }
@@ -527,28 +532,32 @@ BoltConnection* BoltRoutingPool_acquire(struct BoltRoutingPool* pool, BoltAccess
             connection->on_error_cb_state = pool;
             connection->on_error_cb = BoltRoutingPool_connection_error_handler;
         }
+        else {
+            result = status->error;
+        }
+    }
+
+    BoltSync_rwlock_rdunlock(&pool->rwlock);
+
+    if (result!=BOLT_SUCCESS) {
+        // check if we were able to complete server selection. this is not the case when routing
+        // table refresh fails.
+        if (server!=NULL) {
+            BoltRoutingPool_handle_connection_error_by_code(pool, server, result);
+        }
+
+        // set error code if it failed and we're not set
+        if (status->error==BOLT_SUCCESS) {
+            status->error = result;
+            status->error_ctx = NULL;
+        }
     }
 
     if (server!=NULL) {
         BoltAddress_destroy(server);
     }
 
-    BoltSync_rwlock_rdunlock(&pool->rwlock);
-
-    if (result==BOLT_SUCCESS) {
-        return connection;
-    }
-
-    // check if we were able to complete server selection. this is not the case when routing
-    // table refresh fails.
-    if (server!=NULL) {
-        BoltRoutingPool_handle_connection_error_by_code(pool, server, result);
-    }
-
-    status->error = result;
-    status->error_ctx = NULL;
-
-    return NULL;
+    return connection;
 }
 
 int BoltRoutingPool_release(struct BoltRoutingPool* pool, struct BoltConnection* connection)

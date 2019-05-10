@@ -37,6 +37,8 @@ extern "C"
 #include "bolt/v3.h"
 #include "bolt/communication.h"
 #include "bolt/communication-mock.h"
+#include "bolt/routing-table.h"
+#include "bolt/time.h"
 }
 
 #define SETTING(name, default_value) ((char*)((getenv(name) == nullptr) ? (default_value) : getenv(name)))

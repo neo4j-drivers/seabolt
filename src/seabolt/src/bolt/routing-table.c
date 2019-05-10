@@ -70,7 +70,9 @@ int RoutingTable_update(volatile RoutingTable* table, struct BoltValue* response
         if (ttl_value==NULL || BoltValue_type(ttl_value)!=BOLT_INTEGER) {
             status = BOLT_ROUTING_UNEXPECTED_DISCOVERY_RESPONSE;
         }
-        ttl = BoltInteger_get(ttl_value)*1000;
+        else {
+            ttl = BoltInteger_get(ttl_value)*1000;
+        }
     }
 
     struct BoltValue* servers_value = NULL;
@@ -81,30 +83,31 @@ int RoutingTable_update(volatile RoutingTable* table, struct BoltValue* response
         }
     }
 
-    volatile BoltAddressSet* readers = BoltAddressSet_create();
-    volatile BoltAddressSet* writers = BoltAddressSet_create();
-    volatile BoltAddressSet* routers = BoltAddressSet_create();
+    if (status==BOLT_SUCCESS && servers_value!=NULL) {
+        volatile BoltAddressSet* readers = BoltAddressSet_create();
+        volatile BoltAddressSet* writers = BoltAddressSet_create();
+        volatile BoltAddressSet* routers = BoltAddressSet_create();
 
-    for (int32_t i = 0; i<servers_value->size && status==BOLT_SUCCESS; i++) {
-        struct BoltValue* server_value = BoltList_value(servers_value, i);
-        if (server_value==NULL || BoltValue_type(server_value)!=BOLT_DICTIONARY) {
-            status = BOLT_ROUTING_UNEXPECTED_DISCOVERY_RESPONSE;
-            break;
-        }
+        for (int32_t i = 0; i<servers_value->size && status==BOLT_SUCCESS; i++) {
+            struct BoltValue* server_value = BoltList_value(servers_value, i);
+            if (server_value==NULL || BoltValue_type(server_value)!=BOLT_DICTIONARY) {
+                status = BOLT_ROUTING_UNEXPECTED_DISCOVERY_RESPONSE;
+                break;
+            }
 
-        struct BoltValue* role_value = BoltDictionary_value_by_key(server_value, ROLE_KEY, ROLE_KEY_LEN);
-        if (role_value==NULL || BoltValue_type(role_value)!=BOLT_STRING) {
-            status = BOLT_ROUTING_UNEXPECTED_DISCOVERY_RESPONSE;
-            break;
-        }
+            struct BoltValue* role_value = BoltDictionary_value_by_key(server_value, ROLE_KEY, ROLE_KEY_LEN);
+            if (role_value==NULL || BoltValue_type(role_value)!=BOLT_STRING) {
+                status = BOLT_ROUTING_UNEXPECTED_DISCOVERY_RESPONSE;
+                break;
+            }
 
-        struct BoltValue* addresses_value = BoltDictionary_value_by_key(server_value, ADDRESSES_KEY, ADDRESSES_KEY_LEN);
-        if (addresses_value==NULL || BoltValue_type(addresses_value)!=BOLT_LIST) {
-            status = BOLT_ROUTING_UNEXPECTED_DISCOVERY_RESPONSE;
-            break;
-        }
+            struct BoltValue* addresses_value = BoltDictionary_value_by_key(server_value, ADDRESSES_KEY,
+                    ADDRESSES_KEY_LEN);
+            if (addresses_value==NULL || BoltValue_type(addresses_value)!=BOLT_LIST) {
+                status = BOLT_ROUTING_UNEXPECTED_DISCOVERY_RESPONSE;
+                break;
+            }
 
-        if (status==BOLT_SUCCESS) {
             char* role = BoltString_get(role_value);
 
             for (int32_t j = 0; j<addresses_value->size && status==BOLT_SUCCESS; j++) {
@@ -133,19 +136,23 @@ int RoutingTable_update(volatile RoutingTable* table, struct BoltValue* response
                 BoltAddress_destroy(address);
             }
         }
-    }
 
-    if (status==BOLT_SUCCESS) {
-        BoltAddressSet_replace(table->readers, readers);
-        BoltAddressSet_replace(table->writers, writers);
-        BoltAddressSet_replace(table->routers, routers);
-        table->last_updated = BoltTime_get_time_ms();
-        table->expires = table->last_updated+ttl;
-    }
+        if (status==BOLT_SUCCESS && readers->size==0 && routers->size==0) {
+            status = BOLT_ROUTING_UNEXPECTED_DISCOVERY_RESPONSE;
+        }
 
-    BoltAddressSet_destroy(readers);
-    BoltAddressSet_destroy(writers);
-    BoltAddressSet_destroy(routers);
+        if (status==BOLT_SUCCESS) {
+            BoltAddressSet_replace(table->readers, readers);
+            BoltAddressSet_replace(table->writers, writers);
+            BoltAddressSet_replace(table->routers, routers);
+            table->last_updated = BoltTime_get_time_ms();
+            table->expires = table->last_updated+ttl;
+        }
+
+        BoltAddressSet_destroy(readers);
+        BoltAddressSet_destroy(writers);
+        BoltAddressSet_destroy(routers);
+    }
 
     return status;
 }

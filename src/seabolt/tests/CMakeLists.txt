@@ -13,6 +13,7 @@ target_sources(seabolt-test
         ${CMAKE_CURRENT_LIST_DIR}/test-warden.cpp
         ${CMAKE_CURRENT_LIST_DIR}/test-string-builder.cpp
         ${CMAKE_CURRENT_LIST_DIR}/test-direct-pool.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/test-routing-table.cpp
         ${CMAKE_CURRENT_LIST_DIR}/test-v3.cpp
         ${CMAKE_CURRENT_LIST_DIR}/utils/test-context.cpp)
 
