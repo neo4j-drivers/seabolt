@@ -69,6 +69,8 @@ int BoltSync_cond_wait(cond_t* cond, mutex_t* mutex);
 
 int BoltSync_cond_timedwait(cond_t* cond, mutex_t* mutex, int timeout_ms);
 
+void BoltSync_sleep(int milliseconds);
+
 unsigned long BoltThread_id();
 
 #endif //SEABOLT_SYNC_H
