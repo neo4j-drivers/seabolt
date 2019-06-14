@@ -37,6 +37,16 @@ rm seabolt-1.7.3-Linux-ubuntu-$(lsb_release -rs).deb
 tar zxvf ~/Downloads/seabolt.tar.gz --strip-components=1 -C /
 ```
 
+### Windows (zip)
+
+1. Download the package you want to install (check [here](https://github.com/neo4j-drivers/seabolt/releases) for latest releases).
+
+2. Extract the package using the following powershell script (assuming that you saved the package as `C:\Temp\seabolt.zip`).
+```
+Expand-Archive -Path C:\Temp\seabolt.zip -DestinationPath C:\
+Get-ChildItem -Path C:\seabolt-* -Directory | Rename-Item -NewName seabolt
+```
+
 ## Building from source
 
 This project requires the following tools/libraries to be installed in order to be built. General installation instructions can be found in the following sections.
