@@ -10,6 +10,10 @@ foreach (lib ${LIBRARIES})
         continue()
     endif ()
 
+    if (lib MATCHES "Threads::Threads")
+        continue()
+    endif ()
+
     if (lib MATCHES "^-l")
         string(SUBSTRING ${lib} 2 -1 lib)
     endif ()

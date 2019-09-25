@@ -119,6 +119,7 @@ endif ()
 
 if (ON_POSIX)
     set(CMAKE_THREAD_PREFER_PTHREAD ON)
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
 endif ()
 
@@ -159,7 +160,7 @@ foreach (target ${SEABOLT_SHARED} ${SEABOLT_STATIC})
     if (ON_POSIX)
         target_link_libraries(${target}
                 PUBLIC
-                ${CMAKE_THREAD_LIBS_INIT})
+                Threads::Threads)
     endif ()
 
     if (ON_WINDOWS)
