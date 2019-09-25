@@ -15,7 +15,7 @@ sudo apt-get install -y libssl1.0.0
 
 2. Fetch the latest package (check [here](https://github.com/neo4j-drivers/seabolt/releases) for latest releases)
 ```
-wget https://github.com/neo4j-drivers/seabolt/releases/download/v1.7.3/seabolt-1.7.3-Linux-ubuntu-$(lsb_release -rs).deb
+wget https://github.com/neo4j-drivers/seabolt/releases/download/v1.7.4/seabolt-1.7.4-Linux-ubuntu-$(lsb_release -rs).deb
 ```
 
 3. (optional) Check the sha256 hash of the download matches the published hash
@@ -24,6 +24,27 @@ wget https://github.com/neo4j-drivers/seabolt/releases/download/v1.7.3/seabolt-1
 ```
 dpkg -i seabolt-1.7.3-Linux-ubuntu-$(lsb_release -rs).deb
 rm seabolt-1.7.3-Linux-ubuntu-$(lsb_release -rs).deb
+```
+
+### Linux and MacOS (tar.gz)
+
+1. Seabolt requires openssl libraries to be present on the system. Most linux distributions have them installed by default and you can use `brew install openssl` to install it on MacOS. If you 
+
+2. Download the package you want to install (check [here](https://github.com/neo4j-drivers/seabolt/releases) for latest releases).
+
+3. Extract the package using the following command (assuming that you saved the package as `~/Downloads/seabolt.tar.gz`). This command actually skips the top-level folder inside the tar.gz package and extracts its contents into the root folder `/`.
+```
+tar zxvf ~/Downloads/seabolt.tar.gz --strip-components=1 -C /
+```
+
+### Windows (zip)
+
+1. Download the package you want to install (check [here](https://github.com/neo4j-drivers/seabolt/releases) for latest releases).
+
+2. Extract the package using the following powershell script (assuming that you saved the package as `C:\Temp\seabolt.zip`).
+```
+Expand-Archive -Path C:\Temp\seabolt.zip -DestinationPath C:\
+Get-ChildItem -Path C:\seabolt-* -Directory | Rename-Item -NewName seabolt
 ```
 
 ## Building from source
