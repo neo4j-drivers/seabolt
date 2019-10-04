@@ -93,6 +93,16 @@ Function InstallServer($Target, $Version)
         }
     }
 
+    Write-Host "-- Configuring server for tls level to be OPTIONAL"
+    & neoctrl-configure "$Server" dbms.connector.bolt.tls_level=OPTIONAL
+    if ( $LASTEXITCODE -ne 0 )
+    {
+        throw @{
+            Code = $ErrorServerConfigFailed
+            Message = "FATAL: Unable to configure server for tls level."
+        }
+    }
+
     Write-Host "-- Setting initial password"
     & neoctrl-set-initial-password "$Password" "$Server"
     if ( $LASTEXITCODE -ne 0 )
