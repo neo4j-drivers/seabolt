@@ -111,6 +111,14 @@ function run_tests
         exit ${SERVER_CONFIG_FAILED}
     fi
 
+    echo "-- Setting tls level to optional"
+    neoctrl-configure "${NEO4J_DIR}" dbms.connector.bolt.tls_level=OPTIONAL
+    if [ "$?" -ne "0" ]
+    then
+        echo "FATAL: Unable to configure server for tls level."
+        exit ${SERVER_CONFIG_FAILED}
+    fi
+
     echo "-- Setting initial password"
     neoctrl-set-initial-password "${PASSWORD}" "${NEO4J_DIR}"
     if [ "$?" -ne "0" ]
