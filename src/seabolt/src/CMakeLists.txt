@@ -160,7 +160,7 @@ foreach (target ${SEABOLT_SHARED} ${SEABOLT_STATIC})
     if (ON_POSIX)
         target_link_libraries(${target}
                 PUBLIC
-                Threads::Threads)
+                ${CMAKE_THREAD_LIBS_INIT})
     endif ()
 
     if (ON_WINDOWS)

@@ -1,6 +1,7 @@
 message(STATUS "Passed ${LIBRARIES}")
 
 set(LIBS_PROCESSED "")
+set(LIBS_APPEND "")
 foreach (lib ${LIBRARIES})
     if (lib MATCHES "^\\$")
         continue()
@@ -10,7 +11,8 @@ foreach (lib ${LIBRARIES})
         continue()
     endif ()
 
-    if (lib MATCHES "Threads::Threads")
+    if (lib MATCHES ".*thread.*")
+        string(APPEND LIBS_APPEND "${lib} ")
         continue()
     endif ()
 
@@ -30,6 +32,8 @@ foreach (lib ${LIBRARIES})
         string(APPEND LIBS_PROCESSED "-l${lib} ")
     endif ()
 endforeach ()
+
+string(APPEND LIBS_PROCESSED "${LIBS_APPEND}")
 
 message(STATUS "Processed ${LIBS_PROCESSED}")
 
