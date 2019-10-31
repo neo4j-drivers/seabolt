@@ -21,6 +21,7 @@
 
 #include <pthread.h>
 #include <errno.h>
+#include <poll.h>
 
 int socket_last_error(BoltCommunication* comm)
 {
@@ -212,23 +213,20 @@ int socket_get_local_addr(int sockfd, struct sockaddr_storage* address, socklen_
 int socket_select(int sockfd, int timeout)
 {
     // connection in progress
-    fd_set write_set;
-    FD_ZERO(&write_set);
-    FD_SET(sockfd, &write_set);
+    struct pollfd pfd;
+    pfd.fd = sockfd;
+    pfd.events = POLLOUT;
+    int status = poll(&pfd, 1, timeout);
+    if (status == 1) {
+        if (pfd.revents & POLLOUT) {
+            int so_error = 0;
+            socklen_t so_error_len = sizeof(int);
 
-    struct timeval select_timeout;
-    select_timeout.tv_sec = timeout/1000;
-    select_timeout.tv_usec = (timeout%1000)*1000;
-
-    int status = select(FD_SETSIZE, NULL, &write_set, NULL, &select_timeout);
-    if (status==1) {
-        int so_error = 0;
-        socklen_t so_error_len = sizeof(int);
-
-        getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &so_error, &so_error_len);
-        if (so_error!=0) {
-            errno = so_error;
-            return -1;
+            getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &so_error, &so_error_len);
+            if (so_error!=0) {
+                errno = so_error;
+                return -1;
+            }
         }
     }
 
