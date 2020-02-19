@@ -10,16 +10,20 @@ RUN /cmake/bin/cmake -D CMAKE_BUILD_TYPE=Debug -D CMAKE_INSTALL_PREFIX=dist /tmp
 
 FROM openjdk:11-jdk
 ARG BOLTKIT=git+https://github.com/neo4j-drivers/boltkit.git@1.3#egg=boltkit
-RUN apt update \
-    && apt install -y bash python3 python3-pip openjdk-8-jdk \
+RUN wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add - \
+    && apt update \
+    && apt install -y software-properties-common \
+    && add-apt-repository --yes https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ \
+    && apt update \
+    && apt install -y bash python3 python3-pip adoptopenjdk-8-hotspot \
     && python3 -m pip install $BOLTKIT \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir /java \
     && ln -s /usr/local/openjdk-11 /java/jdk-4.0 \
-    && ln -s /usr/lib/jvm/java-8-openjdk-amd64 /java/jdk-3.5 \
-    && ln -s /usr/lib/jvm/java-8-openjdk-amd64 /java/jdk-3.4 \
-    && ln -s /usr/lib/jvm/java-8-openjdk-amd64 /java/jdk-3.3 \
-    && ln -s /usr/lib/jvm/java-8-openjdk-amd64 /java/jdk-3.2
+    && ln -s /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64 /java/jdk-3.5 \
+    && ln -s /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64 /java/jdk-3.4 \
+    && ln -s /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64 /java/jdk-3.3 \
+    && ln -s /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64 /java/jdk-3.2
 ENV NEOCTRLARGS="-e 3.4"
 ENV TEAMCITY_HOST="" TEAMCITY_USER="" TEAMCITY_PASSWORD=""
 ENV BOLT_HOST="localhost" BOLT_PORT="7687" HTTP_PORT="7474" HTTPS_PORT="7473"
