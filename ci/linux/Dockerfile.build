@@ -11,6 +11,7 @@ RUN /cmake/bin/cmake -D CMAKE_BUILD_TYPE=Debug -D CMAKE_INSTALL_PREFIX=dist /tmp
 FROM openjdk:11-jdk
 ARG BOLTKIT=git+https://github.com/neo4j-drivers/boltkit.git@1.3#egg=boltkit
 RUN wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add - \
+    && apt update \
     && apt install -y software-properties-common \
     && add-apt-repository --yes https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ \
     && apt update \
