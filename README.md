@@ -22,8 +22,8 @@ wget https://github.com/neo4j-drivers/seabolt/releases/download/v1.7.4/seabolt-1
 
 4. Install the package and clean up
 ```
-dpkg -i seabolt-1.7.3-Linux-ubuntu-$(lsb_release -rs).deb
-rm seabolt-1.7.3-Linux-ubuntu-$(lsb_release -rs).deb
+dpkg -i seabolt-1.7.4-Linux-ubuntu-$(lsb_release -rs).deb
+rm seabolt-1.7.4-Linux-ubuntu-$(lsb_release -rs).deb
 ```
 
 ### Linux and MacOS (tar.gz)
