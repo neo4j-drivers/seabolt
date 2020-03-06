@@ -1,0 +1,14 @@
+FROM centos:centos8
+RUN yum -y install perl wget ca-certificates make gcc-c++ pkgconfig git rpm-build \
+        && (mkdir -p /cmake && wget --no-verbose --output-document=- https://cmake.org/files/v3.16/cmake-3.16.5-Linux-x86_64.tar.gz | tar xvz -C /cmake --strip 1 ) \
+        && (mkdir -p /openssl && wget --no-verbose --output-document=- https://www.openssl.org/source/openssl-1.1.1d.tar.gz | tar xvz -C /openssl --strip 1 ) && cd openssl && ./config && make && make install \
+        && yum -y clean all
+ARG SEABOLT_VERSION
+ARG SEABOLT_VERSION_HASH
+ENV SEABOLT_VERSION=$SEABOLT_VERSION
+ENV SEABOLT_VERSION_HASH=$SEABOLT_VERSION_HASH
+ADD . /tmp/seabolt
+WORKDIR /tmp/seabolt/build-docker
+RUN /cmake/bin/cmake -D CMAKE_BUILD_TYPE=Release /tmp/seabolt \
+    && /cmake/bin/cmake --build . --target package
+CMD tar -czf - dist-package/seabolt*
