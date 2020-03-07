@@ -47,7 +47,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 endif ()
 
 if (UNIX)
-    if (OS_ID_LIKE MATCHES "debian")
+    if (OS_ID MATCHES "debian" OR OS_ID_LIKE MATCHES "debian")
         list(APPEND CPACK_GENERATOR "DEB")
         set(CPACK_DEBIAN_PACKAGE_NAME "${SEABOLT_NAME}")
         set(CPACK_DEBIAN_PACKAGE_VERSION "${PROJECT_VERSION}")
