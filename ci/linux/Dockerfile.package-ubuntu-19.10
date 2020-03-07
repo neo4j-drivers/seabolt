@@ -1,0 +1,13 @@
+FROM ubuntu:19.10
+RUN apt-get update \
+        && apt-get install -y ca-certificates make g++ libssl-dev git wget pkg-config dpkg-dev file cmake \
+        && rm -rf /var/lib/apt/lists/*
+ARG SEABOLT_VERSION
+ARG SEABOLT_VERSION_HASH
+ENV SEABOLT_VERSION=$SEABOLT_VERSION
+ENV SEABOLT_VERSION_HASH=$SEABOLT_VERSION_HASH
+ADD . /tmp/seabolt
+WORKDIR /tmp/seabolt/build-docker
+RUN cmake -D CMAKE_BUILD_TYPE=Release /tmp/seabolt \
+    && cmake --build . --target package
+CMD tar -czf - dist-package/seabolt*
