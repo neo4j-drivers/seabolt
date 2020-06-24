@@ -44,6 +44,6 @@ BoltValue* BoltAuth_none()
     struct BoltValue* auth_token = BoltValue_create();
     BoltValue_format_as_Dictionary(auth_token, 1);
     BoltDictionary_set_key(auth_token, 0, "scheme", 6);
-    BoltValue_format_as_String(BoltDictionary_value(auth_token, 0), "none", 5);
+    BoltValue_format_as_String(BoltDictionary_value(auth_token, 0), "none", 4);
     return auth_token;
 }
