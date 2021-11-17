@@ -137,7 +137,7 @@ void _write_string(FILE* file, const char* data, size_t size)
 {
     fputc(STRING_QUOTE, file);
     for (size_t i = 0; i<size; i++) {
-        char ch0 = data[i];
+        signed char ch0 = data[i];
         if (IS_PRINTABLE_ASCII(ch0) && ch0!=STRING_QUOTE) {
             fputc(ch0, file);
         }
